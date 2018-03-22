@@ -343,7 +343,6 @@ struct cdir* create_cdir(const struct config* config, const char* attr, int star
 struct cdir* create_cdir_with_cdir_parent(const struct config* config, struct cdir* parent, int startBound, int endBound)
 {
     struct cdir* cdir = create_cdir(config, parent->attr, startBound, endBound);
-    cdir->attr = strdup(parent->attr);
     cdir->parent_type = CNODE_PARENT_CDIR;
     cdir->cdir_parent = parent;
     return cdir;
