@@ -546,8 +546,8 @@ int all_tests()
     mu_run_test(test_sub_has_attribute);
     mu_run_test(test_remove_sub);
     mu_run_test(test_match_single_cnode);
-    // mu_run_test(test_insert_first_split);
-    // mu_run_test(test_pdir_split_twice);
+    mu_run_test(test_insert_first_split);
+    mu_run_test(test_pdir_split_twice);
     // mu_run_test(test_cdir_split_twice);
     // mu_run_test(test_remove_sub_in_tree);
     // mu_run_test(test_remove_sub_in_tree_with_delete);
