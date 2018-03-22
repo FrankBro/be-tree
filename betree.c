@@ -698,7 +698,7 @@ void free_cnode(struct cnode* cnode)
     free(cnode);
 }
 
-void removeCDir(struct cdir* cdir)
+void free_cdir(struct cdir* cdir)
 {
     if(cdir == NULL) {
         return;
@@ -707,9 +707,9 @@ void removeCDir(struct cdir* cdir)
     cdir->attr = NULL;
     free_cnode(cdir->cnode);
     cdir->cnode = NULL;
-    removeCDir(cdir->lChild);
+    free_cdir(cdir->lChild);
     cdir->lChild = NULL;
-    removeCDir(cdir->rChild);
+    free_cdir(cdir->rChild);
     cdir->rChild = NULL;
     free(cdir);
 }
@@ -747,7 +747,7 @@ void free_pnode(struct pnode* pnode)
     }
     free((char*)pnode->attr);
     pnode->attr = NULL;
-    removeCDir(pnode->cdir);
+    free_cdir(pnode->cdir);
     pnode->cdir = NULL;
     free(pnode);
 }
@@ -799,7 +799,7 @@ bool is_empty(struct cdir* cdir)
 
 void remove_bucket(struct cdir* cdir)
 {
-    removeCDir(cdir);
+    free_cdir(cdir);
 }
 
 bool search_delete_cdir(const struct config* config, struct sub* sub, struct cdir* cdir) 
@@ -827,7 +827,7 @@ bool search_delete_cdir(const struct config* config, struct sub* sub, struct cdi
             cdir->rChild = NULL;
         }
         if(is_empty(cdir)) {
-            removeCDir(cdir);
+            free_cdir(cdir);
             // if(cdir->pnode_parent != NULL) {
             //     cdir->pnode_parent->cdir = NULL;
             // }
