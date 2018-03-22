@@ -446,9 +446,7 @@ int test_remove_sub_in_tree_with_delete()
     mu_assert(test_lnode_has_subs(cnode->pdir->pnodes[0]->cdir->cnode->lnode, 3, subs123), "sub 1, 2, and 3 is lower lnode");
 
     delete_be_tree(config, sub1, cnode);
-    // print_be_tree(cnode);
     delete_be_tree(config, sub2, cnode);
-    // print_be_tree(cnode);
     delete_be_tree(config, sub3, cnode);
 
     mu_assert(cnode->pdir == NULL, "deleted everything down of the pdir");
@@ -549,8 +547,8 @@ int all_tests()
     mu_run_test(test_insert_first_split);
     mu_run_test(test_pdir_split_twice);
     mu_run_test(test_cdir_split_twice);
-    // mu_run_test(test_remove_sub_in_tree);
-    // mu_run_test(test_remove_sub_in_tree_with_delete);
+    mu_run_test(test_remove_sub_in_tree);
+    mu_run_test(test_remove_sub_in_tree_with_delete);
 
     // mu_run_test(test_remove_sub_in_tree_with_two_levels_pnode);
     // mu_run_test(test_remove_sub_in_tree_with_two_levels_cdir);

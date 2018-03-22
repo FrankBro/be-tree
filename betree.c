@@ -763,7 +763,6 @@ bool delete_be_tree(const struct config* config, struct sub* sub, struct cnode* 
                 isFound = search_delete_cdir(config, sub, pnode->cdir);
             }
             if(isFound) {
-                pnode->cdir = NULL;
                 break;
             }
         }
@@ -774,13 +773,13 @@ bool delete_be_tree(const struct config* config, struct sub* sub, struct cnode* 
             free_pnode(pnode);
         }
         if(cnode != NULL && is_pdir_empty(cnode->pdir)) {
-            cnode->pdir = NULL;
             free_pdir(cnode->pdir);
+            cnode->pdir = NULL;
         }
         if(!is_root(cnode)) {
             if(cnode != NULL && is_lnode_empty(cnode->lnode)) {
-                cnode->lnode = NULL;
                 free_lnode(cnode->lnode);
+                cnode->lnode = NULL;
             }
             if(is_cnode_empty(cnode)) {
                 cnode->parent->cnode = NULL;
@@ -801,6 +800,25 @@ void remove_bucket(struct cdir* cdir)
     free_cdir(cdir);
 }
 
+void try_remove_cdir_from_parent(struct cdir* cdir)
+{
+    switch(cdir->parent_type) {
+        case CNODE_PARENT_CDIR: {
+            if(cdir->cdir_parent->lChild == cdir) {
+                cdir->cdir_parent->lChild = NULL;
+            }
+            else if(cdir->cdir_parent->rChild == cdir) {
+                cdir->cdir_parent->rChild = NULL;
+            }
+            break;
+        }
+        case CNODE_PARENT_PNODE: {
+            cdir->pnode_parent->cdir = NULL;
+        }
+
+    }
+}
+
 bool search_delete_cdir(const struct config* config, struct sub* sub, struct cdir* cdir) 
 {
     bool isFound = false;
@@ -812,9 +830,6 @@ bool search_delete_cdir(const struct config* config, struct sub* sub, struct cdi
     }
     else {
         isFound = delete_be_tree(config, sub, cdir->cnode);
-        if(isFound) {
-            cdir->cnode = NULL;
-        }
     }
     if(isFound) {
         if(is_empty(cdir->lChild)) {
@@ -826,10 +841,8 @@ bool search_delete_cdir(const struct config* config, struct sub* sub, struct cdi
             cdir->rChild = NULL;
         }
         if(is_empty(cdir)) {
+            try_remove_cdir_from_parent(cdir);
             free_cdir(cdir);
-            // if(cdir->pnode_parent != NULL) {
-            //     cdir->pnode_parent->cdir = NULL;
-            // }
         }
     }
     return isFound;
