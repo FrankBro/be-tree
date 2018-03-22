@@ -1,0 +1,4 @@
+*.o
+betree_tests
+err.txt
+betree_tests.dSYM/*

@@ -1,0 +1,13 @@
+BasedOnStyle: WebKit
+Standard: Cpp11
+AllowShortBlocksOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: All
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+BinPackArguments: false
+BinPackParameters: false
+ColumnLimit: 100
+MaxEmptyLinesToKeep: 2
+NamespaceIndentation: None
+PointerBindsToType: false
