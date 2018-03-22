@@ -107,7 +107,8 @@ struct matched_subs {
     int *subs;
 };
 
-void free_matched_subs(struct matched_subs matched_subs);
+struct matched_subs* make_matched_subs();
+void free_matched_subs(struct matched_subs* matched_subs);
 
 void insert_be_tree(const struct config* config, const struct sub* sub, struct cnode* cnode, struct cdir* cdir);
 void match_be_tree(const struct event* event, const struct cnode* cnode, struct matched_subs* matchedSub);

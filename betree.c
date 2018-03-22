@@ -74,6 +74,9 @@ void match_be_tree(const struct event* event, const struct cnode* cnode, struct 
 
 bool is_event_enclosed(const struct event* event, const struct cdir* cdir)
 {
+    if(cdir == NULL) {
+        return false;
+    }
     for(unsigned int i = 0; i < event->pred_count; i++) {
         const char* attr = event->preds[i]->attr;
         if(strcasecmp(attr, cdir->attr) == 0) {
@@ -408,47 +411,6 @@ struct pnode* create_pdir(const struct config* config, const char* attr, struct 
     return pnode;
 }
 
-const struct cnode* get_parent_cdir(const struct cdir* cdir)
-{
-    if(cdir == NULL) {
-        return NULL;
-    }
-    switch(cdir->parent_type) {
-        case CNODE_PARENT_PNODE: {
-            return cdir->pnode_parent->parent->parent;
-        }
-        case CNODE_PARENT_CDIR: {
-            return get_parent_cdir(cdir->cdir_parent);
-        }
-    }
-}
-
-const struct cnode* get_parent_cnode(const struct cnode* cnode)
-{
-    if(cnode == NULL) {
-        return NULL;
-    }
-    return get_parent_cdir(cnode->parent);
-}
-
-bool attr_is_used_in_pdir(const char* attr, const struct lnode* lnode)
-{
-    if(lnode == NULL || lnode->parent == NULL || lnode->parent->pdir == NULL) {
-        return false;
-    }
-    for(unsigned int i=0; i < lnode->parent->pdir->pnode_count; i++) {
-        struct pnode* pnode = lnode->parent->pdir->pnodes[i];
-        if(pnode != NULL && strcasecmp(pnode->attr, attr) == 0) {
-            return true;
-        }
-    }
-    const struct cnode* parent = get_parent_cnode(lnode->parent);
-    if(parent == NULL) {
-        return false;
-    }
-    return attr_is_used_in_pdir(attr, parent->lnode);
-}
-
 unsigned int count_attr_in_lnode(const char* attr, const struct lnode* lnode)
 {
     int count = 0;
@@ -475,6 +437,49 @@ unsigned int count_attr_in_lnode(const char* attr, const struct lnode* lnode)
     return count;
 }
 
+bool is_attr_used_in_parent_cnode(const char* attr, const struct cnode* cnode);
+
+bool is_attr_used_in_parent_pdir(const char* attr, const struct pdir* pdir)
+{
+    return is_attr_used_in_parent_cnode(attr, pdir->parent);
+}
+
+bool is_attr_used_in_parent_pnode(const char* attr, const struct pnode* pnode)
+{
+    if(strcasecmp(pnode->attr, attr) == 0) {
+        return true;
+    }
+    return is_attr_used_in_parent_pdir(attr, pnode->parent);
+}
+
+bool is_attr_used_in_parent_cdir(const char* attr, const struct cdir* cdir)
+{
+    if(strcasecmp(cdir->attr, attr) == 0) {
+        return true;
+    }
+    switch(cdir->parent_type) {
+        case(CNODE_PARENT_CDIR): {
+            return is_attr_used_in_parent_cdir(attr, cdir->cdir_parent);
+        }
+        case(CNODE_PARENT_PNODE): {
+            return is_attr_used_in_parent_pnode(attr, cdir->pnode_parent);
+        }
+    }
+}
+
+bool is_attr_used_in_parent_cnode(const char* attr, const struct cnode* cnode)
+{
+    if(is_root(cnode)) {
+        return false;
+    }
+    return is_attr_used_in_parent_cdir(attr, cnode->parent);
+}
+
+bool is_attr_used_in_parent_lnode(const char* attr, const struct lnode* lnode)
+{
+    return is_attr_used_in_parent_cnode(attr, lnode->parent);
+}
+
 const char* get_next_highest_score_unused_attr(const struct lnode* lnode)
 {
     int highestCount = 0;
@@ -483,7 +488,7 @@ const char* get_next_highest_score_unused_attr(const struct lnode* lnode)
         const struct sub* sub = lnode->subs[i];
         for(unsigned int j = 0; j < sub->pred_count; j++) {
             const char* currentAttr = sub->preds[j]->attr;
-            if(!attr_is_used_in_pdir(currentAttr, lnode)) {
+            if(!is_attr_used_in_parent_lnode(currentAttr, lnode)) {
                 int currentCount = count_attr_in_lnode(currentAttr, lnode);
                 if(currentCount > highestCount) {
                     highestCount = currentCount;
@@ -846,4 +851,18 @@ bool search_delete_cdir(const struct config* config, struct sub* sub, struct cdi
         }
     }
     return isFound;
+}
+
+struct matched_subs* make_matched_subs()
+{
+    struct matched_subs* matched_subs = malloc(sizeof(struct matched_subs));
+    matched_subs->sub_count = 0;
+    matched_subs->subs = NULL;
+    return matched_subs;
+}
+
+void free_matched_subs(struct matched_subs* matched_subs)
+{
+    free(matched_subs->subs);
+    free(matched_subs);
 }

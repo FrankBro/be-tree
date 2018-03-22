@@ -130,8 +130,17 @@ const struct event* make_simple_event(const char* attr, int value)
 {
     struct event* event = malloc(sizeof(struct event));
     event->pred_count = 1;
-    event->preds = malloc(sizeof(struct pred));
+    event->preds = malloc(sizeof(struct pred*));
     event->preds[0] = make_simple_pred(attr, value);
+    return event;
+}
+
+const struct event* make_event_with_preds(const size_t size, const struct pred** preds)
+{
+    struct event* event = malloc(sizeof(struct event));
+    event->pred_count = size;
+    event->preds = malloc(sizeof(struct pred*) * size);
+    memcpy(event->preds, preds, sizeof(struct pred*) * size);
     return event;
 }
 
@@ -287,6 +296,17 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
                 }
             }
             if(!is_found) {
+                if(sub->pred_count == 0) {
+                    sub->preds = malloc(sizeof(struct pred*));
+                }
+                else {
+                    struct pred** preds = realloc(sub->preds, sizeof(struct pred *) * (sub->pred_count + 1));
+                    if(sub == NULL) {
+                        fprintf(stderr, "fill_pred realloc failed");
+                        exit(1);
+                    }
+                    sub->preds = preds;
+                }
                 sub->preds[sub->pred_count] = make_simple_pred(expr->binary_expr.name, 0);
                 sub->pred_count++;
             }
@@ -471,7 +491,7 @@ int test_remove_sub_in_tree_with_delete()
 int test_match_deeper()
 {
     struct config local_config = *config;
-    struct attr_domain attr_domain_a = { .name = "a", .minBound = 0, .maxBound = 1 };
+    struct attr_domain attr_domain_a = { .name = "a", .minBound = 0, .maxBound = 0 };
     local_config.attr_domains[0] = attr_domain_a;
     struct attr_domain attr_domain_b = { .name = "b", .minBound = 0, .maxBound = 1 };
     local_config.attr_domains[1] = attr_domain_b;
@@ -479,7 +499,7 @@ int test_match_deeper()
     struct cnode* cnode = make_cnode(&local_config, NULL);
     int id_gen = 1;
     const struct sub* sub1 = make_complex_sub(&id_gen, _AND(_EQ("a", 0), _EQ("b", 0)));
-    const struct sub* sub2 = make_simple_sub(id_gen, "a", 0);
+    const struct sub* sub2 = make_simple_sub(id_gen, "a", 1);
     id_gen++;
     const struct sub* sub3 = make_complex_sub(&id_gen, _AND(_EQ("a", 0), _EQ("b", 0)));
     const struct sub* sub4 = make_complex_sub(&id_gen, _AND(_EQ("a", 0), _EQ("b", 1)));
@@ -514,17 +534,22 @@ int test_match_deeper()
         lnode_b->sub_count == 3
     ,"tree matches what we expected");
 
-    mu_assert(cnode->lnode->sub_count == 1, "tree has one sub");
+    mu_assert(lnode_a->sub_count == 1, "lnode in 'a' has one sub");
+    mu_assert(lnode_b->sub_count == 3, "lnode in 'a' has one sub");
 
-    const struct event* event = make_simple_event("b", 1);
+    const struct pred* pred_a = make_simple_pred("a", 0);
+    const struct pred* pred_b = make_simple_pred("b", 1);
+    const struct pred* preds[2] = { pred_a, pred_b };
+    const struct event* event = make_event_with_preds(2, preds);
 
-    struct matched_subs matched_subs;
-    initialize_matched_subs(&matched_subs);
-    match_be_tree(event, cnode, &matched_subs);
-    mu_assert(matched_subs.sub_count == 1 && matched_subs.subs[0] == id_gen - 1, "goodEvent");
+    struct matched_subs* matched_subs = make_matched_subs();
+    initialize_matched_subs(matched_subs);
+    match_be_tree(event, cnode, matched_subs);
+    mu_assert(matched_subs->sub_count == 1 && matched_subs->subs[0] == 4, "goodEvent");
 
     free_event((struct event*)event);
     free_cnode((struct cnode*)cnode);
+    free_matched_subs(matched_subs);
     return 0;
 }
 
@@ -552,7 +577,7 @@ int all_tests()
 
     // mu_run_test(test_remove_sub_in_tree_with_two_levels_pnode);
     // mu_run_test(test_remove_sub_in_tree_with_two_levels_cdir);
-    // mu_run_test(test_match_deeper);
+    mu_run_test(test_match_deeper);
 
     return 0;
 }
