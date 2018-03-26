@@ -112,25 +112,25 @@ void search_cdir(const struct event* event, struct cdir* cdir, struct matched_su
         search_cdir(event, cdir->rChild, matched_subs);
 }
 
-bool is_used(const struct pred* pred, const struct cnode* cnode);
+bool is_used_cnode(const struct pred* pred, const struct cnode* cnode);
 
-bool is_usedPDir(const struct pred* pred, const struct pdir* pdir)
+bool is_used_pdir(const struct pred* pred, const struct pdir* pdir)
 {
     if(pdir == NULL || pdir->parent == NULL)
         return NULL;
-    return is_used(pred, pdir->parent);
+    return is_used_cnode(pred, pdir->parent);
 }
 
-bool is_usedPNode(const struct pred* pred, const struct pnode* pnode)
+bool is_used_pnode(const struct pred* pred, const struct pnode* pnode)
 {
     if(pnode == NULL || pnode->parent == NULL)
         return false;
     if(strcasecmp(pnode->attr, pred->attr) == 0)
         return true;
-    return is_usedPDir(pred, pnode->parent);
+    return is_used_pdir(pred, pnode->parent);
 }
 
-bool is_usedCDir(const struct pred* pred, const struct cdir* cdir)
+bool is_used_cdir(const struct pred* pred, const struct cdir* cdir)
 {
     if(cdir == NULL)
         return false;
@@ -138,19 +138,19 @@ bool is_usedCDir(const struct pred* pred, const struct cdir* cdir)
         return true;
     switch(cdir->parent_type) {
         case CNODE_PARENT_PNODE:
-            return is_usedPNode(pred, cdir->pnode_parent);
+            return is_used_pnode(pred, cdir->pnode_parent);
         case CNODE_PARENT_CDIR:
-            return is_usedCDir(pred, cdir->cdir_parent);
+            return is_used_cdir(pred, cdir->cdir_parent);
     }
 }
 
-bool is_used(const struct pred* pred, const struct cnode* cnode)
+bool is_used_cnode(const struct pred* pred, const struct cnode* cnode)
 {
     if(cnode == NULL)
         return false;
     if(cnode->parent == NULL)
         return false;
-    return is_usedCDir(pred, cnode->parent);
+    return is_used_cdir(pred, cnode->parent);
 }
 
 void insert_sub(const struct sub* sub, struct lnode* lnode)
@@ -216,7 +216,7 @@ void insert_be_tree(const struct config* config, const struct sub* sub, struct c
         int maxScore = -1;
         for(unsigned int i = 0; i < num_of_pred_sub(sub); i++) {
             const struct pred* pred = sub->preds[i];
-            if(!is_used(pred, cnode)) {
+            if(!is_used_cnode(pred, cnode)) {
                 const char* attr = pred->attr;
                 struct pnode* pnode = search_pdir(attr, cnode->pdir);
                 if(pnode != NULL) {
