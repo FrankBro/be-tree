@@ -55,7 +55,8 @@ src/erlang.o: src/erlang.c
 	$(CC) $(CFLAGS) -c -o $@ $^
 
 build/betree.so: $(OBJECTS)
-	$(CC) $(LDFLAGS) -o src/erlang.o build/betree.a
+	# -rdynamic before -o
+	$(CC) $(LDFLAGS) -o $@ src/erlang.o build/betree.a
 
 build:
 	mkdir -p build
