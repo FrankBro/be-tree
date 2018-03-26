@@ -89,7 +89,14 @@ int match_node(const struct event* event, const struct ast_node *node)
             }
         }
         case AST_TYPE_COMBI_EXPR: {
-            return match_node(event, node->combi_expr.lhs) && match_node(event, node->combi_expr.rhs);
+            switch(node->combi_expr.op) {
+                case COMBI_AND: {
+                    return match_node(event, node->combi_expr.lhs) && match_node(event, node->combi_expr.rhs);
+                }
+                case COMBI_OR: {
+                    return match_node(event, node->combi_expr.lhs) || match_node(event, node->combi_expr.rhs);
+                }
+            }
         }
     }
 }

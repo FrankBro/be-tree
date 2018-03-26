@@ -32,7 +32,7 @@ LEX?=flex
 YACC?=bison
 YFLAGS?=-dv
 
-VALGRIND=valgrind --leak-check=full --track-origins=yes
+VALGRIND=valgrind --leak-check=full --track-origins=yes --suppressions=valgrind.supp
 
 ################################################################################
 # Default Target
@@ -95,3 +95,7 @@ $(TEST_OBJECTS): %: %.c build/tests build/betree.a
 
 clean:
 	rm -rf build/betree.so $(OBJECTS) $(LEX_OBJECTS) $(YACC_OBJECTS)
+
+valgrind:
+	$(VALGRIND) build/tests/betree_tests
+	$(VALGRIND) build/tests/parser_tests

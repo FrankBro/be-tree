@@ -29,6 +29,10 @@ void check_sub(const struct event* event, const struct lnode* lnode, struct matc
         if(match_sub(event, sub) == true) {
             if(matched_subs->sub_count == 0) {
                 matched_subs->subs = malloc(sizeof(int));
+                if(matched_subs->subs == NULL) {
+                    fprintf(stderr, "check_sub malloc failed");
+                    exit(1);
+                }
             }
             else {
                 int* subs = realloc(matched_subs->subs, sizeof(int) * (matched_subs->sub_count + 1));
@@ -66,8 +70,9 @@ void match_be_tree(const struct event* event, const struct cnode* cnode, struct 
     for(unsigned int i = 0; i < num_of_pred_event(event); i++) {
         const char* attr = event->preds[i]->attr;
         const struct pnode* pnode = search_pdir(attr, cnode->pdir);
-        if(pnode)
+        if(pnode != NULL) {
             search_cdir(event, pnode->cdir, matched_subs);
+        }
     }
 }
 
@@ -93,9 +98,7 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
     for(unsigned int i = 0; i < sub->pred_count; i++) {
         const char* attr = sub->preds[i]->attr;
         if(strcasecmp(attr, cdir->attr) == 0) {
-            struct variable_bound bound;
-            bound.min = INT32_MAX;
-            bound.max = INT32_MIN;
+            struct variable_bound bound = { .min = INT32_MAX, .max = INT32_MIN };
             get_variable_bound(config->attr_domains, sub->expr, &bound);
             return cdir->startBound <= bound.min && cdir->endBound >= bound.max;
         }
@@ -116,40 +119,49 @@ bool is_used_cnode(const struct pred* pred, const struct cnode* cnode);
 
 bool is_used_pdir(const struct pred* pred, const struct pdir* pdir)
 {
-    if(pdir == NULL || pdir->parent == NULL)
-        return NULL;
+    if(pdir == NULL || pdir->parent == NULL) {
+        return false;
+    }
     return is_used_cnode(pred, pdir->parent);
 }
 
 bool is_used_pnode(const struct pred* pred, const struct pnode* pnode)
 {
-    if(pnode == NULL || pnode->parent == NULL)
+    if(pnode == NULL || pnode->parent == NULL) {
         return false;
-    if(strcasecmp(pnode->attr, pred->attr) == 0)
+    }
+    if(strcasecmp(pnode->attr, pred->attr) == 0) {
         return true;
+    }
     return is_used_pdir(pred, pnode->parent);
 }
 
 bool is_used_cdir(const struct pred* pred, const struct cdir* cdir)
 {
-    if(cdir == NULL)
+    if(cdir == NULL) {
         return false;
-    if(strcasecmp(cdir->attr, pred->attr) == 0)
+    }
+    if(strcasecmp(cdir->attr, pred->attr) == 0) {
         return true;
+    }
     switch(cdir->parent_type) {
-        case CNODE_PARENT_PNODE:
+        case CNODE_PARENT_PNODE: {
             return is_used_pnode(pred, cdir->pnode_parent);
-        case CNODE_PARENT_CDIR:
+        }
+        case CNODE_PARENT_CDIR: {
             return is_used_cdir(pred, cdir->cdir_parent);
+        }
     }
 }
 
 bool is_used_cnode(const struct pred* pred, const struct cnode* cnode)
 {
-    if(cnode == NULL)
+    if(cnode == NULL) {
         return false;
-    if(cnode->parent == NULL)
+    }
+    if(cnode->parent == NULL) {
         return false;
+    }
     return is_used_cdir(pred, cnode->parent);
 }
 
@@ -157,6 +169,10 @@ void insert_sub(const struct sub* sub, struct lnode* lnode)
 {
     if(lnode->sub_count == 0) {
         lnode->subs = malloc(sizeof(struct sub*));
+        if(lnode->subs == NULL) {
+            fprintf(stderr, "insert_sub malloc failed");
+            exit(1);
+        }
     }
     else {
         struct sub** subs = realloc(lnode->subs, sizeof(struct sub*) * (lnode->sub_count + 1));
@@ -317,6 +333,10 @@ void move(const struct sub* sub, struct lnode* origin, struct lnode* destination
     }
     if(destination->sub_count == 0) {
         destination->subs = malloc(sizeof(struct sub*));
+        if(destination->subs == NULL) {
+            fprintf(stderr, "move malloc failed");
+            exit(1);
+        }
     }
     else {
         struct sub** subs = realloc(destination->subs, sizeof(struct sub*) * (destination->sub_count + 1));
@@ -333,7 +353,15 @@ void move(const struct sub* sub, struct lnode* origin, struct lnode* destination
 struct cdir* create_cdir(const struct config* config, const char* attr, int startBound, int endBound)
 {
     struct cdir* cdir = malloc(sizeof(struct cdir));
+    if(cdir == NULL) {
+        fprintf(stderr, "create_cdir malloc failed");
+        exit(1);
+    }
     cdir->attr = strdup(attr);
+    if(cdir->attr == NULL) {
+        fprintf(stderr, "create_cdir strdup failed");
+        exit(1);
+    }
     cdir->startBound = startBound;
     cdir->endBound = endBound;
     cdir->cnode = make_cnode(config, cdir);
@@ -367,6 +395,10 @@ struct pnode* create_pdir(const struct config* config, const char* attr, struct 
     struct pdir* pdir = cnode->pdir;
     if(cnode->pdir == NULL) {
         pdir = malloc(sizeof(struct pdir));
+        if(pdir == NULL) {
+            fprintf(stderr, "create_pdir pdir malloc failed");
+            exit(1);
+        }
         pdir->parent = cnode;
         pdir->pnode_count = 0;
         pdir->pnodes = NULL;
@@ -374,8 +406,16 @@ struct pnode* create_pdir(const struct config* config, const char* attr, struct 
     }
 
     struct pnode* pnode = malloc(sizeof(struct pnode));
+    if(pnode == NULL) {
+        fprintf(stderr, "create_pdir pnode malloc failed");
+        exit(1);
+    }
     pnode->parent = pdir;
     pnode->attr = strdup(attr);
+    if(pnode->attr == NULL) {
+        fprintf(stderr, "create_pdir strdup failed");
+        exit(1);
+    }
     int minBound = 0, maxBound = 0;
     bool isFound = false;
     for(unsigned int i = 0; i < config->attr_domain_count; i++) {
@@ -396,6 +436,10 @@ struct pnode* create_pdir(const struct config* config, const char* attr, struct 
 
     if(pdir->pnode_count == 0) {
         pdir->pnodes = malloc(sizeof(struct pnode));
+        if(pdir->pnodes == NULL) {
+            fprintf(stderr, "create_pdir pnodes malloc failed");
+            exit(1);
+        }
     }
     else {
         struct pnode** pnodes = realloc(pdir->pnodes, sizeof(struct pnode*) * (pdir->pnode_count + 1));
@@ -540,6 +584,10 @@ bool is_atomic(const struct cdir* cdir)
 struct lnode* make_lnode(const struct config* config, struct cnode* parent)
 {
     struct lnode* lnode = malloc(sizeof(struct lnode));
+    if(lnode == NULL) {
+        fprintf(stderr, "make_lnode malloc failed");
+        exit(1);
+    }
     lnode->parent = parent;
     lnode->sub_count = 0;
     lnode->subs = NULL;
@@ -550,6 +598,10 @@ struct lnode* make_lnode(const struct config* config, struct cnode* parent)
 struct cnode* make_cnode(const struct config* config, struct cdir* parent)
 {
     struct cnode* cnode = malloc(sizeof(struct cnode));
+    if(cnode == NULL) {
+        fprintf(stderr, "make_cnode malloc failed");
+        exit(1);
+    }
     cnode->parent = parent;
     cnode->pdir = NULL;
     cnode->lnode = make_lnode(config, cnode);
@@ -855,6 +907,10 @@ bool search_delete_cdir(const struct config* config, struct sub* sub, struct cdi
 struct matched_subs* make_matched_subs()
 {
     struct matched_subs* matched_subs = malloc(sizeof(struct matched_subs));
+    if(matched_subs == NULL) {
+        fprintf(stderr, "make_matched_subs malloc failed");
+        exit(1);
+    }
     matched_subs->sub_count = 0;
     matched_subs->subs = NULL;
     return matched_subs;
