@@ -17,11 +17,7 @@ struct ast_node* ast_binary_expr_create(const enum ast_binop_e op, const char* n
     struct ast_node* node = ast_node_create();
     node->type = AST_TYPE_BINARY_EXPR;
     node->binary_expr.op = op;
-    size_t length_copied = strlcpy((char*)node->binary_expr.name, name, VAR_NAME_MAX);
-    if(length_copied > sizeof(node->binary_expr.name)) {
-        fprintf(stderr, "Variable name is too big");
-        exit(1);
-    }
+    node->binary_expr.name = strdup(name);
     node->binary_expr.value = value;
     return node;
 }
@@ -43,6 +39,7 @@ void free_ast_node(struct ast_node* node)
     }
     switch(node->type) {
         case AST_TYPE_BINARY_EXPR:
+            free(node->binary_expr.name);
             break;
         case AST_TYPE_COMBI_EXPR:
             free_ast_node((struct ast_node*)node->combi_expr.lhs);

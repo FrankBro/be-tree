@@ -12,11 +12,9 @@ enum ast_binop_e {
     BINOP_GE,
 };
 
-#define VAR_NAME_MAX 64
-
 struct ast_binary_expr {
     enum ast_binop_e op;
-    const char name[VAR_NAME_MAX];
+    const char *name;
     int value;
 };
 

@@ -52,12 +52,12 @@ expr    : TLPAREN expr TRPAREN  { $$ = $2; }
         | cexpr                 { $$ = $1; }
 ;
 
-bexpr   : ident TCEQ integer    { $$ = ast_binary_expr_create(BINOP_EQ, $1, $3); }
-        | ident TCNE integer    { $$ = ast_binary_expr_create(BINOP_NE, $1, $3); }
-        | ident TCGT integer    { $$ = ast_binary_expr_create(BINOP_GT, $1, $3); }
-        | ident TCGE integer    { $$ = ast_binary_expr_create(BINOP_GE, $1, $3); }
-        | ident TCLT integer    { $$ = ast_binary_expr_create(BINOP_LT, $1, $3); }
-        | ident TCLE integer    { $$ = ast_binary_expr_create(BINOP_LE, $1, $3); }
+bexpr   : ident TCEQ integer    { $$ = ast_binary_expr_create(BINOP_EQ, $1, $3); free($1); }
+        | ident TCNE integer    { $$ = ast_binary_expr_create(BINOP_NE, $1, $3); free($1); }
+        | ident TCGT integer    { $$ = ast_binary_expr_create(BINOP_GT, $1, $3); free($1); }
+        | ident TCGE integer    { $$ = ast_binary_expr_create(BINOP_GE, $1, $3); free($1); }
+        | ident TCLT integer    { $$ = ast_binary_expr_create(BINOP_LT, $1, $3); free($1); }
+        | ident TCLE integer    { $$ = ast_binary_expr_create(BINOP_LE, $1, $3); free($1); }
 ;
 
 cexpr   : expr TAND expr        { $$ = ast_combi_expr_create(COMBI_AND, $1, $3); }
