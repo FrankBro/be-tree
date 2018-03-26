@@ -1,4 +1,8 @@
 *.o
-betree_tests
 err.txt
-betree_tests.dSYM/*
+build/*
+lexer.c
+lexer.h
+parser.c
+parser.h
+parser.output

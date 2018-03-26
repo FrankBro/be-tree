@@ -12,7 +12,7 @@ struct ast_node* ast_node_create()
     return node;
 }
 
-const struct ast_node* ast_binary_expr_create(const enum ast_binop_e op, const char* name, int value)
+struct ast_node* ast_binary_expr_create(const enum ast_binop_e op, const char* name, int value)
 {
     struct ast_node* node = ast_node_create();
     node->type = AST_TYPE_BINARY_EXPR;
@@ -26,7 +26,7 @@ const struct ast_node* ast_binary_expr_create(const enum ast_binop_e op, const c
     return node;
 }
 
-const struct ast_node* ast_combi_expr_create(const enum ast_combi_e op, const struct ast_node* lhs, const struct ast_node* rhs)
+struct ast_node* ast_combi_expr_create(const enum ast_combi_e op, const struct ast_node* lhs, const struct ast_node* rhs)
 {
     struct ast_node* node = ast_node_create();
     node->type = AST_TYPE_COMBI_EXPR;

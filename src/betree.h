@@ -12,13 +12,15 @@ struct pred {
 struct sub {
     int id;
     unsigned int pred_count;
-    const struct pred** preds;
+    // TODO Make const
+    struct pred** preds;
     const struct ast_node *expr;
 };
 
 struct event {
     unsigned int pred_count;
-    const struct pred** preds;
+    // TODO Make const
+    struct pred** preds;
 };
 
 struct cnode;
@@ -26,7 +28,8 @@ struct cnode;
 struct lnode {
     struct cnode* parent;
     unsigned int sub_count;
-    const struct sub **subs;
+    // TODO Make const
+    struct sub **subs;
     unsigned int max;
 };
 

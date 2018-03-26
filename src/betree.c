@@ -17,7 +17,6 @@ unsigned int num_of_pred_sub(const struct sub* sub)
     return sub->pred_count;
 }
 
-
 bool match_sub(const struct event* event, const struct sub *sub)
 {
     return match_node(event, sub->expr) == 1;

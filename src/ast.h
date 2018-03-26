@@ -51,8 +51,8 @@ struct variable_bound {
     int max;
 };
 
-const struct ast_node* ast_binary_expr_create(const enum ast_binop_e op, const char* name, int value);
-const struct ast_node* ast_combi_expr_create(const enum ast_combi_e op, const struct ast_node* lhs, const struct ast_node* rhs);
+struct ast_node* ast_binary_expr_create(const enum ast_binop_e op, const char* name, int value);
+struct ast_node* ast_combi_expr_create(const enum ast_combi_e op, const struct ast_node* lhs, const struct ast_node* rhs);
 
 int match_node(const struct event* event, const struct ast_node *node);
 void get_variable_bound(const struct attr_domain* domain, const struct ast_node* node, struct variable_bound* bound);

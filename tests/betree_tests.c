@@ -120,7 +120,7 @@ const struct sub* make_simple_sub(int id, const char* attr, int value)
     struct sub* sub = make_empty_sub(id);
     sub->pred_count = 1;
     sub->preds = malloc(sizeof(struct pred));
-    sub->preds[0] = make_simple_pred(attr, value);
+    sub->preds[0] = (struct pred*)make_simple_pred(attr, value);
     const struct ast_node* expr = ast_binary_expr_create(BINOP_EQ, attr, value);
     sub->expr = expr;
     return sub;
@@ -131,7 +131,7 @@ const struct event* make_simple_event(const char* attr, int value)
     struct event* event = malloc(sizeof(struct event));
     event->pred_count = 1;
     event->preds = malloc(sizeof(struct pred*));
-    event->preds[0] = make_simple_pred(attr, value);
+    event->preds[0] = (struct pred*)make_simple_pred(attr, value);
     return event;
 }
 
@@ -307,7 +307,7 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
                     }
                     sub->preds = preds;
                 }
-                sub->preds[sub->pred_count] = make_simple_pred(expr->binary_expr.name, 0);
+                sub->preds[sub->pred_count] = (struct pred*)make_simple_pred(expr->binary_expr.name, 0);
                 sub->pred_count++;
             }
         }
@@ -478,16 +478,6 @@ int test_remove_sub_in_tree_with_delete()
     return 0;
 }
 
-// int test_remove_sub_in_tree_with_two_levels_pnode()
-// {
-
-// }
-
-// int test_remove_sub_in_tree_with_two_levels_cdir()
-// {
-
-// }
-
 int test_match_deeper()
 {
     struct config local_config = *config;
@@ -574,9 +564,6 @@ int all_tests()
     mu_run_test(test_cdir_split_twice);
     mu_run_test(test_remove_sub_in_tree);
     mu_run_test(test_remove_sub_in_tree_with_delete);
-
-    // mu_run_test(test_remove_sub_in_tree_with_two_levels_pnode);
-    // mu_run_test(test_remove_sub_in_tree_with_two_levels_cdir);
     mu_run_test(test_match_deeper);
 
     return 0;
