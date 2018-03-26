@@ -39,7 +39,7 @@ void free_ast_node(struct ast_node* node)
     }
     switch(node->type) {
         case AST_TYPE_BINARY_EXPR:
-            free(node->binary_expr.name);
+            free((char*)node->binary_expr.name);
             break;
         case AST_TYPE_COMBI_EXPR:
             free_ast_node((struct ast_node*)node->combi_expr.lhs);

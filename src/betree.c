@@ -19,6 +19,9 @@ unsigned int num_of_pred_sub(const struct sub* sub)
 
 bool match_sub(const struct event* event, const struct sub *sub)
 {
+    if(sub == NULL) {
+        return false;
+    }
     return match_node(event, sub->expr) == 1;
 } 
 
@@ -182,11 +185,14 @@ void insert_sub(const struct sub* sub, struct lnode* lnode)
         }
         lnode->subs = subs;
     }
-    lnode->subs[lnode->sub_count] = sub;
+    lnode->subs[lnode->sub_count] = (struct sub*)sub;
     lnode->sub_count++;
 }
 
 bool is_root(const struct cnode* cnode) {
+    if(cnode == NULL) {
+        return false;
+    }
     return cnode->parent == NULL; 
 }
 
@@ -346,7 +352,7 @@ void move(const struct sub* sub, struct lnode* origin, struct lnode* destination
         }
         destination->subs = subs;
     }
-    destination->subs[destination->sub_count] = sub;
+    destination->subs[destination->sub_count] = (struct sub*)sub;
     destination->sub_count++;
 }
 
@@ -435,7 +441,7 @@ struct pnode* create_pdir(const struct config* config, const char* attr, struct 
     pnode->score = 0;
 
     if(pdir->pnode_count == 0) {
-        pdir->pnodes = malloc(sizeof(struct pnode));
+        pdir->pnodes = malloc(sizeof(struct pnode*));
         if(pdir->pnodes == NULL) {
             fprintf(stderr, "create_pdir pnodes malloc failed");
             exit(1);
