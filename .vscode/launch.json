@@ -8,7 +8,7 @@
             "name": "(lldb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/betree_tests",
+            "program": "${workspaceFolder}/build/tests/betree_tests",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
