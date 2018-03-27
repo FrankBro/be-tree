@@ -1,8 +1,8 @@
 *.o
 err.txt
 build/*
-lexer.c
-lexer.h
-parser.c
-parser.h
+src/lexer.c
+src/lexer.h
+src/parser.c
+src/parser.h
 parser.output
