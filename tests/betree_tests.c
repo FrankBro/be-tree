@@ -470,6 +470,35 @@ int test_match_deeper()
     return 0;
 }
 
+int test_large_cdir_split()
+{
+    struct config local_config;
+    local_config.lnode_max_cap = 3;
+    local_config.attr_domain_count = 1;
+    local_config.attr_domains = malloc(sizeof(struct attr_domain));
+    struct attr_domain attr_domain_a = { .name = "a", .minBound = 0, .maxBound = 10000 };
+    local_config.attr_domains[0] = attr_domain_a;
+
+    struct cnode* cnode = make_cnode(&local_config, NULL);
+    
+    for(unsigned int i = 0; i < 100; i++) {
+        const struct sub* sub = make_simple_sub(i, "a", i);
+        insert_be_tree(&local_config, sub, cnode, NULL);
+    }
+
+    const struct event* event = make_simple_event("a", 0);
+    struct matched_subs* matched_subs = make_matched_subs();
+    match_be_tree(event, cnode, matched_subs);
+
+    mu_assert(matched_subs->sub_count == 1, "matched one");
+
+    free(local_config.attr_domains);
+    free_matched_subs(matched_subs);
+    free_event(event);
+    free_cnode(cnode);
+    return 0;
+}
+
 int all_tests() 
 {
     config = malloc(sizeof(struct config));
@@ -492,6 +521,7 @@ int all_tests()
     mu_run_test(test_remove_sub_in_tree);
     mu_run_test(test_remove_sub_in_tree_with_delete);
     mu_run_test(test_match_deeper);
+    mu_run_test(test_large_cdir_split);
 
     free(config->attr_domains);
     free(config);

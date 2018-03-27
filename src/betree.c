@@ -624,9 +624,25 @@ void space_clustering(const struct config* config, struct cdir* cdir)
         space_partitioning(config, cdir->cnode);
     }
     else {
-        // TODO
-        cdir->lChild = create_cdir_with_cdir_parent(config, cdir, cdir->startBound, cdir->endBound / 2);
-        cdir->rChild = create_cdir_with_cdir_parent(config, cdir, cdir->endBound / 2, cdir->endBound);
+        int start = cdir->startBound, end = cdir->endBound;
+        if(end - start > 2) {
+            int middle = start + (end - start)/2;
+            cdir->lChild = create_cdir_with_cdir_parent(config, cdir, start, middle);
+            cdir->rChild = create_cdir_with_cdir_parent(config, cdir, middle, end);
+        }
+        else if(end - start == 2) {
+            int middle = start + 1;
+            cdir->lChild = create_cdir_with_cdir_parent(config, cdir, start, middle);
+            cdir->rChild = create_cdir_with_cdir_parent(config, cdir, middle, end);
+        }
+        else if(end - start == 1) {
+            cdir->lChild = create_cdir_with_cdir_parent(config, cdir, start, start);
+            cdir->rChild = create_cdir_with_cdir_parent(config, cdir, end, end);
+        }
+        else {
+            fprintf(stderr, "Should never happen");
+            exit(1);
+        }
         for(unsigned int i = 0; i < lnode->sub_count; i++) {
             const struct sub* sub = lnode->subs[i];
             if(sub_is_enclosed(config, sub, cdir->lChild)) {
