@@ -112,6 +112,11 @@ struct matched_subs {
 
 struct matched_subs* make_matched_subs();
 void free_matched_subs(struct matched_subs* matched_subs);
+const struct pred* make_simple_pred(const char* attr, int value);
+void fill_pred(struct sub* sub, const struct ast_node* expr);
+struct sub* make_empty_sub(int id);
+const struct sub* make_sub(int id, const struct ast_node* expr);
+const struct event* make_simple_event(const char* attr, int value);
 
 void insert_be_tree(const struct config* config, const struct sub* sub, struct cnode* cnode, struct cdir* cdir);
 void match_be_tree(const struct event* event, const struct cnode* cnode, struct matched_subs* matchedSub);

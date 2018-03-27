@@ -98,23 +98,6 @@ void print_be_tree(const struct cnode* root)
     print_cnode(root, 0);
 }
 
-const struct pred* make_simple_pred(const char* attr, int value)
-{
-    struct pred* pred = malloc(sizeof(struct pred));
-    pred->attr = strdup(attr);
-    pred->value = value;
-    return pred;
-}
-
-struct sub* make_empty_sub(int id)
-{
-    struct sub* sub = malloc(sizeof(struct sub));
-    sub->id = id;
-    sub->pred_count = 0;
-    sub->preds = NULL;
-    return sub;
-}
-
 const struct sub* make_simple_sub(int id, const char* attr, int value)
 {
     struct sub* sub = make_empty_sub(id);
@@ -124,15 +107,6 @@ const struct sub* make_simple_sub(int id, const char* attr, int value)
     const struct ast_node* expr = ast_binary_expr_create(BINOP_EQ, attr, value);
     sub->expr = expr;
     return sub;
-}
-
-const struct event* make_simple_event(const char* attr, int value)
-{
-    struct event* event = malloc(sizeof(struct event));
-    event->pred_count = 1;
-    event->preds = malloc(sizeof(struct pred*));
-    event->preds[0] = (struct pred*)make_simple_pred(attr, value);
-    return event;
 }
 
 const struct event* make_event_with_preds(const size_t size, const struct pred** preds)
@@ -277,51 +251,6 @@ const struct ast_node* _EQ (const char* attr, int value)
 const struct ast_node* _LT (const char* attr, int value)
 {
     return ast_binary_expr_create(BINOP_LT, attr, value);
-}
-
-void fill_pred(struct sub* sub, const struct ast_node* expr)
-{
-    switch(expr->type) {
-        case AST_TYPE_COMBI_EXPR: {
-            fill_pred(sub, expr->combi_expr.lhs);
-            fill_pred(sub, expr->combi_expr.rhs);
-            return;
-        }
-        case AST_TYPE_BINARY_EXPR: {
-            bool is_found = false;
-            for(unsigned int i = 0; i < sub->pred_count; i++) {
-                if(strcasecmp(sub->preds[i]->attr, expr->binary_expr.name) == 0) {
-                    is_found = true;
-                    break;
-                }
-            }
-            if(!is_found) {
-                if(sub->pred_count == 0) {
-                    sub->preds = malloc(sizeof(struct pred*));
-                }
-                else {
-                    struct pred** preds = realloc(sub->preds, sizeof(struct pred *) * (sub->pred_count + 1));
-                    if(sub == NULL) {
-                        fprintf(stderr, "fill_pred realloc failed");
-                        exit(1);
-                    }
-                    sub->preds = preds;
-                }
-                sub->preds[sub->pred_count] = (struct pred*)make_simple_pred(expr->binary_expr.name, 0);
-                sub->pred_count++;
-            }
-        }
-    }
-}
-
-const struct sub* make_complex_sub(int* id_gen, const struct ast_node* expr)
-{
-    int id = *id_gen;
-    (*id_gen)++;
-    struct sub* sub = make_empty_sub(id);
-    sub->expr = expr;
-    fill_pred(sub, sub->expr);
-    return sub;
 }
 
 bool test_lnode_has_subs(const struct lnode* lnode, unsigned int sub_count, const struct sub** subs)
@@ -487,12 +416,10 @@ int test_match_deeper()
     local_config.attr_domains[1] = attr_domain_b;
 
     struct cnode* cnode = make_cnode(&local_config, NULL);
-    int id_gen = 1;
-    const struct sub* sub1 = make_complex_sub(&id_gen, _AND(_EQ("a", 0), _EQ("b", 0)));
-    const struct sub* sub2 = make_simple_sub(id_gen, "a", 1);
-    id_gen++;
-    const struct sub* sub3 = make_complex_sub(&id_gen, _AND(_EQ("a", 0), _EQ("b", 0)));
-    const struct sub* sub4 = make_complex_sub(&id_gen, _AND(_EQ("a", 0), _EQ("b", 1)));
+    const struct sub* sub1 = make_sub(1, _AND(_EQ("a", 0), _EQ("b", 0)));
+    const struct sub* sub2 = make_simple_sub(2, "a", 1);
+    const struct sub* sub3 = make_sub(3, _AND(_EQ("a", 0), _EQ("b", 0)));
+    const struct sub* sub4 = make_sub(4, _AND(_EQ("a", 0), _EQ("b", 1)));
 
     insert_be_tree(&local_config, sub1, cnode, NULL);
     insert_be_tree(&local_config, sub2, cnode, NULL);

@@ -927,3 +927,72 @@ void free_matched_subs(struct matched_subs* matched_subs)
     free(matched_subs->subs);
     free(matched_subs);
 }
+
+const struct pred* make_simple_pred(const char* attr, int value)
+{
+    struct pred* pred = malloc(sizeof(struct pred));
+    pred->attr = strdup(attr);
+    pred->value = value;
+    return pred;
+}
+
+void fill_pred(struct sub* sub, const struct ast_node* expr)
+{
+    switch(expr->type) {
+        case AST_TYPE_COMBI_EXPR: {
+            fill_pred(sub, expr->combi_expr.lhs);
+            fill_pred(sub, expr->combi_expr.rhs);
+            return;
+        }
+        case AST_TYPE_BINARY_EXPR: {
+            bool is_found = false;
+            for(unsigned int i = 0; i < sub->pred_count; i++) {
+                if(strcasecmp(sub->preds[i]->attr, expr->binary_expr.name) == 0) {
+                    is_found = true;
+                    break;
+                }
+            }
+            if(!is_found) {
+                if(sub->pred_count == 0) {
+                    sub->preds = malloc(sizeof(struct pred*));
+                }
+                else {
+                    struct pred** preds = realloc(sub->preds, sizeof(struct pred *) * (sub->pred_count + 1));
+                    if(sub == NULL) {
+                        fprintf(stderr, "fill_pred realloc failed");
+                        exit(1);
+                    }
+                    sub->preds = preds;
+                }
+                sub->preds[sub->pred_count] = (struct pred*)make_simple_pred(expr->binary_expr.name, 0);
+                sub->pred_count++;
+            }
+        }
+    }
+}
+
+struct sub* make_empty_sub(int id)
+{
+    struct sub* sub = malloc(sizeof(struct sub));
+    sub->id = id;
+    sub->pred_count = 0;
+    sub->preds = NULL;
+    return sub;
+}
+
+const struct sub* make_sub(int id, const struct ast_node* expr)
+{
+    struct sub* sub = make_empty_sub(id);
+    sub->expr = expr;
+    fill_pred(sub, sub->expr);
+    return sub;
+}
+
+const struct event* make_simple_event(const char* attr, int value)
+{
+    struct event* event = malloc(sizeof(struct event));
+    event->pred_count = 1;
+    event->preds = malloc(sizeof(struct pred*));
+    event->preds[0] = (struct pred*)make_simple_pred(attr, value);
+    return event;
+}
