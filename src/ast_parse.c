@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ast.h"
+#include "ast_parse.h"
 #include "betree.h"
 
 struct ast_node* ast_node_create()

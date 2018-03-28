@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ast.h"
+#include "ast_parse.h"
 #include "betree.h"
 
 unsigned int num_of_pred_event(const struct event* event)

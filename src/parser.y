@@ -1,6 +1,6 @@
 %{
     #include "stdio.h"
-    #include "ast.h"
+    #include "ast_parse.h"
     #include "parser.h"
     #include "lexer.h"
     struct ast_node *root;
