@@ -8,7 +8,7 @@
     void yyerror(void *scanner, const char *s) { (void)scanner; printf("ERROR: %s\n", s); }
 %}
 
-%debug
+//%debug
 %pure-parser
 %lex-param {void *scanner}
 %parse-param {void *scanner}
