@@ -49,24 +49,27 @@ void free_ast_node(struct ast_node* node)
     free(node);
 }
 
-int get_variable(const char* name, const struct event* event)
+bool get_variable(const char* name, const struct event* event, int* value)
 {
     for(unsigned int i=0; i < event->pred_count; i++) {
         const struct pred* pred = event->preds[i];
         if(strcasecmp(name, pred->attr) == 0) {
-            return pred->value;
+            *value = pred->value;
+            return true;
         }
     }
-    fprintf(stderr, "Variable %s not found in event", name);
-    exit(1);
-    return -1;
+    return false;
 }
 
 int match_node(const struct event* event, const struct ast_node *node)
 {
     switch(node->type) {
         case AST_TYPE_BINARY_EXPR: {
-            int variable = get_variable(node->binary_expr.name, event);
+            int variable;
+            bool found = get_variable(node->binary_expr.name, event, &variable);
+            if(!found) {
+                return 0;
+            }
             switch(node->binary_expr.op) {
                 case BINOP_LT: {
                     return variable < node->binary_expr.value;
