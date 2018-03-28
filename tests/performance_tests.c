@@ -10,13 +10,20 @@
  
 int parse(const char *text, struct ast_node **node); 
  
-struct config* config = NULL; 
+#define COUNT 100
  
 int test_cdir_split() 
 { 
-    size_t count = 10000; 
-    const char* data[count]; 
-    for(unsigned int i = 0; i < count; i++) { 
+    struct config* local_config = malloc(sizeof(struct config)); 
+    local_config->lnode_max_cap = 3; 
+    local_config->attr_domain_count = 1;
+    local_config->attr_domains = malloc(sizeof(struct attr_domain));
+    struct attr_domain attr_domain_a = { .name = "a", .minBound = 0, .maxBound = COUNT }; 
+    local_config->attr_domains[0] = attr_domain_a; 
+
+    const char* data[COUNT]; 
+
+    for(unsigned int i = 0; i < COUNT; i++) { 
         char* expr; 
         asprintf(&expr, "a = %d", i); 
         data[i] = expr; 
@@ -26,14 +33,14 @@ int test_cdir_split()
  
     clock_gettime(CLOCK_MONOTONIC_RAW, &start);
  
-    struct cnode* cnode = make_cnode(config, NULL); 
+    struct cnode* cnode = make_cnode(local_config, NULL); 
     struct ast_node* node; 
      
     clock_gettime(CLOCK_MONOTONIC_RAW, &init_done);
 
-    const struct sub* subs[count];
+    const struct sub* subs[COUNT];
  
-    for(unsigned int i = 0; i < count; i++) { 
+    for(unsigned int i = 0; i < COUNT; i++) { 
         if(parse(data[i], &node) != 0) { 
             return 1; 
         } 
@@ -43,8 +50,8 @@ int test_cdir_split()
  
     clock_gettime(CLOCK_MONOTONIC_RAW, &parse_done);
  
-    for(unsigned int i = 0; i < count; i++) { 
-        insert_be_tree(config, subs[i], cnode, NULL); 
+    for(unsigned int i = 0; i < COUNT; i++) { 
+        insert_be_tree(local_config, subs[i], cnode, NULL); 
     }
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &insert_done);
@@ -60,15 +67,17 @@ int test_cdir_split()
     uint64_t insert_us = (insert_done.tv_sec - parse_done.tv_sec) * 1000000 + (insert_done.tv_nsec - parse_done.tv_nsec) / 1000;
     uint64_t search_us = (search_done.tv_sec - insert_done.tv_sec) * 1000000 + (search_done.tv_nsec - insert_done.tv_nsec) / 1000;
 
-    printf("Init took %" PRIu64 "\n", init_us);
-    printf("Parse took %" PRIu64 "\n", parse_us);
-    printf("Insert took %" PRIu64 "\n", insert_us);
-    printf("Search took %" PRIu64 "\n", search_us);
+    printf("    Init took %" PRIu64 "\n", init_us);
+    printf("    Parse took %" PRIu64 "\n", parse_us);
+    printf("    Insert took %" PRIu64 "\n", insert_us);
+    printf("    Search took %" PRIu64 "\n", search_us);
 
  
-    for(unsigned int i = 0; i < count; i++) { 
+    for(unsigned int i = 0; i < COUNT; i++) { 
         free((char*)data[i]); 
     } 
+    free(local_config->attr_domains); 
+    free(local_config); 
     free_matched_subs(matched_subs);
     free_event((struct event*)event);
     free_cnode(cnode);
@@ -79,14 +88,12 @@ int test_pdir_split()
 {
     struct config* local_config = malloc(sizeof(struct config)); 
     local_config->lnode_max_cap = 3; 
+    local_config->attr_domain_count = COUNT; 
+    local_config->attr_domains = malloc(COUNT * sizeof(struct attr_domain)); 
 
-    size_t count = 10000; 
-    const char* data[count]; 
+    const char* data[COUNT]; 
 
-    local_config->attr_domain_count = count; 
-    local_config->attr_domains = malloc(count * sizeof(struct attr_domain)); 
-
-    for(unsigned int i = 0; i < count; i++) { 
+    for(unsigned int i = 0; i < COUNT; i++) { 
         char* expr; 
         asprintf(&expr, "a%d = 0", i); 
         data[i] = expr; 
@@ -106,9 +113,9 @@ int test_pdir_split()
      
     clock_gettime(CLOCK_MONOTONIC_RAW, &init_done);
 
-    const struct sub* subs[count];
+    const struct sub* subs[COUNT];
  
-    for(unsigned int i = 0; i < count; i++) { 
+    for(unsigned int i = 0; i < COUNT; i++) { 
         if(parse(data[i], &node) != 0) { 
             return 1; 
         } 
@@ -118,7 +125,7 @@ int test_pdir_split()
  
     clock_gettime(CLOCK_MONOTONIC_RAW, &parse_done);
  
-    for(unsigned int i = 0; i < count; i++) { 
+    for(unsigned int i = 0; i < COUNT; i++) { 
         insert_be_tree(local_config, subs[i], cnode, NULL); 
     }
 
@@ -135,15 +142,18 @@ int test_pdir_split()
     uint64_t insert_us = (insert_done.tv_sec - parse_done.tv_sec) * 1000000 + (insert_done.tv_nsec - parse_done.tv_nsec) / 1000;
     uint64_t search_us = (search_done.tv_sec - insert_done.tv_sec) * 1000000 + (search_done.tv_nsec - insert_done.tv_nsec) / 1000;
 
-    printf("Init took %" PRIu64 "\n", init_us);
-    printf("Parse took %" PRIu64 "\n", parse_us);
-    printf("Insert took %" PRIu64 "\n", insert_us);
-    printf("Search took %" PRIu64 "\n", search_us);
+    printf("    Init took %" PRIu64 "\n", init_us);
+    printf("    Parse took %" PRIu64 "\n", parse_us);
+    printf("    Insert took %" PRIu64 "\n", insert_us);
+    printf("    Search took %" PRIu64 "\n", search_us);
 
  
-    for(unsigned int i = 0; i < count; i++) { 
+    for(unsigned int i = 0; i < COUNT; i++) { 
         free((char*)data[i]); 
     } 
+    for(unsigned int i = 0; i < local_config->attr_domain_count; i++) {
+        free((char*)local_config->attr_domains[i].name);
+    }
     free(local_config->attr_domains); 
     free(local_config); 
     free_matched_subs(matched_subs);
@@ -154,18 +164,9 @@ int test_pdir_split()
  
 int all_tests()  
 { 
-    config = malloc(sizeof(struct config)); 
-    config->lnode_max_cap = 3; 
-    config->attr_domain_count = 1; 
-    config->attr_domains = malloc(1 * sizeof(struct attr_domain)); 
-    struct attr_domain attr_domain_a = { .name = "a", .minBound = 0, .maxBound = 10000 }; 
-    config->attr_domains[0] = attr_domain_a; 
- 
     mu_run_test(test_cdir_split); 
+    printf("\n");
     mu_run_test(test_pdir_split);
- 
-    free(config->attr_domains); 
-    free(config); 
  
     return 0; 
 } 
