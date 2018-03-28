@@ -1,5 +1,5 @@
-#ifndef AST_PARSE_H__
-#define AST_PARSE_H__
+#ifndef AST_H__
+#define AST_H__
 
 #include "betree.h"
 

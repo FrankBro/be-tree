@@ -4,7 +4,7 @@
 #include <string.h> 
 #include <inttypes.h>
  
-#include "ast_parse.h" 
+#include "ast.h" 
 #include "parser.h" 
 #include "minunit.h" 
  

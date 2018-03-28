@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ast_parse.h"
+#include "ast.h"
 #include "betree.h"
 #include "minunit.h"
 
