@@ -33,6 +33,7 @@ YACC?=bison
 YFLAGS?=-dv
 
 VALGRIND=valgrind --leak-check=full --track-origins=yes --suppressions=valgrind.supp
+CALLGRIND=valgrind --tool=callgrind
 
 ################################################################################
 # Default Target
@@ -100,3 +101,6 @@ valgrind:
 	$(VALGRIND) build/tests/betree_tests
 	$(VALGRIND) build/tests/parser_tests
 	#$(VALGRIND) build/tests/performance_tests
+
+callgrind:
+	$(CALLGRIND) build/tests/performance_tests
