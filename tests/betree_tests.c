@@ -494,7 +494,7 @@ int test_large_cdir_split()
 
     free(local_config.attr_domains);
     free_matched_subs(matched_subs);
-    free_event(event);
+    free_event((struct event*)event);
     free_cnode(cnode);
     return 0;
 }
