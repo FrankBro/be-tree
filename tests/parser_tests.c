@@ -12,22 +12,22 @@ int test_all_binop()
 {
     struct ast_node* node = NULL;
     parse("a = 0", &node);
-    mu_assert(node->type == AST_TYPE_BINARY_EXPR && node->binary_expr.op == BINOP_EQ, "EQ");
+    mu_assert(node->type == AST_TYPE_BINARY_EXPR && node->binary_expr.op == AST_BINOP_EQ, "EQ");
     free_ast_node(node);
     parse("a <> 0", &node);
-    mu_assert(node->type == AST_TYPE_BINARY_EXPR && node->binary_expr.op == BINOP_NE, "NE");
+    mu_assert(node->type == AST_TYPE_BINARY_EXPR && node->binary_expr.op == AST_BINOP_NE, "NE");
     free_ast_node(node);
     parse("a < 0", &node);
-    mu_assert(node->type == AST_TYPE_BINARY_EXPR && node->binary_expr.op == BINOP_LT, "LT");
+    mu_assert(node->type == AST_TYPE_BINARY_EXPR && node->binary_expr.op == AST_BINOP_LT, "LT");
     free_ast_node(node);
     parse("a <= 0", &node);
-    mu_assert(node->type == AST_TYPE_BINARY_EXPR && node->binary_expr.op == BINOP_LE, "LE");
+    mu_assert(node->type == AST_TYPE_BINARY_EXPR && node->binary_expr.op == AST_BINOP_LE, "LE");
     free_ast_node(node);
     parse("a > 0", &node);
-    mu_assert(node->type == AST_TYPE_BINARY_EXPR && node->binary_expr.op == BINOP_GT, "GT");
+    mu_assert(node->type == AST_TYPE_BINARY_EXPR && node->binary_expr.op == AST_BINOP_GT, "GT");
     free_ast_node(node);
     parse("a >= 0", &node);
-    mu_assert(node->type == AST_TYPE_BINARY_EXPR && node->binary_expr.op == BINOP_GE, "GE");
+    mu_assert(node->type == AST_TYPE_BINARY_EXPR && node->binary_expr.op == AST_BINOP_GE, "GE");
     free_ast_node(node);
     return 0;
 }
@@ -36,10 +36,10 @@ int test_all_combi()
 {
     struct ast_node* node = NULL;
     parse("a = 0 && b = 0", &node);
-    mu_assert(node->type == AST_TYPE_COMBI_EXPR && node->combi_expr.op == COMBI_AND, "AND");
+    mu_assert(node->type == AST_TYPE_COMBI_EXPR && node->combi_expr.op == AST_COMBI_AND, "AND");
     free_ast_node(node);
     parse("a = 0 || b = 0", &node);
-    mu_assert(node->type == AST_TYPE_COMBI_EXPR && node->combi_expr.op == COMBI_OR, "OR");
+    mu_assert(node->type == AST_TYPE_COMBI_EXPR && node->combi_expr.op == AST_COMBI_OR, "OR");
     free_ast_node(node);
     return 0;
 }
@@ -48,10 +48,10 @@ int test_paren()
 {
     struct ast_node* node = NULL;
     parse("(a = 0 && b = 0) || c = 0", &node);
-    mu_assert(node->type == AST_TYPE_COMBI_EXPR && node->combi_expr.op == COMBI_OR, "first");
+    mu_assert(node->type == AST_TYPE_COMBI_EXPR && node->combi_expr.op == AST_COMBI_OR, "first");
     free_ast_node(node);
     parse("a = 0 && (b = 0 || c = 0)", &node);
-    mu_assert(node->type == AST_TYPE_COMBI_EXPR && node->combi_expr.op == COMBI_AND, "second");
+    mu_assert(node->type == AST_TYPE_COMBI_EXPR && node->combi_expr.op == AST_COMBI_AND, "second");
     free_ast_node(node);
     return 0;
 }

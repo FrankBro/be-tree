@@ -27,12 +27,12 @@ void initialize_config()
     config->lnode_max_cap = 3;
     config->attr_domain_count = 3;
     config->attr_domains = malloc(sizeof(struct config*) * config->attr_domain_count);
-    struct attr_domain attr_domain_a = { .name = "a", .minBound = 0, .maxBound = 10 };
-    config->attr_domains[0] = attr_domain_a;
-    struct attr_domain attr_domain_b = { .name = "b", .minBound = 0, .maxBound = 10 };
-    config->attr_domains[1] = attr_domain_b;
-    struct attr_domain attr_domain_c = { .name = "c", .minBound = 0, .maxBound = 10 };
-    config->attr_domains[2] = attr_domain_c;
+    // struct attr_domain attr_domain_a = { .name = "a", .minBound = 0, .maxBound = 10 };
+    // config->attr_domains[0] = attr_domain_a;
+    // struct attr_domain attr_domain_b = { .name = "b", .minBound = 0, .maxBound = 10 };
+    // config->attr_domains[1] = attr_domain_b;
+    // struct attr_domain attr_domain_c = { .name = "c", .minBound = 0, .maxBound = 10 };
+    // config->attr_domains[2] = attr_domain_c;
 }
 
 static int

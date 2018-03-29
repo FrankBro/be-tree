@@ -13,13 +13,9 @@ int parse(const char *text, struct ast_node **node);
 #define COUNT 100
  
 int test_cdir_split() 
-{ 
-    struct config* local_config = malloc(sizeof(struct config)); 
-    local_config->lnode_max_cap = 3; 
-    local_config->attr_domain_count = 1;
-    local_config->attr_domains = malloc(sizeof(struct attr_domain));
-    struct attr_domain attr_domain_a = { .name = "a", .minBound = 0, .maxBound = COUNT }; 
-    local_config->attr_domains[0] = attr_domain_a; 
+{
+    struct config* config = make_default_config();
+    add_attr_domain(config, "a", 0, COUNT);
 
     const char* data[COUNT]; 
 
@@ -33,7 +29,7 @@ int test_cdir_split()
  
     clock_gettime(CLOCK_MONOTONIC_RAW, &start);
  
-    struct cnode* cnode = make_cnode(local_config, NULL); 
+    struct cnode* cnode = make_cnode(config, NULL); 
     struct ast_node* node; 
      
     clock_gettime(CLOCK_MONOTONIC_RAW, &init_done);
@@ -44,19 +40,19 @@ int test_cdir_split()
         if(parse(data[i], &node) != 0) { 
             return 1; 
         } 
-        const struct sub* sub = make_sub(i + 1, node); 
+        const struct sub* sub = make_sub(config, i + 1, node); 
         subs[i] = sub;
     } 
  
     clock_gettime(CLOCK_MONOTONIC_RAW, &parse_done);
  
     for(unsigned int i = 0; i < COUNT; i++) { 
-        insert_be_tree(local_config, subs[i], cnode, NULL); 
+        insert_be_tree(config, subs[i], cnode, NULL); 
     }
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &insert_done);
 
-    const struct event* event = make_simple_event("a", 0); 
+    const struct event* event = make_simple_event(config, "a", 0); 
     struct matched_subs* matched_subs = make_matched_subs(); 
     match_be_tree(event, cnode, matched_subs); 
  
@@ -76,8 +72,8 @@ int test_cdir_split()
     for(unsigned int i = 0; i < COUNT; i++) { 
         free((char*)data[i]); 
     } 
-    free(local_config->attr_domains); 
-    free(local_config); 
+    free(config->attr_domains); 
+    free(config); 
     free_matched_subs(matched_subs);
     free_event((struct event*)event);
     free_cnode(cnode);
@@ -86,10 +82,7 @@ int test_cdir_split()
 
 int test_pdir_split()
 {
-    struct config* local_config = malloc(sizeof(struct config)); 
-    local_config->lnode_max_cap = 3; 
-    local_config->attr_domain_count = COUNT; 
-    local_config->attr_domains = malloc(COUNT * sizeof(struct attr_domain)); 
+    struct config* config = make_default_config();
 
     const char* data[COUNT]; 
 
@@ -100,15 +93,14 @@ int test_pdir_split()
 
         char* name;
         asprintf(&name, "a%d", i);
-        struct attr_domain attr_domain = { .name = name, .minBound = 0, .maxBound = 10 }; 
-        local_config->attr_domains[i] = attr_domain; 
+        add_attr_domain(config, name, 0, 10);
     } 
  
     struct timespec start, init_done, parse_done, insert_done, search_done; 
  
     clock_gettime(CLOCK_MONOTONIC_RAW, &start);
  
-    struct cnode* cnode = make_cnode(local_config, NULL); 
+    struct cnode* cnode = make_cnode(config, NULL); 
     struct ast_node* node; 
      
     clock_gettime(CLOCK_MONOTONIC_RAW, &init_done);
@@ -119,19 +111,19 @@ int test_pdir_split()
         if(parse(data[i], &node) != 0) { 
             return 1; 
         } 
-        const struct sub* sub = make_sub(i + 1, node); 
+        const struct sub* sub = make_sub(config, i + 1, node); 
         subs[i] = sub;
     } 
  
     clock_gettime(CLOCK_MONOTONIC_RAW, &parse_done);
  
     for(unsigned int i = 0; i < COUNT; i++) { 
-        insert_be_tree(local_config, subs[i], cnode, NULL); 
+        insert_be_tree(config, subs[i], cnode, NULL); 
     }
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &insert_done);
 
-    const struct event* event = make_simple_event("a0", 0); 
+    const struct event* event = make_simple_event(config, "a0", 0); 
     struct matched_subs* matched_subs = make_matched_subs(); 
     match_be_tree(event, cnode, matched_subs); 
  
@@ -151,11 +143,7 @@ int test_pdir_split()
     for(unsigned int i = 0; i < COUNT; i++) { 
         free((char*)data[i]); 
     } 
-    for(unsigned int i = 0; i < local_config->attr_domain_count; i++) {
-        free((char*)local_config->attr_domains[i].name);
-    }
-    free(local_config->attr_domains); 
-    free(local_config); 
+    free_config(config);
     free_matched_subs(matched_subs);
     free_event((struct event*)event);
     free_cnode(cnode);

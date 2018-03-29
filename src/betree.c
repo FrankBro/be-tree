@@ -3,19 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "ast.h"
 #include "betree.h"
-
-unsigned int num_of_pred_event(const struct event* event)
-{
-    return event->pred_count;
-}
-
-unsigned int num_of_pred_sub(const struct sub* sub) 
-{
-    return sub->pred_count;
-}
 
 bool match_sub(const struct event* event, const struct sub *sub)
 {
@@ -51,14 +42,14 @@ void check_sub(const struct event* event, const struct lnode* lnode, struct matc
     }
 }
 
-struct pnode* search_pdir(const char* attr, const struct pdir* pdir)
+struct pnode* search_pdir(unsigned int variable_id, const struct pdir* pdir)
 {
     if(pdir == NULL) {
         return NULL;
     }
     for(unsigned int i=0; i < pdir->pnode_count; i++) {
         struct pnode* pnode = pdir->pnodes[i];
-        if(strcasecmp(attr, pnode->attr) == 0) {
+        if(variable_id == pnode->variable_id) {
             return pnode;
         }
     }
@@ -70,9 +61,9 @@ void search_cdir(const struct event* event, struct cdir* cdir, struct matched_su
 void match_be_tree(const struct event* event, const struct cnode* cnode, struct matched_subs* matched_subs) 
 {
     check_sub(event, cnode->lnode, matched_subs);
-    for(unsigned int i = 0; i < num_of_pred_event(event); i++) {
-        const char* attr = event->preds[i]->attr;
-        const struct pnode* pnode = search_pdir(attr, cnode->pdir);
+    for(unsigned int i = 0; i < event->pred_count; i++) {
+        unsigned int variable_id = event->preds[i]->variable_id;
+        const struct pnode* pnode = search_pdir(variable_id, cnode->pdir);
         if(pnode != NULL) {
             search_cdir(event, pnode->cdir, matched_subs);
         }
@@ -85,8 +76,8 @@ bool is_event_enclosed(const struct event* event, const struct cdir* cdir)
         return false;
     }
     for(unsigned int i = 0; i < event->pred_count; i++) {
-        const char* attr = event->preds[i]->attr;
-        if(strcasecmp(attr, cdir->attr) == 0) {
+        unsigned int variable_id = event->preds[i]->variable_id;
+        if(variable_id == cdir->variable_id) {
             return true;
         }
     }
@@ -98,12 +89,25 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
     if(cdir == NULL) {
         return false;
     }
-    for(unsigned int i = 0; i < sub->pred_count; i++) {
-        const char* attr = sub->preds[i]->attr;
-        if(strcasecmp(attr, cdir->attr) == 0) {
+    for(unsigned int i = 0; i < sub->variable_id_count; i++) {
+        unsigned int variable_id = sub->variable_ids[i];
+        if(variable_id == cdir->variable_id) {
             struct variable_bound bound = { .min = INT32_MAX, .max = INT32_MIN };
-            get_variable_bound(config->attr_domains, sub->expr, &bound);
-            return cdir->startBound <= bound.min && cdir->endBound >= bound.max;
+            const struct attr_domain* attr_domain = NULL;
+            for(unsigned int j = 0; j < config->attr_domain_count; j++) {
+                if(config->attr_domains[j]->variable_id == variable_id) {
+                    attr_domain = config->attr_domains[j];
+                    break;
+                }
+            }
+            if(attr_domain == NULL) {
+                fprintf(stderr, "cannot find variable_id %d in attr_domains", variable_id);
+                exit(1);
+            }
+            else {
+                get_variable_bound(attr_domain, sub->expr, &bound);
+                return cdir->startBound <= bound.min && cdir->endBound >= bound.max;
+            }
         }
     }
     return false;
@@ -118,46 +122,46 @@ void search_cdir(const struct event* event, struct cdir* cdir, struct matched_su
         search_cdir(event, cdir->rChild, matched_subs);
 }
 
-bool is_used_cnode(const struct pred* pred, const struct cnode* cnode);
+bool is_used_cnode(unsigned int variable_id, const struct cnode* cnode);
 
-bool is_used_pdir(const struct pred* pred, const struct pdir* pdir)
+bool is_used_pdir(unsigned int variable_id, const struct pdir* pdir)
 {
     if(pdir == NULL || pdir->parent == NULL) {
         return false;
     }
-    return is_used_cnode(pred, pdir->parent);
+    return is_used_cnode(variable_id, pdir->parent);
 }
 
-bool is_used_pnode(const struct pred* pred, const struct pnode* pnode)
+bool is_used_pnode(unsigned int variable_id, const struct pnode* pnode)
 {
     if(pnode == NULL || pnode->parent == NULL) {
         return false;
     }
-    if(strcasecmp(pnode->attr, pred->attr) == 0) {
+    if(pnode->variable_id == variable_id) {
         return true;
     }
-    return is_used_pdir(pred, pnode->parent);
+    return is_used_pdir(variable_id, pnode->parent);
 }
 
-bool is_used_cdir(const struct pred* pred, const struct cdir* cdir)
+bool is_used_cdir(unsigned int variable_id, const struct cdir* cdir)
 {
     if(cdir == NULL) {
         return false;
     }
-    if(strcasecmp(cdir->attr, pred->attr) == 0) {
+    if(cdir->variable_id == variable_id) {
         return true;
     }
     switch(cdir->parent_type) {
         case CNODE_PARENT_PNODE: {
-            return is_used_pnode(pred, cdir->pnode_parent);
+            return is_used_pnode(variable_id, cdir->pnode_parent);
         }
         case CNODE_PARENT_CDIR: {
-            return is_used_cdir(pred, cdir->cdir_parent);
+            return is_used_cdir(variable_id, cdir->cdir_parent);
         }
     }
 }
 
-bool is_used_cnode(const struct pred* pred, const struct cnode* cnode)
+bool is_used_cnode(unsigned int variable_id, const struct cnode* cnode)
 {
     if(cnode == NULL) {
         return false;
@@ -165,7 +169,7 @@ bool is_used_cnode(const struct pred* pred, const struct cnode* cnode)
     if(cnode->parent == NULL) {
         return false;
     }
-    return is_used_cdir(pred, cnode->parent);
+    return is_used_cdir(variable_id, cnode->parent);
 }
 
 void insert_sub(const struct sub* sub, struct lnode* lnode)
@@ -200,19 +204,19 @@ void space_partitioning(const struct config* config, struct cnode* cnode);
 void space_clustering(const struct config* config, struct cdir* cdir);
 struct cdir* insert_cdir(const struct config* config, const struct sub* sub, struct cdir* cdir);
 
-unsigned int count_attr_in_lnode(const char* attr, const struct lnode* lnode);
+unsigned int count_attr_in_lnode(unsigned int variable_id, const struct lnode* lnode);
 
-unsigned int count_attr_in_cdir(const char* attr, const struct cdir* cdir)
+unsigned int count_attr_in_cdir(unsigned int variable_id, const struct cdir* cdir)
 {
     if(cdir == NULL) {
         return 0;
     }
     unsigned int count = 0;
     if(cdir->cnode != NULL) {
-        count += count_attr_in_lnode(attr, cdir->cnode->lnode);
+        count += count_attr_in_lnode(variable_id, cdir->cnode->lnode);
     }
-    count += count_attr_in_cdir(attr, cdir->lChild);
-    count += count_attr_in_cdir(attr, cdir->rChild);
+    count += count_attr_in_cdir(variable_id, cdir->lChild);
+    count += count_attr_in_cdir(variable_id, cdir->rChild);
     return count;
 }
 
@@ -220,7 +224,7 @@ void update_partition_score(struct pnode* pnode)
 {
     // TODO: Wutdo
     float alpha = 0.5;
-    unsigned int gain = count_attr_in_cdir(pnode->attr, pnode->cdir);
+    unsigned int gain = count_attr_in_cdir(pnode->variable_id, pnode->cdir);
     // TODO: Idk man
     unsigned int loss = 0;
     pnode->score = (1.0 - alpha) * (float) gain - alpha * (float)loss;
@@ -236,11 +240,10 @@ void insert_be_tree(const struct config* config, const struct sub* sub, struct c
     struct pnode* maxPnode = NULL;
     if(cnode->pdir != NULL) {
         int maxScore = -1;
-        for(unsigned int i = 0; i < num_of_pred_sub(sub); i++) {
-            const struct pred* pred = sub->preds[i];
-            if(!is_used_cnode(pred, cnode)) {
-                const char* attr = pred->attr;
-                struct pnode* pnode = search_pdir(attr, cnode->pdir);
+        for(unsigned int i = 0; i < sub->variable_id_count; i++) {
+            unsigned int variable_id = sub->variable_ids[i];
+            if(!is_used_cnode(variable_id, cnode)) {
+                struct pnode* pnode = search_pdir(variable_id, cnode->pdir);
                 if(pnode != NULL) {
                     foundPartition = true;
                     if(maxScore < pnode->score) {
@@ -293,14 +296,20 @@ bool is_overflowed(const struct lnode* lnode)
     return lnode->sub_count > lnode->max;
 }
 
-bool sub_has_attribute(const struct sub* sub, const char* attr)
+bool sub_has_attribute(const struct sub* sub, unsigned int variable_id)
 {
-    for(unsigned int i = 0; i < sub->pred_count; i++) {
-        if(strcasecmp(sub->preds[i]->attr, attr) == 0) {
+    for(unsigned int i = 0; i < sub->variable_id_count; i++) {
+        if(sub->variable_ids[i] == variable_id) {
             return true;
         }
     }
     return false;
+}
+
+bool sub_has_attribute_str(struct config* config, const struct sub* sub, const char* attr)
+{
+    unsigned int variable_id = get_id_for_attr(config, attr);
+    return sub_has_attribute(sub, variable_id);
 }
 
 bool remove_sub(const struct sub* sub, struct lnode* lnode)
@@ -356,18 +365,14 @@ void move(const struct sub* sub, struct lnode* origin, struct lnode* destination
     destination->sub_count++;
 }
 
-struct cdir* create_cdir(const struct config* config, const char* attr, int startBound, int endBound)
+struct cdir* create_cdir(const struct config* config, unsigned int variable_id, int startBound, int endBound)
 {
     struct cdir* cdir = malloc(sizeof(struct cdir));
     if(cdir == NULL) {
         fprintf(stderr, "create_cdir malloc failed");
         exit(1);
     }
-    cdir->attr = strdup(attr);
-    if(cdir->attr == NULL) {
-        fprintf(stderr, "create_cdir strdup failed");
-        exit(1);
-    }
+    cdir->variable_id = variable_id;
     cdir->startBound = startBound;
     cdir->endBound = endBound;
     cdir->cnode = make_cnode(config, cdir);
@@ -378,7 +383,7 @@ struct cdir* create_cdir(const struct config* config, const char* attr, int star
 
 struct cdir* create_cdir_with_cdir_parent(const struct config* config, struct cdir* parent, int startBound, int endBound)
 {
-    struct cdir* cdir = create_cdir(config, parent->attr, startBound, endBound);
+    struct cdir* cdir = create_cdir(config, parent->variable_id, startBound, endBound);
     cdir->parent_type = CNODE_PARENT_CDIR;
     cdir->cdir_parent = parent;
     return cdir;
@@ -386,13 +391,13 @@ struct cdir* create_cdir_with_cdir_parent(const struct config* config, struct cd
 
 struct cdir* create_cdir_with_pnode_parent(const struct config* config, struct pnode* parent, int startBound, int endBound)
 {
-    struct cdir* cdir = create_cdir(config, parent->attr, startBound, endBound);
+    struct cdir* cdir = create_cdir(config, parent->variable_id, startBound, endBound);
     cdir->parent_type = CNODE_PARENT_PNODE;
     cdir->pnode_parent = parent;
     return cdir;
 }
 
-struct pnode* create_pdir(const struct config* config, const char* attr, struct cnode* cnode)
+struct pnode* create_pdir(const struct config* config, unsigned int variable_id, struct cnode* cnode)
 {
     if(cnode == NULL) {
         fprintf(stderr, "cnode is NULL, cannot create a pdir and pnode");
@@ -417,24 +422,20 @@ struct pnode* create_pdir(const struct config* config, const char* attr, struct 
         exit(1);
     }
     pnode->parent = pdir;
-    pnode->attr = strdup(attr);
-    if(pnode->attr == NULL) {
-        fprintf(stderr, "create_pdir strdup failed");
-        exit(1);
-    }
+    pnode->variable_id = variable_id;
     int minBound = 0, maxBound = 0;
     bool isFound = false;
     for(unsigned int i = 0; i < config->attr_domain_count; i++) {
-        const struct attr_domain* attr_domain = &config->attr_domains[i];
-        if(strcasecmp(attr_domain->name, attr) == 0) {
-            minBound = attr_domain->minBound;
-            maxBound = attr_domain->maxBound;
+        const struct attr_domain* attr_domain = config->attr_domains[i];
+        if(attr_domain->variable_id == variable_id) {
+            minBound = attr_domain->min_bound;
+            maxBound = attr_domain->max_bound;
             isFound = true;
             break;
         }
     }
     if(!isFound) {
-        fprintf(stderr, "No domain definition for attr %s in config", attr);
+        fprintf(stderr, "No domain definition for attr %d in config", variable_id);
         exit(1);
     }
     pnode->cdir = create_cdir_with_pnode_parent(config, pnode, minBound, maxBound);
@@ -460,7 +461,7 @@ struct pnode* create_pdir(const struct config* config, const char* attr, struct 
     return pnode;
 }
 
-unsigned int count_attr_in_lnode(const char* attr, const struct lnode* lnode)
+unsigned int count_attr_in_lnode(unsigned int variable_id, const struct lnode* lnode)
 {
     int count = 0;
     if(lnode == NULL) {
@@ -472,13 +473,9 @@ unsigned int count_attr_in_lnode(const char* attr, const struct lnode* lnode)
             fprintf(stderr, "%s, sub is NULL", __func__);
             continue;
         }
-        for(unsigned int j=0; j < sub->pred_count; j++) {
-            const char* attr_to_count = sub->preds[j]->attr;
-            if(attr_to_count == NULL) {
-                fprintf(stderr, "%s, attr_to_count is NULL", __func__);
-                continue;
-            }
-            if(strcasecmp(attr_to_count, attr) == 0) {
+        for(unsigned int j=0; j < sub->variable_id_count; j++) {
+            unsigned int variable_id_to_count = sub->variable_ids[j];
+            if(variable_id_to_count == variable_id) {
                 count++;
             }
         }
@@ -486,67 +483,73 @@ unsigned int count_attr_in_lnode(const char* attr, const struct lnode* lnode)
     return count;
 }
 
-bool is_attr_used_in_parent_cnode(const char* attr, const struct cnode* cnode);
+bool is_attr_used_in_parent_cnode(unsigned int variable_id, const struct cnode* cnode);
 
-bool is_attr_used_in_parent_pdir(const char* attr, const struct pdir* pdir)
+bool is_attr_used_in_parent_pdir(unsigned int variable_id, const struct pdir* pdir)
 {
-    return is_attr_used_in_parent_cnode(attr, pdir->parent);
+    return is_attr_used_in_parent_cnode(variable_id, pdir->parent);
 }
 
-bool is_attr_used_in_parent_pnode(const char* attr, const struct pnode* pnode)
+bool is_attr_used_in_parent_pnode(unsigned int variable_id, const struct pnode* pnode)
 {
-    if(strcasecmp(pnode->attr, attr) == 0) {
+    if(pnode->variable_id == variable_id) {
         return true;
     }
-    return is_attr_used_in_parent_pdir(attr, pnode->parent);
+    return is_attr_used_in_parent_pdir(variable_id, pnode->parent);
 }
 
-bool is_attr_used_in_parent_cdir(const char* attr, const struct cdir* cdir)
+bool is_attr_used_in_parent_cdir(unsigned int variable_id, const struct cdir* cdir)
 {
-    if(strcasecmp(cdir->attr, attr) == 0) {
+    if(cdir->variable_id == variable_id) {
         return true;
     }
     switch(cdir->parent_type) {
         case(CNODE_PARENT_CDIR): {
-            return is_attr_used_in_parent_cdir(attr, cdir->cdir_parent);
+            return is_attr_used_in_parent_cdir(variable_id, cdir->cdir_parent);
         }
         case(CNODE_PARENT_PNODE): {
-            return is_attr_used_in_parent_pnode(attr, cdir->pnode_parent);
+            return is_attr_used_in_parent_pnode(variable_id, cdir->pnode_parent);
         }
     }
 }
 
-bool is_attr_used_in_parent_cnode(const char* attr, const struct cnode* cnode)
+bool is_attr_used_in_parent_cnode(unsigned int variable_id, const struct cnode* cnode)
 {
     if(is_root(cnode)) {
         return false;
     }
-    return is_attr_used_in_parent_cdir(attr, cnode->parent);
+    return is_attr_used_in_parent_cdir(variable_id, cnode->parent);
 }
 
-bool is_attr_used_in_parent_lnode(const char* attr, const struct lnode* lnode)
+bool is_attr_used_in_parent_lnode(unsigned int variable_id, const struct lnode* lnode)
 {
-    return is_attr_used_in_parent_cnode(attr, lnode->parent);
+    return is_attr_used_in_parent_cnode(variable_id, lnode->parent);
 }
 
-const char* get_next_highest_score_unused_attr(const struct lnode* lnode)
+bool get_next_highest_score_unused_attr(const struct lnode* lnode, unsigned int* variable_id)
 {
-    int highestCount = 0;
-    const char* highestAttr = NULL;
+    unsigned int highest_count = 0;
+    unsigned int highest_variable_id = 0;
     for(unsigned int i = 0; i < lnode->sub_count; i++) {
         const struct sub* sub = lnode->subs[i];
-        for(unsigned int j = 0; j < sub->pred_count; j++) {
-            const char* currentAttr = sub->preds[j]->attr;
-            if(!is_attr_used_in_parent_lnode(currentAttr, lnode)) {
-                int currentCount = count_attr_in_lnode(currentAttr, lnode);
-                if(currentCount > highestCount) {
-                    highestCount = currentCount;
-                    highestAttr = currentAttr;
+        for(unsigned int j = 0; j < sub->variable_id_count; j++) {
+            unsigned int current_variable_id = sub->variable_ids[j];
+            if(!is_attr_used_in_parent_lnode(current_variable_id, lnode)) {
+                unsigned int current_count = count_attr_in_lnode(current_variable_id, lnode);
+                if(current_count > highest_count) {
+                    highest_count = current_count;
+                    highest_variable_id = current_variable_id;
                 }
             }
         }
     }
-    return highestAttr;
+    if(highest_count == 0) {
+        return false;
+    }
+    else {
+        *variable_id = highest_variable_id;
+        return true;
+    }
 }
 
 void update_cluster_capacity(const struct config* config, struct lnode* lnode)
@@ -564,14 +567,15 @@ void space_partitioning(const struct config* config, struct cnode* cnode)
 {
     struct lnode* lnode = cnode->lnode;
     while(is_overflowed(lnode) == true) {
-        const char* attr = get_next_highest_score_unused_attr(lnode);
-        if(attr == NULL) {
+        unsigned int variable_id;
+        bool found = get_next_highest_score_unused_attr(lnode, &variable_id);
+        if(found == false) {
             break;
         }
-        struct pnode* pnode = create_pdir(config, attr, cnode);
+        struct pnode* pnode = create_pdir(config, variable_id, cnode);
         for(unsigned int i = 0; i < lnode->sub_count; i++) {
             const struct sub* sub = lnode->subs[i];
-            if(sub_has_attribute(sub, attr)) {
+            if(sub_has_attribute(sub, variable_id)) {
                 struct cdir* cdir = insert_cdir(config, sub, pnode->cdir);
                 move(sub, lnode, cdir->cnode->lnode);
                 i--;
@@ -714,8 +718,6 @@ void free_pred(struct pred* pred)
     if(pred == NULL) {
         return;
     }
-    free((char*)pred->attr);
-    pred->attr = NULL;
     free(pred);
 }
 
@@ -724,12 +726,8 @@ void free_sub(struct sub* sub)
     if(sub == NULL) {
         return;
     }
-    for(unsigned int i = 0; i < sub->pred_count; i++) {
-        const struct pred* pred = sub->preds[i];
-        free_pred((struct pred*)pred);
-    }
-    free(sub->preds);
-    sub->preds = NULL;
+    free(sub->variable_ids);
+    sub->variable_ids = NULL;
     free_ast_node((struct ast_node*)sub->expr);
     sub->expr = NULL;
     free(sub);
@@ -780,8 +778,6 @@ void free_cdir(struct cdir* cdir)
     if(cdir == NULL) {
         return;
     }
-    free((char*)cdir->attr);
-    cdir->attr = NULL;
     free_cnode(cdir->cnode);
     cdir->cnode = NULL;
     free_cdir(cdir->lChild);
@@ -822,8 +818,6 @@ void free_pnode(struct pnode* pnode)
     if(pnode == NULL) {
         return;
     }
-    free((char*)pnode->attr);
-    pnode->attr = NULL;
     free_cdir(pnode->cdir);
     pnode->cdir = NULL;
     free(pnode);
@@ -834,9 +828,9 @@ bool delete_be_tree(const struct config* config, struct sub* sub, struct cnode* 
     struct pnode* pnode = NULL;
     bool isFound = delete_sub_from_leaf(sub, cnode->lnode);
     if(!isFound) {
-        for(unsigned int i = 0; i < num_of_pred_sub(sub); i++) {
-            const char* attr = sub->preds[i]->attr;
-            pnode = search_pdir(attr, cnode->pdir);
+        for(unsigned int i = 0; i < sub->variable_id_count; i++) {
+            unsigned int variable_id = sub->variable_ids[i];
+            pnode = search_pdir(variable_id, cnode->pdir);
             if(pnode != NULL) {
                 isFound = search_delete_cdir(config, sub, pnode->cdir);
             }
@@ -944,12 +938,18 @@ void free_matched_subs(struct matched_subs* matched_subs)
     free(matched_subs);
 }
 
-const struct pred* make_simple_pred(const char* attr, int value)
+const struct pred* make_simple_pred(unsigned int variable_id, int value)
 {
     struct pred* pred = malloc(sizeof(struct pred));
-    pred->attr = strdup(attr);
+    pred->variable_id = variable_id;
     pred->value = value;
     return pred;
+}
+
+const struct pred* make_simple_pred_str(struct config* config, const char* attr, int value)
+{
+    unsigned int variable_id = get_id_for_attr(config, attr);
+    return make_simple_pred(variable_id, value);
 }
 
 void fill_pred(struct sub* sub, const struct ast_node* expr)
@@ -962,53 +962,165 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
         }
         case AST_TYPE_BINARY_EXPR: {
             bool is_found = false;
-            for(unsigned int i = 0; i < sub->pred_count; i++) {
-                if(strcasecmp(sub->preds[i]->attr, expr->binary_expr.name) == 0) {
+            for(unsigned int i = 0; i < sub->variable_id_count; i++) {
+                if(sub->variable_ids[i] == expr->binary_expr.variable_id) {
                     is_found = true;
                     break;
                 }
             }
             if(!is_found) {
-                if(sub->pred_count == 0) {
-                    sub->preds = malloc(sizeof(struct pred*));
+                if(sub->variable_id_count == 0) {
+                    sub->variable_ids = malloc(sizeof(int));
                 }
                 else {
-                    struct pred** preds = realloc(sub->preds, sizeof(struct pred *) * (sub->pred_count + 1));
+                    unsigned int* variable_ids = realloc(sub->variable_ids, sizeof(int) * (sub->variable_id_count + 1));
                     if(sub == NULL) {
                         fprintf(stderr, "fill_pred realloc failed");
                         exit(1);
                     }
-                    sub->preds = preds;
+                    sub->variable_ids = variable_ids;
                 }
-                sub->preds[sub->pred_count] = (struct pred*)make_simple_pred(expr->binary_expr.name, 0);
-                sub->pred_count++;
+                sub->variable_ids[sub->variable_id_count] = expr->binary_expr.variable_id;
+                sub->variable_id_count++;
             }
         }
     }
 }
 
-struct sub* make_empty_sub(int id)
+struct sub* make_empty_sub(unsigned int id)
 {
     struct sub* sub = malloc(sizeof(struct sub));
     sub->id = id;
-    sub->pred_count = 0;
-    sub->preds = NULL;
+    sub->variable_id_count = 0;
+    sub->variable_ids = NULL;
     return sub;
 }
 
-const struct sub* make_sub(int id, const struct ast_node* expr)
+const struct sub* make_sub(struct config* config, unsigned int id, struct ast_node* expr)
 {
     struct sub* sub = make_empty_sub(id);
     sub->expr = expr;
+    assign_variable_id(config, expr);
     fill_pred(sub, sub->expr);
     return sub;
 }
 
-const struct event* make_simple_event(const char* attr, int value)
+const struct event* make_simple_event(struct config* config, const char* attr, int value)
 {
     struct event* event = malloc(sizeof(struct event));
     event->pred_count = 1;
     event->preds = malloc(sizeof(struct pred*));
-    event->preds[0] = (struct pred*)make_simple_pred(attr, value);
+    event->preds[0] = (struct pred*)make_simple_pred_str(config, attr, value);
     return event;
+}
+
+const char* get_attr_for_id(const struct config* config, unsigned int variable_id)
+{
+    if(variable_id < config->attr_to_id_count) {
+        return config->attr_to_ids[variable_id];
+    }
+    return NULL;
+}
+
+unsigned int get_id_for_attr(struct config* config, const char* attr)
+{
+    char* copy = strdup(attr);
+    for(unsigned int i = 0; copy[i]; i++) {
+        copy[i] = tolower(copy[i]);
+    }
+    for(unsigned int i = 0; i < config->attr_to_id_count; i++) {
+        if(strcmp(config->attr_to_ids[i], copy) == 0) {
+            free(copy);
+            return i;
+        }
+    }
+    if(config->attr_to_id_count == 0) {
+        config->attr_to_ids = malloc(sizeof(char*));
+        if(config->attr_to_ids == NULL) {
+            fprintf(stderr, "get_id_for_attr malloc failed");
+            exit(1);
+        }
+    }
+    else {
+        char** attr_to_ids = realloc(config->attr_to_ids, sizeof(char*) * (config->attr_to_id_count + 1));
+        if(attr_to_ids == NULL) {
+            fprintf(stderr, "get_id_for_attr realloc failed");
+            exit(1);
+        }
+        config->attr_to_ids = attr_to_ids;
+    }
+    config->attr_to_ids[config->attr_to_id_count] = copy;
+    config->attr_to_id_count++;
+    return config->attr_to_id_count - 1;
+}
+
+struct config* make_config(unsigned int lnode_max_cap, unsigned int partition_min_size)
+{
+    struct config* config = malloc(sizeof(struct config));
+    config->attr_domain_count = 0;
+    config->attr_domains = NULL;
+    config->attr_to_id_count = 0;
+    config->attr_to_ids = NULL;
+    config->lnode_max_cap = lnode_max_cap;
+    config->partition_min_size = partition_min_size;
+    return config;
+}
+
+struct config* make_default_config()
+{
+    return make_config(3, 0);
+}
+
+void free_config(struct config* config)
+{
+    if(config == NULL) {
+        return;
+    }
+    if(config->attr_to_ids != NULL) {
+        for(unsigned int i = 0; i < config->attr_to_id_count; i++) {
+            free(config->attr_to_ids[i]);
+        }
+        free(config->attr_to_ids);
+        config->attr_to_ids = NULL;
+    }
+    if(config->attr_domains != NULL) {
+        for(unsigned int i = 0; i < config->attr_domain_count; i++) {
+            free(config->attr_domains[i]);
+        }
+        free(config->attr_domains);
+        config->attr_domains = NULL;
+    }
+    free(config);
+}
+
+struct attr_domain* make_attr_domain(unsigned int variable_id, int min_bound, int max_bound)
+{
+    struct attr_domain* attr_domain = malloc(sizeof(struct attr_domain));
+    attr_domain->variable_id = variable_id;
+    attr_domain->min_bound = min_bound;
+    attr_domain->max_bound = max_bound;
+    return attr_domain;
+}
+
+void add_attr_domain(struct config* config, const char* attr, int min_bound, int max_bound)
+{
+    unsigned int variable_id = get_id_for_attr(config, attr);
+    struct attr_domain* attr_domain =  make_attr_domain(variable_id, min_bound, max_bound);
+    if(config->attr_domain_count == 0) {
+        config->attr_domains = malloc(sizeof(struct attr_domain*));
+        if(config->attr_domains == NULL) {
+            fprintf(stderr, "add_attr_domain malloc failed");
+            exit(1);
+        }
+    }
+    else {
+        struct attr_domain** attr_domains = realloc(config->attr_domains, sizeof(struct attr_domain*) * (config->attr_domain_count + 1));
+        if(attr_domains == NULL) {
+            fprintf(stderr, "add_attr_domain realloc failed");
+            exit(1);
+        }
+        config->attr_domains = attr_domains;
+    }
+    config->attr_domains[config->attr_domain_count] = attr_domain;
+    config->attr_domain_count++;
 }
