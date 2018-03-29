@@ -95,7 +95,8 @@ $(TEST_OBJECTS): %: %.c build/tests build/betree.a
 	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/betree.a
 
 clean:
-	rm -rf build/betree.so $(OBJECTS) $(LEX_OBJECTS) $(YACC_OBJECTS)
+	rm -rf build/betree.so build/betree.a $(OBJECTS) $(LEX_OBJECTS) $(YACC_OBJECTS)
+	rm -rf build/tests
 
 valgrind:
 	$(VALGRIND) build/tests/betree_tests
