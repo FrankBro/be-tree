@@ -1,5 +1,5 @@
 %{
-    #include "ast_parse.h"
+    #include "ast.h"
     #include "parser.h"
     #define SAVE_STRING yylval->string = strndup(yytext, yyleng)
     #define SAVE_INTEGER yylval->integer = atoi(yytext)

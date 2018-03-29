@@ -1,6 +1,6 @@
 #include <erl_nif.h>
 
-#include "ast_parse.h"
+#include "ast.h"
 #include "betree.h"
 
 static ERL_NIF_TERM atom_error;
