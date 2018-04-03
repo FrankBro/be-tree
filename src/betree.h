@@ -98,6 +98,7 @@ struct config* make_config(unsigned int lnode_max_cap, unsigned int partition_mi
 struct config* make_default_config();
 void free_config(struct config* config);
 void add_attr_domain(struct config* config, const char* attr, int min_bound, int max_bound);
+void adjust_attr_domains(struct config* config, const struct ast_node* node, unsigned int min, unsigned int max);
 
 const char* get_attr_for_id(const struct config* config, unsigned int variable_id);
 unsigned int get_id_for_attr(struct config* config, const char* attr);

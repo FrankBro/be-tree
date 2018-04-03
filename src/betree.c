@@ -1124,3 +1124,24 @@ void add_attr_domain(struct config* config, const char* attr, int min_bound, int
     config->attr_domains[config->attr_domain_count] = attr_domain;
     config->attr_domain_count++;
 }
+
+void adjust_attr_domains(struct config* config, const struct ast_node* node, unsigned int min, unsigned int max)
+{
+    switch(node->type) {
+        case(AST_TYPE_BINARY_EXPR): {
+            unsigned int variable_id = get_id_for_attr(config, node->binary_expr.name);
+            for(unsigned int i = 0; i < config->attr_domain_count; i++) {
+                if(variable_id == config->attr_domains[i]->variable_id) {
+                    return;
+                }
+            }
+            add_attr_domain(config, node->binary_expr.name, min, max);
+            break;
+        }
+        case(AST_TYPE_COMBI_EXPR): {
+            adjust_attr_domains(config, node->combi_expr.lhs, min, max);
+            adjust_attr_domains(config, node->combi_expr.rhs, min, max);
+            break;
+        }
+    }
+}
