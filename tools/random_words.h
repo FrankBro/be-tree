@@ -1,0 +1,60 @@
+#ifndef RANDOM_WORDS_H__
+#define RANDOM_WORDS_H__
+
+
+// 500 via https://www.randomlists.com/random-words
+
+static const char* RANDOM_WORDS[500] = {
+    "magical", "pricey", "thick", "jealous", "needy", "form", "chickens", "one", "pretend", "ambitious",
+    "cracker", "public", "lamp", "invent", "curvy", "needless", "befitting", "hapless", "last", "girl",
+    "complex", "famous", "fierce", "food", "toe", "dress", "crown", "intend", "support", "distribution",
+    "habitual", "ski", "deceive", "grip", "recognise", "majestic", "reject", "club", "rampant", "desk",
+    "quarrelsome", "orange", "nutritious", "carry", "iron", "equal", "gentle", "approve", "belief", "third",
+    "ring", "sound", "coil", "guide", "peel", "observation", "peep", "handsome", "skillful", "space",
+    "order", "cars", "playground", "second", "stupendous", "veil", "north", "church", "cute", "ladybug",
+    "sloppy", "afraid", "deeply", "puzzling", "mind", "ugliest", "sugar", "dusty", "accidental", "unequal",
+    "sisters", "dry", "flap", "vest", "jeans", "soda", "beam", "shake", "black-and-white", "symptomatic",
+    "pat", "possible", "plate", "seemly", "cycle", "hall", "grate", "ultra", "pass", "momentous",
+    "punish", "question", "basin", "chin", "record", "spurious", "hydrant", "miscreant", "apologise", "precious",
+    "real", "free", "whisper", "file", "cluttered", "command", "branch", "ill-fated", "cow", "adjustment",
+    "sleepy", "gratis", "bright", "chunky", "sound", "high-pitched", "lacking", "fast", "windy", "ban",
+    "care", "redundant", "ceaseless", "flight", "summer", "remarkable", "painstaking", "poised", "memorise", "march",
+    "parsimonious", "unhealthy", "trick", "reply", "perpetual", "furry", "uptight", "mother", "cowardly", "sedate",
+    "scarce", "condition", "expand", "husky", "tight", "energetic", "bore", "meddle", "frame", "trouble",
+    "near", "canvas", "difficult", "tooth", "weary", "baby", "handy", "extend", "coast", "eye",
+    "pocket", "aspiring", "breezy", "odd", "creepy", "verdant", "hard", "plane", "limping", "scatter",
+    "light", "many", "carve", "obese", "committee", "humorous", "magnificent", "amuck", "shallow", "beg",
+    "order", "unable", "super", "radiate", "twist", "note", "industry", "request", "rock", "finger",
+    "earn", "error", "label", "boring", "wiggly", "faulty", "pipe", "satisfying", "rock", "ignorant",
+    "interest", "knee", "attempt", "soothe", "rejoice", "tender", "moldy", "prose", "hospitable", "hot",
+    "wave", "broken", "impartial", "frame", "apparatus", "fold", "awesome", "dull", "camera", "snobbish",
+    "hobbies", "decay", "toys", "goofy", "pear", "dare", "suspend", "forgetful", "uncle", "zebra",
+    "wind", "driving", "soap", "island", "page", "education", "guitar", "cart", "knowledge", "ragged",
+    "lethal", "enjoy", "attach", "taste", "books", "second-hand", "bless", "uneven", "clean", "press",
+    "crowded", "low", "downtown", "mailbox", "hallowed", "rod", "produce", "point", "nod", "bat",
+    "interrupt", "pleasant", "knock", "plastic", "type", "tranquil", "obtainable", "perfect", "swing", "drink",
+    "greasy", "smile", "dance", "lowly", "match", "clover", "destroy", "count", "stomach", "willing",
+    "vacation", "hole", "deserted", "post", "deafening", "warlike", "tan", "large", "field", "aquatic",
+    "influence", "adaptable", "homely", "jaded", "basket", "fact", "smash", "unpack", "coal", "plug",
+    "work", "vague", "pop", "fearless", "porter", "roasted", "lackadaisical", "frail", "well-groomed", "nine",
+    "bike", "battle", "insect", "play", "entertaining", "ordinary", "stupid", "cakes", "silk", "possess",
+    "clam", "calendar", "ahead", "tiresome", "marvelous", "design", "vulgar", "unbecoming", "motionless", "upbeat",
+    "spade", "birthday", "end", "delay", "knot", "slip", "stiff", "apparel", "profit", "stamp",
+    "psychotic", "bait", "jump", "lean", "try", "happen", "able", "sparkling", "sore", "abaft",
+    "barbarous", "crack", "thirsty", "pathetic", "sneeze", "slave", "representative", "hanging", "itchy", "fork",
+    "pan", "well-off", "fallacious", "use", "cooing", "onerous", "oatmeal", "closed", "science", "flashy",
+    "stay", "shrill", "unaccountable", "base", "sweet", "blind", "chivalrous", "decision", "level", "bleach",
+    "steadfast", "jumbled", "power", "bounce", "include", "suit", "cherry", "insurance", "baseball", "nest",
+    "print", "wave", "tired", "awake", "giants", "invention", "unequaled", "library", "expensive", "part",
+    "oven", "petite", "wren", "ossified", "wonderful", "pencil", "tame", "plant", "shut", "male",
+    "selective", "turn", "guess", "fortunate", "plant", "loose", "resolute", "torpid", "hug", "voracious",
+    "quack", "horses", "agreement", "black", "parched", "whispering", "curve", "internal", "crash", "harm",
+    "planes", "fax", "heady", "occur", "structure", "godly", "amusing", "money", "spiritual", "eight",
+    "kitty", "desire", "ice", "wrong", "innate", "peace", "blood", "naughty", "amused", "fire",
+    "incredible", "balance", "tray", "romantic", "wriggle", "animated", "sneeze", "chief", "unfasten", "bump",
+    "rob", "woman", "voice", "fertile", "lick", "slow", "water", "unadvised", "appreciate", "fish",
+    "dramatic", "fluffy", "honorable", "fragile", "grip", "sack", "literate", "sofa", "horrible", "alive",
+    "death", "scorch", "wait", "blade", "heat", "exist", "furtive", "safe", "tiger", "unwieldy"
+};
+
+#endif 

@@ -27,6 +27,8 @@ LIB_SOURCES=$(filter-out erlang.c,${SOURCES})
 LIB_OBJECTS=$(filter-out erlang.o,${OBJECTS})
 TEST_SOURCES=$(wildcard tests/*_tests.c)
 TEST_OBJECTS=$(patsubst %.c,%,${TEST_SOURCES})
+TOOL_SOURCES=$(wildcard tools/*.c)
+TOOL_OBJECTS=$(patsubst %.c,%,${TOOL_SOURCES})
 
 LEX?=flex
 YACC?=bison
@@ -39,7 +41,7 @@ CALLGRIND=valgrind --tool=callgrind
 # Default Target
 ################################################################################
 
-all: build/betree.a build/betree.so $(OBJECTS) test
+all: build/betree.a build/betree.so $(OBJECTS) tool test 
 
 ################################################################################
 # Binaries
@@ -81,6 +83,18 @@ src.betree.o: src/betree.c
 	$(CC) $(CFLAGS) -c -o $@ $^
 
 ################################################################################
+# Tools
+################################################################################
+
+tool: $(TOOL_OBJECTS)
+
+build/tools:
+	mkdir -p build/tools
+
+$(TOOL_OBJECTS): %: %.c build/tools
+	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/betree.a
+
+################################################################################
 # Tests
 ################################################################################
 
@@ -102,6 +116,7 @@ valgrind:
 	$(VALGRIND) build/tests/betree_tests
 	$(VALGRIND) build/tests/parser_tests
 	#$(VALGRIND) build/tests/performance_tests
+	#$(VALGRIND) build/tools/gen_expr
 
 callgrind:
 	$(CALLGRIND) build/tests/performance_tests

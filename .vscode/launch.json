@@ -9,6 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/tests/betree_tests",
+            // "program": "${workspaceFolder}/build/tools/gen_expr",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
