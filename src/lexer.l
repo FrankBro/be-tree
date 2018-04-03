@@ -28,7 +28,7 @@
 ")"                     return TOKEN(TRPAREN);
 "&&"                    return TOKEN(TAND);
 "||"                    return TOKEN(TOR);
-.                       printf("Unknown token!\n"); yyterminate();
+.                       printf("Unknown token! (%s)\n", yytext); yyterminate();
 
 %%
 
