@@ -16,7 +16,7 @@
 %%
 
 [ \t\n]                 ;
-[a-zA-Z_][a-zA-Z0-9_]*  SAVE_STRING; return TIDENTIFIER;
+[a-zA-Z_][a-zA-Z0-9_-]* SAVE_STRING; return TIDENTIFIER;
 [0-9]*                  SAVE_INTEGER; return TINTEGER;
 "="                     return TOKEN(TCEQ);
 "<>"                    return TOKEN(TCNE);
