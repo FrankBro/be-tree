@@ -4,6 +4,7 @@
 
 #include "ast.h"
 #include "betree.h"
+#include "debug.h"
 #include "minunit.h"
 
 const struct sub* make_simple_sub(struct config* config, unsigned int id, const char* attr, int value)
