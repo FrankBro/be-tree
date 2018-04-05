@@ -356,7 +356,7 @@ void write_dot_file_pnode_links(FILE* f, const struct config* config, const stru
         fprintf(f, "%.*s", level * 4, SEP_SPACE);
         fprintf(f, "\"%s\" -> \"%s_fake\"\n", pnode_name, pnode_name);
         fprintf(f, "%.*s", level * 4, SEP_SPACE);
-        fprintf(f, "\"%s_fake\" -> \"%s\"\n", pnode_name, cdir_name);
+        fprintf(f, "\"%s_fake\" -> \"%s\" [lhead=\"cluster%s\"]\n", pnode_name, cdir_name, cdir_name);
         free((char*)pnode_name);
         free((char*)cdir_name);
         write_dot_file_cdir_links(f, config, pnode->cdir, level);
