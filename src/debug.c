@@ -203,7 +203,7 @@ void write_dot_file_lnode_names(FILE* f, const struct config* config, const stru
 {
     const char* name = get_name_lnode(config, lnode);
     fprintf(f, "%.*s", level * 4, SEP_SPACE);
-    fprintf(f, "\"%s\" [label=\"l-node\", fillcolor=black, style=filled, fontcolor=white, shape=circle]\n", name);
+    fprintf(f, "\"%s\" [label=\"l-node\", fillcolor=black, style=filled, fontcolor=white, shape=circle, fixedsize=true, width=0.8]\n", name);
     if(lnode->sub_count > 0) {
         fprintf(f, "%.*s", level * 4, SEP_SPACE);
         fprintf(f, "\"%s_subs\" [label=<\\\{", name);
@@ -269,7 +269,7 @@ void write_dot_file_pnode_names(FILE* f, const struct config* config, const stru
     fprintf(f, "%.*s", level * 4, SEP_SPACE);
     fprintf(f, "\"%s\" [label=\"%s\", color=cyan2, fillcolor=cyan2, style=filled, shape=record]\n", name, attr);
     fprintf(f, "%.*s", level * 4, SEP_SPACE);
-    fprintf(f, "\"%s_fake\" [label=\"p-node\", color=cyan2, fillcolor=cyan2, style=filled, shape=circle]\n", name);
+    fprintf(f, "\"%s_fake\" [label=\"p-node\", color=cyan2, fillcolor=cyan2, style=filled, shape=circle, fixedsize=true, width=0.8]\n", name);
     free((char*)name);
     if(pnode->cdir != NULL) {
         write_dot_file_cdir_names(f, config, pnode->cdir, level);
@@ -309,7 +309,7 @@ void write_dot_file_cnode_names(FILE* f, const struct config* config, const stru
 {
     const char* name = get_name_cnode(config, cnode);
     fprintf(f, "%.*s", level * 4, SEP_SPACE);
-    fprintf(f, "\"%s\" [label=\"c-node\", color=darkolivegreen3, fillcolor=darkolivegreen3, style=filled, shape=circle]\n", name);
+    fprintf(f, "\"%s\" [label=\"c-node\", color=darkolivegreen3, fillcolor=darkolivegreen3, style=filled, shape=circle, fixedsize=true, width=0.8]\n", name);
     free((char*)name);
     if(cnode->lnode != NULL) {
         write_dot_file_lnode_names(f, config, cnode->lnode, level);
