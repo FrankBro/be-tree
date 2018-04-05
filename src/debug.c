@@ -206,14 +206,14 @@ void write_dot_file_lnode_names(FILE* f, const struct config* config, const stru
     fprintf(f, "\"%s\" [label=\"l-node\", fillcolor=black, style=filled, fontcolor=white, shape=circle]\n", name);
     if(lnode->sub_count > 0) {
         fprintf(f, "%.*s", level * 4, SEP_SPACE);
-        fprintf(f, "\"%s_subs\" [label=\"(", name);
+        fprintf(f, "\"%s_subs\" [label=<\\\{", name);
         for(unsigned int i = 0; i < lnode->sub_count; i++) {
             if(i != 0) {
                 fprintf(f, ", ");
             }
-            fprintf(f, "S%d", lnode->subs[i]->id);
+            fprintf(f, "S<sub>%d</sub>", lnode->subs[i]->id);
         }
-        fprintf(f, ")\", color=lightblue1, fillcolor=lightblue1, style=filled, shape=record]\n");
+        fprintf(f, "\\\}>, color=lightblue1, fillcolor=lightblue1, style=filled, shape=record]\n");
     }
     free((char*)name);
 }
