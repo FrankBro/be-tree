@@ -168,3 +168,56 @@ void assign_variable_id(struct config* config, struct ast_node* node)
         }
     }
 }
+
+const char* ast_to_string(const struct ast_node* node)
+{
+    char* expr;
+    switch(node->type) {
+        case(AST_TYPE_COMBI_EXPR): {
+            char* a = ast_to_string(node->combi_expr.lhs);
+            char* b = ast_to_string(node->combi_expr.rhs);
+            switch(node->combi_expr.op) {
+                case AST_COMBI_AND: {
+                    asprintf(&expr, "%s && %s", a, b);
+                    break;
+                }
+                case AST_COMBI_OR: {
+                    asprintf(&expr, "%s || %s", a, b);
+                    break;
+                }
+            }
+            free(a);
+            free(b);
+            return expr;
+
+        }
+        case(AST_TYPE_BINARY_EXPR): {
+            switch(node->binary_expr.op) {
+                case AST_BINOP_LT: {
+                    asprintf(&expr, "%s < %d", node->binary_expr.name, node->binary_expr.value);
+                    return expr;
+                }
+                case AST_BINOP_LE: {
+                    asprintf(&expr, "%s <= %d", node->binary_expr.name, node->binary_expr.value);
+                    return expr;
+                }
+                case AST_BINOP_EQ: {
+                    asprintf(&expr, "%s = %d", node->binary_expr.name, node->binary_expr.value);
+                    return expr;
+                }
+                case AST_BINOP_NE: {
+                    asprintf(&expr, "%s <> %d", node->binary_expr.name, node->binary_expr.value);
+                    return expr;
+                }
+                case AST_BINOP_GT: {
+                    asprintf(&expr, "%s > %d", node->binary_expr.name, node->binary_expr.value);
+                    return expr;
+                }
+                case AST_BINOP_GE: {
+                    asprintf(&expr, "%s >= %d", node->binary_expr.name, node->binary_expr.value);
+                    return expr;
+                }
+            }
+        }
+    }
+}

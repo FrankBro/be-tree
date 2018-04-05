@@ -56,11 +56,35 @@ int test_paren()
     return 0;
 }
 
+// int test_precedence()
+// {
+//     struct ast_node* node = NULL;
+//     parse("(a = 0 || b = 0 && c = 0 || d = 0", &node);
+// }
+
+int test_to_string()
+{
+    struct ast_node* node = NULL;
+
+    {
+        const char* expr = "a = 0 && b <> 0 && c > 0 || d >= 0 || e < 0 && f <= 0";
+        parse(expr, &node);
+        const char* to_string = ast_to_string(node);
+        mu_assert(strcasecmp(expr, to_string) == 0, "");
+        free_ast_node(node);
+        free((char*)to_string);
+    }
+
+    return 0;
+}
+
 int all_tests() 
 {
     mu_run_test(test_all_binop);
     mu_run_test(test_all_combi);
     mu_run_test(test_paren);
+    // mu_run_test(test_precedence);
+    mu_run_test(test_to_string);
 
     return 0;
 }
