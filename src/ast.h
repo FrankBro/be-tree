@@ -4,25 +4,24 @@
 #include "betree.h"
 
 enum ast_binop_e {
-    BINOP_LT,
-    BINOP_LE,
-    BINOP_EQ,
-    BINOP_NE,
-    BINOP_GT,
-    BINOP_GE,
+    AST_BINOP_LT,
+    AST_BINOP_LE,
+    AST_BINOP_EQ,
+    AST_BINOP_NE,
+    AST_BINOP_GT,
+    AST_BINOP_GE,
 };
-
-#define VAR_NAME_MAX 64
 
 struct ast_binary_expr {
     enum ast_binop_e op;
-    const char name[VAR_NAME_MAX];
+    unsigned int variable_id;
+    const char *name;
     int value;
 };
 
 enum ast_combi_e {
-    COMBI_OR,
-    COMBI_AND,
+    AST_COMBI_OR,
+    AST_COMBI_AND,
 };
 
 struct ast_node;
@@ -46,17 +45,21 @@ struct ast_node {
     };
 };
 
+struct ast_node* ast_binary_expr_create(const enum ast_binop_e op, const char* name, int value);
+struct ast_node* ast_combi_expr_create(const enum ast_combi_e op, const struct ast_node* lhs, const struct ast_node* rhs);
+void free_ast_node(struct ast_node* node);
+
+int match_node(const struct event* event, const struct ast_node *node);
+
 struct variable_bound {
     int min;
     int max;
 };
 
-const struct ast_node* ast_binary_expr_create(const enum ast_binop_e op, const char* name, int value);
-const struct ast_node* ast_combi_expr_create(const enum ast_combi_e op, const struct ast_node* lhs, const struct ast_node* rhs);
-
-int match_node(const struct event* event, const struct ast_node *node);
 void get_variable_bound(const struct attr_domain* domain, const struct ast_node* node, struct variable_bound* bound);
 
-void free_ast_node(struct ast_node* node);
+void assign_variable_id(struct config* config, struct ast_node* node);
+
+const char* ast_to_string(const struct ast_node* node);
 
 #endif

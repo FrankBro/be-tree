@@ -1,4 +1,10 @@
 *.o
-betree_tests
 err.txt
-betree_tests.dSYM/*
+build/*
+src/lexer.c
+src/lexer.h
+src/parser.c
+src/parser.h
+src/parser.output
+.DS_Store
+callgrind.out.*

@@ -2,7 +2,7 @@ echo ""
 echo "Unit Tests"
 
 # Loop over compiled tests and run them.
-for test_file in *_tests
+for test_file in build/tests/*_tests
 do
     # Only execute if result is a file.
     if test -f $test_file
