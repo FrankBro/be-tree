@@ -268,6 +268,8 @@ void write_dot_file_pnode_names(FILE* f, const struct config* config, const stru
     const char* attr = get_attr_for_id(config, pnode->variable_id);
     fprintf(f, "%.*s", level * 4, SEP_SPACE);
     fprintf(f, "\"%s\" [label=\"%s\", color=cyan2, fillcolor=cyan2, style=filled, shape=record]\n", name, attr);
+    fprintf(f, "%.*s", level * 4, SEP_SPACE);
+    fprintf(f, "\"%s_fake\" [label=\"p-node\", color=cyan2, fillcolor=cyan2, style=filled, shape=circle]\n", name);
     free((char*)name);
     if(pnode->cdir != NULL) {
         write_dot_file_cdir_names(f, config, pnode->cdir, level);
@@ -352,7 +354,9 @@ void write_dot_file_pnode_links(FILE* f, const struct config* config, const stru
         const char* pnode_name = get_name_pnode(config, pnode);
         const char* cdir_name = get_name_cdir(config, pnode->cdir);
         fprintf(f, "%.*s", level * 4, SEP_SPACE);
-        fprintf(f, "\"%s\" -> \"%s\"\n", pnode_name, cdir_name);
+        fprintf(f, "\"%s\" -> \"%s_fake\"\n", pnode_name, pnode_name);
+        fprintf(f, "%.*s", level * 4, SEP_SPACE);
+        fprintf(f, "\"%s_fake\" -> \"%s\"\n", pnode_name, cdir_name);
         free((char*)pnode_name);
         free((char*)cdir_name);
         write_dot_file_cdir_links(f, config, pnode->cdir, level);
