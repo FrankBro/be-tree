@@ -253,7 +253,7 @@ void write_dot_file_cdir_names(FILE* f, const struct config* config, const struc
     fprintf(f, "subgraph \"cluster%s\" {\n", name);
     level++;
     fprintf(f, "%.*s", level * 4, SEP_SPACE);
-    fprintf(f, "color=orange; fillcolor=orange; style=filled; label=\"c-directory\"");
+    fprintf(f, "color=orange; fillcolor=orange; style=filled; label=\"c-directory\"; fontsize=20; fontname=\"Verdana\"");
     write_dot_file_cdir_inner_names(f, config, cdir, level);
     level--;
     fprintf(f, "%.*s", level * 4, SEP_SPACE);
@@ -292,7 +292,7 @@ void write_dot_file_pdir_names(FILE* f, const struct config* config, const struc
     fprintf(f, "subgraph \"cluster%s\" {\n", name);
     level++;
     fprintf(f, "%.*s", level * 4, SEP_SPACE);
-    fprintf(f, "color=lightpink; fillcolor=lightpink; style=filled; label=\"p-directory\"");
+    fprintf(f, "color=lightpink; fillcolor=lightpink; style=filled; label=\"p-directory\"; fontsize=20; fontname=\"Verdana\"");
     write_dot_file_pdir_inner_names(f, config, pdir, level);
     level--;
     fprintf(f, "%.*s", level * 4, SEP_SPACE);
