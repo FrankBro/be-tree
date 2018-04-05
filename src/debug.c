@@ -406,7 +406,7 @@ void write_dot_file(const struct config* config, const struct cnode* root)
     }
     fprintf(f, "digraph {\n");
     fprintf(f, "    compound=true");
-    fprintf(f, "    node [fontsize=20; fontname=\"Verdana\"];\n");
+    fprintf(f, "    node [fontsize=20, fontname=\"Verdana\"];\n");
     write_dot_file_cnode_names(f, config, root, 1);
     write_dot_file_cnode_links(f, config, root, 1);
     write_dot_file_cnode_ranks(f, config, root, 1);
