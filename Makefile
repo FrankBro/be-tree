@@ -43,6 +43,9 @@ CALLGRIND=valgrind --tool=callgrind
 
 all: build/betree.a build/betree.so $(OBJECTS) tool test 
 
+dot:
+	dot -Tpng betree.dot -o betree.png
+
 ################################################################################
 # Binaries
 ################################################################################
