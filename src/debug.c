@@ -235,17 +235,6 @@ void write_dot_file_cdir_cnode_names(FILE* f, const struct config* config, const
     }
 }
 
-    // subgraph cluster0 {
-    //     shape=triangle;
-    //     style=filled;
-    //     color=lightgrey;
-    //     node [style=filled];
-    //     a b c d e f g
-    //     label = "c-directory";
-    //     color=orange;
-    //     fillcolor=orange;
-    // }
-
 void write_dot_file_cdir_names(FILE* f, const struct config* config, const struct cdir* cdir, unsigned int level)
 {
     const char* name = get_name_cdir(config, cdir);
@@ -293,8 +282,6 @@ void write_dot_file_pdir_names(FILE* f, const struct config* config, const struc
     level++;
     fprintf(f, "%.*s", level * 4, SEP_SPACE);
     fprintf(f, "color=lightpink; fillcolor=lightpink; style=filled; label=\"p-directory\"");
-    fprintf(f, "%.*s", level * 4, SEP_SPACE);
-    fprintf(f, "\"%s\" [label=\"\", shape=point]\n", name);
     write_dot_file_pdir_inner_names(f, config, pdir, level);
     level--;
     fprintf(f, "%.*s", level * 4, SEP_SPACE);
@@ -363,16 +350,10 @@ void write_dot_file_pnode_links(FILE* f, const struct config* config, const stru
 
 void write_dot_file_pdir_links(FILE* f, const struct config* config, const struct pdir* pdir, unsigned int level)
 {
-    const char* pdir_name = get_name_pdir(config, pdir);
     for(unsigned int i = 0; i < pdir->pnode_count; i++) {
         const struct pnode* pnode = pdir->pnodes[i];
-        const char* pnode_name = get_name_pnode(config, pnode);
-        fprintf(f, "%.*s", level * 4, SEP_SPACE);
-        fprintf(f, "\"%s\" -> \"%s\"\n", pdir_name, pnode_name);
-        free((char*)pnode_name);
         write_dot_file_pnode_links(f, config, pnode, level);
     }
-    free((char*)pdir_name);
 }
 
 void write_dot_file_cnode_links(FILE* f, const struct config* config, const struct cnode* cnode, unsigned int level)
@@ -384,11 +365,13 @@ void write_dot_file_cnode_links(FILE* f, const struct config* config, const stru
         fprintf(f, "\"%s\" -> \"%s\"\n", cnode_name, lnode_name);
         free((char*)lnode_name);
     }
-    if(cnode->pdir != NULL) {
+    if(cnode->pdir != NULL && cnode->pdir->pnode_count > 0) {
         const char* pdir_name = get_name_pdir(config, cnode->pdir);
+        const char* pnode_name = get_name_pnode(config, cnode->pdir->pnodes[0]);
         fprintf(f, "%.*s", level * 4, SEP_SPACE);
-        fprintf(f, "\"%s\" -> \"%s\"\n", cnode_name, pdir_name);
+        fprintf(f, "\"%s\" -> \"%s\" [lhead=\"cluster%s\"]\n", cnode_name, pnode_name, pdir_name);
         free((char*)pdir_name);
+        free((char*)pnode_name);
         write_dot_file_pdir_links(f, config, cnode->pdir, level);
     }
     free((char*)cnode_name);
@@ -407,6 +390,7 @@ void write_dot_file(const struct config* config, const struct cnode* root)
         exit(1);
     }
     fprintf(f, "digraph {\n");
+    fprintf(f, "    compound=true");
     fprintf(f, "    node [fontsize=20; fontname=\"Verdana\"];\n");
     write_dot_file_cnode_names(f, config, root, 1);
     write_dot_file_cnode_links(f, config, root, 1);
