@@ -396,9 +396,75 @@ void write_dot_file_cnode_links(FILE* f, const struct config* config, const stru
     free((char*)cnode_name);
 }
 
+void write_dot_file_cdir_inner_ranks(FILE* f, const struct config* config, const struct cdir* cdir, unsigned int level, bool first)
+{
+    if(cdir->cnode != NULL) {
+        const char* cnode_name = get_name_cnode(config, cdir->cnode);
+        if(!first) {
+            fprintf(f, ", ");
+        }
+        fprintf(f, "\"%s\"", cnode_name);
+        free((char*)cnode_name);
+    }
+    if(cdir->lChild != NULL) {
+        write_dot_file_cdir_inner_ranks(f, config, cdir->lChild, level, false);
+    }
+    if(cdir->rChild != NULL) {
+        write_dot_file_cdir_inner_ranks(f, config, cdir->rChild, level, false);
+    }
+}
+
+void write_dot_file_cnode_ranks(FILE* f, const struct config* config, const struct cnode* cnode, unsigned int level);
+
+void write_dot_file_cdir_ranks(FILE* f, const struct config* config, const struct cdir* cdir, unsigned int level, bool first)
+{
+    if(first) {
+        fprintf(f, "%.*s", level * 4, SEP_SPACE);
+        fprintf(f, "{ rank=same; ");
+        write_dot_file_cdir_inner_ranks(f, config, cdir, level, true);
+        fprintf(f, " }\n");
+    }
+    if(cdir->cnode != NULL) {
+        write_dot_file_cnode_ranks(f, config, cdir->cnode, level);
+    }
+    if(cdir->lChild != NULL) {
+        write_dot_file_cdir_ranks(f, config, cdir->lChild, level, false);
+    }
+    if(cdir->rChild != NULL) {
+        write_dot_file_cdir_ranks(f, config, cdir->rChild, level, false);
+    }
+}
+
+void write_dot_file_pnode_ranks(FILE* f, const struct config* config, const struct pnode* pnode, unsigned int level)
+{
+    if(pnode->cdir != NULL) {
+        write_dot_file_cdir_ranks(f, config, pnode->cdir, level, true);
+    }
+}
+
+void write_dot_file_pdir_ranks(FILE* f, const struct config* config, const struct pdir* pdir, unsigned int level)
+{
+    fprintf(f, "%.*s", level * 4, SEP_SPACE);
+    fprintf(f, "{ rank=same; ");
+    for(unsigned int i = 0; i < pdir->pnode_count; i++) {
+        const char* pnode_name = get_name_pnode(config, pdir->pnodes[i]);
+        if(i != 0) {
+            fprintf(f, ", ");
+        }
+        fprintf(f, "\"%s_fake\"", pnode_name);
+        free((char*)pnode_name);
+    }
+    fprintf(f, " }\n");
+    for(unsigned int i = 0; i < pdir->pnode_count; i++) {
+        write_dot_file_pnode_ranks(f, config, pdir->pnodes[i], level);
+    }
+}
+
 void write_dot_file_cnode_ranks(FILE* f, const struct config* config, const struct cnode* cnode, unsigned int level)
 {
-
+    if(cnode->pdir != NULL) {
+        write_dot_file_pdir_ranks(f, config, cnode->pdir, level);
+    }
 }
 
 void write_dot_file(const struct config* config, const struct cnode* root)
