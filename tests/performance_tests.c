@@ -68,12 +68,10 @@ int test_cdir_split()
     printf("    Insert took %" PRIu64 "\n", insert_us);
     printf("    Search took %" PRIu64 "\n", search_us);
 
- 
     for(unsigned int i = 0; i < COUNT; i++) { 
         free((char*)data[i]); 
     } 
-    free(config->attr_domains); 
-    free(config); 
+    free_config(config); 
     free_matched_subs(matched_subs);
     free_event((struct event*)event);
     free_cnode(cnode);
@@ -94,6 +92,7 @@ int test_pdir_split()
         char* name;
         asprintf(&name, "a%d", i);
         add_attr_domain(config, name, 0, 10);
+        free(name);
     } 
  
     struct timespec start, init_done, parse_done, insert_done, search_done; 
@@ -139,7 +138,6 @@ int test_pdir_split()
     printf("    Insert took %" PRIu64 "\n", insert_us);
     printf("    Search took %" PRIu64 "\n", search_us);
 
- 
     for(unsigned int i = 0; i < COUNT; i++) { 
         free((char*)data[i]); 
     } 
@@ -155,7 +153,6 @@ int test_pdir_split()
 int test_complex()
 {
     struct config* config = make_default_config();
-
 
     struct timespec start, init_done, parse_done, insert_done, search_done; 
  
@@ -224,6 +221,7 @@ int test_complex()
     printf("    Insert took %" PRIu64 "\n", insert_us);
     printf("    Search took %" PRIu64 "\n", search_us);
 
+    free(subs);
     free_matched_subs(matched_subs);
     free_event((struct event*)event);
     free_cnode(cnode);
