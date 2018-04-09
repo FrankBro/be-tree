@@ -8,3 +8,4 @@ src/parser.h
 src/parser.output
 .DS_Store
 callgrind.out.*
+output.be
