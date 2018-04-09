@@ -25,14 +25,14 @@ void check_sub(const struct event* event, const struct lnode* lnode, struct matc
                 matched_subs->subs = malloc(sizeof(int));
                 if(matched_subs->subs == NULL) {
                     fprintf(stderr, "check_sub malloc failed");
-                    exit(1);
+                    abort();
                 }
             }
             else {
                 int* subs = realloc(matched_subs->subs, sizeof(int) * (matched_subs->sub_count + 1));
                 if(sub == NULL) {
                     fprintf(stderr, "check_sub realloc failed");
-                    exit(1);
+                    abort();
                 }
                 matched_subs->subs = subs;
             }
@@ -102,7 +102,7 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
             }
             if(attr_domain == NULL) {
                 fprintf(stderr, "cannot find variable_id %d in attr_domains", variable_id);
-                exit(1);
+                abort();
             }
             else {
                 get_variable_bound(attr_domain, sub->expr, &bound);
@@ -178,14 +178,14 @@ void insert_sub(const struct sub* sub, struct lnode* lnode)
         lnode->subs = malloc(sizeof(struct sub*));
         if(lnode->subs == NULL) {
             fprintf(stderr, "insert_sub malloc failed");
-            exit(1);
+            abort();
         }
     }
     else {
         struct sub** subs = realloc(lnode->subs, sizeof(struct sub*) * (lnode->sub_count + 1));
         if(sub == NULL) {
             fprintf(stderr, "insert_sub realloc failed");
-            exit(1);
+            abort();
         }
         lnode->subs = subs;
     }
@@ -234,7 +234,7 @@ void insert_be_tree(const struct config* config, const struct sub* sub, struct c
 {
     if(config == NULL) {
         fprintf(stderr, "Config is NULL, required to insert in the be tree");
-        exit(1);
+        abort();
     }
     bool foundPartition = false;
     struct pnode* maxPnode = NULL;
@@ -329,7 +329,7 @@ bool remove_sub(const struct sub* sub, struct lnode* lnode)
                 struct sub** subs = realloc(lnode->subs, sizeof(struct sub*) * lnode->sub_count);
                 if(subs == NULL) {
                     fprintf(stderr, "remove_sub realloc failed");
-                    exit(1);
+                    abort();
                 }
                 lnode->subs = subs;
             }
@@ -344,20 +344,20 @@ void move(const struct sub* sub, struct lnode* origin, struct lnode* destination
     bool isFound = remove_sub(sub, origin);
     if(!isFound) {
         fprintf(stderr, "Could not find sub %d", sub->id);
-        exit(1);
+        abort();
     }
     if(destination->sub_count == 0) {
         destination->subs = malloc(sizeof(struct sub*));
         if(destination->subs == NULL) {
             fprintf(stderr, "move malloc failed");
-            exit(1);
+            abort();
         }
     }
     else {
         struct sub** subs = realloc(destination->subs, sizeof(struct sub*) * (destination->sub_count + 1));
         if(subs == NULL) {
             fprintf(stderr, "move realloc failed");
-            exit(1);
+            abort();
         }
         destination->subs = subs;
     }
@@ -370,7 +370,7 @@ struct cdir* create_cdir(const struct config* config, unsigned int variable_id, 
     struct cdir* cdir = malloc(sizeof(struct cdir));
     if(cdir == NULL) {
         fprintf(stderr, "create_cdir malloc failed");
-        exit(1);
+        abort();
     }
     cdir->variable_id = variable_id;
     cdir->startBound = startBound;
@@ -401,14 +401,14 @@ struct pnode* create_pdir(const struct config* config, unsigned int variable_id,
 {
     if(cnode == NULL) {
         fprintf(stderr, "cnode is NULL, cannot create a pdir and pnode");
-        exit(1);
+        abort();
     }
     struct pdir* pdir = cnode->pdir;
     if(cnode->pdir == NULL) {
         pdir = malloc(sizeof(struct pdir));
         if(pdir == NULL) {
             fprintf(stderr, "create_pdir pdir malloc failed");
-            exit(1);
+            abort();
         }
         pdir->parent = cnode;
         pdir->pnode_count = 0;
@@ -419,7 +419,7 @@ struct pnode* create_pdir(const struct config* config, unsigned int variable_id,
     struct pnode* pnode = malloc(sizeof(struct pnode));
     if(pnode == NULL) {
         fprintf(stderr, "create_pdir pnode malloc failed");
-        exit(1);
+        abort();
     }
     pnode->parent = pdir;
     pnode->variable_id = variable_id;
@@ -436,7 +436,7 @@ struct pnode* create_pdir(const struct config* config, unsigned int variable_id,
     }
     if(!isFound) {
         fprintf(stderr, "No domain definition for attr %d in config", variable_id);
-        exit(1);
+        abort();
     }
     pnode->cdir = create_cdir_with_pnode_parent(config, pnode, minBound, maxBound);
     pnode->score = 0;
@@ -445,14 +445,14 @@ struct pnode* create_pdir(const struct config* config, unsigned int variable_id,
         pdir->pnodes = malloc(sizeof(struct pnode*));
         if(pdir->pnodes == NULL) {
             fprintf(stderr, "create_pdir pnodes malloc failed");
-            exit(1);
+            abort();
         }
     }
     else {
         struct pnode** pnodes = realloc(pdir->pnodes, sizeof(struct pnode*) * (pdir->pnode_count + 1));
         if(pnodes == NULL) {
             fprintf(stderr, "create_pdir realloc failed");
-            exit(1);
+            abort();
         }
         pdir->pnodes = pnodes;
     }
@@ -596,7 +596,7 @@ struct lnode* make_lnode(const struct config* config, struct cnode* parent)
     struct lnode* lnode = malloc(sizeof(struct lnode));
     if(lnode == NULL) {
         fprintf(stderr, "make_lnode malloc failed");
-        exit(1);
+        abort();
     }
     lnode->parent = parent;
     lnode->sub_count = 0;
@@ -610,7 +610,7 @@ struct cnode* make_cnode(const struct config* config, struct cdir* parent)
     struct cnode* cnode = malloc(sizeof(struct cnode));
     if(cnode == NULL) {
         fprintf(stderr, "make_cnode malloc failed");
-        exit(1);
+        abort();
     }
     cnode->parent = parent;
     cnode->pdir = NULL;
@@ -645,7 +645,7 @@ void space_clustering(const struct config* config, struct cdir* cdir)
         }
         else {
             fprintf(stderr, "Should never happen");
-            exit(1);
+            abort();
         }
         for(unsigned int i = 0; i < lnode->sub_count; i++) {
             const struct sub* sub = lnode->subs[i];
@@ -804,7 +804,7 @@ void try_remove_pnode_from_parent(const struct pnode* pnode)
                 struct pnode** pnodes = realloc(pdir->pnodes, sizeof(struct pnode*) * pdir->pnode_count);
                 if(pnodes == NULL) {
                     fprintf(stderr, "try_remove_pnode_from_parent realloc failed");
-                    exit(1);
+                    abort();
                 }
                 pdir->pnodes = pnodes;
             }
@@ -925,7 +925,7 @@ struct matched_subs* make_matched_subs()
     struct matched_subs* matched_subs = malloc(sizeof(struct matched_subs));
     if(matched_subs == NULL) {
         fprintf(stderr, "make_matched_subs malloc failed");
-        exit(1);
+        abort();
     }
     matched_subs->sub_count = 0;
     matched_subs->subs = NULL;
@@ -976,7 +976,7 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
                     unsigned int* variable_ids = realloc(sub->variable_ids, sizeof(int) * (sub->variable_id_count + 1));
                     if(sub == NULL) {
                         fprintf(stderr, "fill_pred realloc failed");
-                        exit(1);
+                        abort();
                     }
                     sub->variable_ids = variable_ids;
                 }
@@ -1038,14 +1038,14 @@ unsigned int get_id_for_attr(struct config* config, const char* attr)
         config->attr_to_ids = malloc(sizeof(char*));
         if(config->attr_to_ids == NULL) {
             fprintf(stderr, "get_id_for_attr malloc failed");
-            exit(1);
+            abort();
         }
     }
     else {
         char** attr_to_ids = realloc(config->attr_to_ids, sizeof(char*) * (config->attr_to_id_count + 1));
         if(attr_to_ids == NULL) {
             fprintf(stderr, "get_id_for_attr realloc failed");
-            exit(1);
+            abort();
         }
         config->attr_to_ids = attr_to_ids;
     }
@@ -1110,14 +1110,14 @@ void add_attr_domain(struct config* config, const char* attr, int min_bound, int
         config->attr_domains = malloc(sizeof(struct attr_domain*));
         if(config->attr_domains == NULL) {
             fprintf(stderr, "add_attr_domain malloc failed");
-            exit(1);
+            abort();
         }
     }
     else {
         struct attr_domain** attr_domains = realloc(config->attr_domains, sizeof(struct attr_domain*) * (config->attr_domain_count + 1));
         if(attr_domains == NULL) {
             fprintf(stderr, "add_attr_domain realloc failed");
-            exit(1);
+            abort();
         }
         config->attr_domains = attr_domains;
     }

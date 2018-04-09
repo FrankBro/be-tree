@@ -472,7 +472,7 @@ void write_dot_file(const struct config* config, const struct cnode* root)
     FILE* f = fopen("betree.dot", "w");
     if(f == NULL) {
         fprintf(stderr, "Can't open a file to write the dot_file");
-        exit(1);
+        abort();
     }
     fprintf(f, "digraph {\n");
     fprintf(f, "    compound=true");
