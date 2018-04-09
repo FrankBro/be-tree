@@ -156,6 +156,7 @@ const char* get_name_pnode(const struct config* config, const struct pnode* pnod
     char* name;
     const char* path = get_path_pnode(config, pnode);
     asprintf(&name, "pnode_%s", path);
+    free((char*)path);
     return name;
 }
 
@@ -164,6 +165,7 @@ const char* get_name_cdir(const struct config* config, const struct cdir* cdir)
     char* name;
     const char* path = get_path_cdir(config, cdir, true);
     asprintf(&name, "cdir_%s", path);
+    free((char*)path);
     return name;
 }
 
@@ -284,6 +286,7 @@ void write_dot_file_pdir_inner_names(FILE* f, const struct config* config, const
         fprintf(f, "%.*s", level * 4, SEP_SPACE);
         const char* attr = get_attr_for_id(config, pnode->variable_id);
         fprintf(f, "\"%s\" [label=\"%s\", color=cyan2, fillcolor=cyan2, style=filled, shape=record]\n", name, attr);
+        free((char*)name);
     }
 }
 
