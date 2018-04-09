@@ -8,7 +8,11 @@
 
 struct ast_node* ast_node_create()
 {
-    struct ast_node* node = malloc(sizeof(struct ast_node));
+    struct ast_node* node = calloc(1, sizeof(*node));
+    if(node == NULL) {
+        fprintf(stderr, "%s calloc failed", __func__);
+        abort();
+    }
     return node;
 }
 

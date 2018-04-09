@@ -22,16 +22,16 @@ void check_sub(const struct event* event, const struct lnode* lnode, struct matc
         const struct sub* sub = lnode->subs[i];
         if(match_sub(event, sub) == true) {
             if(matched_subs->sub_count == 0) {
-                matched_subs->subs = malloc(sizeof(int));
+                matched_subs->subs = calloc(1, sizeof(*matched_subs->subs));
                 if(matched_subs->subs == NULL) {
-                    fprintf(stderr, "check_sub malloc failed");
+                    fprintf(stderr, "%s calloc failed", __func__);
                     abort();
                 }
             }
             else {
-                int* subs = realloc(matched_subs->subs, sizeof(int) * (matched_subs->sub_count + 1));
+                unsigned int* subs = realloc(matched_subs->subs, sizeof(*matched_subs->subs) * (matched_subs->sub_count + 1));
                 if(sub == NULL) {
-                    fprintf(stderr, "check_sub realloc failed");
+                    fprintf(stderr, "%s realloc failed", __func__);
                     abort();
                 }
                 matched_subs->subs = subs;
@@ -175,16 +175,16 @@ bool is_used_cnode(unsigned int variable_id, const struct cnode* cnode)
 void insert_sub(const struct sub* sub, struct lnode* lnode)
 {
     if(lnode->sub_count == 0) {
-        lnode->subs = malloc(sizeof(struct sub*));
+        lnode->subs = calloc(1, sizeof(*lnode->subs));
         if(lnode->subs == NULL) {
-            fprintf(stderr, "insert_sub malloc failed");
+            fprintf(stderr, "%s calloc failed", __func__);
             abort();
         }
     }
     else {
-        struct sub** subs = realloc(lnode->subs, sizeof(struct sub*) * (lnode->sub_count + 1));
+        struct sub** subs = realloc(lnode->subs, sizeof(*subs) * (lnode->sub_count + 1));
         if(sub == NULL) {
-            fprintf(stderr, "insert_sub realloc failed");
+            fprintf(stderr, "%s realloc failed", __func__);
             abort();
         }
         lnode->subs = subs;
@@ -326,9 +326,9 @@ bool remove_sub(const struct sub* sub, struct lnode* lnode)
                 lnode->subs = NULL;
             }
             else {
-                struct sub** subs = realloc(lnode->subs, sizeof(struct sub*) * lnode->sub_count);
+                struct sub** subs = realloc(lnode->subs, sizeof(*lnode->subs) * lnode->sub_count);
                 if(subs == NULL) {
-                    fprintf(stderr, "remove_sub realloc failed");
+                    fprintf(stderr, "%s realloc failed", __func__);
                     abort();
                 }
                 lnode->subs = subs;
@@ -347,16 +347,16 @@ void move(const struct sub* sub, struct lnode* origin, struct lnode* destination
         abort();
     }
     if(destination->sub_count == 0) {
-        destination->subs = malloc(sizeof(struct sub*));
+        destination->subs = calloc(1, sizeof(*destination->subs));
         if(destination->subs == NULL) {
-            fprintf(stderr, "move malloc failed");
+            fprintf(stderr, "%s calloc failed", __func__);
             abort();
         }
     }
     else {
-        struct sub** subs = realloc(destination->subs, sizeof(struct sub*) * (destination->sub_count + 1));
+        struct sub** subs = realloc(destination->subs, sizeof(*destination->subs) * (destination->sub_count + 1));
         if(subs == NULL) {
-            fprintf(stderr, "move realloc failed");
+            fprintf(stderr, "%s realloc failed", __func__);
             abort();
         }
         destination->subs = subs;
@@ -367,9 +367,9 @@ void move(const struct sub* sub, struct lnode* origin, struct lnode* destination
 
 struct cdir* create_cdir(const struct config* config, unsigned int variable_id, int startBound, int endBound)
 {
-    struct cdir* cdir = malloc(sizeof(struct cdir));
+    struct cdir* cdir = calloc(1, sizeof(*cdir));
     if(cdir == NULL) {
-        fprintf(stderr, "create_cdir malloc failed");
+        fprintf(stderr, "%s calloc failed", __func__);
         abort();
     }
     cdir->variable_id = variable_id;
@@ -405,9 +405,9 @@ struct pnode* create_pdir(const struct config* config, unsigned int variable_id,
     }
     struct pdir* pdir = cnode->pdir;
     if(cnode->pdir == NULL) {
-        pdir = malloc(sizeof(struct pdir));
+        pdir = calloc(1, sizeof(*pdir));
         if(pdir == NULL) {
-            fprintf(stderr, "create_pdir pdir malloc failed");
+            fprintf(stderr, "%s pdir calloc failed", __func__);
             abort();
         }
         pdir->parent = cnode;
@@ -416,13 +416,15 @@ struct pnode* create_pdir(const struct config* config, unsigned int variable_id,
         cnode->pdir = pdir;
     }
 
-    struct pnode* pnode = malloc(sizeof(struct pnode));
+    struct pnode* pnode = calloc(1, sizeof(*pnode));
     if(pnode == NULL) {
-        fprintf(stderr, "create_pdir pnode malloc failed");
+        fprintf(stderr, "%s pnode calloc failed", __func__);
         abort();
     }
+    pnode->cdir = NULL;
     pnode->parent = pdir;
     pnode->variable_id = variable_id;
+    pnode->score = 0.f;
     int minBound = 0, maxBound = 0;
     bool isFound = false;
     for(unsigned int i = 0; i < config->attr_domain_count; i++) {
@@ -439,19 +441,18 @@ struct pnode* create_pdir(const struct config* config, unsigned int variable_id,
         abort();
     }
     pnode->cdir = create_cdir_with_pnode_parent(config, pnode, minBound, maxBound);
-    pnode->score = 0;
 
     if(pdir->pnode_count == 0) {
-        pdir->pnodes = malloc(sizeof(struct pnode*));
+        pdir->pnodes = calloc(1, sizeof(*pdir->pnodes));
         if(pdir->pnodes == NULL) {
-            fprintf(stderr, "create_pdir pnodes malloc failed");
+            fprintf(stderr, "%s pnodes calloc failed", __func__);
             abort();
         }
     }
     else {
-        struct pnode** pnodes = realloc(pdir->pnodes, sizeof(struct pnode*) * (pdir->pnode_count + 1));
+        struct pnode** pnodes = realloc(pdir->pnodes, sizeof(*pnodes) * (pdir->pnode_count + 1));
         if(pnodes == NULL) {
-            fprintf(stderr, "create_pdir realloc failed");
+            fprintf(stderr, "%s realloc failed", __func__);
             abort();
         }
         pdir->pnodes = pnodes;
@@ -593,9 +594,9 @@ bool is_atomic(const struct cdir* cdir)
 
 struct lnode* make_lnode(const struct config* config, struct cnode* parent)
 {
-    struct lnode* lnode = malloc(sizeof(struct lnode));
+    struct lnode* lnode = calloc(1, sizeof(*lnode));
     if(lnode == NULL) {
-        fprintf(stderr, "make_lnode malloc failed");
+        fprintf(stderr, "%s calloc failed", __func__);
         abort();
     }
     lnode->parent = parent;
@@ -607,9 +608,9 @@ struct lnode* make_lnode(const struct config* config, struct cnode* parent)
 
 struct cnode* make_cnode(const struct config* config, struct cdir* parent)
 {
-    struct cnode* cnode = malloc(sizeof(struct cnode));
+    struct cnode* cnode = calloc(1, sizeof(*cnode));
     if(cnode == NULL) {
-        fprintf(stderr, "make_cnode malloc failed");
+        fprintf(stderr, "%s calloc failed", __func__);
         abort();
     }
     cnode->parent = parent;
@@ -801,9 +802,9 @@ void try_remove_pnode_from_parent(const struct pnode* pnode)
                 pdir->pnodes = NULL;
             }
             else {
-                struct pnode** pnodes = realloc(pdir->pnodes, sizeof(struct pnode*) * pdir->pnode_count);
+                struct pnode** pnodes = realloc(pdir->pnodes, sizeof(*pnodes) * pdir->pnode_count);
                 if(pnodes == NULL) {
-                    fprintf(stderr, "try_remove_pnode_from_parent realloc failed");
+                    fprintf(stderr, "%s realloc failed", __func__);
                     abort();
                 }
                 pdir->pnodes = pnodes;
@@ -922,9 +923,9 @@ bool search_delete_cdir(const struct config* config, struct sub* sub, struct cdi
 
 struct matched_subs* make_matched_subs()
 {
-    struct matched_subs* matched_subs = malloc(sizeof(struct matched_subs));
+    struct matched_subs* matched_subs = calloc(1, sizeof(*matched_subs));
     if(matched_subs == NULL) {
-        fprintf(stderr, "make_matched_subs malloc failed");
+        fprintf(stderr, "%s calloc failed", __func__);
         abort();
     }
     matched_subs->sub_count = 0;
@@ -940,7 +941,11 @@ void free_matched_subs(struct matched_subs* matched_subs)
 
 const struct pred* make_simple_pred(unsigned int variable_id, int value)
 {
-    struct pred* pred = malloc(sizeof(struct pred));
+    struct pred* pred = calloc(1, sizeof(*pred));
+    if(pred == NULL) {
+        fprintf(stderr, "%s calloc failed", __func__);
+        abort();
+    }
     pred->variable_id = variable_id;
     pred->value = value;
     return pred;
@@ -970,12 +975,16 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
             }
             if(!is_found) {
                 if(sub->variable_id_count == 0) {
-                    sub->variable_ids = malloc(sizeof(int));
+                    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
+                    if(sub->variable_ids == NULL) {
+                        fprintf(stderr, "%s calloc failed", __func__);
+                        abort();
+                    }
                 }
                 else {
-                    unsigned int* variable_ids = realloc(sub->variable_ids, sizeof(int) * (sub->variable_id_count + 1));
+                    unsigned int* variable_ids = realloc(sub->variable_ids, sizeof(*sub->variable_ids) * (sub->variable_id_count + 1));
                     if(sub == NULL) {
-                        fprintf(stderr, "fill_pred realloc failed");
+                        fprintf(stderr, "%s realloc failed", __func__);
                         abort();
                     }
                     sub->variable_ids = variable_ids;
@@ -989,7 +998,11 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
 
 struct sub* make_empty_sub(unsigned int id)
 {
-    struct sub* sub = malloc(sizeof(struct sub));
+    struct sub* sub = calloc(1, sizeof(*sub));
+    if(sub == NULL) {
+        fprintf(stderr, "%s calloc failed", __func__);
+        abort();
+    }
     sub->id = id;
     sub->variable_id_count = 0;
     sub->variable_ids = NULL;
@@ -1007,9 +1020,17 @@ const struct sub* make_sub(struct config* config, unsigned int id, struct ast_no
 
 const struct event* make_simple_event(struct config* config, const char* attr, int value)
 {
-    struct event* event = malloc(sizeof(struct event));
+    struct event* event = calloc(1, sizeof(*event));
+    if(event == NULL) {
+        fprintf(stderr, "%s event calloc failed", __func__);
+        abort();
+    }
     event->pred_count = 1;
-    event->preds = malloc(sizeof(struct pred*));
+    event->preds = calloc(1, sizeof(*event->preds));
+    if(event->preds == NULL) {
+        fprintf(stderr, "%s preds calloc failed", __func__);
+        abort();
+    }
     event->preds[0] = (struct pred*)make_simple_pred_str(config, attr, value);
     return event;
 }
@@ -1035,16 +1056,16 @@ unsigned int get_id_for_attr(struct config* config, const char* attr)
         }
     }
     if(config->attr_to_id_count == 0) {
-        config->attr_to_ids = malloc(sizeof(char*));
+        config->attr_to_ids = calloc(1, sizeof(*config->attr_to_ids));
         if(config->attr_to_ids == NULL) {
-            fprintf(stderr, "get_id_for_attr malloc failed");
+            fprintf(stderr, "%s calloc failed", __func__);
             abort();
         }
     }
     else {
-        char** attr_to_ids = realloc(config->attr_to_ids, sizeof(char*) * (config->attr_to_id_count + 1));
+        char** attr_to_ids = realloc(config->attr_to_ids, sizeof(*attr_to_ids) * (config->attr_to_id_count + 1));
         if(attr_to_ids == NULL) {
-            fprintf(stderr, "get_id_for_attr realloc failed");
+            fprintf(stderr, "%s realloc failed", __func__);
             abort();
         }
         config->attr_to_ids = attr_to_ids;
@@ -1056,7 +1077,11 @@ unsigned int get_id_for_attr(struct config* config, const char* attr)
 
 struct config* make_config(unsigned int lnode_max_cap, unsigned int partition_min_size)
 {
-    struct config* config = malloc(sizeof(struct config));
+    struct config* config = calloc(1, sizeof(*config));
+    if(config == NULL) {
+        fprintf(stderr, "%s calloc failed", __func__);
+        abort();
+    }
     config->attr_domain_count = 0;
     config->attr_domains = NULL;
     config->attr_to_id_count = 0;
@@ -1095,7 +1120,11 @@ void free_config(struct config* config)
 
 struct attr_domain* make_attr_domain(unsigned int variable_id, int min_bound, int max_bound)
 {
-    struct attr_domain* attr_domain = malloc(sizeof(struct attr_domain));
+    struct attr_domain* attr_domain = calloc(1, sizeof(*attr_domain));
+    if(attr_domain == NULL) {
+        fprintf(stderr, "%s calloc faild", __func__);
+        abort();
+    }
     attr_domain->variable_id = variable_id;
     attr_domain->min_bound = min_bound;
     attr_domain->max_bound = max_bound;
@@ -1107,16 +1136,16 @@ void add_attr_domain(struct config* config, const char* attr, int min_bound, int
     unsigned int variable_id = get_id_for_attr(config, attr);
     struct attr_domain* attr_domain =  make_attr_domain(variable_id, min_bound, max_bound);
     if(config->attr_domain_count == 0) {
-        config->attr_domains = malloc(sizeof(struct attr_domain*));
+        config->attr_domains = calloc(1, sizeof(*config->attr_domains));
         if(config->attr_domains == NULL) {
-            fprintf(stderr, "add_attr_domain malloc failed");
+            fprintf(stderr, "%s calloc failed", __func__);
             abort();
         }
     }
     else {
-        struct attr_domain** attr_domains = realloc(config->attr_domains, sizeof(struct attr_domain*) * (config->attr_domain_count + 1));
+        struct attr_domain** attr_domains = realloc(config->attr_domains, sizeof(*attr_domains) * (config->attr_domain_count + 1));
         if(attr_domains == NULL) {
-            fprintf(stderr, "add_attr_domain realloc failed");
+            fprintf(stderr, "%s realloc failed", __func__);
             abort();
         }
         config->attr_domains = attr_domains;

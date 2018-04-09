@@ -11,7 +11,11 @@ const struct sub* make_simple_sub(struct config* config, unsigned int id, const 
 {
     struct sub* sub = make_empty_sub(id);
     sub->variable_id_count = 1;
-    sub->variable_ids = malloc(sizeof(int));
+    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
+    if(sub->variable_ids == NULL) {
+        fprintf(stderr, "%s calloc failed", __func__);
+        abort();
+    }
     sub->variable_ids[0] = get_id_for_attr(config, attr);
     struct ast_node* expr = ast_binary_expr_create(AST_BINOP_EQ, attr, value);
     assign_variable_id(config, expr);
@@ -21,10 +25,18 @@ const struct sub* make_simple_sub(struct config* config, unsigned int id, const 
 
 const struct event* make_event_with_preds(const size_t size, const struct pred** preds)
 {
-    struct event* event = malloc(sizeof(struct event));
+    struct event* event = calloc(1, sizeof(*event));
+    if(event == NULL) {
+        fprintf(stderr, "%s event calloc failed", __func__);
+        abort();
+    }
     event->pred_count = size;
-    event->preds = malloc(sizeof(struct pred*) * size);
-    memcpy(event->preds, preds, sizeof(struct pred*) * size);
+    event->preds = calloc(size, sizeof(*event->preds));
+    if(event->preds == NULL) {
+        fprintf(stderr, "%s preds calloc failed", __func__);
+        abort();
+    }
+    memcpy(event->preds, preds, sizeof(*event->preds) * size);
     return event;
 }
 

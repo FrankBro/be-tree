@@ -180,15 +180,17 @@ int test_complex()
         adjust_attr_domains(config, node, 0, 100);
         const struct sub* sub = make_sub(config, sub_count + 1, node); 
         if(sub_count == 0) {
-            subs = malloc(sizeof(struct sub*));
+            subs = calloc(1, sizeof(*subs));
             if(subs == NULL) {
-                return 1;
+                fprintf(stderr, "%s calloc failed", __func__);
+                abort();
             }
         }
         else {
-            struct sub** next_subs = realloc(subs, sizeof(struct sub*) * (sub_count + 1));
+            struct sub** next_subs = realloc(subs, sizeof(*next_subs) * (sub_count + 1));
             if(next_subs == NULL) {
-                return 1;
+                fprintf(stderr, "%s realloc failed", __func__);
+                abort();
             }
             subs = next_subs;
         }
