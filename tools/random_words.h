@@ -1,6 +1,4 @@
-#ifndef RANDOM_WORDS_H__
-#define RANDOM_WORDS_H__
-
+#pragma once
 
 // 500 via https://www.randomlists.com/random-words
 
@@ -56,5 +54,3 @@ static const char* RANDOM_WORDS[500] = {
     "dramatic", "fluffy", "honorable", "fragile", "grip", "sack", "literate", "sofa", "horrible", "alive",
     "death", "scorch", "wait", "blade", "heat", "exist", "furtive", "safe", "tiger", "unwieldy"
 };
-
-#endif 

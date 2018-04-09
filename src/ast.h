@@ -1,5 +1,4 @@
-#ifndef AST_H__
-#define AST_H__
+#pragma once
 
 #include "betree.h"
 
@@ -61,5 +60,3 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
 void assign_variable_id(struct config* config, struct ast_node* node);
 
 const char* ast_to_string(const struct ast_node* node);
-
-#endif

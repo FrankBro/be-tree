@@ -1,5 +1,4 @@
-#ifndef BETREE_H__
-#define BETREE_H__
+#pragma once
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -135,5 +134,3 @@ const struct event* make_simple_event(struct config* config, const char* attr, i
 void insert_be_tree(const struct config* config, const struct sub* sub, struct cnode* cnode, struct cdir* cdir);
 void match_be_tree(const struct event* event, const struct cnode* cnode, struct matched_subs* matchedSub);
 bool delete_be_tree(const struct config* config, struct sub* sub, struct cnode* cnode);
-
-#endif
