@@ -1018,13 +1018,21 @@ const struct sub* make_sub(struct config* config, unsigned int id, struct ast_no
     return sub;
 }
 
-const struct event* make_simple_event(struct config* config, const char* attr, int value)
+const struct event* make_event()
 {
     struct event* event = calloc(1, sizeof(*event));
     if(event == NULL) {
         fprintf(stderr, "%s event calloc failed", __func__);
         abort();
     }
+    event->pred_count = 0;
+    event->preds = NULL;
+    return event;
+}
+
+const struct event* make_simple_event(struct config* config, const char* attr, int value)
+{
+    struct event* event = make_event();
     event->pred_count = 1;
     event->preds = calloc(1, sizeof(*event->preds));
     if(event->preds == NULL) {
@@ -1173,4 +1181,18 @@ void adjust_attr_domains(struct config* config, const struct ast_node* node, uns
             break;
         }
     }
+}
+
+void event_to_string(struct config* config, const struct event* event, char* buffer)
+{
+    size_t length = 0;
+    for(size_t i = 0; i < event->pred_count; i++) {
+        const struct pred* pred = event->preds[i];
+        if(i != 0) {
+            length += sprintf(buffer + length, ", ");
+        }
+        const char* attr = get_attr_for_id(config, pred->variable_id);
+        length += sprintf(buffer + length, "%s = %d", attr, pred->value);
+    }
+    buffer[length] = '\0';
 }

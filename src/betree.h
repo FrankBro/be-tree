@@ -129,7 +129,9 @@ const struct pred* make_simple_pred_str(struct config* config, const char* attr,
 void fill_pred(struct sub* sub, const struct ast_node* expr);
 struct sub* make_empty_sub(unsigned int id);
 const struct sub* make_sub(struct config* config, unsigned int id, struct ast_node* expr);
+const struct event* make_event();
 const struct event* make_simple_event(struct config* config, const char* attr, int value);
+void event_to_string(struct config* config, const struct event* event, char* buffer);
 
 void insert_be_tree(const struct config* config, const struct sub* sub, struct cnode* cnode, struct cdir* cdir);
 void match_be_tree(const struct event* event, const struct cnode* cnode, struct matched_subs* matchedSub);
