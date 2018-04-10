@@ -15,6 +15,7 @@
 
 #include "ast.h"
 #include "random_words.h"
+#include "utils.h"
  
 double mean(double* values, int n)
 {
@@ -25,7 +26,6 @@ double mean(double* values, int n)
         s += values[i];
     return s / n;
 }
- 
  
 double stddev(double* values, int n)
 {
@@ -99,11 +99,6 @@ void printHistogram(double* values, double low, double high, double delta, doubl
  
         free(bins);
     }
-}
-
-unsigned int random_in_range(unsigned int min, unsigned int max)
-{
-    return rand() % (max + 1 - min) + min;
 }
 
 void debug(double* seq, unsigned int min, unsigned int max, unsigned int count)
