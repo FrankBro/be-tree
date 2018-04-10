@@ -178,8 +178,8 @@ const char* ast_to_string(const struct ast_node* node)
     char* expr;
     switch(node->type) {
         case(AST_TYPE_COMBI_EXPR): {
-            char* a = ast_to_string(node->combi_expr.lhs);
-            char* b = ast_to_string(node->combi_expr.rhs);
+            const char* a = ast_to_string(node->combi_expr.lhs);
+            const char* b = ast_to_string(node->combi_expr.rhs);
             switch(node->combi_expr.op) {
                 case AST_COMBI_AND: {
                     asprintf(&expr, "%s && %s", a, b);
