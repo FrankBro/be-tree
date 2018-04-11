@@ -1,5 +1,24 @@
 {
     "files.associations": {
-        "vector.h": "c"
+        "vector.h": "c",
+        "algorithm": "c",
+        "chrono": "c",
+        "limits": "c",
+        "random": "c",
+        "ios": "c",
+        "typeinfo": "c"
+    },
+    "files.exclude":{
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/CVS": true,
+        "**/.DS_Store": true,
+        "src/*.o": true,
+        "src/parser.c": true,
+        "src/parser.h": true,
+        "src/parser.output": true,
+        "src/lexer.c": true,
+        "src/lexer.h": true
     }
 }
