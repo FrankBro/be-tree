@@ -7,7 +7,7 @@
 #include "debug.h"
 #include "minunit.h"
 
-const struct sub* make_simple_sub(struct config* config, unsigned int id, const char* attr, int value)
+const struct sub* make_simple_sub(struct config* config, betree_sub_t id, const char* attr, uint64_t value)
 {
     struct sub* sub = make_empty_sub(id);
     sub->variable_id_count = 1;
@@ -92,8 +92,8 @@ int test_match_single_cnode()
 {
     struct config* config = make_default_config();
     struct cnode* cnode = make_cnode(config, NULL);
-    unsigned int subId = 0;
-    struct sub* sub = (struct sub*)make_simple_sub(config, subId, "a", 0);
+    betree_sub_t sub_id = 0;
+    struct sub* sub = (struct sub*)make_simple_sub(config, sub_id, "a", 0);
     insert_be_tree(config, sub, cnode, NULL);
 
     mu_assert(cnode->lnode->sub_count == 1, "tree has one sub");
@@ -106,7 +106,7 @@ int test_match_single_cnode()
     {
         initialize_matched_subs(matched_subs);
         match_be_tree(goodEvent, cnode, matched_subs);
-        mu_assert(matched_subs->sub_count == 1 && matched_subs->subs[0] == subId, "goodEvent");
+        mu_assert(matched_subs->sub_count == 1 && matched_subs->subs[0] == sub_id, "goodEvent");
     }
     {
         initialize_matched_subs(matched_subs);
@@ -134,7 +134,7 @@ bool test_attr_in_pnode(struct config* config, const char* attr, const struct pn
     if(config == NULL || pnode == NULL || attr == NULL) {
         return false;
     }
-    unsigned int variable_id = get_id_for_attr(config, attr);
+    betree_var_t variable_id = get_id_for_attr(config, attr);
     return pnode->variable_id == variable_id;
 }
 
@@ -143,7 +143,7 @@ bool test_attr_in_cdir(struct config* config, const char* attr, const struct cdi
     if(config == NULL || cdir == NULL || attr == NULL) {
         return false;
     }
-    unsigned int variable_id = get_id_for_attr(config, attr);
+    betree_var_t variable_id = get_id_for_attr(config, attr);
     return cdir->variable_id == variable_id;
 }
 
@@ -171,7 +171,7 @@ int test_insert_first_split()
     mu_assert(test_attr_in_cdir(config, "a", pnode->cdir), "cdir is for attr 'a'");
     // mu_assert(pnode->cdir->startBound == 0, "startBound");
     // mu_assert(pnode->cdir->endBound == 2, "endBound");
-    mu_assert(pnode->cdir->lChild == NULL || pnode->cdir->rChild == NULL, "cdir has no lChild and rChild");
+    mu_assert(pnode->cdir->lchild == NULL || pnode->cdir->rchild == NULL, "cdir has no lChild and rChild");
     mu_assert(pnode->cdir->cnode != NULL, "cdir has a cnode");
     mu_assert(pnode->cdir->cnode->pdir == NULL, "pdir in the lower cnode does not have a pdir");
     mu_assert(pnode->cdir->cnode->lnode != NULL, "inner cnode has a lnode");
@@ -187,27 +187,27 @@ struct ast_node* _AND (const struct ast_node* lhs, const struct ast_node* rhs)
     return ast_combi_expr_create(AST_COMBI_AND, lhs, rhs);
 }
 
-struct ast_node* _GT (const char* attr, int value)
+struct ast_node* _GT (const char* attr, uint64_t value)
 {
     return ast_binary_expr_create(AST_BINOP_GT, attr, value);
 }
 
-struct ast_node* _EQ (const char* attr, int value)
+struct ast_node* _EQ (const char* attr, uint64_t value)
 {
     return ast_binary_expr_create(AST_BINOP_EQ, attr, value);
 }
 
-struct ast_node* _LT (const char* attr, int value)
+struct ast_node* _LT (const char* attr, uint64_t value)
 {
     return ast_binary_expr_create(AST_BINOP_LT, attr, value);
 }
 
-bool test_lnode_has_subs(const struct lnode* lnode, unsigned int sub_count, const struct sub** subs)
+bool test_lnode_has_subs(const struct lnode* lnode, size_t sub_count, const struct sub** subs)
 {
     if(lnode->sub_count != sub_count) {
         return false;
     }
-    for(unsigned int i = 0; i < sub_count; i++) {
+    for(size_t i = 0; i < sub_count; i++) {
         if(lnode->subs[i] != subs[i]) {
             return false;
         }
@@ -215,12 +215,12 @@ bool test_lnode_has_subs(const struct lnode* lnode, unsigned int sub_count, cons
     return true;
 } 
 
-bool test_cnode_has_pnodes(struct config* config, const struct cnode* cnode, unsigned int pnode_count, const char** attrs)
+bool test_cnode_has_pnodes(struct config* config, const struct cnode* cnode, size_t pnode_count, const char** attrs)
 {
     if(cnode->pdir == NULL || cnode->pdir->pnode_count != pnode_count) {
         return false;
     }
-    for(unsigned int i = 0; i < pnode_count; i++) {
+    for(size_t i = 0; i < pnode_count; i++) {
         if(!test_attr_in_pnode(config, attrs[i], cnode->pdir->pnodes[i])) {
             return false;
         }
@@ -305,8 +305,8 @@ int test_cdir_split_twice()
     insert_be_tree(config, sub6, cnode, NULL);
     insert_be_tree(config, sub7, cnode, NULL);
 
-    mu_assert(test_lnode_has_subs(cnode->pdir->pnodes[0]->cdir->lChild->cnode->lnode, 3, subs123), "subs123 in second lnode");
-    mu_assert(test_lnode_has_subs(cnode->pdir->pnodes[0]->cdir->rChild->cnode->lnode, 3, subs567), "subs567 in third lnode");
+    mu_assert(test_lnode_has_subs(cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode, 3, subs123), "subs123 in second lnode");
+    mu_assert(test_lnode_has_subs(cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode, 3, subs567), "subs567 in third lnode");
     mu_assert(test_lnode_has_subs(cnode->lnode, 1, subs4), "subs4 in first lnode");
 
     free_cnode((struct cnode*)cnode);
@@ -409,7 +409,7 @@ int test_match_deeper()
         pdir_b->pnode_count == 1 &&
         test_attr_in_pnode(config, "b", pnode_b) &&
         test_attr_in_cdir(config, "b", cdir_b) &&
-        cdir_b->lChild == NULL && cdir_b->rChild == NULL &&
+        cdir_b->lchild == NULL && cdir_b->rchild == NULL &&
         lnode_b->sub_count == 3
     , "tree matches what we expected");
 
@@ -440,7 +440,7 @@ int test_large_cdir_split()
 
     struct cnode* cnode = make_cnode(config, NULL);
     
-    for(unsigned int i = 0; i < 100; i++) {
+    for(size_t i = 0; i < 100; i++) {
         const struct sub* sub = make_simple_sub(config, i, "a", i);
         insert_be_tree(config, sub, cnode, NULL);
     }

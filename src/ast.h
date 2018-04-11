@@ -13,9 +13,9 @@ enum ast_binop_e {
 
 struct ast_binary_expr {
     enum ast_binop_e op;
-    unsigned int variable_id;
+    betree_var_t variable_id;
     const char *name;
-    int value;
+    uint64_t value;
 };
 
 enum ast_combi_e {
@@ -44,15 +44,15 @@ struct ast_node {
     };
 };
 
-struct ast_node* ast_binary_expr_create(const enum ast_binop_e op, const char* name, int value);
+struct ast_node* ast_binary_expr_create(const enum ast_binop_e op, const char* name, uint64_t value);
 struct ast_node* ast_combi_expr_create(const enum ast_combi_e op, const struct ast_node* lhs, const struct ast_node* rhs);
 void free_ast_node(struct ast_node* node);
 
 int match_node(const struct event* event, const struct ast_node *node);
 
 struct variable_bound {
-    int min;
-    int max;
+    uint64_t min;
+    uint64_t max;
 };
 
 void get_variable_bound(const struct attr_domain* domain, const struct ast_node* node, struct variable_bound* bound);

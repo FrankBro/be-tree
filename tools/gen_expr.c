@@ -66,50 +66,6 @@ double* generate(int n)
     return values;
 }
  
- 
-void printHistogram(double* values, double low, double high, double delta, double count)
-{
-    const int width = 50;    
-    int max = 0;
- 
-    int i,j,k;
-    int nbins = (int)((high - low) / delta);
-    int* bins = (int*)calloc(nbins,sizeof(int));
-    if ( bins != NULL )
-    {
-        for ( i = 0; i < count; i++ )
-        {
-            int j = (int)( (values[i] - low) / delta );
-            if ( 0 <= j  &&  j < nbins )
-                bins[j]++;
-        }
- 
-        for ( j = 0; j < nbins; j++ )
-            if ( max < bins[j] )
-                max = bins[j];
- 
-        for ( j = 0; j < nbins; j++ )
-        {
-            printf("(%5.2f, %5.2f) |", low + j * delta, low + (j + 1) * delta );
-            k = (int)( (double)width * (double)bins[j] / (double)max );
-            while(k-- > 0) putchar('*');
-            printf("  %-.1f%%", bins[j] * 100.0 / (double)count);
-            putchar('\n');
-        }
- 
-        free(bins);
-    }
-}
-
-void debug(double* seq, unsigned int min, unsigned int max, unsigned int count)
-{
-    printf("mean = %g, stddev = %g\n\n", mean(seq,count), stddev(seq,count));
-    const double low   = (double)min;
-    const double high  = (double)max;
-    const double delta = 1.;
-    printHistogram(seq, low, high, delta, count);
-}
-
 const struct ast_node* generate_expr(unsigned int complexity, unsigned int attr_count, unsigned int value_min, unsigned int value_max)
 {
     struct ast_node* last_combi_node;
@@ -167,7 +123,7 @@ void write_expr(FILE* f, const struct ast_node* node)
                     break;
                 }
             }
-            fprintf(f, "%d ", node->binary_expr.value);
+            fprintf(f, "%llu ", node->binary_expr.value);
             break;
         }
         case(AST_TYPE_COMBI_EXPR): {

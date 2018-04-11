@@ -20,9 +20,9 @@ int test_cdir_split()
 
     const char* data[COUNT]; 
 
-    for(unsigned int i = 0; i < COUNT; i++) { 
+    for(size_t i = 0; i < COUNT; i++) { 
         char* expr; 
-        asprintf(&expr, "a = %d", i); 
+        asprintf(&expr, "a = %zu", i); 
         data[i] = expr; 
     } 
  
@@ -37,7 +37,7 @@ int test_cdir_split()
 
     const struct sub* subs[COUNT];
  
-    for(unsigned int i = 0; i < COUNT; i++) { 
+    for(size_t i = 0; i < COUNT; i++) { 
         if(parse(data[i], &node) != 0) { 
             return 1; 
         } 
@@ -47,7 +47,7 @@ int test_cdir_split()
  
     clock_gettime(CLOCK_MONOTONIC_RAW, &parse_done);
  
-    for(unsigned int i = 0; i < COUNT; i++) { 
+    for(size_t i = 0; i < COUNT; i++) { 
         insert_be_tree(config, subs[i], cnode, NULL); 
     }
 
@@ -69,7 +69,7 @@ int test_cdir_split()
     printf("    Insert took %" PRIu64 "\n", insert_us);
     printf("    Search took %" PRIu64 "\n", search_us);
 
-    for(unsigned int i = 0; i < COUNT; i++) { 
+    for(size_t i = 0; i < COUNT; i++) { 
         free((char*)data[i]); 
     } 
     free_config(config); 
@@ -85,13 +85,13 @@ int test_pdir_split()
 
     const char* data[COUNT]; 
 
-    for(unsigned int i = 0; i < COUNT; i++) { 
+    for(size_t i = 0; i < COUNT; i++) { 
         char* expr; 
-        asprintf(&expr, "a%d = 0", i); 
+        asprintf(&expr, "a%zu = 0", i); 
         data[i] = expr; 
 
         char* name;
-        asprintf(&name, "a%d", i);
+        asprintf(&name, "a%zu", i);
         add_attr_domain(config, name, 0, 10);
         free(name);
     } 
@@ -107,7 +107,7 @@ int test_pdir_split()
 
     const struct sub* subs[COUNT];
  
-    for(unsigned int i = 0; i < COUNT; i++) { 
+    for(size_t i = 0; i < COUNT; i++) { 
         if(parse(data[i], &node) != 0) { 
             return 1; 
         } 
@@ -117,7 +117,7 @@ int test_pdir_split()
  
     clock_gettime(CLOCK_MONOTONIC_RAW, &parse_done);
  
-    for(unsigned int i = 0; i < COUNT; i++) { 
+    for(size_t i = 0; i < COUNT; i++) { 
         insert_be_tree(config, subs[i], cnode, NULL); 
     }
 
@@ -139,7 +139,7 @@ int test_pdir_split()
     printf("    Insert took %" PRIu64 "\n", insert_us);
     printf("    Search took %" PRIu64 "\n", search_us);
 
-    for(unsigned int i = 0; i < COUNT; i++) { 
+    for(size_t i = 0; i < COUNT; i++) { 
         free((char*)data[i]); 
     } 
     free_config(config);
@@ -151,7 +151,7 @@ int test_pdir_split()
 
 #include <limits.h>
 
-const struct sub* get_sub(const struct sub** subs, size_t sub_count, unsigned int sub_id)
+const struct sub* get_sub(const struct sub** subs, size_t sub_count, betree_sub_t sub_id)
 {
     for(size_t i = 0; i < sub_count; i++) {
         const struct sub* sub = subs[i];
@@ -162,7 +162,7 @@ const struct sub* get_sub(const struct sub** subs, size_t sub_count, unsigned in
     return NULL;
 }
 
-void fill_event_random(const struct sub** subs, size_t sub_count, struct event* event, unsigned int count) 
+void fill_event_random(const struct sub** subs, size_t sub_count, struct event* event, size_t count) 
 {
     event->pred_count = count;
     event->preds = calloc(count, sizeof(*event->preds));
@@ -170,12 +170,12 @@ void fill_event_random(const struct sub** subs, size_t sub_count, struct event* 
         fprintf(stderr, "%s calloc failed", __func__);
         abort();
     }
-    for(unsigned int i = 0; i < count; i++) {
-        unsigned int sub_index = random_in_range(0, sub_count - 1);
+    for(size_t i = 0; i < count; i++) {
+        size_t sub_index = random_in_range(0, sub_count - 1);
         const struct sub* sub = subs[sub_index];
-        unsigned int variable_id_index = random_in_range(0, sub->variable_id_count - 1);
-        unsigned int variable_id = sub->variable_ids[variable_id_index];
-        unsigned int value = random_in_range(0, 100);
+        size_t variable_id_index = random_in_range(0, sub->variable_id_count - 1);
+        betree_var_t variable_id = sub->variable_ids[variable_id_index];
+        uint64_t value = random_in_range(0, 100);
         const struct pred* pred = make_simple_pred(variable_id, value);
         event->preds[i] = pred;
     }
@@ -198,7 +198,7 @@ int test_complex()
 
     char line[LINE_MAX];
     struct ast_node* node; 
-    unsigned int sub_count = 0;
+    size_t sub_count = 0;
     struct sub** subs;
     while(fgets(line, sizeof(line), f)) {
         if(parse(line, &node) != 0) {
@@ -230,7 +230,7 @@ int test_complex()
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &parse_done);
  
-    for(unsigned int i = 0; i < sub_count; i++) { 
+    for(size_t i = 0; i < sub_count; i++) { 
         insert_be_tree(config, subs[i], cnode, NULL); 
     }
 
@@ -263,10 +263,10 @@ int test_complex()
     if(matched_subs->sub_count > 0) {
         printf("    Matched subs:\n");
         for(size_t i = 0; i < matched_subs->sub_count; i++) {
-            unsigned int sub_id = matched_subs->subs[i];
+            betree_sub_t sub_id = matched_subs->subs[i];
             const struct sub* sub = get_sub(subs, sub_count, sub_id);
             const char* expr = ast_to_string(sub->expr);
-            printf("    %d: %s", sub->id, expr);
+            printf("    %llu: %s", sub->id, expr);
             free((char*)expr);
         }
     }

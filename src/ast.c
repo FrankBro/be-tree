@@ -5,6 +5,7 @@
 
 #include "ast.h"
 #include "betree.h"
+#include "utils.h"
 
 struct ast_node* ast_node_create()
 {
@@ -16,7 +17,7 @@ struct ast_node* ast_node_create()
     return node;
 }
 
-struct ast_node* ast_binary_expr_create(const enum ast_binop_e op, const char* name, int value)
+struct ast_node* ast_binary_expr_create(const enum ast_binop_e op, const char* name, uint64_t value)
 {
     struct ast_node* node = ast_node_create();
     node->type = AST_TYPE_BINARY_EXPR;
@@ -54,9 +55,9 @@ void free_ast_node(struct ast_node* node)
     free(node);
 }
 
-bool get_variable(unsigned int variable_id, const struct event* event, int* value)
+bool get_variable(betree_var_t variable_id, const struct event* event, uint64_t* value)
 {
-    for(unsigned int i=0; i < event->pred_count; i++) {
+    for(size_t i=0; i < event->pred_count; i++) {
         const struct pred* pred = event->preds[i];
         if(variable_id == pred->variable_id) {
             *value = pred->value;
@@ -70,7 +71,7 @@ int match_node(const struct event* event, const struct ast_node *node)
 {
     switch(node->type) {
         case AST_TYPE_BINARY_EXPR: {
-            int variable;
+            uint64_t variable;
             bool found = get_variable(node->binary_expr.variable_id, event, &variable);
             if(!found) {
                 return 0;
@@ -124,17 +125,17 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
             switch(node->binary_expr.op) {
                 case AST_BINOP_LT: {
                     bound->min = domain->min_bound;
-                    bound->max = fmax(bound->max, node->binary_expr.value - 1);
+                    bound->max = max(bound->max, node->binary_expr.value - 1);
                     return;
                 }
                 case AST_BINOP_LE: {
                     bound->min = domain->min_bound;
-                    bound->max = fmax(bound->max, node->binary_expr.value);
+                    bound->max = max(bound->max, node->binary_expr.value);
                     return;
                 }
                 case AST_BINOP_EQ: {
-                    bound->min = fmin(bound->min, node->binary_expr.value);
-                    bound->max = fmax(bound->max, node->binary_expr.value);
+                    bound->min = min(bound->min, node->binary_expr.value);
+                    bound->max = max(bound->max, node->binary_expr.value);
                     return;
                 }
                 case AST_BINOP_NE: {
@@ -143,12 +144,12 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                     return;
                 }
                 case AST_BINOP_GT: {
-                    bound->min = fmin(bound->min, node->binary_expr.value + 1);
+                    bound->min = min(bound->min, node->binary_expr.value + 1);
                     bound->max = domain->max_bound;
                     return;
                 }
                 case AST_BINOP_GE: {
-                    bound->min = fmin(bound->min, node->binary_expr.value);
+                    bound->min = min(bound->min, node->binary_expr.value);
                     bound->max = domain->max_bound;
                     return;
                 }
@@ -161,7 +162,7 @@ void assign_variable_id(struct config* config, struct ast_node* node)
 {
     switch(node->type) {
         case(AST_TYPE_BINARY_EXPR): {
-            unsigned int variable_id = get_id_for_attr(config, node->binary_expr.name);
+            betree_var_t variable_id = get_id_for_attr(config, node->binary_expr.name);
             node->binary_expr.variable_id = variable_id;
             return;
         }
@@ -190,35 +191,35 @@ const char* ast_to_string(const struct ast_node* node)
                     break;
                 }
             }
-            free(a);
-            free(b);
+            free((char*)a);
+            free((char*)b);
             return expr;
 
         }
         case(AST_TYPE_BINARY_EXPR): {
             switch(node->binary_expr.op) {
                 case AST_BINOP_LT: {
-                    asprintf(&expr, "%s < %d", node->binary_expr.name, node->binary_expr.value);
+                    asprintf(&expr, "%s < %llu", node->binary_expr.name, node->binary_expr.value);
                     return expr;
                 }
                 case AST_BINOP_LE: {
-                    asprintf(&expr, "%s <= %d", node->binary_expr.name, node->binary_expr.value);
+                    asprintf(&expr, "%s <= %llu", node->binary_expr.name, node->binary_expr.value);
                     return expr;
                 }
                 case AST_BINOP_EQ: {
-                    asprintf(&expr, "%s = %d", node->binary_expr.name, node->binary_expr.value);
+                    asprintf(&expr, "%s = %llu", node->binary_expr.name, node->binary_expr.value);
                     return expr;
                 }
                 case AST_BINOP_NE: {
-                    asprintf(&expr, "%s <> %d", node->binary_expr.name, node->binary_expr.value);
+                    asprintf(&expr, "%s <> %llu", node->binary_expr.name, node->binary_expr.value);
                     return expr;
                 }
                 case AST_BINOP_GT: {
-                    asprintf(&expr, "%s > %d", node->binary_expr.name, node->binary_expr.value);
+                    asprintf(&expr, "%s > %llu", node->binary_expr.name, node->binary_expr.value);
                     return expr;
                 }
                 case AST_BINOP_GE: {
-                    asprintf(&expr, "%s >= %d", node->binary_expr.name, node->binary_expr.value);
+                    asprintf(&expr, "%s >= %llu", node->binary_expr.name, node->binary_expr.value);
                     return expr;
                 }
             }
