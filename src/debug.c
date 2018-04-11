@@ -658,8 +658,8 @@ void gather_subs_cdir(const struct cdir* cdir, struct gathered_subs* gatherer)
     if(cdir->cnode != NULL) {
         gather_subs_cnode(cdir->cnode, gatherer);
     }
-    if(cdir->lChild != NULL) {
-        gather_subs_cdir(cdir->lChild, gatherer);
+    if(cdir->lchild != NULL) {
+        gather_subs_cdir(cdir->lchild, gatherer);
     }
     if(cdir->rchild != NULL) {
         gather_subs_cdir(cdir->rchild, gatherer);
