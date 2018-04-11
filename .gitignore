@@ -9,3 +9,6 @@ src/parser.output
 .DS_Store
 callgrind.out.*
 output.be
+betree.dot
+betree.png
+betree.svg
