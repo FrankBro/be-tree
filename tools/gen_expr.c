@@ -66,19 +66,19 @@ double* generate(int n)
     return values;
 }
  
-const struct ast_node* generate_expr(unsigned int complexity, unsigned int attr_count, unsigned int value_min, unsigned int value_max)
+const struct ast_node* generate_expr(unsigned int complexity, unsigned int attr_min, unsigned int attr_max, unsigned int value_min, unsigned int value_max)
 {
     struct ast_node* last_combi_node;
     for(unsigned int j = 0; j < complexity; j++) {
         enum ast_binop_e binop = random_in_range(0, 5);
-        unsigned int attr_index = random_in_range(0, attr_count-1);
+        unsigned int attr_index = random_in_range(attr_min, attr_max);
         const char* attr = RANDOM_WORDS[attr_index];
         unsigned int value = random_in_range(value_min, value_max);
         struct ast_node* bin_node = ast_binary_expr_create(binop, attr, value);
 
         enum ast_combi_e combiop = random_in_range(0, 1);
         if(j == 0) {
-            unsigned int another_attr_index = random_in_range(0, attr_count-1);
+            unsigned int another_attr_index = random_in_range(attr_min, attr_max);
             const char* another_attr = RANDOM_WORDS[another_attr_index];
             enum ast_binop_e another_binop = random_in_range(0, 5);
             unsigned int another_value = random_in_range(value_min, value_max);
@@ -146,8 +146,9 @@ void write_expr(FILE* f, const struct ast_node* node)
 
 int main(void)
 {
-    unsigned int expr_count = 100;
-    unsigned int attr_count = 500;
+    unsigned int expr_count = 1000;
+    unsigned int attr_min = 0;
+    unsigned int attr_max = 499;
     unsigned int value_min = 0;
     unsigned int value_max = 100;
     unsigned int complexity_min = 5;
@@ -162,7 +163,7 @@ int main(void)
     double* seq = generate(expr_count);
     for(unsigned int i = 0; i < expr_count; i++) {
         unsigned int complexity = seq[i] * complexity_stddev + complexity_mean;
-        const struct ast_node* node = generate_expr(complexity, attr_count, value_min, value_max);
+        const struct ast_node* node = generate_expr(complexity, attr_min, attr_max, value_min, value_max);
         write_expr(f, node);
         fprintf(f, "\n");
         free_ast_node((struct ast_node*)node);
