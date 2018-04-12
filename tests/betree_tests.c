@@ -511,6 +511,8 @@ int test_min_partition()
     return 0;
 }
 
+int parse(const char *text, struct ast_node **node);
+
 int test_allow_undefined()
 {
     enum { expr_count = 4 };
