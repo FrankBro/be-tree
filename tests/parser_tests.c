@@ -41,6 +41,12 @@ int test_all_combi()
     parse("a = 0 || b = 0", &node);
     mu_assert(node->type == AST_TYPE_COMBI_EXPR && node->combi_expr.op == AST_COMBI_OR, "OR");
     free_ast_node(node);
+    parse("a = 0 and b = 0", &node);
+    mu_assert(node->type == AST_TYPE_COMBI_EXPR && node->combi_expr.op == AST_COMBI_AND, "AND");
+    free_ast_node(node);
+    parse("a = 0 or b = 0", &node);
+    mu_assert(node->type == AST_TYPE_COMBI_EXPR && node->combi_expr.op == AST_COMBI_OR, "OR");
+    free_ast_node(node);
     return 0;
 }
 

@@ -24,11 +24,11 @@
     int token;
 }
 
-%token<string> TIDENTIFIER
-%token<integer> TINTEGER
 %token<token> TCEQ TCNE TCGT TCGE TCLT TCLE
 %token<token> TLPAREN TRPAREN
 %token<token> TAND TOR
+%token<string> TIDENTIFIER
+%token<integer> TINTEGER
 
 %type<node> expr bexpr cexpr
 %type<string> ident

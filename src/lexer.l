@@ -16,6 +16,8 @@
 %%
 
 [ \t\n]                 ;
+"and"                   return TOKEN(TAND);
+"or"                    return TOKEN(TOR);
 [a-zA-Z_][a-zA-Z0-9_-]* SAVE_STRING; return TIDENTIFIER;
 [0-9]*                  SAVE_INTEGER; return TINTEGER;
 "="                     return TOKEN(TCEQ);
