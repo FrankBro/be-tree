@@ -458,6 +458,56 @@ int test_large_cdir_split()
     return 0;
 }
 
+int test_min_partition()
+{
+    size_t lnode_max_cap = 3;
+    struct config* config = make_config(lnode_max_cap, 0);
+    add_attr_domain(config, "a", 0, 10);
+
+    struct cnode* cnode = make_cnode(config, NULL);
+
+    struct sub* sub = NULL;
+    sub = (struct sub*)make_simple_sub(config, 0, "a", 0);
+    insert_be_tree(config, sub, cnode, NULL);
+    sub = (struct sub*)make_simple_sub(config, 1, "a", 0);
+    insert_be_tree(config, sub, cnode, NULL);
+    sub = (struct sub*)make_simple_sub(config, 2, "b", 0);
+    insert_be_tree(config, sub, cnode, NULL);
+    sub = (struct sub*)make_simple_sub(config, 3, "c", 0);
+    insert_be_tree(config, sub, cnode, NULL);
+
+    mu_assert(cnode->lnode->sub_count == 2, "First lnode has two subs");
+    mu_assert( cnode->pdir->pnode_count == 1 &&
+        cnode->pdir->pnodes[0]->variable_id == 0 &&
+        cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 2, "Has a pnode for 'a' and two subs"
+    );
+
+    free_cnode(cnode);
+    free_config(config);
+
+    config = make_config(lnode_max_cap, 3);
+    add_attr_domain(config, "a", 0, 10);
+
+    cnode = make_cnode(config, NULL);
+
+    sub = (struct sub*)make_simple_sub(config, 0, "a", 0);
+    insert_be_tree(config, sub, cnode, NULL);
+    sub = (struct sub*)make_simple_sub(config, 1, "a", 0);
+    insert_be_tree(config, sub, cnode, NULL);
+    sub = (struct sub*)make_simple_sub(config, 2, "b", 0);
+    insert_be_tree(config, sub, cnode, NULL);
+    sub = (struct sub*)make_simple_sub(config, 3, "c", 0);
+    insert_be_tree(config, sub, cnode, NULL);
+
+    mu_assert(cnode->lnode->sub_count == 4, "First lnode has four subs");
+    mu_assert(cnode->lnode->max != lnode_max_cap, "First lnode max cap went up");
+
+    free_cnode(cnode);
+    free_config(config);
+
+    return 0;
+}
+
 int all_tests() 
 {
     mu_run_test(test_sub_has_attribute);
@@ -470,6 +520,7 @@ int all_tests()
     mu_run_test(test_remove_sub_in_tree_with_delete);
     mu_run_test(test_match_deeper);
     mu_run_test(test_large_cdir_split);
+    mu_run_test(test_min_partition);
 
     return 0;
 }

@@ -567,6 +567,18 @@ void update_cluster_capacity(const struct config* config, struct lnode* lnode)
     lnode->max = max;
 }
 
+size_t count_subs_with_variable(const struct sub** subs, size_t sub_count, betree_var_t variable_id)
+{
+    size_t count = 0;
+    for(size_t i = 0; i < sub_count; i++) {
+        const struct sub* sub = subs[i];
+        if(sub_has_attribute(sub, variable_id)) {
+            count++;
+        }
+    }
+    return count;
+}
+
 void space_partitioning(const struct config* config, struct cnode* cnode) 
 {
     struct lnode* lnode = cnode->lnode;
@@ -574,6 +586,10 @@ void space_partitioning(const struct config* config, struct cnode* cnode)
         betree_var_t variable_id;
         bool found = get_next_highest_score_unused_attr(lnode, &variable_id);
         if(found == false) {
+            break;
+        }
+        size_t target_subs_count = count_subs_with_variable(lnode->subs, lnode->sub_count, variable_id);
+        if(target_subs_count < config->partition_min_size) {
             break;
         }
         struct pnode* pnode = create_pdir(config, variable_id, cnode);
