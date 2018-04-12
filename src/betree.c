@@ -58,16 +58,34 @@ struct pnode* search_pdir(betree_var_t variable_id, const struct pdir* pdir)
     return NULL;
 }
 
-void search_cdir(const struct event* event, struct cdir* cdir, struct matched_subs* matched_subs);
+void search_cdir(const struct config* config, const struct event* event, struct cdir* cdir, struct matched_subs* matched_subs);
 
-void match_be_tree(const struct event* event, const struct cnode* cnode, struct matched_subs* matched_subs) 
+bool event_contains_variable(const struct event* event, betree_var_t variable_id)
+{
+    for(size_t i = 0; i < event->pred_count; i++) {
+        const struct pred* pred = event->preds[i];
+        if(variable_id == pred->variable_id) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void match_be_tree(const struct config* config, const struct event* event, const struct cnode* cnode, struct matched_subs* matched_subs) 
 {
     check_sub(event, cnode->lnode, matched_subs);
-    for(size_t i = 0; i < event->pred_count; i++) {
-        betree_var_t variable_id = event->preds[i]->variable_id;
-        const struct pnode* pnode = search_pdir(variable_id, cnode->pdir);
-        if(pnode != NULL) {
-            search_cdir(event, pnode->cdir, matched_subs);
+    if(cnode->pdir != NULL) {
+        for(size_t i = 0; i < cnode->pdir->pnode_count; i++) {
+            struct pnode* pnode = cnode->pdir->pnodes[i];
+            const struct attr_domain* attr_domain = get_attr_domain(config, pnode->variable_id);
+            if(attr_domain == NULL) {
+                const char* attr = get_attr_for_id(config, pnode->variable_id);
+                fprintf(stderr, "Could not find attr_domain for attr '%s'", attr);
+                abort();
+            }
+            if(attr_domain->allow_undefined || event_contains_variable(event, pnode->variable_id)) {
+                search_cdir(config, event, pnode->cdir, matched_subs);
+            }
         }
     }
 }
@@ -116,13 +134,13 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
     return false;
 }
 
-void search_cdir(const struct event* event, struct cdir* cdir, struct matched_subs* matched_subs) 
+void search_cdir(const struct config* config, const struct event* event, struct cdir* cdir, struct matched_subs* matched_subs) 
 {
-    match_be_tree(event, cdir->cnode, matched_subs);
+    match_be_tree(config, event, cdir->cnode, matched_subs);
     if(is_event_enclosed(event, cdir->lchild))
-        search_cdir(event, cdir->lchild, matched_subs);
+        search_cdir(config, event, cdir->lchild, matched_subs);
     else if(is_event_enclosed(event, cdir->rchild))
-        search_cdir(event, cdir->rchild, matched_subs);
+        search_cdir(config, event, cdir->rchild, matched_subs);
 }
 
 bool is_used_cnode(betree_var_t variable_id, const struct cnode* cnode);
@@ -1145,7 +1163,7 @@ void free_config(struct config* config)
     free(config);
 }
 
-struct attr_domain* make_attr_domain(betree_var_t variable_id, uint64_t min_bound, uint64_t max_bound)
+struct attr_domain* make_attr_domain(betree_var_t variable_id, uint64_t min_bound, uint64_t max_bound, bool allow_undefined)
 {
     struct attr_domain* attr_domain = calloc(1, sizeof(*attr_domain));
     if(attr_domain == NULL) {
@@ -1155,13 +1173,14 @@ struct attr_domain* make_attr_domain(betree_var_t variable_id, uint64_t min_boun
     attr_domain->variable_id = variable_id;
     attr_domain->min_bound = min_bound;
     attr_domain->max_bound = max_bound;
+    attr_domain->allow_undefined = allow_undefined;
     return attr_domain;
 }
 
-void add_attr_domain(struct config* config, const char* attr, uint64_t min_bound, uint64_t max_bound)
+void add_attr_domain(struct config* config, const char* attr, uint64_t min_bound, uint64_t max_bound, bool allow_undefined)
 {
     betree_var_t variable_id = get_id_for_attr(config, attr);
-    struct attr_domain* attr_domain =  make_attr_domain(variable_id, min_bound, max_bound);
+    struct attr_domain* attr_domain =  make_attr_domain(variable_id, min_bound, max_bound, allow_undefined);
     if(config->attr_domain_count == 0) {
         config->attr_domains = calloc(1, sizeof(*config->attr_domains));
         if(config->attr_domains == NULL) {
@@ -1181,25 +1200,37 @@ void add_attr_domain(struct config* config, const char* attr, uint64_t min_bound
     config->attr_domain_count++;
 }
 
-void adjust_attr_domains(struct config* config, const struct ast_node* node, uint64_t min, uint64_t max)
+void adjust_attr_domains(struct config* config, const struct ast_node* node, uint64_t min, uint64_t max, bool allow_undefined)
 {
     switch(node->type) {
         case(AST_TYPE_BINARY_EXPR): {
             betree_var_t variable_id = get_id_for_attr(config, node->binary_expr.name);
             for(size_t i = 0; i < config->attr_domain_count; i++) {
-                if(variable_id == config->attr_domains[i]->variable_id) {
+                const struct attr_domain* attr_domain = config->attr_domains[i];
+                if(variable_id == attr_domain->variable_id) {
                     return;
                 }
             }
-            add_attr_domain(config, node->binary_expr.name, min, max);
+            add_attr_domain(config, node->binary_expr.name, min, max, allow_undefined);
             break;
         }
         case(AST_TYPE_COMBI_EXPR): {
-            adjust_attr_domains(config, node->combi_expr.lhs, min, max);
-            adjust_attr_domains(config, node->combi_expr.rhs, min, max);
+            adjust_attr_domains(config, node->combi_expr.lhs, min, max, allow_undefined);
+            adjust_attr_domains(config, node->combi_expr.rhs, min, max, allow_undefined);
             break;
         }
     }
+}
+
+const struct attr_domain* get_attr_domain(const struct config* config, betree_var_t variable_id)
+{
+    for(size_t i = 0; i < config->attr_domain_count; i++) {
+        const struct attr_domain* attr_domain = config->attr_domains[i];
+        if(attr_domain->variable_id == variable_id) {
+            return attr_domain;
+        }
+    }
+    return NULL;
 }
 
 void event_to_string(struct config* config, const struct event* event, char* buffer)

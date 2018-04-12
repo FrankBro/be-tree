@@ -16,7 +16,7 @@ int parse(const char *text, struct ast_node **node);
 int test_cdir_split() 
 {
     struct config* config = make_default_config();
-    add_attr_domain(config, "a", 0, COUNT);
+    add_attr_domain(config, "a", 0, COUNT, false);
 
     const char* data[COUNT]; 
 
@@ -55,7 +55,7 @@ int test_cdir_split()
 
     const struct event* event = make_simple_event(config, "a", 0); 
     struct matched_subs* matched_subs = make_matched_subs(); 
-    match_be_tree(event, cnode, matched_subs); 
+    match_be_tree(config, event, cnode, matched_subs); 
  
     clock_gettime(CLOCK_MONOTONIC_RAW, &search_done);
 
@@ -92,7 +92,7 @@ int test_pdir_split()
 
         char* name;
         asprintf(&name, "a%zu", i);
-        add_attr_domain(config, name, 0, 10);
+        add_attr_domain(config, name, 0, 10, false);
         free(name);
     } 
  
@@ -125,7 +125,7 @@ int test_pdir_split()
 
     const struct event* event = make_simple_event(config, "a0", 0); 
     struct matched_subs* matched_subs = make_matched_subs(); 
-    match_be_tree(event, cnode, matched_subs); 
+    match_be_tree(config, event, cnode, matched_subs); 
  
     clock_gettime(CLOCK_MONOTONIC_RAW, &search_done);
 
@@ -205,7 +205,7 @@ int test_complex()
             printf("Failed to parse: %s\n", line);
             return 1;
         }
-        adjust_attr_domains(config, node, 0, 100);
+        adjust_attr_domains(config, node, 0, 100, false);
         const struct sub* sub = make_sub(config, sub_count + 1, node); 
         if(sub_count == 0) {
             subs = calloc(1, sizeof(*subs));
@@ -243,7 +243,7 @@ int test_complex()
     clock_gettime(CLOCK_MONOTONIC_RAW, &gen_event_done);
 
     struct matched_subs* matched_subs = make_matched_subs(); 
-    match_be_tree(event, cnode, matched_subs); 
+    match_be_tree(config, event, cnode, matched_subs); 
  
     clock_gettime(CLOCK_MONOTONIC_RAW, &search_done);
 

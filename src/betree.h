@@ -84,6 +84,7 @@ struct attr_domain {
     betree_var_t variable_id;
     uint64_t min_bound;
     uint64_t max_bound;
+    bool allow_undefined;
 };
 
 struct config {
@@ -99,8 +100,9 @@ struct config {
 struct config* make_config(uint64_t lnode_max_cap, uint64_t partition_min_size);
 struct config* make_default_config();
 void free_config(struct config* config);
-void add_attr_domain(struct config* config, const char* attr, uint64_t min_bound, uint64_t max_bound);
-void adjust_attr_domains(struct config* config, const struct ast_node* node, uint64_t min, uint64_t max);
+void add_attr_domain(struct config* config, const char* attr, uint64_t min_bound, uint64_t max_bound, bool allow_undefined);
+void adjust_attr_domains(struct config* config, const struct ast_node* node, uint64_t min, uint64_t max, bool allow_undefined);
+const struct attr_domain* get_attr_domain(const struct config* config, betree_var_t variable_id);
 
 const char* get_attr_for_id(const struct config* config, betree_var_t variable_id);
 betree_var_t get_id_for_attr(struct config* config, const char* attr);
@@ -137,5 +139,5 @@ const struct event* make_simple_event(struct config* config, const char* attr, u
 void event_to_string(struct config* config, const struct event* event, char* buffer);
 
 void insert_be_tree(const struct config* config, const struct sub* sub, struct cnode* cnode, struct cdir* cdir);
-void match_be_tree(const struct event* event, const struct cnode* cnode, struct matched_subs* matchedSub);
+void match_be_tree(const struct config* config, const struct event* event, const struct cnode* cnode, struct matched_subs* matched_subs);
 bool delete_be_tree(const struct config* config, struct sub* sub, struct cnode* cnode);
