@@ -241,13 +241,19 @@ size_t count_attr_in_cdir(betree_var_t variable_id, const struct cdir* cdir)
     return count;
 }
 
-void update_partition_score(struct pnode* pnode)
+void update_partition_score(const struct config* config, struct pnode* pnode)
 {
     // TODO: Wutdo
     float alpha = 0.5;
     size_t gain = count_attr_in_cdir(pnode->variable_id, pnode->cdir);
     // TODO: Idk man
-    uint64_t loss = 0;
+    const struct attr_domain* attr_domain = get_attr_domain(config, pnode->variable_id);
+    if(attr_domain == NULL) {
+        const char* attr = get_attr_for_id(config, pnode->variable_id);
+        fprintf(stderr, "Could not find attr_domain for attr '%s'", attr);
+        abort();
+    }
+    uint64_t loss = attr_domain->allow_undefined ? 1.0 : 0.0;
     pnode->score = (1.0 - alpha) * (float) gain - alpha * (float)loss;
 }
 
@@ -287,7 +293,7 @@ void insert_be_tree(const struct config* config, const struct sub* sub, struct c
     else {
         struct cdir* maxCdir = insert_cdir(config, sub, max_pnode->cdir);
         insert_be_tree(config, sub, maxCdir->cnode, maxCdir);
-        update_partition_score(max_pnode);
+        update_partition_score(config, max_pnode);
     }
 }
 
