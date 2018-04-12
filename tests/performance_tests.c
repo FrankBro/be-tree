@@ -176,7 +176,7 @@ void fill_event_random(const struct sub** subs, size_t sub_count, struct event* 
         size_t variable_id_index = random_in_range(0, sub->variable_id_count - 1);
         betree_var_t variable_id = sub->variable_ids[variable_id_index];
         uint64_t value = random_in_range(0, 100);
-        const struct pred* pred = make_simple_pred(variable_id, value);
+        struct pred* pred = (struct pred*)make_simple_pred(variable_id, value);
         event->preds[i] = pred;
     }
 }
