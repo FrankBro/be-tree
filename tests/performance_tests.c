@@ -271,7 +271,7 @@ int test_complex()
         }
     }
     else {
-        printf("    No matched subs");
+        printf("    No matched subs\n");
     }
 
     free(subs);
