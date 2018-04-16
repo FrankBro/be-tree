@@ -5,6 +5,7 @@
 #include "ast.h"
 #include "parser.h"
 #include "minunit.h"
+#include "utils.h"
 
 int parse(const char *text, struct ast_node **node);
 
@@ -84,6 +85,24 @@ int test_to_string()
     return 0;
 }
 
+int test_float()
+{
+    struct ast_node* node = NULL;
+    parse("a = 0.", &node);
+    mu_assert(node->type == AST_TYPE_BINARY_EXPR && 
+        node->binary_expr.value.value_type == VALUE_F && 
+        feq(node->binary_expr.value.fvalue, 0.)
+    , "no decimal");
+    free_ast_node(node);
+    parse("a = 0.0", &node);
+    mu_assert(node->type == AST_TYPE_BINARY_EXPR && 
+        node->binary_expr.value.value_type == VALUE_F && 
+        feq(node->binary_expr.value.fvalue, 0.)
+    , "with decimal");
+    free_ast_node(node);
+    return 0;
+}
+
 int all_tests() 
 {
     mu_run_test(test_all_binop);
@@ -91,6 +110,7 @@ int all_tests()
     mu_run_test(test_paren);
     // mu_run_test(test_precedence);
     mu_run_test(test_to_string);
+    mu_run_test(test_float);
 
     return 0;
 }

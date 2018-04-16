@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <float.h>
 
 #include "ast.h"
 #include "betree.h"
@@ -15,7 +16,12 @@ bool match_sub(const struct event* event, const struct sub *sub)
     if(sub == NULL) {
         return false;
     }
-    return match_node(event, sub->expr) == 1;
+    struct value value = match_node(event, sub->expr);
+    if(value.value_type != VALUE_B) {
+        fprintf(stderr, "%s result is not boolean", __func__);
+        abort();
+    }
+    return value.bvalue;
 } 
 
 void check_sub(const struct event* event, const struct lnode* lnode, struct matched_subs* matched_subs) 
@@ -112,7 +118,6 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
     for(size_t i = 0; i < sub->variable_id_count; i++) {
         betree_var_t variable_id = sub->variable_ids[i];
         if(variable_id == cdir->variable_id) {
-            struct variable_bound bound = { .min = UINT64_MAX, .max = UINT64_C(0) };
             const struct attr_domain* attr_domain = NULL;
             for(size_t j = 0; j < config->attr_domain_count; j++) {
                 const struct attr_domain* current_attr_domain = config->attr_domains[j];
@@ -125,9 +130,36 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
                 fprintf(stderr, "cannot find variable_id %llu in attr_domains", variable_id);
                 abort();
             }
-            else {
-                get_variable_bound(attr_domain, sub->expr, &bound);
-                return cdir->start <= bound.min && cdir->end >= bound.max;
+            struct value_bound bound;
+            bound.value_type = attr_domain->bound.value_type;
+            switch(attr_domain->bound.value_type) {
+                case(VALUE_I): {
+                    bound.imin = INT64_MAX;
+                    bound.imax = INT64_MIN;
+                    break;
+                }
+                case(VALUE_F): {
+                    bound.fmin = DBL_MAX;
+                    bound.fmax = -DBL_MAX;
+                    break;
+                }
+                case(VALUE_B): {
+                    bound.bmin = true;
+                    bound.bmax = false;
+                    break;
+                }
+            }
+            get_variable_bound(attr_domain, sub->expr, &bound);
+            switch(attr_domain->bound.value_type) {
+                case(VALUE_I): {
+                    return cdir->bound.imin <= bound.imin && cdir->bound.imax >= bound.imax;
+                }
+                case(VALUE_F): {
+                    return cdir->bound.fmin <= bound.fmin && cdir->bound.fmax >= bound.fmax;
+                }
+                case(VALUE_B): {
+                    return cdir->bound.bmin <= bound.bmin && cdir->bound.bmax >= bound.bmax;
+                }
             }
         }
     }
@@ -392,7 +424,7 @@ void move(const struct sub* sub, struct lnode* origin, struct lnode* destination
     destination->sub_count++;
 }
 
-struct cdir* create_cdir(const struct config* config, betree_var_t variable_id, uint64_t start, uint64_t end)
+struct cdir* create_cdir(const struct config* config, betree_var_t variable_id, struct value_bound bound)
 {
     struct cdir* cdir = calloc(1, sizeof(*cdir));
     if(cdir == NULL) {
@@ -400,25 +432,24 @@ struct cdir* create_cdir(const struct config* config, betree_var_t variable_id, 
         abort();
     }
     cdir->variable_id = variable_id;
-    cdir->start = start;
-    cdir->end = end;
+    cdir->bound = bound;
     cdir->cnode = make_cnode(config, cdir);
     cdir->lchild = NULL;
     cdir->rchild = NULL;
     return cdir;
 }
 
-struct cdir* create_cdir_with_cdir_parent(const struct config* config, struct cdir* parent, uint64_t start, uint64_t end)
+struct cdir* create_cdir_with_cdir_parent(const struct config* config, struct cdir* parent, struct value_bound bound)
 {
-    struct cdir* cdir = create_cdir(config, parent->variable_id, start, end);
+    struct cdir* cdir = create_cdir(config, parent->variable_id, bound);
     cdir->parent_type = CNODE_PARENT_CDIR;
     cdir->cdir_parent = parent;
     return cdir;
 }
 
-struct cdir* create_cdir_with_pnode_parent(const struct config* config, struct pnode* parent, uint64_t start, uint64_t end)
+struct cdir* create_cdir_with_pnode_parent(const struct config* config, struct pnode* parent, struct value_bound bound)
 {
-    struct cdir* cdir = create_cdir(config, parent->variable_id, start, end);
+    struct cdir* cdir = create_cdir(config, parent->variable_id, bound);
     cdir->parent_type = CNODE_PARENT_PNODE;
     cdir->pnode_parent = parent;
     return cdir;
@@ -452,13 +483,12 @@ struct pnode* create_pdir(const struct config* config, betree_var_t variable_id,
     pnode->parent = pdir;
     pnode->variable_id = variable_id;
     pnode->score = 0.f;
-    uint64_t min_bound = 0, max_bound = 0;
+    struct value_bound bound;
     bool found = false;
     for(size_t i = 0; i < config->attr_domain_count; i++) {
         const struct attr_domain* attr_domain = config->attr_domains[i];
         if(attr_domain->variable_id == variable_id) {
-            min_bound = attr_domain->min_bound;
-            max_bound = attr_domain->max_bound;
+            bound = attr_domain->bound;
             found = true;
             break;
         }
@@ -467,7 +497,7 @@ struct pnode* create_pdir(const struct config* config, betree_var_t variable_id,
         fprintf(stderr, "No domain definition for attr %llu in config", variable_id);
         abort();
     }
-    pnode->cdir = create_cdir_with_pnode_parent(config, pnode, min_bound, max_bound);
+    pnode->cdir = create_cdir_with_pnode_parent(config, pnode, bound);
 
     if(pdir->pnode_count == 0) {
         pdir->pnodes = calloc(1, sizeof(*pdir->pnodes));
@@ -632,7 +662,17 @@ void space_partitioning(const struct config* config, struct cnode* cnode)
 
 bool is_atomic(const struct cdir* cdir)
 {
-    return cdir->start == cdir->end;
+    switch(cdir->bound.value_type) {
+        case(VALUE_I): {
+            return cdir->bound.imin == cdir->bound.imax;
+        }
+        case(VALUE_F): {
+            return feq(cdir->bound.fmin, cdir->bound.fmax);
+        }
+        case(VALUE_B): {
+            return cdir->bound.bmin == cdir->bound.bmax;
+        }
+    }
 }
 
 struct lnode* make_lnode(const struct config* config, struct cnode* parent)
@@ -662,6 +702,83 @@ struct cnode* make_cnode(const struct config* config, struct cdir* parent)
     return cnode;
 }
 
+struct value_bounds {
+    struct value_bound lbound;
+    struct value_bound rbound;
+};
+
+struct value_bounds split_value_bound(struct value_bound bound)
+{
+    struct value_bound lbound = { .value_type = bound.value_type };
+    struct value_bound rbound = { .value_type = bound.value_type };
+    switch(bound.value_type) {
+        case(VALUE_I): {
+            int64_t start = bound.imin, end = bound.imax;
+            lbound.imin = start;
+            rbound.imax = end;
+            if(llabs(end - start) > 2) {
+                int64_t middle = start + (end - start)/2;
+                lbound.imax = middle;
+                rbound.imin = middle;
+            }
+            else if(llabs(end - start) == 2) {
+                int64_t middle = start + 1;
+                lbound.imax = middle;
+                rbound.imin = middle;
+            }
+            else if(llabs(end - start) == 1) {
+                lbound.imax = start;
+                rbound.imin = end;
+            }
+            else {
+                fprintf(stderr, "%s trying to split an unsplitable bound", __func__);
+                abort();
+            }
+            break;
+        }
+        case(VALUE_F): {
+            double start = bound.fmin, end = bound.fmax;
+            lbound.fmin = start;
+            rbound.fmax = end;
+            if(fabs(end - start) > 2) {
+                double middle = start + ceil((end - start)/2);
+                lbound.fmax = middle;
+                rbound.fmin = middle;
+            }
+            else if(fabs(end - start) == 2) {
+                double middle = start + 1;
+                lbound.fmax = middle;
+                rbound.fmin = middle;
+            }
+            else if(fabs(end - start) == 1) {
+                lbound.fmax = start;
+                rbound.fmin = end;
+            }
+            else {
+                fprintf(stderr, "%s trying to split an unsplitable bound", __func__);
+                abort();
+            }
+            break;
+        }
+        case(VALUE_B): {
+            bool start = bound.bmin, end = bound.bmax;
+            lbound.bmin = start;
+            rbound.bmax = end;
+            if(abs(end - start) == 1) {
+                lbound.bmax = start;
+                rbound.bmin = end;
+            }
+            else {
+                fprintf(stderr, "%s trying to split an unsplitable bound", __func__);
+                abort();
+            }
+            break;
+        }
+    }
+    struct value_bounds bounds = { .lbound = lbound, .rbound = rbound };
+    return bounds;
+}
+
 void space_clustering(const struct config* config, struct cdir* cdir)
 {
     struct lnode* lnode = cdir->cnode->lnode;
@@ -672,25 +789,9 @@ void space_clustering(const struct config* config, struct cdir* cdir)
         space_partitioning(config, cdir->cnode);
     }
     else {
-        uint64_t start = cdir->start, end = cdir->end;
-        if(end - start > 2) {
-            uint64_t middle = start + (end - start)/2;
-            cdir->lchild = create_cdir_with_cdir_parent(config, cdir, start, middle);
-            cdir->rchild = create_cdir_with_cdir_parent(config, cdir, middle, end);
-        }
-        else if(end - start == 2) {
-            uint64_t middle = start + 1;
-            cdir->lchild = create_cdir_with_cdir_parent(config, cdir, start, middle);
-            cdir->rchild = create_cdir_with_cdir_parent(config, cdir, middle, end);
-        }
-        else if(end - start == 1) {
-            cdir->lchild = create_cdir_with_cdir_parent(config, cdir, start, start);
-            cdir->rchild = create_cdir_with_cdir_parent(config, cdir, end, end);
-        }
-        else {
-            fprintf(stderr, "Should never happen");
-            abort();
-        }
+        struct value_bounds bounds = split_value_bound(cdir->bound);
+        cdir->lchild = create_cdir_with_cdir_parent(config, cdir, bounds.lbound);
+        cdir->rchild = create_cdir_with_cdir_parent(config, cdir, bounds.rbound);
         for(size_t i = 0; i < lnode->sub_count; i++) {
             const struct sub* sub = lnode->subs[i];
             if(sub_is_enclosed(config, sub, cdir->lchild)) {
@@ -982,7 +1083,7 @@ void free_matched_subs(struct matched_subs* matched_subs)
     free(matched_subs);
 }
 
-const struct pred* make_simple_pred(betree_var_t variable_id, uint64_t value)
+struct pred* make_simple_pred(betree_var_t variable_id, struct value value)
 {
     struct pred* pred = calloc(1, sizeof(*pred));
     if(pred == NULL) {
@@ -994,10 +1095,16 @@ const struct pred* make_simple_pred(betree_var_t variable_id, uint64_t value)
     return pred;
 }
 
-const struct pred* make_simple_pred_str(struct config* config, const char* attr, uint64_t value)
+const struct pred* make_simple_pred_i(betree_var_t variable_id, int64_t ivalue)
+{
+    struct value value = { .value_type = VALUE_I, .ivalue = ivalue };
+    return make_simple_pred(variable_id, value);
+}
+
+const struct pred* make_simple_pred_str_i(struct config* config, const char* attr, int64_t value)
 {
     betree_var_t variable_id = get_id_for_attr(config, attr);
-    return make_simple_pred(variable_id, value);
+    return make_simple_pred_i(variable_id, value);
 }
 
 void fill_pred(struct sub* sub, const struct ast_node* expr)
@@ -1073,7 +1180,7 @@ const struct event* make_event()
     return event;
 }
 
-const struct event* make_simple_event(struct config* config, const char* attr, uint64_t value)
+const struct event* make_simple_event_i(struct config* config, const char* attr, int64_t value)
 {
     struct event* event = (struct event*)make_event();
     event->pred_count = 1;
@@ -1082,7 +1189,7 @@ const struct event* make_simple_event(struct config* config, const char* attr, u
         fprintf(stderr, "%s preds calloc failed", __func__);
         abort();
     }
-    event->preds[0] = (struct pred*)make_simple_pred_str(config, attr, value);
+    event->preds[0] = (struct pred*)make_simple_pred_str_i(config, attr, value);
     return event;
 }
 
@@ -1169,7 +1276,7 @@ void free_config(struct config* config)
     free(config);
 }
 
-struct attr_domain* make_attr_domain(betree_var_t variable_id, uint64_t min_bound, uint64_t max_bound, bool allow_undefined)
+struct attr_domain* make_attr_domain(betree_var_t variable_id, struct value_bound bound, bool allow_undefined)
 {
     struct attr_domain* attr_domain = calloc(1, sizeof(*attr_domain));
     if(attr_domain == NULL) {
@@ -1177,16 +1284,15 @@ struct attr_domain* make_attr_domain(betree_var_t variable_id, uint64_t min_boun
         abort();
     }
     attr_domain->variable_id = variable_id;
-    attr_domain->min_bound = min_bound;
-    attr_domain->max_bound = max_bound;
+    attr_domain->bound = bound;
     attr_domain->allow_undefined = allow_undefined;
     return attr_domain;
 }
 
-void add_attr_domain(struct config* config, const char* attr, uint64_t min_bound, uint64_t max_bound, bool allow_undefined)
+void add_attr_domain(struct config* config, const char* attr, struct value_bound bound, bool allow_undefined)
 {
     betree_var_t variable_id = get_id_for_attr(config, attr);
-    struct attr_domain* attr_domain =  make_attr_domain(variable_id, min_bound, max_bound, allow_undefined);
+    struct attr_domain* attr_domain =  make_attr_domain(variable_id, bound, allow_undefined);
     if(config->attr_domain_count == 0) {
         config->attr_domains = calloc(1, sizeof(*config->attr_domains));
         if(config->attr_domains == NULL) {
@@ -1206,7 +1312,19 @@ void add_attr_domain(struct config* config, const char* attr, uint64_t min_bound
     config->attr_domain_count++;
 }
 
-void adjust_attr_domains(struct config* config, const struct ast_node* node, uint64_t min, uint64_t max, bool allow_undefined)
+void add_attr_domain_i(struct config* config, const char* attr, int64_t min, int64_t max, bool allow_undefined)
+{
+    struct value_bound bound = { .value_type = VALUE_I, .imin = min, .imax = max };
+    add_attr_domain(config, attr, bound, allow_undefined);
+}
+
+void add_attr_domain_f(struct config* config, const char* attr, double min, double max, bool allow_undefined)
+{
+    struct value_bound bound = { .value_type = VALUE_F, .fmin = min, .fmax = max };
+    add_attr_domain(config, attr, bound, allow_undefined);
+}
+
+void adjust_attr_domains(struct config* config, const struct ast_node* node, struct value_bound bound, bool allow_undefined)
 {
     switch(node->type) {
         case(AST_TYPE_BINARY_EXPR): {
@@ -1217,15 +1335,21 @@ void adjust_attr_domains(struct config* config, const struct ast_node* node, uin
                     return;
                 }
             }
-            add_attr_domain(config, node->binary_expr.name, min, max, allow_undefined);
+            add_attr_domain(config, node->binary_expr.name, bound, allow_undefined);
             break;
         }
         case(AST_TYPE_COMBI_EXPR): {
-            adjust_attr_domains(config, node->combi_expr.lhs, min, max, allow_undefined);
-            adjust_attr_domains(config, node->combi_expr.rhs, min, max, allow_undefined);
+            adjust_attr_domains(config, node->combi_expr.lhs, bound, allow_undefined);
+            adjust_attr_domains(config, node->combi_expr.rhs, bound, allow_undefined);
             break;
         }
     }
+}
+
+void adjust_attr_domains_i(struct config* config, const struct ast_node* node, int64_t min, int64_t max, bool allow_undefined)
+{
+    struct value_bound bound = { .value_type = VALUE_I, .imin = min, .imax = max };
+    adjust_attr_domains(config, node, bound, allow_undefined);
 }
 
 const struct attr_domain* get_attr_domain(const struct config* config, betree_var_t variable_id)
@@ -1248,7 +1372,21 @@ void event_to_string(struct config* config, const struct event* event, char* buf
             length += sprintf(buffer + length, ", ");
         }
         const char* attr = get_attr_for_id(config, pred->variable_id);
-        length += sprintf(buffer + length, "%s = %llu", attr, pred->value);
+        switch(pred->value.value_type) {
+            case(VALUE_I): {
+                length += sprintf(buffer + length, "%s = %llu", attr, pred->value.ivalue);
+                break;
+            }
+            case(VALUE_F): {
+                length += sprintf(buffer + length, "%s = %.2f", attr, pred->value.fvalue);
+                break;
+            }
+            case(VALUE_B): {
+                const char* value = pred->value.bvalue ? "true" : "false";
+                length += sprintf(buffer + length, "%s = %s", attr, value);
+                break;
+            }
+        }
     }
     buffer[length] = '\0';
 }

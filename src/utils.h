@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #define max(a,b) \
@@ -12,4 +13,7 @@
         __typeof__ (b) _b = (b); \
         _a < _b ? _a : _b; })
 
-uint64_t random_in_range(uint64_t min, uint64_t max);
+int64_t random_in_range(int64_t min, int64_t max);
+
+bool feq(double a, double b);
+bool fne(double a, double b);

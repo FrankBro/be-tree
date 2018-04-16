@@ -16,7 +16,7 @@ int parse(const char *text, struct ast_node **node);
 int test_cdir_split() 
 {
     struct config* config = make_default_config();
-    add_attr_domain(config, "a", 0, COUNT, false);
+    add_attr_domain_i(config, "a", 0, COUNT, false);
 
     const char* data[COUNT]; 
 
@@ -53,11 +53,13 @@ int test_cdir_split()
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &insert_done);
 
-    const struct event* event = make_simple_event(config, "a", 0); 
+    const struct event* event = make_simple_event_i(config, "a", 0); 
     struct matched_subs* matched_subs = make_matched_subs(); 
     match_be_tree(config, event, cnode, matched_subs); 
  
     clock_gettime(CLOCK_MONOTONIC_RAW, &search_done);
+
+    mu_assert(matched_subs->sub_count == 1, "Found our sub");
 
     uint64_t init_us = (init_done.tv_sec - start.tv_sec) * 1000000 + (init_done.tv_nsec - start.tv_nsec) / 1000;
     uint64_t parse_us = (parse_done.tv_sec - init_done.tv_sec) * 1000000 + (parse_done.tv_nsec - init_done.tv_nsec) / 1000;
@@ -92,7 +94,7 @@ int test_pdir_split()
 
         char* name;
         asprintf(&name, "a%zu", i);
-        add_attr_domain(config, name, 0, 10, false);
+        add_attr_domain_i(config, name, 0, 10, false);
         free(name);
     } 
  
@@ -123,11 +125,13 @@ int test_pdir_split()
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &insert_done);
 
-    const struct event* event = make_simple_event(config, "a0", 0); 
+    const struct event* event = make_simple_event_i(config, "a0", 0); 
     struct matched_subs* matched_subs = make_matched_subs(); 
     match_be_tree(config, event, cnode, matched_subs); 
  
     clock_gettime(CLOCK_MONOTONIC_RAW, &search_done);
+
+    mu_assert(matched_subs->sub_count == 1, "Found our sub");
 
     uint64_t init_us = (init_done.tv_sec - start.tv_sec) * 1000000 + (init_done.tv_nsec - start.tv_nsec) / 1000;
     uint64_t parse_us = (parse_done.tv_sec - init_done.tv_sec) * 1000000 + (parse_done.tv_nsec - init_done.tv_nsec) / 1000;
@@ -175,8 +179,8 @@ void fill_event_random(const struct sub** subs, size_t sub_count, struct event* 
         const struct sub* sub = subs[sub_index];
         size_t variable_id_index = random_in_range(0, sub->variable_id_count - 1);
         betree_var_t variable_id = sub->variable_ids[variable_id_index];
-        uint64_t value = random_in_range(0, 100);
-        struct pred* pred = (struct pred*)make_simple_pred(variable_id, value);
+        int64_t value = random_in_range(0, 100);
+        struct pred* pred = (struct pred*)make_simple_pred_i(variable_id, value);
         event->preds[i] = pred;
     }
 }
@@ -205,7 +209,7 @@ int test_complex()
             printf("Failed to parse: %s\n", line);
             return 1;
         }
-        adjust_attr_domains(config, node, 0, 100, false);
+        adjust_attr_domains_i(config, node, 0, 100, false);
         const struct sub* sub = make_sub(config, sub_count + 1, node); 
         if(sub_count == 0) {
             subs = calloc(1, sizeof(*subs));

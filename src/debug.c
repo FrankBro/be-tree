@@ -36,7 +36,22 @@ void print_cdir(const struct config* config, const struct cdir* cdir, uint64_t l
         return;
     }
     print_dashs(level);
-    printf(" cdir [%llu, %llu]", cdir->start, cdir->end);
+    switch(cdir->bound.value_type) {
+        case(VALUE_I): {
+            printf(" cdir [%llu, %llu]", cdir->bound.imin, cdir->bound.imax);
+            break;
+        }
+        case(VALUE_F): {
+            printf(" cdir [%.2f, %.2f]", cdir->bound.fmin, cdir->bound.fmax);
+            break;
+        }
+        case(VALUE_B): {
+            const char* min = cdir->bound.bmin ? "true" : "false";
+            const char* max = cdir->bound.bmax ? "true" : "false";
+            printf(" cdir [%s, %s]", min, max);
+            break;
+        }
+    }
     if(cdir->cnode != NULL) {
         printf("\n");
         print_cnode(config, cdir->cnode, level + 1);
@@ -143,32 +158,43 @@ const char* get_path_pnode(const struct config* config, const struct pnode* pnod
 
 const char* get_path_cdir(const struct config* config, const struct cdir* cdir, bool first)
 {
+    const char* parent_path;
     switch(cdir->parent_type) {
-        case CNODE_PARENT_CDIR: {
+        case(CNODE_PARENT_CDIR): {
             if(first) {
-                char* name;
-                const char* parent_path = get_path_cdir(config, cdir->cdir_parent, false);
-                asprintf(&name, "%s_%llu_%llu", parent_path, cdir->start, cdir->end);
-                free((char*)parent_path);
-                return name;
+                parent_path = get_path_cdir(config, cdir->cdir_parent, false);
+                break;
             }
             else {
                 return get_path_cdir(config, cdir->cdir_parent, false);
             }
         }
-        case CNODE_PARENT_PNODE: {
+        case(CNODE_PARENT_PNODE): {
             if(first) {
-                char* name;
-                const char* parent_path = get_path_pnode(config, cdir->pnode_parent);
-                asprintf(&name, "%s_%llu_%llu", parent_path, cdir->start, cdir->end);
-                free((char*)parent_path);
-                return name;
+                parent_path = get_path_pnode(config, cdir->pnode_parent);
+                break;
             }
             else {
                 return get_path_pnode(config, cdir->pnode_parent);
             }
         }
     }
+    char* name;
+    switch(cdir->bound.value_type) {
+        case(VALUE_I): {
+            asprintf(&name, "%s_%llu_%llu", parent_path, cdir->bound.imin, cdir->bound.imax);
+        }
+        case(VALUE_F): {
+            asprintf(&name, "%s_%.0f_%.0f", parent_path, cdir->bound.fmin, cdir->bound.fmax);
+        }
+        case(VALUE_B): {
+            const char* min = cdir->bound.bmin ? "true" : "false";
+            const char* max = cdir->bound.bmax ? "true" : "false";
+            asprintf(&name, "%s_%s_%s", parent_path, min, max);
+        }
+    }
+    free((char*)parent_path);
+    return name;
 }
 
 const char* get_path_cnode(const struct config* config, const struct cnode* cnode)
@@ -273,7 +299,22 @@ void write_dot_file_cdir_td(FILE* f, const struct config* config, const struct c
         }
         else {
             const char* name = get_name_cdir(config, cdir);
-            fprintf(f, "<td colspan=\"%llu\" port=\"%s\">[%llu, %llu]</td>\n", colspan, name, cdir->start, cdir->end);
+            switch(cdir->bound.value_type) {
+                case(VALUE_I): {
+                    fprintf(f, "<td colspan=\"%llu\" port=\"%s\">[%llu, %llu]</td>\n", colspan, name, cdir->bound.imin, cdir->bound.imax);
+                    break;
+                }
+                case(VALUE_F): {
+                    fprintf(f, "<td colspan=\"%llu\" port=\"%s\">[%.0f, %.0f]</td>\n", colspan, name, cdir->bound.fmin, cdir->bound.fmax);
+                    break;
+                }
+                case(VALUE_B): {
+                    const char* min = cdir->bound.bmin ? "true" : "false";
+                    const char* max = cdir->bound.bmax ? "true" : "false";
+                    fprintf(f, "<td colspan=\"%llu\" port=\"%s\">[%s, %s]</td>\n", colspan, name, min, max);
+                    break;
+                }
+            }
             free((char*)name);
         }
     }

@@ -17,7 +17,7 @@ struct ast_node* ast_node_create()
     return node;
 }
 
-struct ast_node* ast_binary_expr_create(const enum ast_binop_e op, const char* name, uint64_t value)
+struct ast_node* ast_binary_expr_create(const enum ast_binop_e op, const char* name, struct value value)
 {
     struct ast_node* node = ast_node_create();
     node->type = AST_TYPE_BINARY_EXPR;
@@ -55,7 +55,7 @@ void free_ast_node(struct ast_node* node)
     free(node);
 }
 
-bool get_variable(betree_var_t variable_id, const struct event* event, uint64_t* value)
+bool get_variable(betree_var_t variable_id, const struct event* event, struct value* value)
 {
     for(size_t i=0; i < event->pred_count; i++) {
         const struct pred* pred = event->preds[i];
@@ -67,50 +67,143 @@ bool get_variable(betree_var_t variable_id, const struct event* event, uint64_t*
     return false;
 }
 
-int match_node(const struct event* event, const struct ast_node *node)
+static const struct value false_value = { .value_type = VALUE_B, .bvalue = false };
+
+static void invalid_expr(const char* msg)
+{
+    fprintf(stderr, "%s", msg);
+    abort();
+}
+
+struct value match_node(const struct event* event, const struct ast_node *node)
 {
     switch(node->type) {
         case AST_TYPE_BINARY_EXPR: {
-            uint64_t variable;
+            struct value variable;
             bool found = get_variable(node->binary_expr.variable_id, event, &variable);
             if(!found) {
-                return 0;
+                return false_value;
+            }
+            if(variable.value_type != node->binary_expr.value.value_type) {
+                fprintf(stderr, "%s value types do not match", __func__);
+                abort();
             }
             switch(node->binary_expr.op) {
                 case AST_BINOP_LT: {
-                    return variable < node->binary_expr.value;
+                    switch(node->binary_expr.value.value_type) {
+                        case VALUE_I: {
+                            struct value value = { .value_type = VALUE_B, .bvalue = variable.ivalue < node->binary_expr.value.ivalue };
+                            return value;
+                        }
+                        case VALUE_F: {
+                            struct value value = { .value_type = VALUE_B, .bvalue = variable.fvalue < node->binary_expr.value.fvalue };
+                            return value;
+                        }
+                        case VALUE_B: {
+                            invalid_expr("Using < on a boolean value");
+                        }
+                    }
                 }
                 case AST_BINOP_LE: {
-                    return variable <= node->binary_expr.value;
+                    switch(node->binary_expr.value.value_type) {
+                        case VALUE_I: {
+                            struct value value = { .value_type = VALUE_B, .bvalue = variable.ivalue <= node->binary_expr.value.ivalue };
+                            return value;
+                        }
+                        case VALUE_F: {
+                            struct value value = { .value_type = VALUE_B, .bvalue = variable.fvalue <= node->binary_expr.value.fvalue };
+                            return value;
+                        }
+                        case VALUE_B: {
+                            invalid_expr("Using <= on a boolean value");
+                        }
+                    }
                 }
                 case AST_BINOP_EQ: {
-                    return variable == node->binary_expr.value;
+                    switch(node->binary_expr.value.value_type) {
+                        case VALUE_I: {
+                            struct value value = { .value_type = VALUE_B, .bvalue = variable.ivalue == node->binary_expr.value.ivalue };
+                            return value;
+                        }
+                        case VALUE_F: {
+                            struct value value = { .value_type = VALUE_B, .bvalue = feq(variable.fvalue, node->binary_expr.value.fvalue) };
+                            return value;
+                        }
+                        case VALUE_B: {
+                            struct value value = { .value_type = VALUE_B, .bvalue = variable.bvalue == node->binary_expr.value.bvalue };
+                            return value;
+                        }
+                    }
                 }
                 case AST_BINOP_NE: {
-                    return variable != node->binary_expr.value;
+                    switch(node->binary_expr.value.value_type) {
+                        case VALUE_I: {
+                            struct value value = { .value_type = VALUE_B, .bvalue = variable.ivalue != node->binary_expr.value.ivalue };
+                            return value;
+                        }
+                        case VALUE_F: {
+                            struct value value = { .value_type = VALUE_B, .bvalue = fne(variable.fvalue, node->binary_expr.value.fvalue) };
+                            return value;
+                        }
+                        case VALUE_B: {
+                            struct value value = { .value_type = VALUE_B, .bvalue = variable.bvalue != node->binary_expr.value.bvalue };
+                            return value;
+                        }
+                    }
                 }
                 case AST_BINOP_GT: {
-                    return variable > node->binary_expr.value;
+                    switch(node->binary_expr.value.value_type) {
+                        case VALUE_I: {
+                            struct value value = { .value_type = VALUE_B, .bvalue = variable.ivalue > node->binary_expr.value.ivalue };
+                            return value;
+                        }
+                        case VALUE_F: {
+                            struct value value = { .value_type = VALUE_B, .bvalue = variable.fvalue > node->binary_expr.value.fvalue };
+                            return value;
+                        }
+                        case VALUE_B: {
+                            invalid_expr("Using > on a boolean value");
+                        }
+                    }
                 }
                 case AST_BINOP_GE: {
-                    return variable >= node->binary_expr.value;
+                    switch(node->binary_expr.value.value_type) {
+                        case VALUE_I: {
+                            struct value value = { .value_type = VALUE_B, .bvalue = variable.ivalue >= node->binary_expr.value.ivalue };
+                            return value;
+                        }
+                        case VALUE_F: {
+                            struct value value = { .value_type = VALUE_B, .bvalue = variable.fvalue >= node->binary_expr.value.fvalue };
+                            return value;
+                        }
+                        case VALUE_B: {
+                            invalid_expr("Using >= on a boolean value");
+                        }
+                    }
                 }
             }
         }
         case AST_TYPE_COMBI_EXPR: {
+            struct value lhs = match_node(event, node->combi_expr.lhs);
+            struct value rhs = match_node(event, node->combi_expr.rhs);
+            if(lhs.value_type != VALUE_B || rhs.value_type != VALUE_B) {
+                invalid_expr("Using && or || on a non-boolean value");
+            }
             switch(node->combi_expr.op) {
                 case AST_COMBI_AND: {
-                    return match_node(event, node->combi_expr.lhs) && match_node(event, node->combi_expr.rhs);
+                    struct value value = { .value_type = VALUE_B, .bvalue = lhs.bvalue && rhs.bvalue };
+                    return value;
                 }
                 case AST_COMBI_OR: {
-                    return match_node(event, node->combi_expr.lhs) || match_node(event, node->combi_expr.rhs);
+                    struct value value = { .value_type = VALUE_B, .bvalue = lhs.bvalue || rhs.bvalue };
+                    return value;
                 }
             }
         }
     }
 }
 
-void get_variable_bound(const struct attr_domain* domain, const struct ast_node* node, struct variable_bound* bound)
+void get_variable_bound(const struct attr_domain* domain, const struct ast_node* node, struct value_bound* bound)
 {
     if(node == NULL) {
         return;
@@ -122,36 +215,114 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
             return;
         }
         case AST_TYPE_BINARY_EXPR: {
+            if(domain->bound.value_type != bound->value_type || domain->bound.value_type != node->binary_expr.value.value_type) {
+                invalid_expr("Domain, bound or expr type mismatch");
+            }
             switch(node->binary_expr.op) {
                 case AST_BINOP_LT: {
-                    bound->min = domain->min_bound;
-                    bound->max = max(bound->max, node->binary_expr.value - 1);
-                    return;
+                    switch(node->binary_expr.value.value_type) {
+                        case VALUE_I: {
+                            bound->imin = domain->bound.imin;
+                            bound->imax = max(bound->imax, node->binary_expr.value.ivalue - 1);
+                            return;
+                        }
+                        case VALUE_F: {
+                            bound->fmin = domain->bound.fmin;
+                            bound->fmax = fmax(bound->fmax, node->binary_expr.value.fvalue - __DBL_EPSILON__);
+                            return;
+                        }
+                        case VALUE_B: {
+                            invalid_expr("Using < on a boolean value");
+                        }
+                    }
                 }
                 case AST_BINOP_LE: {
-                    bound->min = domain->min_bound;
-                    bound->max = max(bound->max, node->binary_expr.value);
-                    return;
+                    switch(node->binary_expr.value.value_type) {
+                        case VALUE_I: {
+                            bound->imin = domain->bound.imin;
+                            bound->imax = max(bound->imax, node->binary_expr.value.ivalue);
+                            return;
+                        }
+                        case VALUE_F: {
+                            bound->fmin = domain->bound.fmin;
+                            bound->fmax = fmax(bound->fmax, node->binary_expr.value.fvalue);
+                            return;
+                        }
+                        case VALUE_B: {
+                            invalid_expr("Using <= on a boolean value");
+                        }
+                    }
                 }
                 case AST_BINOP_EQ: {
-                    bound->min = min(bound->min, node->binary_expr.value);
-                    bound->max = max(bound->max, node->binary_expr.value);
-                    return;
+                    switch(node->binary_expr.value.value_type) {
+                        case VALUE_I: {
+                            bound->imin = min(bound->imin, node->binary_expr.value.ivalue);
+                            bound->imax = max(bound->imax, node->binary_expr.value.ivalue);
+                            return;
+                        }
+                        case VALUE_F: {
+                            bound->fmin = fmin(bound->fmin, node->binary_expr.value.fvalue);
+                            bound->fmax = fmax(bound->fmax, node->binary_expr.value.fvalue);
+                            return;
+                        }
+                        case VALUE_B: {
+                            bound->bmin = min(bound->bmin, node->binary_expr.value.bvalue);
+                            bound->bmax = max(bound->bmin, node->binary_expr.value.bvalue);
+                            return;
+                        }
+                    }
                 }
                 case AST_BINOP_NE: {
-                    bound->min = domain->min_bound;
-                    bound->max = domain->max_bound;
-                    return;
+                    switch(node->binary_expr.value.value_type) {
+                        case VALUE_I: {
+                            bound->imin = domain->bound.imin;
+                            bound->imax = domain->bound.imax;
+                            return;
+                        }
+                        case VALUE_F: {
+                            bound->fmin = domain->bound.fmin;
+                            bound->fmax = domain->bound.fmax;
+                            return;
+                        }
+                        case VALUE_B: {
+                            bound->bmin = domain->bound.bmin;
+                            bound->bmax = domain->bound.bmax;
+                        }
+                    }
                 }
                 case AST_BINOP_GT: {
-                    bound->min = min(bound->min, node->binary_expr.value + 1);
-                    bound->max = domain->max_bound;
-                    return;
+                    switch(node->binary_expr.value.value_type) {
+                        case VALUE_I: {
+                            bound->imin = min(bound->imin, node->binary_expr.value.ivalue + 1);
+                            bound->imax = domain->bound.imax;
+                            return;
+                        }
+                        case VALUE_F: {
+                            bound->fmin = fmin(bound->fmin, node->binary_expr.value.fvalue + __DBL_EPSILON__);
+                            bound->fmax = domain->bound.fmax;
+                            return;
+                        }
+                        case VALUE_B: {
+                            invalid_expr("Using > on a boolean value");
+                        }
+                    }
                 }
                 case AST_BINOP_GE: {
-                    bound->min = min(bound->min, node->binary_expr.value);
-                    bound->max = domain->max_bound;
-                    return;
+                    switch(node->binary_expr.value.value_type) {
+                        case VALUE_I: {
+                            bound->imin = min(bound->imin, node->binary_expr.value.ivalue);
+                            bound->imax = domain->bound.imax;
+                            return;
+                        }
+                        case VALUE_F: {
+                            bound->fmin = fmin(bound->fmin, node->binary_expr.value.fvalue);
+                            bound->fmax = domain->bound.fmax;
+                            return;
+                        }
+                        case VALUE_B: {
+                            invalid_expr("Using > on a boolean value");
+                        }
+                    }
                 }
             }
         }
@@ -194,33 +365,104 @@ const char* ast_to_string(const struct ast_node* node)
             free((char*)a);
             free((char*)b);
             return expr;
-
         }
         case(AST_TYPE_BINARY_EXPR): {
             switch(node->binary_expr.op) {
                 case AST_BINOP_LT: {
-                    asprintf(&expr, "%s < %llu", node->binary_expr.name, node->binary_expr.value);
-                    return expr;
+                    switch(node->binary_expr.value.value_type) {
+                        case VALUE_I: {
+                            asprintf(&expr, "%s < %llu", node->binary_expr.name, node->binary_expr.value.ivalue);
+                            return expr;
+                        }
+                        case VALUE_F: {
+                            asprintf(&expr, "%s < %.2f", node->binary_expr.name, node->binary_expr.value.fvalue);
+                            return expr;
+                        }
+                        case VALUE_B: {
+                            invalid_expr("Using < on a boolean value");
+                            return NULL;
+                        }
+                    }
                 }
                 case AST_BINOP_LE: {
-                    asprintf(&expr, "%s <= %llu", node->binary_expr.name, node->binary_expr.value);
-                    return expr;
+                    switch(node->binary_expr.value.value_type) {
+                        case VALUE_I: {
+                            asprintf(&expr, "%s <= %llu", node->binary_expr.name, node->binary_expr.value.ivalue);
+                            return expr;
+                        }
+                        case VALUE_F: {
+                            asprintf(&expr, "%s <= %.2f", node->binary_expr.name, node->binary_expr.value.fvalue);
+                            return expr;
+                        }
+                        case VALUE_B: {
+                            invalid_expr("Using <= on a boolean value");
+                            return NULL;
+                        }
+                    }
                 }
                 case AST_BINOP_EQ: {
-                    asprintf(&expr, "%s = %llu", node->binary_expr.name, node->binary_expr.value);
-                    return expr;
+                    switch(node->binary_expr.value.value_type) {
+                        case VALUE_I: {
+                            asprintf(&expr, "%s = %llu", node->binary_expr.name, node->binary_expr.value.ivalue);
+                            return expr;
+                        }
+                        case VALUE_F: {
+                            asprintf(&expr, "%s = %.2f", node->binary_expr.name, node->binary_expr.value.fvalue);
+                            return expr;
+                        }
+                        case VALUE_B: {
+                            asprintf(&expr, "%s = %s", node->binary_expr.name, node->binary_expr.value.bvalue ? "true" : "false");
+                            return expr;
+                        }
+                    }
                 }
                 case AST_BINOP_NE: {
-                    asprintf(&expr, "%s <> %llu", node->binary_expr.name, node->binary_expr.value);
-                    return expr;
+                    switch(node->binary_expr.value.value_type) {
+                        case VALUE_I: {
+                            asprintf(&expr, "%s <> %llu", node->binary_expr.name, node->binary_expr.value.ivalue);
+                            return expr;
+                        }
+                        case VALUE_F: {
+                            asprintf(&expr, "%s <> %.2f", node->binary_expr.name, node->binary_expr.value.fvalue);
+                            return expr;
+                        }
+                        case VALUE_B: {
+                            asprintf(&expr, "%s <> %s", node->binary_expr.name, node->binary_expr.value.bvalue ? "true" : "false");
+                            return expr;
+                        }
+                    }
                 }
                 case AST_BINOP_GT: {
-                    asprintf(&expr, "%s > %llu", node->binary_expr.name, node->binary_expr.value);
-                    return expr;
+                    switch(node->binary_expr.value.value_type) {
+                        case VALUE_I: {
+                            asprintf(&expr, "%s > %llu", node->binary_expr.name, node->binary_expr.value.ivalue);
+                            return expr;
+                        }
+                        case VALUE_F: {
+                            asprintf(&expr, "%s > %.2f", node->binary_expr.name, node->binary_expr.value.fvalue);
+                            return expr;
+                        }
+                        case VALUE_B: {
+                            invalid_expr("Using > on a boolean value");
+                            return NULL;
+                        }
+                    }
                 }
                 case AST_BINOP_GE: {
-                    asprintf(&expr, "%s >= %llu", node->binary_expr.name, node->binary_expr.value);
-                    return expr;
+                    switch(node->binary_expr.value.value_type) {
+                        case VALUE_I: {
+                            asprintf(&expr, "%s >= %llu", node->binary_expr.name, node->binary_expr.value.ivalue);
+                            return expr;
+                        }
+                        case VALUE_F: {
+                            asprintf(&expr, "%s >= %.2f", node->binary_expr.name, node->binary_expr.value.fvalue);
+                            return expr;
+                        }
+                        case VALUE_B: {
+                            invalid_expr("Using >= on a boolean value");
+                            return NULL;
+                        }
+                    }
                 }
             }
         }

@@ -8,7 +8,7 @@
 #include "minunit.h"
 #include "parser.h"
 
-const struct sub* make_simple_sub(struct config* config, betree_sub_t id, const char* attr, uint64_t value)
+const struct sub* make_simple_sub_i(struct config* config, betree_sub_t id, const char* attr, int64_t ivalue)
 {
     struct sub* sub = make_empty_sub(id);
     sub->variable_id_count = 1;
@@ -18,6 +18,24 @@ const struct sub* make_simple_sub(struct config* config, betree_sub_t id, const 
         abort();
     }
     sub->variable_ids[0] = get_id_for_attr(config, attr);
+    struct value value = { .value_type = VALUE_I, .ivalue = ivalue };
+    struct ast_node* expr = ast_binary_expr_create(AST_BINOP_EQ, attr, value);
+    assign_variable_id(config, expr);
+    sub->expr = expr;
+    return sub;
+}
+
+const struct sub* make_simple_sub_f(struct config* config, betree_sub_t id, const char* attr, double ivalue)
+{
+    struct sub* sub = make_empty_sub(id);
+    sub->variable_id_count = 1;
+    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
+    if(sub->variable_ids == NULL) {
+        fprintf(stderr, "%s calloc failed", __func__);
+        abort();
+    }
+    sub->variable_ids[0] = get_id_for_attr(config, attr);
+    struct value value = { .value_type = VALUE_F, .fvalue = ivalue };
     struct ast_node* expr = ast_binary_expr_create(AST_BINOP_EQ, attr, value);
     assign_variable_id(config, expr);
     sub->expr = expr;
@@ -44,7 +62,7 @@ const struct event* make_event_with_preds(const size_t size, const struct pred**
 int test_sub_has_attribute() 
 {
     struct config* config = make_default_config();
-    const struct sub* sub = make_simple_sub(config, 0, "a", 0);
+    const struct sub* sub = make_simple_sub_i(config, 0, "a", 0);
 
     mu_assert(sub_has_attribute_str(config, sub, "a"), "Simple sub has 'a'");
     mu_assert(!sub_has_attribute_str(config, sub, "b"), "Simple sub does not have 'b'");
@@ -57,9 +75,9 @@ int test_sub_has_attribute()
 int test_remove_sub()
 {
     struct config* config = make_default_config();
-    const struct sub* sub1 = make_simple_sub(config, 0, "a", 0);
-    const struct sub* sub2 = make_simple_sub(config, 1, "a", 1);
-    const struct sub* sub3 = make_simple_sub(config, 2, "a", 2);
+    const struct sub* sub1 = make_simple_sub_i(config, 0, "a", 0);
+    const struct sub* sub2 = make_simple_sub_i(config, 1, "a", 1);
+    const struct sub* sub3 = make_simple_sub_i(config, 2, "a", 2);
     struct lnode* lnode = (struct lnode*)make_lnode(config, NULL);
 
     insert_sub(sub1, lnode);
@@ -94,14 +112,14 @@ int test_match_single_cnode()
     struct config* config = make_default_config();
     struct cnode* cnode = make_cnode(config, NULL);
     betree_sub_t sub_id = 0;
-    struct sub* sub = (struct sub*)make_simple_sub(config, sub_id, "a", 0);
+    struct sub* sub = (struct sub*)make_simple_sub_i(config, sub_id, "a", 0);
     insert_be_tree(config, sub, cnode, NULL);
 
     mu_assert(cnode->lnode->sub_count == 1, "tree has one sub");
 
-    const struct event* goodEvent = make_simple_event(config, "a", 0);
-    const struct event* wrongValueEvent = make_simple_event(config, "a", 1);
-    const struct event* wrongVariableEvent = make_simple_event(config, "b", 0);
+    const struct event* goodEvent = make_simple_event_i(config, "a", 0);
+    const struct event* wrongValueEvent = make_simple_event_i(config, "a", 1);
+    const struct event* wrongVariableEvent = make_simple_event_i(config, "b", 0);
 
     struct matched_subs* matched_subs = make_matched_subs();
     {
@@ -151,13 +169,13 @@ bool test_attr_in_cdir(struct config* config, const char* attr, const struct cdi
 int test_insert_first_split()
 {
     struct config* config = make_default_config();
-    add_attr_domain(config, "a", 0, 10, false);
-    add_attr_domain(config, "b", 0, 10, false);
+    add_attr_domain_i(config, "a", 0, 10, false);
+    add_attr_domain_i(config, "b", 0, 10, false);
     struct cnode* cnode = make_cnode(config, NULL);
-    struct sub* sub1 = (struct sub*)make_simple_sub(config, 0, "a", 0);
-    struct sub* sub2 = (struct sub*)make_simple_sub(config, 1, "a", 1);
-    struct sub* sub3 = (struct sub*)make_simple_sub(config, 2, "a", 2);
-    struct sub* sub4 = (struct sub*)make_simple_sub(config, 3, "b", 0);
+    struct sub* sub1 = (struct sub*)make_simple_sub_i(config, 0, "a", 0);
+    struct sub* sub2 = (struct sub*)make_simple_sub_i(config, 1, "a", 1);
+    struct sub* sub3 = (struct sub*)make_simple_sub_i(config, 2, "a", 2);
+    struct sub* sub4 = (struct sub*)make_simple_sub_i(config, 3, "b", 0);
     insert_be_tree(config, sub1, cnode, NULL);
     insert_be_tree(config, sub2, cnode, NULL);
     insert_be_tree(config, sub3, cnode, NULL);
@@ -188,19 +206,25 @@ struct ast_node* _AND (const struct ast_node* lhs, const struct ast_node* rhs)
     return ast_combi_expr_create(AST_COMBI_AND, lhs, rhs);
 }
 
+struct ast_node* ast_binary_expr_create_i(enum ast_binop_e op, const char* attr, int64_t ivalue)
+{
+    struct value value = { .value_type = VALUE_I, .ivalue = ivalue };
+    return ast_binary_expr_create(op, attr, value);
+}
+
 struct ast_node* _GT (const char* attr, uint64_t value)
 {
-    return ast_binary_expr_create(AST_BINOP_GT, attr, value);
+    return ast_binary_expr_create_i(AST_BINOP_GT, attr, value);
 }
 
 struct ast_node* _EQ (const char* attr, uint64_t value)
 {
-    return ast_binary_expr_create(AST_BINOP_EQ, attr, value);
+    return ast_binary_expr_create_i(AST_BINOP_EQ, attr, value);
 }
 
 struct ast_node* _LT (const char* attr, uint64_t value)
 {
-    return ast_binary_expr_create(AST_BINOP_LT, attr, value);
+    return ast_binary_expr_create_i(AST_BINOP_LT, attr, value);
 }
 
 bool test_lnode_has_subs(const struct lnode* lnode, size_t sub_count, const struct sub** subs)
@@ -232,18 +256,18 @@ bool test_cnode_has_pnodes(struct config* config, const struct cnode* cnode, siz
 int test_pdir_split_twice()
 {
     struct config* config = make_default_config();
-    add_attr_domain(config, "a", 0, 10, false);
-    add_attr_domain(config, "b", 0, 10, false);
-    add_attr_domain(config, "c", 0, 10, false);
+    add_attr_domain_i(config, "a", 0, 10, false);
+    add_attr_domain_i(config, "b", 0, 10, false);
+    add_attr_domain_i(config, "c", 0, 10, false);
     struct cnode* cnode = make_cnode(config, NULL);
 
-    const struct sub* sub1 = make_simple_sub(config, 1, "a", 0);
-    const struct sub* sub2 = make_simple_sub(config, 2, "a", 0);
-    const struct sub* sub3 = make_simple_sub(config, 3, "a", 0);
-    const struct sub* sub4 = make_simple_sub(config, 4, "b", 0);
-    const struct sub* sub5 = make_simple_sub(config, 5, "b", 0);
-    const struct sub* sub6 = make_simple_sub(config, 6, "b", 0);
-    const struct sub* sub7 = make_simple_sub(config, 7, "c", 0);
+    const struct sub* sub1 = make_simple_sub_i(config, 1, "a", 0);
+    const struct sub* sub2 = make_simple_sub_i(config, 2, "a", 0);
+    const struct sub* sub3 = make_simple_sub_i(config, 3, "a", 0);
+    const struct sub* sub4 = make_simple_sub_i(config, 4, "b", 0);
+    const struct sub* sub5 = make_simple_sub_i(config, 5, "b", 0);
+    const struct sub* sub6 = make_simple_sub_i(config, 6, "b", 0);
+    const struct sub* sub7 = make_simple_sub_i(config, 7, "c", 0);
 
     const struct sub* subs123[3] = { sub1, sub2, sub3 };
     const struct sub* subs456[3] = { sub4, sub5, sub6 };
@@ -276,16 +300,16 @@ int test_pdir_split_twice()
 int test_cdir_split_twice()
 {
     struct config* config = make_default_config();
-    add_attr_domain(config, "a", 0, 10, false);
+    add_attr_domain_i(config, "a", 0, 10, false);
     struct cnode* cnode = make_cnode(config, NULL);
 
-    const struct sub* sub1 = make_simple_sub(config, 1, "a", 2);
-    const struct sub* sub2 = make_simple_sub(config, 2, "a", 2);
-    const struct sub* sub3 = make_simple_sub(config, 3, "a", 2);
-    const struct sub* sub4 = make_simple_sub(config, 4, "b", 0);
-    const struct sub* sub5 = make_simple_sub(config, 5, "a", 7);
-    const struct sub* sub6 = make_simple_sub(config, 6, "a", 7);
-    const struct sub* sub7 = make_simple_sub(config, 7, "a", 7);
+    const struct sub* sub1 = make_simple_sub_i(config, 1, "a", 2);
+    const struct sub* sub2 = make_simple_sub_i(config, 2, "a", 2);
+    const struct sub* sub3 = make_simple_sub_i(config, 3, "a", 2);
+    const struct sub* sub4 = make_simple_sub_i(config, 4, "b", 0);
+    const struct sub* sub5 = make_simple_sub_i(config, 5, "a", 7);
+    const struct sub* sub6 = make_simple_sub_i(config, 6, "a", 7);
+    const struct sub* sub7 = make_simple_sub_i(config, 7, "a", 7);
 
     const struct sub* subs123[3] = { sub1, sub2, sub3 };
     const struct sub* subs4[1] = { sub4 };
@@ -319,7 +343,7 @@ int test_remove_sub_in_tree()
 {
     struct config* config = make_default_config();
     struct cnode* cnode = make_cnode(config, NULL);
-    struct sub* sub1 = (struct sub*)make_simple_sub(config, 0, "a", 0);
+    struct sub* sub1 = (struct sub*)make_simple_sub_i(config, 0, "a", 0);
 
     insert_be_tree(config, sub1, cnode, NULL);
 
@@ -339,13 +363,13 @@ int test_remove_sub_in_tree()
 int test_remove_sub_in_tree_with_delete()
 {
     struct config* config = make_default_config();
-    add_attr_domain(config, "a", 0, 10, false);
-    add_attr_domain(config, "b", 0, 10, false);
+    add_attr_domain_i(config, "a", 0, 10, false);
+    add_attr_domain_i(config, "b", 0, 10, false);
     struct cnode* cnode = make_cnode(config, NULL);
-    struct sub* sub1 = (struct sub*)make_simple_sub(config, 1, "a", 0);
-    struct sub* sub2 = (struct sub*)make_simple_sub(config, 2, "a", 0);
-    struct sub* sub3 = (struct sub*)make_simple_sub(config, 3, "a", 0);
-    struct sub* sub4 = (struct sub*)make_simple_sub(config, 4, "b", 0);
+    struct sub* sub1 = (struct sub*)make_simple_sub_i(config, 1, "a", 0);
+    struct sub* sub2 = (struct sub*)make_simple_sub_i(config, 2, "a", 0);
+    struct sub* sub3 = (struct sub*)make_simple_sub_i(config, 3, "a", 0);
+    struct sub* sub4 = (struct sub*)make_simple_sub_i(config, 4, "b", 0);
 
     insert_be_tree(config, sub1, cnode, NULL);
     insert_be_tree(config, sub2, cnode, NULL);
@@ -374,12 +398,12 @@ int test_remove_sub_in_tree_with_delete()
 int test_match_deeper()
 {
     struct config* config = make_default_config();
-    add_attr_domain(config, "a", 0, 0, false);
-    add_attr_domain(config, "b", 0, 1, false);
+    add_attr_domain_i(config, "a", 0, 0, false);
+    add_attr_domain_i(config, "b", 0, 1, false);
 
     struct cnode* cnode = make_cnode(config, NULL);
     const struct sub* sub1 = make_sub(config, 1, _AND(_EQ("a", 0), _EQ("b", 0)));
-    const struct sub* sub2 = make_simple_sub(config, 2, "a", 1);
+    const struct sub* sub2 = make_simple_sub_i(config, 2, "a", 1);
     const struct sub* sub3 = make_sub(config, 3, _AND(_EQ("a", 0), _EQ("b", 0)));
     const struct sub* sub4 = make_sub(config, 4, _AND(_EQ("a", 0), _EQ("b", 1)));
 
@@ -417,8 +441,8 @@ int test_match_deeper()
     mu_assert(lnode_a->sub_count == 1, "lnode in 'a' has one sub");
     mu_assert(lnode_b->sub_count == 3, "lnode in 'a' has one sub");
 
-    const struct pred* pred_a = make_simple_pred_str(config, "a", 0);
-    const struct pred* pred_b = make_simple_pred_str(config, "b", 1);
+    const struct pred* pred_a = make_simple_pred_str_i(config, "a", 0);
+    const struct pred* pred_b = make_simple_pred_str_i(config, "b", 1);
     const struct pred* preds[2] = { pred_a, pred_b };
     const struct event* event = make_event_with_preds(2, preds);
 
@@ -437,16 +461,16 @@ int test_match_deeper()
 int test_large_cdir_split()
 {
     struct config* config = make_default_config();
-    add_attr_domain(config, "a", 0, 10000, false);
+    add_attr_domain_i(config, "a", 0, 10000, false);
 
     struct cnode* cnode = make_cnode(config, NULL);
     
     for(size_t i = 0; i < 100; i++) {
-        const struct sub* sub = make_simple_sub(config, i, "a", i);
+        const struct sub* sub = make_simple_sub_i(config, i, "a", i);
         insert_be_tree(config, sub, cnode, NULL);
     }
 
-    const struct event* event = make_simple_event(config, "a", 0);
+    const struct event* event = make_simple_event_i(config, "a", 0);
     struct matched_subs* matched_subs = make_matched_subs();
     match_be_tree(config, event, cnode, matched_subs);
 
@@ -464,18 +488,18 @@ int test_min_partition()
     size_t lnode_max_cap = 3;
     // With 0
     struct config* config = make_config(lnode_max_cap, 0);
-    add_attr_domain(config, "a", 0, 10, false);
+    add_attr_domain_i(config, "a", 0, 10, false);
 
     struct cnode* cnode = make_cnode(config, NULL);
 
     struct sub* sub = NULL;
-    sub = (struct sub*)make_simple_sub(config, 0, "a", 0);
+    sub = (struct sub*)make_simple_sub_i(config, 0, "a", 0);
     insert_be_tree(config, sub, cnode, NULL);
-    sub = (struct sub*)make_simple_sub(config, 1, "a", 0);
+    sub = (struct sub*)make_simple_sub_i(config, 1, "a", 0);
     insert_be_tree(config, sub, cnode, NULL);
-    sub = (struct sub*)make_simple_sub(config, 2, "b", 0);
+    sub = (struct sub*)make_simple_sub_i(config, 2, "b", 0);
     insert_be_tree(config, sub, cnode, NULL);
-    sub = (struct sub*)make_simple_sub(config, 3, "c", 0);
+    sub = (struct sub*)make_simple_sub_i(config, 3, "c", 0);
     insert_be_tree(config, sub, cnode, NULL);
 
     mu_assert(cnode->lnode->sub_count == 2, "First lnode has two subs");
@@ -489,17 +513,17 @@ int test_min_partition()
 
     // With 3
     config = make_config(lnode_max_cap, 3);
-    add_attr_domain(config, "a", 0, 10, false);
+    add_attr_domain_i(config, "a", 0, 10, false);
 
     cnode = make_cnode(config, NULL);
 
-    sub = (struct sub*)make_simple_sub(config, 0, "a", 0);
+    sub = (struct sub*)make_simple_sub_i(config, 0, "a", 0);
     insert_be_tree(config, sub, cnode, NULL);
-    sub = (struct sub*)make_simple_sub(config, 1, "a", 0);
+    sub = (struct sub*)make_simple_sub_i(config, 1, "a", 0);
     insert_be_tree(config, sub, cnode, NULL);
-    sub = (struct sub*)make_simple_sub(config, 2, "b", 0);
+    sub = (struct sub*)make_simple_sub_i(config, 2, "b", 0);
     insert_be_tree(config, sub, cnode, NULL);
-    sub = (struct sub*)make_simple_sub(config, 3, "c", 0);
+    sub = (struct sub*)make_simple_sub_i(config, 3, "c", 0);
     insert_be_tree(config, sub, cnode, NULL);
 
     mu_assert(cnode->lnode->sub_count == 4, "First lnode has four subs");
@@ -525,11 +549,11 @@ int test_allow_undefined()
 
     // With defined only
     struct config* config = make_default_config();
-    add_attr_domain(config, "a", 0, 10, false);
-    add_attr_domain(config, "b", 0, 10, false);
+    add_attr_domain_i(config, "a", 0, 10, false);
+    add_attr_domain_i(config, "b", 0, 10, false);
 
     struct cnode* cnode = make_cnode(config, NULL);
-    struct event* event = (struct event*)make_simple_event(config, "b", 0);
+    struct event* event = (struct event*)make_simple_event_i(config, "b", 0);
 
     for(size_t i = 0; i < expr_count; i++) {
         const char* expr = exprs[i];
@@ -556,11 +580,11 @@ int test_allow_undefined()
 
     // With allow undefined
     config = make_default_config();
-    add_attr_domain(config, "a", 0, 10, true);
-    add_attr_domain(config, "b", 0, 10, false);
+    add_attr_domain_i(config, "a", 0, 10, true);
+    add_attr_domain_i(config, "b", 0, 10, false);
 
     cnode = make_cnode(config, NULL);
-    event = (struct event*)make_simple_event(config, "b", 0);
+    event = (struct event*)make_simple_event_i(config, "b", 0);
 
     for(size_t i = 0; i < expr_count; i++) {
         const char* expr = exprs[i];
@@ -588,6 +612,36 @@ int test_allow_undefined()
     return 0;
 }
 
+int test_float()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_f(config, "a", 0., 10., false);
+
+    struct cnode* cnode = make_cnode(config, NULL);
+
+    for(size_t i = 0; i < 4; i++) {
+        double value = i < 3 ? 0. : 7.;
+        struct sub* sub = (struct sub*)make_simple_sub_f(config, i, "a", value);
+        insert_be_tree(config, sub, cnode, NULL);
+    }
+
+    const struct pnode* pnode = cnode->pdir->pnodes[0];
+    mu_assert(cnode->pdir != NULL &&
+        cnode->pdir->pnode_count == 1 &&
+        pnode->cdir != NULL &&
+        pnode->cdir->cnode->lnode->sub_count == 0 &&
+        pnode->cdir->lchild != NULL &&
+        pnode->cdir->rchild != NULL &&
+        pnode->cdir->lchild->cnode->lnode->sub_count == 3 &&
+        pnode->cdir->rchild->cnode->lnode->sub_count == 1
+    , "structure is respected");
+
+    free_cnode(cnode);
+    free_config(config);
+
+    return 0;
+}
+
 int all_tests() 
 {
     mu_run_test(test_sub_has_attribute);
@@ -602,6 +656,7 @@ int all_tests()
     mu_run_test(test_large_cdir_split);
     mu_run_test(test_min_partition);
     mu_run_test(test_allow_undefined);
+    mu_run_test(test_float);
 
     return 0;
 }
