@@ -183,14 +183,17 @@ const char* get_path_cdir(const struct config* config, const struct cdir* cdir, 
     switch(cdir->bound.value_type) {
         case(VALUE_I): {
             asprintf(&name, "%s_%llu_%llu", parent_path, cdir->bound.imin, cdir->bound.imax);
+            break;
         }
         case(VALUE_F): {
             asprintf(&name, "%s_%.0f_%.0f", parent_path, cdir->bound.fmin, cdir->bound.fmax);
+            break;
         }
         case(VALUE_B): {
             const char* min = cdir->bound.bmin ? "true" : "false";
             const char* max = cdir->bound.bmax ? "true" : "false";
             asprintf(&name, "%s_%s_%s", parent_path, min, max);
+            break;
         }
     }
     free((char*)parent_path);
