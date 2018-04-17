@@ -365,7 +365,7 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                             return;
                         }
                         case VALUE_B: {
-                            invalid_expr("Using > on a boolean value");
+                            invalid_expr("Using >= on a boolean value");
                         }
                     }
                 }
