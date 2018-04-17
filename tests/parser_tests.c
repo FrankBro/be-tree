@@ -115,6 +115,7 @@ int test_bool()
     mu_assert(node->type == AST_TYPE_BOOL_EXPR &&
         node->bool_expr.op == AST_BOOL_NOT
     , "not");
+    return 0;
 }
 
 int all_tests() 
