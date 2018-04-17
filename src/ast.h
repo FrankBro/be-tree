@@ -33,9 +33,21 @@ struct ast_combi_expr {
     const struct ast_node* rhs;
 };
 
+enum ast_bool_e {
+    AST_BOOL_NONE,
+    AST_BOOL_NOT,
+};
+
+struct ast_bool_expr {
+    enum ast_bool_e op;
+    betree_var_t variable_id;
+    const char *name;
+};
+
 enum ast_node_type_e {
     AST_TYPE_BINARY_EXPR,
     AST_TYPE_COMBI_EXPR,
+    AST_TYPE_BOOL_EXPR,
 };
 
 struct ast_node {
@@ -43,11 +55,13 @@ struct ast_node {
     union {
         struct ast_binary_expr binary_expr;
         struct ast_combi_expr combi_expr;
+        struct ast_bool_expr bool_expr;
     };
 };
 
 struct ast_node* ast_binary_expr_create(const enum ast_binop_e op, const char* name, struct value value);
 struct ast_node* ast_combi_expr_create(const enum ast_combi_e op, const struct ast_node* lhs, const struct ast_node* rhs);
+struct ast_node* ast_bool_expr_create(const enum ast_bool_e op, const char* name);
 void free_ast_node(struct ast_node* node);
 
 struct value match_node(const struct event* event, const struct ast_node *node);

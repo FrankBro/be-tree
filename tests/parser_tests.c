@@ -103,6 +103,20 @@ int test_float()
     return 0;
 }
 
+int test_bool()
+{
+    struct ast_node* node = NULL;
+    parse("a", &node);
+    mu_assert(node->type == AST_TYPE_BOOL_EXPR &&
+        node->bool_expr.op == AST_BOOL_NONE
+    , "none");
+    free_ast_node(node);
+    parse("not a", &node);
+    mu_assert(node->type == AST_TYPE_BOOL_EXPR &&
+        node->bool_expr.op == AST_BOOL_NOT
+    , "not");
+}
+
 int all_tests() 
 {
     mu_run_test(test_all_binop);
@@ -111,6 +125,7 @@ int all_tests()
     // mu_run_test(test_precedence);
     mu_run_test(test_to_string);
     mu_run_test(test_float);
+    mu_run_test(test_bool);
 
     return 0;
 }

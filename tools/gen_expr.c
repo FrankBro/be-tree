@@ -125,6 +125,19 @@ void write_expr(FILE* f, const struct ast_node* node)
             fprintf(f, "%llu ", node->binary_expr.value.ivalue);
             break;
         }
+        case(AST_TYPE_BOOL_EXPR): {
+            switch(node->bool_expr.op) {
+                case AST_BOOL_NONE: {
+                    fprintf(f, "%s", node->bool_expr.name);
+                    break;
+                }
+                case AST_BOOL_NOT: {
+                    fprintf(f, "not %s", node->bool_expr.name);
+                    break;
+                }
+            }
+            break;
+        }
         case(AST_TYPE_COMBI_EXPR): {
             write_expr(f, node->combi_expr.lhs);
             switch(node->combi_expr.op) {

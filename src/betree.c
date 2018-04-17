@@ -1115,6 +1115,34 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
             fill_pred(sub, expr->combi_expr.rhs);
             return;
         }
+        case AST_TYPE_BOOL_EXPR: {
+            bool is_found = false;
+            for(size_t i = 0; i < sub->variable_id_count; i++) {
+                if(sub->variable_ids[i] == expr->bool_expr.variable_id) {
+                    is_found = true;
+                    break;
+                }
+            }
+            if(!is_found) {
+                if(sub->variable_id_count == 0) {
+                    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
+                    if(sub->variable_ids == NULL) {
+                        fprintf(stderr, "%s calloc failed", __func__);
+                        abort();
+                    }
+                }
+                else {
+                    betree_var_t* variable_ids = realloc(sub->variable_ids, sizeof(*sub->variable_ids) * (sub->variable_id_count + 1));
+                    if(sub == NULL) {
+                        fprintf(stderr, "%s realloc failed", __func__);
+                        abort();
+                    }
+                    sub->variable_ids = variable_ids;
+                }
+                sub->variable_ids[sub->variable_id_count] = expr->bool_expr.variable_id;
+                sub->variable_id_count++;
+            }
+        }
         case AST_TYPE_BINARY_EXPR: {
             bool is_found = false;
             for(size_t i = 0; i < sub->variable_id_count; i++) {
@@ -1324,6 +1352,12 @@ void add_attr_domain_f(struct config* config, const char* attr, double min, doub
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
+void add_attr_domain_b(struct config* config, const char* attr, bool min, bool max, bool allow_undefined)
+{
+    struct value_bound bound = { .value_type = VALUE_B, .bmin = min, .bmax = max };
+    add_attr_domain(config, attr, bound, allow_undefined);
+}
+
 void adjust_attr_domains(struct config* config, const struct ast_node* node, struct value_bound bound, bool allow_undefined)
 {
     switch(node->type) {
@@ -1336,6 +1370,17 @@ void adjust_attr_domains(struct config* config, const struct ast_node* node, str
                 }
             }
             add_attr_domain(config, node->binary_expr.name, bound, allow_undefined);
+            break;
+        }
+        case(AST_TYPE_BOOL_EXPR): {
+            betree_var_t variable_id = get_id_for_attr(config, node->bool_expr.name);
+            for(size_t i = 0; i < config->attr_domain_count; i++) {
+                const struct attr_domain* attr_domain = config->attr_domains[i];
+                if(variable_id == attr_domain->variable_id) {
+                    return;
+                }
+            }
+            add_attr_domain(config, node->bool_expr.name, bound, allow_undefined);
             break;
         }
         case(AST_TYPE_COMBI_EXPR): {

@@ -28,6 +28,16 @@ struct ast_node* ast_binary_expr_create(const enum ast_binop_e op, const char* n
     return node;
 }
 
+struct ast_node* ast_bool_expr_create(const enum ast_bool_e op, const char* name)
+{
+    struct ast_node* node = ast_node_create();
+    node->type = AST_TYPE_BOOL_EXPR;
+    node->bool_expr.op = op;
+    node->bool_expr.name = strdup(name);
+    node->bool_expr.variable_id = -1;
+    return node;
+}
+
 struct ast_node* ast_combi_expr_create(const enum ast_combi_e op, const struct ast_node* lhs, const struct ast_node* rhs)
 {
     struct ast_node* node = ast_node_create();
@@ -46,6 +56,9 @@ void free_ast_node(struct ast_node* node)
     switch(node->type) {
         case AST_TYPE_BINARY_EXPR:
             free((char*)node->binary_expr.name);
+            break;
+        case AST_TYPE_BOOL_EXPR:
+            free((char*)node->bool_expr.name);
             break;
         case AST_TYPE_COMBI_EXPR:
             free_ast_node((struct ast_node*)node->combi_expr.lhs);
@@ -78,6 +91,24 @@ static void invalid_expr(const char* msg)
 struct value match_node(const struct event* event, const struct ast_node *node)
 {
     switch(node->type) {
+        case AST_TYPE_BOOL_EXPR: {
+            struct value variable;
+            bool found = get_variable(node->bool_expr.variable_id, event, &variable);
+            if(!found) {
+                return false_value;
+            }
+            struct value value = { .value_type = VALUE_B };
+            switch(node->bool_expr.op) {
+                case AST_BOOL_NONE: {
+                    value.bvalue = variable.bvalue;
+                    return value;
+                }
+                case AST_BOOL_NOT: {
+                    value.bvalue = !variable.bvalue;
+                    return value;
+                }
+            }
+        }
         case AST_TYPE_BINARY_EXPR: {
             struct value variable;
             bool found = get_variable(node->binary_expr.variable_id, event, &variable);
@@ -214,6 +245,20 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
             get_variable_bound(domain, node->combi_expr.rhs, bound);
             return;
         }
+        case AST_TYPE_BOOL_EXPR: {
+            switch(node->bool_expr.op) {
+                case AST_BOOL_NONE: {
+                    bound->bmin = min(bound->bmin, true);
+                    bound->bmax = max(bound->bmax, true);
+                    return;
+                }
+                case AST_BOOL_NOT: {
+                    bound->bmin = min(bound->bmin, false);
+                    bound->bmax = max(bound->bmax, false);
+                    return;
+                }
+            }
+        }
         case AST_TYPE_BINARY_EXPR: {
             if(domain->bound.value_type != bound->value_type || domain->bound.value_type != node->binary_expr.value.value_type) {
                 invalid_expr("Domain, bound or expr type mismatch");
@@ -337,6 +382,11 @@ void assign_variable_id(struct config* config, struct ast_node* node)
             node->binary_expr.variable_id = variable_id;
             return;
         }
+        case(AST_TYPE_BOOL_EXPR): {
+            betree_var_t variable_id = get_id_for_attr(config, node->bool_expr.name);
+            node->bool_expr.variable_id = variable_id;
+            return;
+        }
         case(AST_TYPE_COMBI_EXPR): {
             assign_variable_id(config, (struct ast_node*)node->combi_expr.lhs);
             assign_variable_id(config, (struct ast_node*)node->combi_expr.rhs);
@@ -365,6 +415,18 @@ const char* ast_to_string(const struct ast_node* node)
             free((char*)a);
             free((char*)b);
             return expr;
+        }
+        case(AST_TYPE_BOOL_EXPR): {
+            switch(node->bool_expr.op) {
+                case AST_BOOL_NONE: {
+                    asprintf(&expr, "%s", node->bool_expr.name);
+                    return expr;
+                }
+                case AST_BOOL_NOT: {
+                    asprintf(&expr, "not %s", node->bool_expr.name);
+                    return expr;
+                }
+            }
         }
         case(AST_TYPE_BINARY_EXPR): {
             switch(node->binary_expr.op) {

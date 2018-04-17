@@ -2,7 +2,7 @@
     #include "ast.h"
     #include "parser.h"
     #define SAVE_STRING yylval->string = strndup(yytext, yyleng)
-    #define SAVE_INTEGER yylval->integer = atoi(yytext)
+    #define SAVE_INTEGER yylval->integer_value = atoi(yytext)
     #define SAVE_FLOAT yylval->float_value = atof(yytext)
     #define TOKEN(t) (yylval->token = t)
     #pragma clang diagnostic push
@@ -29,6 +29,9 @@
 "and"                   return TOKEN(TAND);
 "||"                    return TOKEN(TOR);
 "or"                    return TOKEN(TOR);
+"not"                   return TOKEN(TNOT);
+"true"                  return TOKEN(TTRUE);
+"false"                 return TOKEN(TFALSE);
 [a-zA-Z_][a-zA-Z0-9_-]* SAVE_STRING; return TIDENTIFIER;
 [0-9]*                  SAVE_INTEGER; return TINTEGER;
 [0-9]+\.[0-9]*          SAVE_FLOAT; return TFLOAT;

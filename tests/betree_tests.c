@@ -25,7 +25,7 @@ const struct sub* make_simple_sub_i(struct config* config, betree_sub_t id, cons
     return sub;
 }
 
-const struct sub* make_simple_sub_f(struct config* config, betree_sub_t id, const char* attr, double ivalue)
+const struct sub* make_simple_sub_f(struct config* config, betree_sub_t id, const char* attr, double fvalue)
 {
     struct sub* sub = make_empty_sub(id);
     sub->variable_id_count = 1;
@@ -35,8 +35,24 @@ const struct sub* make_simple_sub_f(struct config* config, betree_sub_t id, cons
         abort();
     }
     sub->variable_ids[0] = get_id_for_attr(config, attr);
-    struct value value = { .value_type = VALUE_F, .fvalue = ivalue };
+    struct value value = { .value_type = VALUE_F, .fvalue = fvalue };
     struct ast_node* expr = ast_binary_expr_create(AST_BINOP_EQ, attr, value);
+    assign_variable_id(config, expr);
+    sub->expr = expr;
+    return sub;
+}
+
+const struct sub* make_simple_sub_b(struct config* config, betree_sub_t id, const char* attr, enum ast_bool_e op)
+{
+    struct sub* sub = make_empty_sub(id);
+    sub->variable_id_count = 1;
+    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
+    if(sub->variable_ids == NULL) {
+        fprintf(stderr, "%s calloc failed", __func__);
+        abort();
+    }
+    sub->variable_ids[0] = get_id_for_attr(config, attr);
+    struct ast_node* expr = ast_bool_expr_create(op, attr);
     assign_variable_id(config, expr);
     sub->expr = expr;
     return sub;
@@ -642,6 +658,36 @@ int test_float()
     return 0;
 }
 
+int test_bool()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_b(config, "a", false, true, false);
+
+    struct cnode* cnode = make_cnode(config, NULL);
+
+    for(size_t i = 0; i < 4; i++) {
+        enum ast_bool_e op = i < 3 ? AST_BOOL_NOT : AST_BOOL_NONE;
+        struct sub* sub = (struct sub*)make_simple_sub_b(config, i, "a", op);
+        insert_be_tree(config, sub, cnode, NULL);
+    }
+
+    const struct pnode* pnode = cnode->pdir->pnodes[0];
+    mu_assert(cnode->pdir != NULL &&
+        cnode->pdir->pnode_count == 1 &&
+        pnode->cdir != NULL &&
+        pnode->cdir->cnode->lnode->sub_count == 0 &&
+        pnode->cdir->lchild != NULL &&
+        pnode->cdir->rchild != NULL &&
+        pnode->cdir->lchild->cnode->lnode->sub_count == 3 &&
+        pnode->cdir->rchild->cnode->lnode->sub_count == 1
+    , "structure is respected");
+
+    free_cnode(cnode);
+    free_config(config);
+
+    return 0;
+}
+
 int all_tests() 
 {
     mu_run_test(test_sub_has_attribute);
@@ -657,6 +703,7 @@ int all_tests()
     mu_run_test(test_min_partition);
     mu_run_test(test_allow_undefined);
     mu_run_test(test_float);
+    mu_run_test(test_bool);
 
     return 0;
 }

@@ -134,6 +134,7 @@ void free_config(struct config* config);
 void add_attr_domain(struct config* config, const char* attr, struct value_bound bound, bool allow_undefined);
 void add_attr_domain_i(struct config* config, const char* attr, int64_t min, int64_t max, bool allow_undefined);
 void add_attr_domain_f(struct config* config, const char* attr, double min, double max, bool allow_undefined);
+void add_attr_domain_b(struct config* config, const char* attr, bool min, bool max, bool allow_undefined);
 void adjust_attr_domains(struct config* config, const struct ast_node* node, struct value_bound bound, bool allow_undefined);
 void adjust_attr_domains_i(struct config* config, const struct ast_node* node, int64_t min, int64_t max, bool allow_undefined);
 const struct attr_domain* get_attr_domain(const struct config* config, betree_var_t variable_id);
