@@ -7,3 +7,6 @@
 * For variables that allow undefined, keep in mind that `match_be_tree` will always need to go down pnode's with those variables. Therefore, we rank them worse in the scoring part because they will cause a bunch of useless evaluations.
 * Right now, strings won't ever be chosen for becoming a pnode since we can't really split them on their domain.
 
+## TODO
+* Allow a way to mark string values as if we know all of the possible values and they could therefore be split.
+* Allow a way to control the splitting of float values. Right now it splits like integers but that won't work well for values that have a small domain (eg -0.01 to 0.01). Use domain to find a good split
