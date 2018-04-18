@@ -335,6 +335,7 @@ int test_cdir_split_twice()
 {
     struct config* config = make_default_config();
     add_attr_domain_i(config, "a", 0, 10, false);
+    add_attr_domain_i(config, "b", 0, 10, false);
     struct cnode* cnode = make_cnode(config, NULL);
 
     const struct sub* sub1 = make_simple_sub_i(config, 1, "a", 2);
@@ -523,6 +524,8 @@ int test_min_partition()
     // With 0
     struct config* config = make_config(lnode_max_cap, 0);
     add_attr_domain_i(config, "a", 0, 10, false);
+    add_attr_domain_i(config, "b", 0, 10, false);
+    add_attr_domain_i(config, "c", 0, 10, false);
 
     struct cnode* cnode = make_cnode(config, NULL);
 
@@ -548,6 +551,8 @@ int test_min_partition()
     // With 3
     config = make_config(lnode_max_cap, 3);
     add_attr_domain_i(config, "a", 0, 10, false);
+    add_attr_domain_i(config, "b", 0, 10, false);
+    add_attr_domain_i(config, "c", 0, 10, false);
 
     cnode = make_cnode(config, NULL);
 
