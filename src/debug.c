@@ -51,6 +51,10 @@ void print_cdir(const struct config* config, const struct cdir* cdir, uint64_t l
             printf(" cdir [%s, %s]", min, max);
             break;
         }
+        case(VALUE_S): {
+            fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
+            abort();
+        }
     }
     if(cdir->cnode != NULL) {
         printf("\n");
@@ -195,6 +199,10 @@ const char* get_path_cdir(const struct config* config, const struct cdir* cdir, 
             asprintf(&name, "%s_%s_%s", parent_path, min, max);
             break;
         }
+        case(VALUE_S): {
+            fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
+            abort();
+        }
     }
     free((char*)parent_path);
     return name;
@@ -316,6 +324,10 @@ void write_dot_file_cdir_td(FILE* f, const struct config* config, const struct c
                     const char* max = cdir->bound.bmax ? "true" : "false";
                     fprintf(f, "<td colspan=\"%llu\" port=\"%s\">[%s, %s]</td>\n", colspan, name, min, max);
                     break;
+                }
+                case(VALUE_S): {
+                    fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
+                    abort();
                 }
             }
             free((char*)name);

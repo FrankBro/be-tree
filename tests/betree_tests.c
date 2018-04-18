@@ -58,6 +58,24 @@ const struct sub* make_simple_sub_b(struct config* config, betree_sub_t id, cons
     return sub;
 }
 
+const struct sub* make_simple_sub_s(struct config* config, betree_sub_t id, const char* attr, const char* svalue)
+{
+    struct sub* sub = make_empty_sub(id);
+    sub->variable_id_count = 1;
+    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
+    if(sub->variable_ids == NULL) {
+        fprintf(stderr, "%s calloc failed", __func__);
+        abort();
+    }
+    sub->variable_ids[0] = get_id_for_attr(config, attr);
+    struct value value = { .value_type = VALUE_S, .svalue = { .string = strdup(svalue) }};
+    value.svalue.str = get_id_for_string(config, svalue);
+    struct ast_node* expr = ast_binary_expr_create(AST_BINOP_EQ, attr, value);
+    assign_variable_id(config, expr);
+    sub->expr = expr;
+    return sub;
+}
+
 const struct event* make_event_with_preds(const size_t size, const struct pred** preds)
 {
     struct event* event = calloc(1, sizeof(*event));
@@ -688,6 +706,30 @@ int test_bool()
     return 0;
 }
 
+int test_string()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_s(config, "a", false);
+
+    struct cnode* cnode = make_cnode(config, NULL);
+
+    struct sub* sub = (struct sub*)make_simple_sub_s(config, 0, "a", "a");
+    insert_be_tree(config, sub, cnode, NULL);
+
+    const struct event* event = make_simple_event_s(config, "a", "a");
+    struct matched_subs* matched_subs = make_matched_subs();
+    match_be_tree(config, event, cnode, matched_subs);
+
+    mu_assert(matched_subs->sub_count == 1, "found our sub");
+
+    free_cnode(cnode);
+    free_config(config);
+    free_matched_subs(matched_subs);
+    free_event(event);
+
+    return 0;
+}
+
 int all_tests() 
 {
     mu_run_test(test_sub_has_attribute);
@@ -704,6 +746,7 @@ int all_tests()
     mu_run_test(test_allow_undefined);
     mu_run_test(test_float);
     mu_run_test(test_bool);
+    mu_run_test(test_string);
 
     return 0;
 }

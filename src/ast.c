@@ -56,6 +56,9 @@ void free_ast_node(struct ast_node* node)
     switch(node->type) {
         case AST_TYPE_BINARY_EXPR:
             free((char*)node->binary_expr.name);
+            if(node->binary_expr.value.value_type == VALUE_S) {
+                free((char*)node->binary_expr.value.svalue.string);
+            }
             break;
         case AST_TYPE_BOOL_EXPR:
             free((char*)node->bool_expr.name);
@@ -133,6 +136,9 @@ struct value match_node(const struct event* event, const struct ast_node *node)
                         case VALUE_B: {
                             invalid_expr("Using < on a boolean value");
                         }
+                        case VALUE_S: {
+                            invalid_expr("Using < on a string value");
+                        }
                     }
                 }
                 case AST_BINOP_LE: {
@@ -148,6 +154,9 @@ struct value match_node(const struct event* event, const struct ast_node *node)
                         case VALUE_B: {
                             invalid_expr("Using <= on a boolean value");
                         }
+                        case VALUE_S: {
+                            invalid_expr("Using <= on a string value");
+                        }
                     }
                 }
                 case AST_BINOP_EQ: {
@@ -162,6 +171,10 @@ struct value match_node(const struct event* event, const struct ast_node *node)
                         }
                         case VALUE_B: {
                             struct value value = { .value_type = VALUE_B, .bvalue = variable.bvalue == node->binary_expr.value.bvalue };
+                            return value;
+                        }
+                        case VALUE_S: {
+                            struct value value = { .value_type = VALUE_B, .bvalue = variable.svalue.str == node->binary_expr.value.svalue.str };
                             return value;
                         }
                     }
@@ -180,6 +193,10 @@ struct value match_node(const struct event* event, const struct ast_node *node)
                             struct value value = { .value_type = VALUE_B, .bvalue = variable.bvalue != node->binary_expr.value.bvalue };
                             return value;
                         }
+                        case VALUE_S: {
+                            struct value value = { .value_type = VALUE_B, .bvalue = variable.svalue.str != node->binary_expr.value.svalue.str };
+                            return value;
+                        }
                     }
                 }
                 case AST_BINOP_GT: {
@@ -195,6 +212,9 @@ struct value match_node(const struct event* event, const struct ast_node *node)
                         case VALUE_B: {
                             invalid_expr("Using > on a boolean value");
                         }
+                        case VALUE_S: {
+                            invalid_expr("Using > on a string value");
+                        }
                     }
                 }
                 case AST_BINOP_GE: {
@@ -209,6 +229,9 @@ struct value match_node(const struct event* event, const struct ast_node *node)
                         }
                         case VALUE_B: {
                             invalid_expr("Using >= on a boolean value");
+                        }
+                        case VALUE_S: {
+                            invalid_expr("Using >= on a string value");
                         }
                     }
                 }
@@ -279,6 +302,9 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                         case VALUE_B: {
                             invalid_expr("Using < on a boolean value");
                         }
+                        case VALUE_S: {
+                            invalid_expr("Using < on a string value");
+                        }
                     }
                 }
                 case AST_BINOP_LE: {
@@ -295,6 +321,9 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                         }
                         case VALUE_B: {
                             invalid_expr("Using <= on a boolean value");
+                        }
+                        case VALUE_S: {
+                            invalid_expr("Using <= on a string value");
                         }
                     }
                 }
@@ -315,6 +344,9 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                             bound->bmax = max(bound->bmin, node->binary_expr.value.bvalue);
                             return;
                         }
+                        case VALUE_S: {
+                            invalid_expr("Trying to get the bound of a string value");
+                        }
                     }
                 }
                 case AST_BINOP_NE: {
@@ -333,6 +365,9 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                             bound->bmin = domain->bound.bmin;
                             bound->bmax = domain->bound.bmax;
                         }
+                        case VALUE_S: {
+                            invalid_expr("Trying to get the bound of a string value");
+                        }
                     }
                 }
                 case AST_BINOP_GT: {
@@ -350,6 +385,9 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                         case VALUE_B: {
                             invalid_expr("Using > on a boolean value");
                         }
+                        case VALUE_S: {
+                            invalid_expr("Using > on a string value");
+                        }
                     }
                 }
                 case AST_BINOP_GE: {
@@ -366,6 +404,9 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                         }
                         case VALUE_B: {
                             invalid_expr("Using >= on a boolean value");
+                        }
+                        case VALUE_S: {
+                            invalid_expr("Using >= on a string value");
                         }
                     }
                 }
@@ -390,6 +431,27 @@ void assign_variable_id(struct config* config, struct ast_node* node)
         case(AST_TYPE_COMBI_EXPR): {
             assign_variable_id(config, (struct ast_node*)node->combi_expr.lhs);
             assign_variable_id(config, (struct ast_node*)node->combi_expr.rhs);
+            return;
+        }
+    }
+}
+
+void assign_str_id(struct config* config, struct ast_node* node)
+{
+    switch(node->type) {
+        case(AST_TYPE_BINARY_EXPR): {
+            if(node->binary_expr.value.value_type == VALUE_S) {
+                betree_str_t str_id = get_id_for_string(config, node->binary_expr.value.svalue.string);
+                node->binary_expr.value.svalue.str = str_id;
+            }
+            return;
+        }
+        case(AST_TYPE_BOOL_EXPR): {
+            return;
+        }
+        case(AST_TYPE_COMBI_EXPR): {
+            assign_str_id(config, (struct ast_node*)node->combi_expr.lhs);
+            assign_str_id(config, (struct ast_node*)node->combi_expr.rhs);
             return;
         }
     }
@@ -444,6 +506,10 @@ const char* ast_to_string(const struct ast_node* node)
                             invalid_expr("Using < on a boolean value");
                             return NULL;
                         }
+                        case VALUE_S: {
+                            invalid_expr("Using < on a string value");
+                            return NULL;
+                        }
                     }
                 }
                 case AST_BINOP_LE: {
@@ -458,6 +524,10 @@ const char* ast_to_string(const struct ast_node* node)
                         }
                         case VALUE_B: {
                             invalid_expr("Using <= on a boolean value");
+                            return NULL;
+                        }
+                        case VALUE_S: {
+                            invalid_expr("Using <= on a string value");
                             return NULL;
                         }
                     }
@@ -476,6 +546,10 @@ const char* ast_to_string(const struct ast_node* node)
                             asprintf(&expr, "%s = %s", node->binary_expr.name, node->binary_expr.value.bvalue ? "true" : "false");
                             return expr;
                         }
+                        case VALUE_S: {
+                            asprintf(&expr, "%s = \"%s\"", node->binary_expr.name, node->binary_expr.value.svalue.string);
+                            return expr;
+                        }
                     }
                 }
                 case AST_BINOP_NE: {
@@ -490,6 +564,10 @@ const char* ast_to_string(const struct ast_node* node)
                         }
                         case VALUE_B: {
                             asprintf(&expr, "%s <> %s", node->binary_expr.name, node->binary_expr.value.bvalue ? "true" : "false");
+                            return expr;
+                        }
+                        case VALUE_S: {
+                            asprintf(&expr, "%s <> \"%s\"", node->binary_expr.name, node->binary_expr.value.svalue.string);
                             return expr;
                         }
                     }
@@ -508,6 +586,10 @@ const char* ast_to_string(const struct ast_node* node)
                             invalid_expr("Using > on a boolean value");
                             return NULL;
                         }
+                        case VALUE_S: {
+                            invalid_expr("Using > on a string value");
+                            return NULL;
+                        }
                     }
                 }
                 case AST_BINOP_GE: {
@@ -522,6 +604,10 @@ const char* ast_to_string(const struct ast_node* node)
                         }
                         case VALUE_B: {
                             invalid_expr("Using >= on a boolean value");
+                            return NULL;
+                        }
+                        case VALUE_S: {
+                            invalid_expr("Using >= on a string value");
                             return NULL;
                         }
                     }

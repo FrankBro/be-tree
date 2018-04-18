@@ -119,6 +119,24 @@ int test_bool()
     return 0;
 }
 
+int test_string()
+{
+    struct ast_node* node = NULL;
+    parse("a = \"a\"", &node);
+    mu_assert(node->type == AST_TYPE_BINARY_EXPR &&
+        node->binary_expr.op == AST_BINOP_EQ &&
+        node->binary_expr.value.value_type == VALUE_S
+    , "eq");
+    free_ast_node(node);
+    parse("a <> \"a\"", &node);
+    mu_assert(node->type == AST_TYPE_BINARY_EXPR &&
+        node->binary_expr.op == AST_BINOP_NE &&
+        node->binary_expr.value.value_type == VALUE_S
+    , "ne");
+    free_ast_node(node);
+    return 0;
+}
+
 int all_tests() 
 {
     mu_run_test(test_all_binop);
@@ -128,6 +146,7 @@ int all_tests()
     mu_run_test(test_to_string);
     mu_run_test(test_float);
     mu_run_test(test_bool);
+    mu_run_test(test_string);
 
     return 0;
 }

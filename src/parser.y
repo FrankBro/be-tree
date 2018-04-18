@@ -34,16 +34,18 @@
 %token<token> TLPAREN TRPAREN
 %token<token> TAND TOR
 %token<token> TNOT
+%token<token> TQUOTE
 %token<string> TIDENTIFIER
 %token<boolean_value> TTRUE TFALSE
 %token<integer_value> TINTEGER
 %token<float_value> TFLOAT
 
-%type<node> expr bexpr_i bexpr_f cexpr boolexpr
+%type<node> expr bexpr_i bexpr_f bexpr_s cexpr boolexpr
 %type<string> ident
 %type<value> boolean
 %type<value> integer
 %type<value> float
+%type<value> string
 
 %left TCEQ TCNE TCGT TCGE TCLT TCLE
 %left TAND TOR
@@ -64,9 +66,12 @@ integer     : TINTEGER              { $$.value_type = VALUE_I; $$.ivalue = $1; }
 
 float       : TFLOAT                { $$.value_type = VALUE_F; $$.fvalue = $1; }
 
+string      : TQUOTE ident TQUOTE   { $$.value_type = VALUE_S; $$.svalue.string = strdup($2); $$.svalue.str = -1; free($2); }
+
 expr        : TLPAREN expr TRPAREN  { $$ = $2; }
             | bexpr_i               { $$ = $1; }
             | bexpr_f               { $$ = $1; }
+            | bexpr_s               { $$ = $1; }
             | cexpr                 { $$ = $1; }
             | boolexpr              { $$ = $1; }
 ;
@@ -85,6 +90,10 @@ bexpr_f     : ident TCEQ float      { $$ = ast_binary_expr_create(AST_BINOP_EQ, 
             | ident TCGE float      { $$ = ast_binary_expr_create(AST_BINOP_GE, $1, $3); free($1); }
             | ident TCLT float      { $$ = ast_binary_expr_create(AST_BINOP_LT, $1, $3); free($1); }
             | ident TCLE float      { $$ = ast_binary_expr_create(AST_BINOP_LE, $1, $3); free($1); }
+;
+
+bexpr_s     : ident TCEQ string     { $$ = ast_binary_expr_create(AST_BINOP_EQ, $1, $3); free($1); }
+            | ident TCNE string     { $$ = ast_binary_expr_create(AST_BINOP_NE, $1, $3); free($1); }
 ;
 
 cexpr       : expr TAND expr        { $$ = ast_combi_expr_create(AST_COMBI_AND, $1, $3); }

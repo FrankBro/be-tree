@@ -148,6 +148,10 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
                     bound.bmax = false;
                     break;
                 }
+                case(VALUE_S): {
+                    fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
+                    abort();
+                }
             }
             get_variable_bound(attr_domain, sub->expr, &bound);
             switch(attr_domain->bound.value_type) {
@@ -159,6 +163,10 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
                 }
                 case(VALUE_B): {
                     return cdir->bound.bmin <= bound.bmin && cdir->bound.bmax >= bound.bmax;
+                }
+                case(VALUE_S): {
+                    fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
+                    abort();
                 }
             }
         }
@@ -286,6 +294,7 @@ void update_partition_score(const struct config* config, struct pnode* pnode)
         abort();
     }
     uint64_t loss = attr_domain->allow_undefined ? 1.0 : 0.0;
+    loss = attr_domain->bound.value_type == VALUE_S ? 2.0 : 0.0;
     pnode->score = (1.0 - alpha) * (float) gain - alpha * (float)loss;
 }
 
@@ -584,7 +593,7 @@ bool is_attr_used_in_parent_lnode(betree_var_t variable_id, const struct lnode* 
     return is_attr_used_in_parent_cnode(variable_id, lnode->parent);
 }
 
-bool get_next_highest_score_unused_attr(const struct lnode* lnode, betree_var_t* variable_id)
+bool get_next_highest_score_unused_attr(const struct config* config, const struct lnode* lnode, betree_var_t* variable_id)
 {
     size_t highest_count = 0;
     betree_var_t highest_variable_id = 0;
@@ -592,7 +601,8 @@ bool get_next_highest_score_unused_attr(const struct lnode* lnode, betree_var_t*
         const struct sub* sub = lnode->subs[i];
         for(size_t j = 0; j < sub->variable_id_count; j++) {
             betree_var_t current_variable_id = sub->variable_ids[j];
-            if(!is_attr_used_in_parent_lnode(current_variable_id, lnode)) {
+            const struct attr_domain* attr_domain = get_attr_domain(config, current_variable_id);
+            if(attr_domain->bound.value_type != VALUE_S && !is_attr_used_in_parent_lnode(current_variable_id, lnode)) {
                 size_t current_count = count_attr_in_lnode(current_variable_id, lnode);
                 if(current_count > highest_count) {
                     highest_count = current_count;
@@ -638,7 +648,7 @@ void space_partitioning(const struct config* config, struct cnode* cnode)
     struct lnode* lnode = cnode->lnode;
     while(is_overflowed(lnode) == true) {
         betree_var_t variable_id;
-        bool found = get_next_highest_score_unused_attr(lnode, &variable_id);
+        bool found = get_next_highest_score_unused_attr(config, lnode, &variable_id);
         if(found == false) {
             break;
         }
@@ -671,6 +681,10 @@ bool is_atomic(const struct cdir* cdir)
         }
         case(VALUE_B): {
             return cdir->bound.bmin == cdir->bound.bmax;
+        }
+        case(VALUE_S): {
+            fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
+            abort();
         }
     }
 }
@@ -773,6 +787,10 @@ struct value_bounds split_value_bound(struct value_bound bound)
                 abort();
             }
             break;
+        }
+        case(VALUE_S): {
+            fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
+            abort();
         }
     }
     struct value_bounds bounds = { .lbound = lbound, .rbound = rbound };
@@ -1101,10 +1119,23 @@ const struct pred* make_simple_pred_i(betree_var_t variable_id, int64_t ivalue)
     return make_simple_pred(variable_id, value);
 }
 
+const struct pred* make_simple_pred_s(struct config* config, betree_var_t variable_id, const char* svalue)
+{
+    struct value value = { .value_type = VALUE_S, .svalue = { .string = svalue } };
+    value.svalue.str = get_id_for_string(config, svalue);
+    return make_simple_pred(variable_id, value);
+}
+
 const struct pred* make_simple_pred_str_i(struct config* config, const char* attr, int64_t value)
 {
     betree_var_t variable_id = get_id_for_attr(config, attr);
     return make_simple_pred_i(variable_id, value);
+}
+
+const struct pred* make_simple_pred_str_s(struct config* config, const char* attr, const char* value)
+{
+    betree_var_t variable_id = get_id_for_attr(config, attr);
+    return make_simple_pred_s(config, variable_id, value);
 }
 
 void fill_pred(struct sub* sub, const struct ast_node* expr)
@@ -1221,6 +1252,19 @@ const struct event* make_simple_event_i(struct config* config, const char* attr,
     return event;
 }
 
+const struct event* make_simple_event_s(struct config* config, const char* attr, const char* value)
+{
+    struct event* event = (struct event*)make_event();
+    event->pred_count = 1;
+    event->preds = calloc(1, sizeof(*event->preds));
+    if(event->preds == NULL) {
+        fprintf(stderr, "%s preds calloc failed", __func__);
+        abort();
+    }
+    event->preds[0] = (struct pred*)make_simple_pred_str_s(config, attr, value);
+    return event;
+}
+
 const char* get_attr_for_id(const struct config* config, betree_var_t variable_id)
 {
     if(variable_id < config->attr_to_id_count) {
@@ -1274,6 +1318,8 @@ struct config* make_config(uint64_t lnode_max_cap, uint64_t partition_min_size)
     config->attr_to_ids = NULL;
     config->lnode_max_cap = lnode_max_cap;
     config->partition_min_size = partition_min_size;
+    config->string_value_count = 0;
+    config->string_values = NULL;
     return config;
 }
 
@@ -1300,6 +1346,13 @@ void free_config(struct config* config)
         }
         free(config->attr_domains);
         config->attr_domains = NULL;
+    }
+    if(config->string_values != NULL) {
+        for(size_t i = 0; i < config->string_value_count; i++) {
+            free(config->string_values[i]);
+        }
+        free(config->string_values);
+        config->string_values = NULL;
     }
     free(config);
 }
@@ -1355,6 +1408,12 @@ void add_attr_domain_f(struct config* config, const char* attr, double min, doub
 void add_attr_domain_b(struct config* config, const char* attr, bool min, bool max, bool allow_undefined)
 {
     struct value_bound bound = { .value_type = VALUE_B, .bmin = min, .bmax = max };
+    add_attr_domain(config, attr, bound, allow_undefined);
+}
+
+void add_attr_domain_s(struct config* config, const char* attr, bool allow_undefined)
+{
+    struct value_bound bound = { .value_type = VALUE_S };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
@@ -1431,7 +1490,43 @@ void event_to_string(struct config* config, const struct event* event, char* buf
                 length += sprintf(buffer + length, "%s = %s", attr, value);
                 break;
             }
+            case(VALUE_S): {
+                length += sprintf(buffer + length, "%s = \"%s\"", attr, pred->value.svalue.string);
+                break;
+            }
         }
     }
     buffer[length] = '\0';
+}
+
+betree_str_t get_id_for_string(struct config* config, const char* string)
+{
+    char* copy = strdup(string);
+    for(size_t i = 0; copy[i]; i++) {
+        copy[i] = tolower(copy[i]);
+    }
+    for(size_t i = 0; i < config->string_value_count; i++) {
+        if(strcmp(config->string_values[i], copy) == 0) {
+            free(copy);
+            return i;
+        }
+    }
+    if(config->string_value_count == 0) {
+        config->string_values = calloc(1, sizeof(*config->string_values));
+        if(config->string_values == NULL) {
+            fprintf(stderr, "%s calloc failed", __func__);
+            abort();
+        }
+    }
+    else {
+        char** string_values = realloc(config->string_values, sizeof(*string_values) * (config->string_value_count + 1));
+        if(string_values == NULL) {
+            fprintf(stderr, "%s realloc failed", __func__);
+            abort();
+        }
+        config->string_values = string_values;
+    }
+    config->string_values[config->string_value_count] = copy;
+    config->string_value_count++;
+    return config->string_value_count - 1;
 }
