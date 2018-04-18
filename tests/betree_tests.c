@@ -730,7 +730,27 @@ int test_string()
     free_cnode(cnode);
     free_config(config);
     free_matched_subs(matched_subs);
-    free_event(event);
+    free_event((struct event*)event);
+
+    return 0;
+}
+
+int test_string_wont_split()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_s(config, "a", false);
+
+    struct cnode* cnode = make_cnode(config, NULL);
+
+    for(size_t i = 0; i < 4; i++) {
+        struct sub* sub = (struct sub*)make_simple_sub_s(config, i, "a", "a");
+        insert_be_tree(config, sub, cnode, NULL);
+    }
+
+    mu_assert(cnode->lnode->sub_count == 4, "did not split");
+
+    free_cnode(cnode);
+    free_config(config);
 
     return 0;
 }
@@ -752,6 +772,7 @@ int all_tests()
     mu_run_test(test_float);
     mu_run_test(test_bool);
     mu_run_test(test_string);
+    mu_run_test(test_string_wont_split);
 
     return 0;
 }

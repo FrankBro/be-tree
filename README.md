@@ -5,3 +5,5 @@
 
 ## Implementation
 * For variables that allow undefined, keep in mind that `match_be_tree` will always need to go down pnode's with those variables. Therefore, we rank them worse in the scoring part because they will cause a bunch of useless evaluations.
+* Right now, strings won't ever be chosen for becoming a pnode since we can't really split them on their domain.
+
