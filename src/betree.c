@@ -38,7 +38,7 @@ void check_sub(const struct event* event, const struct lnode* lnode, struct matc
             }
             else {
                 betree_sub_t* subs = realloc(matched_subs->subs, sizeof(*matched_subs->subs) * (matched_subs->sub_count + 1));
-                if(sub == NULL) {
+                if(subs == NULL) {
                     fprintf(stderr, "%s realloc failed", __func__);
                     abort();
                 }
