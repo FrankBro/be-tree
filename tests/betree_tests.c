@@ -755,6 +755,74 @@ int test_string_wont_split()
     return 0;
 }
 
+int test_negative_int()
+{
+    struct config* config = make_default_config();
+    int64_t min = -10;
+    int64_t max = -4;
+    int64_t mid = (min + max) / 2;
+    add_attr_domain_i(config, "a", min, max, false);
+
+    struct cnode* cnode = make_cnode(config, NULL);
+
+    for(size_t i = 0; i < 4; i++) {
+        int64_t value = i < 3 ? -6 : -12;
+        struct sub* sub = (struct sub*)make_simple_sub_i(config, i, "a", value);
+        insert_be_tree(config, sub, cnode, NULL);
+    }
+
+    const struct cdir* cdir = cnode->pdir->pnodes[0]->cdir;
+    const struct cdir* lchild = cdir->lchild;
+    const struct cdir* rchild = cdir->rchild;
+
+    mu_assert(cdir->bound.value_type == VALUE_I &&
+        cdir->bound.imin == min &&
+        cdir->bound.imax == max &&
+        lchild->bound.value_type == VALUE_I &&
+        lchild->bound.imin == min &&
+        lchild->bound.imax == mid &&
+        rchild->bound.value_type == VALUE_I &&
+        rchild->bound.imin == mid &&
+        rchild->bound.imax == max
+    , "cdirs have proper bounds");
+
+    return 0;
+}
+
+int test_negative_float()
+{
+    struct config* config = make_default_config();
+    double min = -10.;
+    double max = -4.;
+    double mid = ceil((min + max) / 2.);
+    add_attr_domain_f(config, "a", min, max, false);
+
+    struct cnode* cnode = make_cnode(config, NULL);
+
+    for(size_t i = 0; i < 4; i++) {
+        int64_t value = i < 3 ? -6. : -12.;
+        struct sub* sub = (struct sub*)make_simple_sub_f(config, i, "a", value);
+        insert_be_tree(config, sub, cnode, NULL);
+    }
+
+    const struct cdir* cdir = cnode->pdir->pnodes[0]->cdir;
+    const struct cdir* lchild = cdir->lchild;
+    const struct cdir* rchild = cdir->rchild;
+
+    mu_assert(cdir->bound.value_type == VALUE_F &&
+        feq(cdir->bound.fmin, min) &&
+        feq(cdir->bound.fmax, max) &&
+        lchild->bound.value_type == VALUE_F &&
+        feq(lchild->bound.fmin, min) &&
+        feq(lchild->bound.fmax, mid) &&
+        rchild->bound.value_type == VALUE_F &&
+        feq(rchild->bound.fmin, mid) &&
+        feq(rchild->bound.fmax, max)
+    , "cdirs have proper bounds");
+
+    return 0;
+}
+
 int all_tests() 
 {
     mu_run_test(test_sub_has_attribute);
@@ -773,6 +841,8 @@ int all_tests()
     mu_run_test(test_bool);
     mu_run_test(test_string);
     mu_run_test(test_string_wont_split);
+    mu_run_test(test_negative_int);
+    mu_run_test(test_negative_float);
 
     return 0;
 }
