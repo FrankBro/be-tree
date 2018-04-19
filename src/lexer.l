@@ -25,6 +25,9 @@
 "<="                    return TOKEN(TCLE);
 "("                     return TOKEN(TLPAREN);
 ")"                     return TOKEN(TRPAREN);
+","                     return TOKEN(TCOMMA);
+"not in"                return TOKEN(TNOTIN);
+"in"                    return TOKEN(TIN);
 "&&"                    return TOKEN(TAND);
 "and"                   return TOKEN(TAND);
 "||"                    return TOKEN(TOR);

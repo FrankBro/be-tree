@@ -55,6 +55,10 @@ void print_cdir(const struct config* config, const struct cdir* cdir, uint64_t l
             fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
             abort();
         }
+        case(VALUE_IL): {
+            fprintf(stderr, "%s a integer list value cdir should never happen for now", __func__);
+            abort();
+        }
     }
     if(cdir->cnode != NULL) {
         printf("\n");
@@ -203,6 +207,10 @@ const char* get_path_cdir(const struct config* config, const struct cdir* cdir, 
             fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
             abort();
         }
+        case(VALUE_IL): {
+            fprintf(stderr, "%s a integer list value cdir should never happen for now", __func__);
+            abort();
+        }
     }
     free((char*)parent_path);
     return name;
@@ -327,6 +335,10 @@ void write_dot_file_cdir_td(FILE* f, const struct config* config, const struct c
                 }
                 case(VALUE_S): {
                     fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
+                    abort();
+                }
+                case(VALUE_IL): {
+                    fprintf(stderr, "%s a integer list value cdir should never happen for now", __func__);
                     abort();
                 }
             }

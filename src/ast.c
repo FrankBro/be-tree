@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -49,6 +50,17 @@ struct ast_node* ast_combi_expr_create(const enum ast_combi_e op, const struct a
     return node;
 }
 
+struct ast_node* ast_list_expr_create(const enum ast_list_e op, const char* name, struct integer_list list)
+{
+    struct ast_node* node = ast_node_create();
+    node->type = AST_TYPE_LIST_EXPR;
+    node->list_expr.op = op;
+    node->list_expr.name = strdup(name);
+    node->list_expr.variable_id = -1;
+    node->list_expr.list = list;
+    return node;
+}
+
 void free_ast_node(struct ast_node* node)
 {
     if(node == NULL) {
@@ -63,6 +75,10 @@ void free_ast_node(struct ast_node* node)
             break;
         case AST_TYPE_BOOL_EXPR:
             free((char*)node->bool_expr.name);
+            break;
+        case AST_TYPE_LIST_EXPR:
+            free((char*)node->list_expr.name);
+            free(node->list_expr.list.integers);
             break;
         case AST_TYPE_COMBI_EXPR:
             free_ast_node((struct ast_node*)node->combi_expr.lhs);
@@ -92,6 +108,16 @@ static void invalid_expr(const char* msg)
     abort();
 }
 
+bool integer_in_integer_list(int64_t integer, struct integer_list integer_list)
+{
+    for(size_t i = 0; i < integer_list.count; i++) {
+        if(integer_list.integers[i] == integer) {
+            return true;
+        }
+    }
+    return false;
+}
+
 struct value match_node(const struct event* event, const struct ast_node *node)
 {
     switch(node->type) {
@@ -109,6 +135,29 @@ struct value match_node(const struct event* event, const struct ast_node *node)
                 }
                 case AST_BOOL_NOT: {
                     value.bvalue = !variable.bvalue;
+                    return value;
+                }
+            }
+        }
+        case AST_TYPE_LIST_EXPR: {
+            struct value variable;
+            bool found = get_variable(node->list_expr.variable_id, event, &variable);
+            if(!found) {
+                return false_value;
+            }
+            switch(node->list_expr.op) {
+                case AST_LISTOP_NOTIN: {
+                    if(variable.value_type != VALUE_I) {
+                        invalid_expr("variable is not an integer in `not in` expression");
+                    }
+                    struct value value = { .value_type = VALUE_B, .bvalue = !integer_in_integer_list(variable.ivalue, node->list_expr.list) };
+                    return value;
+                }
+                case AST_LISTOP_IN: {
+                    if(variable.value_type != VALUE_I) {
+                        invalid_expr("variable is not an integer in `in` expression");
+                    }
+                    struct value value = { .value_type = VALUE_B, .bvalue = integer_in_integer_list(variable.ivalue, node->list_expr.list) };
                     return value;
                 }
             }
@@ -140,6 +189,9 @@ struct value match_node(const struct event* event, const struct ast_node *node)
                         case VALUE_S: {
                             invalid_expr("Using < on a string value");
                         }
+                        case VALUE_IL: {
+                            invalid_expr("Using < on a integer list value");
+                        }
                     }
                 }
                 case AST_BINOP_LE: {
@@ -157,6 +209,9 @@ struct value match_node(const struct event* event, const struct ast_node *node)
                         }
                         case VALUE_S: {
                             invalid_expr("Using <= on a string value");
+                        }
+                        case VALUE_IL: {
+                            invalid_expr("Using <= on a integer list value");
                         }
                     }
                 }
@@ -178,6 +233,9 @@ struct value match_node(const struct event* event, const struct ast_node *node)
                             struct value value = { .value_type = VALUE_B, .bvalue = variable.svalue.str == node->binary_expr.value.svalue.str };
                             return value;
                         }
+                        case VALUE_IL: {
+                            invalid_expr("Using = on a integer list value");
+                        }
                     }
                 }
                 case AST_BINOP_NE: {
@@ -198,6 +256,9 @@ struct value match_node(const struct event* event, const struct ast_node *node)
                             struct value value = { .value_type = VALUE_B, .bvalue = variable.svalue.str != node->binary_expr.value.svalue.str };
                             return value;
                         }
+                        case VALUE_IL: {
+                            invalid_expr("Using <> on a integer list value");
+                        }
                     }
                 }
                 case AST_BINOP_GT: {
@@ -216,6 +277,9 @@ struct value match_node(const struct event* event, const struct ast_node *node)
                         case VALUE_S: {
                             invalid_expr("Using > on a string value");
                         }
+                        case VALUE_IL: {
+                            invalid_expr("Using > on a integer list value");
+                        }
                     }
                 }
                 case AST_BINOP_GE: {
@@ -233,6 +297,9 @@ struct value match_node(const struct event* event, const struct ast_node *node)
                         }
                         case VALUE_S: {
                             invalid_expr("Using >= on a string value");
+                        }
+                        case VALUE_IL: {
+                            invalid_expr("Using >= on a integer list value");
                         }
                     }
                 }
@@ -268,6 +335,30 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
             get_variable_bound(domain, node->combi_expr.lhs, bound);
             get_variable_bound(domain, node->combi_expr.rhs, bound);
             return;
+        }
+        case AST_TYPE_LIST_EXPR: {
+            switch(node->list_expr.op) {
+                case AST_LISTOP_NOTIN: {
+                    bound->imin = domain->bound.imin;
+                    bound->imax = domain->bound.imax;
+                    return;
+                }
+                case AST_LISTOP_IN: {
+                    int64_t min = INT64_MAX, max = INT64_MIN;
+                    for(size_t i = 0; i < node->list_expr.list.count; i++) {
+                        int64_t value = node->list_expr.list.integers[i];
+                        if(value < min) {
+                            min = value;
+                        }
+                        if(value > max) {
+                            max = value;
+                        }
+                    }
+                    bound->imin = min(bound->imin, min);
+                    bound->imax = max(bound->imax, max);
+                    return;
+                }
+            }
         }
         case AST_TYPE_BOOL_EXPR: {
             switch(node->bool_expr.op) {
@@ -306,6 +397,9 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                         case VALUE_S: {
                             invalid_expr("Using < on a string value");
                         }
+                        case VALUE_IL: {
+                            invalid_expr("Using < on a integer list value");
+                        }
                     }
                 }
                 case AST_BINOP_LE: {
@@ -325,6 +419,9 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                         }
                         case VALUE_S: {
                             invalid_expr("Using <= on a string value");
+                        }
+                        case VALUE_IL: {
+                            invalid_expr("Using <= on a integer list value");
                         }
                     }
                 }
@@ -348,6 +445,9 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                         case VALUE_S: {
                             invalid_expr("Trying to get the bound of a string value");
                         }
+                        case VALUE_IL: {
+                            invalid_expr("Using = on a integer list value");
+                        }
                     }
                 }
                 case AST_BINOP_NE: {
@@ -369,6 +469,9 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                         case VALUE_S: {
                             invalid_expr("Trying to get the bound of a string value");
                         }
+                        case VALUE_IL: {
+                            invalid_expr("Using <> on a integer list value");
+                        }
                     }
                 }
                 case AST_BINOP_GT: {
@@ -388,6 +491,9 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                         }
                         case VALUE_S: {
                             invalid_expr("Using > on a string value");
+                        }
+                        case VALUE_IL: {
+                            invalid_expr("Using > on a integer list value");
                         }
                     }
                 }
@@ -409,6 +515,9 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                         case VALUE_S: {
                             invalid_expr("Using >= on a string value");
                         }
+                        case VALUE_IL: {
+                            invalid_expr("Using >= on a integer list value");
+                        }
                     }
                 }
             }
@@ -427,6 +536,11 @@ void assign_variable_id(struct config* config, struct ast_node* node)
         case(AST_TYPE_BOOL_EXPR): {
             betree_var_t variable_id = get_id_for_attr(config, node->bool_expr.name);
             node->bool_expr.variable_id = variable_id;
+            return;
+        }
+        case(AST_TYPE_LIST_EXPR): {
+            betree_var_t variable_id = get_id_for_attr(config, node->list_expr.name);
+            node->list_expr.variable_id = variable_id;
             return;
         }
         case(AST_TYPE_COMBI_EXPR): {
@@ -448,6 +562,9 @@ void assign_str_id(struct config* config, struct ast_node* node)
             return;
         }
         case(AST_TYPE_BOOL_EXPR): {
+            return;
+        }
+        case(AST_TYPE_LIST_EXPR): {
             return;
         }
         case(AST_TYPE_COMBI_EXPR): {
@@ -477,6 +594,19 @@ const char* ast_to_string(const struct ast_node* node)
             }
             free((char*)a);
             free((char*)b);
+            return expr;
+        }
+        case(AST_TYPE_LIST_EXPR): {
+            const char* integer_list = integer_list_to_string(node->list_expr.list);
+            switch(node->list_expr.op) {
+                case AST_LISTOP_NOTIN: {
+                    asprintf(&expr, "%s not in (%s)", node->list_expr.name, integer_list);
+                }
+                case AST_LISTOP_IN: {
+                    asprintf(&expr, "%s in (%s)", node->list_expr.name, integer_list);
+                }
+            }
+            free((char*)integer_list);
             return expr;
         }
         case(AST_TYPE_BOOL_EXPR): {
@@ -511,6 +641,10 @@ const char* ast_to_string(const struct ast_node* node)
                             invalid_expr("Using < on a string value");
                             return NULL;
                         }
+                        case VALUE_IL: {
+                            invalid_expr("Using < on a integer list value");
+                            return NULL;
+                        }
                     }
                 }
                 case AST_BINOP_LE: {
@@ -529,6 +663,10 @@ const char* ast_to_string(const struct ast_node* node)
                         }
                         case VALUE_S: {
                             invalid_expr("Using <= on a string value");
+                            return NULL;
+                        }
+                        case VALUE_IL: {
+                            invalid_expr("Using <= on a integer list value");
                             return NULL;
                         }
                     }
@@ -551,6 +689,10 @@ const char* ast_to_string(const struct ast_node* node)
                             asprintf(&expr, "%s = \"%s\"", node->binary_expr.name, node->binary_expr.value.svalue.string);
                             return expr;
                         }
+                        case VALUE_IL: {
+                            invalid_expr("Using = on a integer list value");
+                            return NULL;
+                        }
                     }
                 }
                 case AST_BINOP_NE: {
@@ -570,6 +712,10 @@ const char* ast_to_string(const struct ast_node* node)
                         case VALUE_S: {
                             asprintf(&expr, "%s <> \"%s\"", node->binary_expr.name, node->binary_expr.value.svalue.string);
                             return expr;
+                        }
+                        case VALUE_IL: {
+                            invalid_expr("Using <> on a integer list value");
+                            return NULL;
                         }
                     }
                 }
@@ -591,6 +737,10 @@ const char* ast_to_string(const struct ast_node* node)
                             invalid_expr("Using > on a string value");
                             return NULL;
                         }
+                        case VALUE_IL: {
+                            invalid_expr("Using > on a integer list value");
+                            return NULL;
+                        }
                     }
                 }
                 case AST_BINOP_GE: {
@@ -609,6 +759,10 @@ const char* ast_to_string(const struct ast_node* node)
                         }
                         case VALUE_S: {
                             invalid_expr("Using >= on a string value");
+                            return NULL;
+                        }
+                        case VALUE_IL: {
+                            invalid_expr("Using >= on a integer list value");
                             return NULL;
                         }
                     }

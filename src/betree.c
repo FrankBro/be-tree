@@ -152,6 +152,10 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
                     fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
                     abort();
                 }
+                case(VALUE_IL): {
+                    fprintf(stderr, "%s a integer list value cdir should never happen for now", __func__);
+                    abort();
+                }
             }
             get_variable_bound(attr_domain, sub->expr, &bound);
             switch(attr_domain->bound.value_type) {
@@ -166,6 +170,10 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
                 }
                 case(VALUE_S): {
                     fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
+                    abort();
+                }
+                case(VALUE_IL): {
+                    fprintf(stderr, "%s a integer list value cdir should never happen for now", __func__);
                     abort();
                 }
             }
@@ -686,6 +694,10 @@ bool is_atomic(const struct cdir* cdir)
             fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
             abort();
         }
+        case(VALUE_IL): {
+            fprintf(stderr, "%s a integer list value cdir should never happen for now", __func__);
+            abort();
+        }
     }
 }
 
@@ -790,6 +802,10 @@ struct value_bounds split_value_bound(struct value_bound bound)
         }
         case(VALUE_S): {
             fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
+            abort();
+        }
+        case(VALUE_IL): {
+            fprintf(stderr, "%s a integer list value cdir should never happen for now", __func__);
             abort();
         }
     }
@@ -1174,6 +1190,34 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
                 sub->variable_id_count++;
             }
         }
+        case AST_TYPE_LIST_EXPR: {
+            bool is_found = false;
+            for(size_t i = 0; i < sub->variable_id_count; i++) {
+                if(sub->variable_ids[i] == expr->list_expr.variable_id) {
+                    is_found = true;
+                    break;
+                }
+            }
+            if(!is_found) {
+                if(sub->variable_id_count == 0) {
+                    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
+                    if(sub->variable_ids == NULL) {
+                        fprintf(stderr, "%s calloc failed", __func__);
+                        abort();
+                    }
+                }
+                else {
+                    betree_var_t* variable_ids = realloc(sub->variable_ids, sizeof(*sub->variable_ids) * (sub->variable_id_count + 1));
+                    if(sub == NULL) {
+                        fprintf(stderr, "%s realloc failed", __func__);
+                        abort();
+                    }
+                    sub->variable_ids = variable_ids;
+                }
+                sub->variable_ids[sub->variable_id_count] = expr->list_expr.variable_id;
+                sub->variable_id_count++;
+            }
+        }
         case AST_TYPE_BINARY_EXPR: {
             bool is_found = false;
             for(size_t i = 0; i < sub->variable_id_count; i++) {
@@ -1442,6 +1486,17 @@ void adjust_attr_domains(struct config* config, const struct ast_node* node, str
             add_attr_domain(config, node->bool_expr.name, bound, allow_undefined);
             break;
         }
+        case(AST_TYPE_LIST_EXPR): {
+            betree_var_t variable_id = get_id_for_attr(config, node->list_expr.name);
+            for(size_t i = 0; i < config->attr_domain_count; i++) {
+                const struct attr_domain* attr_domain = config->attr_domains[i];
+                if(variable_id == attr_domain->variable_id) {
+                    return;
+                }
+            }
+            add_attr_domain(config, node->list_expr.name, bound, allow_undefined);
+            break;
+        }
         case(AST_TYPE_COMBI_EXPR): {
             adjust_attr_domains(config, node->combi_expr.lhs, bound, allow_undefined);
             adjust_attr_domains(config, node->combi_expr.rhs, bound, allow_undefined);
@@ -1494,6 +1549,13 @@ void event_to_string(struct config* config, const struct event* event, char* buf
                 length += sprintf(buffer + length, "%s = \"%s\"", attr, pred->value.svalue.string);
                 break;
             }
+            case(VALUE_IL): {
+                const char* integer_list = integer_list_to_string(pred->value.ilvalue);
+                length += sprintf(buffer + length, "%s = (%s)", attr, integer_list);
+                free((char*)integer_list);
+                break;
+
+            }
         }
     }
     buffer[length] = '\0';
@@ -1529,4 +1591,37 @@ betree_str_t get_id_for_string(struct config* config, const char* string)
     config->string_values[config->string_value_count] = copy;
     config->string_value_count++;
     return config->string_value_count - 1;
+}
+
+void add_integer_list(int64_t integer, struct integer_list* integer_list)
+{
+    if(integer_list->count == 0) {
+        integer_list->integers = calloc(1, sizeof(*integer_list->integers));
+        if(integer_list->integers == NULL) {
+            fprintf(stderr, "%s calloc failed", __func__);
+            abort();
+        }
+    }
+    else {
+        int64_t* integers = realloc(integer_list->integers, sizeof(*integer_list->integers) * (integer_list->count + 1));
+        if(integers == NULL) {
+            fprintf(stderr, "%s realloc failed", __func__);
+            abort();
+        }
+        integer_list->integers = integers;
+    }
+    integer_list->integers[integer_list->count] = integer;
+    integer_list->count++;
+}
+
+const char* integer_list_to_string(struct integer_list list)
+{
+    char* integer_list;
+    for(size_t i = 0; i < list.count; i++) {
+        if(i != 0) {
+            asprintf(&integer_list, ", ");
+        }
+        asprintf(&integer_list, "%llu", list.integers[i]);
+    }
+    return integer_list;
 }

@@ -94,6 +94,21 @@ const struct ast_node* generate_expr(size_t complexity, size_t attr_min, size_t 
 void write_expr(FILE* f, const struct ast_node* node)
 {
     switch(node->type) {
+        case(AST_TYPE_LIST_EXPR): {
+            const char* integer_list = integer_list_to_string(node->list_expr.list);
+            switch(node->list_expr.op) {
+                case AST_LISTOP_IN: {
+                    fprintf(f, "%s in (%s)", node->list_expr.name, integer_list);
+                    break;
+                }
+                case AST_LISTOP_NOTIN: {
+                    fprintf(f, "%s not in (%s)", node->list_expr.name, integer_list);
+                    break;
+                }
+            }
+            free((char*)integer_list);
+            break;
+        }
         case(AST_TYPE_BINARY_EXPR): {
             fprintf(f, "%s ", node->binary_expr.name);
             switch(node->binary_expr.op) {

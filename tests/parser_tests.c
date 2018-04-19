@@ -137,6 +137,27 @@ int test_string()
     return 0;
 }
 
+int test_integer_list()
+{
+    struct ast_node* node = NULL;
+    parse("a in (1,2, 3)", &node);
+    mu_assert(node->type == AST_TYPE_LIST_EXPR &&
+        node->list_expr.op == AST_LISTOP_IN
+    , "in");
+    free_ast_node(node);
+    parse("a not in (1,2, 3)", &node);
+    mu_assert(node->type == AST_TYPE_LIST_EXPR &&
+        node->list_expr.op == AST_LISTOP_NOTIN
+    , "in");
+    free_ast_node(node);
+    parse("a in (1)", &node);
+    mu_assert(node->type == AST_TYPE_LIST_EXPR &&
+        node->list_expr.op == AST_LISTOP_IN
+    , "single");
+    free_ast_node(node);
+    return 0;
+}
+
 int all_tests() 
 {
     mu_run_test(test_all_binop);
@@ -147,6 +168,7 @@ int all_tests()
     mu_run_test(test_float);
     mu_run_test(test_bool);
     mu_run_test(test_string);
+    mu_run_test(test_integer_list);
 
     return 0;
 }
