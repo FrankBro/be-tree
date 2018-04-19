@@ -788,6 +788,9 @@ int test_negative_int()
         rchild->bound.imax == max
     , "cdirs have proper bounds");
 
+    free_config(config);
+    free_cnode(cnode);
+
     return 0;
 }
 
@@ -821,6 +824,9 @@ int test_negative_float()
         feq(rchild->bound.fmin, mid) &&
         feq(rchild->bound.fmax, max)
     , "cdirs have proper bounds");
+
+    free_config(config);
+    free_cnode(cnode);
 
     return 0;
 }
