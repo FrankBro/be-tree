@@ -1156,6 +1156,7 @@ const struct pred* make_simple_pred_str_s(struct config* config, const char* att
 
 void fill_pred(struct sub* sub, const struct ast_node* expr)
 {
+    betree_var_t variable_id;
     switch(expr->type) {
         case AST_TYPE_COMBI_EXPR: {
             fill_pred(sub, expr->combi_expr.lhs);
@@ -1163,89 +1164,43 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
             return;
         }
         case AST_TYPE_BOOL_EXPR: {
-            bool is_found = false;
-            for(size_t i = 0; i < sub->variable_id_count; i++) {
-                if(sub->variable_ids[i] == expr->bool_expr.variable_id) {
-                    is_found = true;
-                    break;
-                }
-            }
-            if(!is_found) {
-                if(sub->variable_id_count == 0) {
-                    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
-                    if(sub->variable_ids == NULL) {
-                        fprintf(stderr, "%s calloc failed", __func__);
-                        abort();
-                    }
-                }
-                else {
-                    betree_var_t* variable_ids = realloc(sub->variable_ids, sizeof(*sub->variable_ids) * (sub->variable_id_count + 1));
-                    if(sub == NULL) {
-                        fprintf(stderr, "%s realloc failed", __func__);
-                        abort();
-                    }
-                    sub->variable_ids = variable_ids;
-                }
-                sub->variable_ids[sub->variable_id_count] = expr->bool_expr.variable_id;
-                sub->variable_id_count++;
-            }
-        }
-        case AST_TYPE_LIST_EXPR: {
-            bool is_found = false;
-            for(size_t i = 0; i < sub->variable_id_count; i++) {
-                if(sub->variable_ids[i] == expr->list_expr.variable_id) {
-                    is_found = true;
-                    break;
-                }
-            }
-            if(!is_found) {
-                if(sub->variable_id_count == 0) {
-                    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
-                    if(sub->variable_ids == NULL) {
-                        fprintf(stderr, "%s calloc failed", __func__);
-                        abort();
-                    }
-                }
-                else {
-                    betree_var_t* variable_ids = realloc(sub->variable_ids, sizeof(*sub->variable_ids) * (sub->variable_id_count + 1));
-                    if(sub == NULL) {
-                        fprintf(stderr, "%s realloc failed", __func__);
-                        abort();
-                    }
-                    sub->variable_ids = variable_ids;
-                }
-                sub->variable_ids[sub->variable_id_count] = expr->list_expr.variable_id;
-                sub->variable_id_count++;
-            }
+            variable_id = expr->bool_expr.variable_id;
+            break;
         }
         case AST_TYPE_BINARY_EXPR: {
-            bool is_found = false;
-            for(size_t i = 0; i < sub->variable_id_count; i++) {
-                if(sub->variable_ids[i] == expr->binary_expr.variable_id) {
-                    is_found = true;
-                    break;
-                }
-            }
-            if(!is_found) {
-                if(sub->variable_id_count == 0) {
-                    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
-                    if(sub->variable_ids == NULL) {
-                        fprintf(stderr, "%s calloc failed", __func__);
-                        abort();
-                    }
-                }
-                else {
-                    betree_var_t* variable_ids = realloc(sub->variable_ids, sizeof(*sub->variable_ids) * (sub->variable_id_count + 1));
-                    if(sub == NULL) {
-                        fprintf(stderr, "%s realloc failed", __func__);
-                        abort();
-                    }
-                    sub->variable_ids = variable_ids;
-                }
-                sub->variable_ids[sub->variable_id_count] = expr->binary_expr.variable_id;
-                sub->variable_id_count++;
+            variable_id = expr->binary_expr.variable_id;
+            break;
+        }
+        case AST_TYPE_LIST_EXPR: {
+            variable_id = expr->list_expr.variable_id;
+            break;
+        }
+    }
+    bool is_found = false;
+    for(size_t i = 0; i < sub->variable_id_count; i++) {
+        if(sub->variable_ids[i] == variable_id) {
+            is_found = true;
+            break;
+        }
+    }
+    if(!is_found) {
+        if(sub->variable_id_count == 0) {
+            sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
+            if(sub->variable_ids == NULL) {
+                fprintf(stderr, "%s calloc failed", __func__);
+                abort();
             }
         }
+        else {
+            betree_var_t* variable_ids = realloc(sub->variable_ids, sizeof(*sub->variable_ids) * (sub->variable_id_count + 1));
+            if(sub == NULL) {
+                fprintf(stderr, "%s realloc failed", __func__);
+                abort();
+            }
+            sub->variable_ids = variable_ids;
+        }
+        sub->variable_ids[sub->variable_id_count] = variable_id;
+        sub->variable_id_count++;
     }
 }
 
@@ -1463,46 +1418,34 @@ void add_attr_domain_s(struct config* config, const char* attr, bool allow_undef
 
 void adjust_attr_domains(struct config* config, const struct ast_node* node, struct value_bound bound, bool allow_undefined)
 {
+    const char* name;
     switch(node->type) {
-        case(AST_TYPE_BINARY_EXPR): {
-            betree_var_t variable_id = get_id_for_attr(config, node->binary_expr.name);
-            for(size_t i = 0; i < config->attr_domain_count; i++) {
-                const struct attr_domain* attr_domain = config->attr_domains[i];
-                if(variable_id == attr_domain->variable_id) {
-                    return;
-                }
-            }
-            add_attr_domain(config, node->binary_expr.name, bound, allow_undefined);
-            break;
-        }
-        case(AST_TYPE_BOOL_EXPR): {
-            betree_var_t variable_id = get_id_for_attr(config, node->bool_expr.name);
-            for(size_t i = 0; i < config->attr_domain_count; i++) {
-                const struct attr_domain* attr_domain = config->attr_domains[i];
-                if(variable_id == attr_domain->variable_id) {
-                    return;
-                }
-            }
-            add_attr_domain(config, node->bool_expr.name, bound, allow_undefined);
-            break;
-        }
-        case(AST_TYPE_LIST_EXPR): {
-            betree_var_t variable_id = get_id_for_attr(config, node->list_expr.name);
-            for(size_t i = 0; i < config->attr_domain_count; i++) {
-                const struct attr_domain* attr_domain = config->attr_domains[i];
-                if(variable_id == attr_domain->variable_id) {
-                    return;
-                }
-            }
-            add_attr_domain(config, node->list_expr.name, bound, allow_undefined);
-            break;
-        }
         case(AST_TYPE_COMBI_EXPR): {
             adjust_attr_domains(config, node->combi_expr.lhs, bound, allow_undefined);
             adjust_attr_domains(config, node->combi_expr.rhs, bound, allow_undefined);
+            return;
+        }
+        case(AST_TYPE_BINARY_EXPR): {
+            name = node->binary_expr.name;
+            break;
+        }
+        case(AST_TYPE_BOOL_EXPR): {
+            name = node->bool_expr.name;
+            break;
+        }
+        case(AST_TYPE_LIST_EXPR): {
+            name = node->list_expr.name;
             break;
         }
     }
+    betree_var_t variable_id = get_id_for_attr(config, name);
+    for(size_t i = 0; i < config->attr_domain_count; i++) {
+        const struct attr_domain* attr_domain = config->attr_domains[i];
+        if(variable_id == attr_domain->variable_id) {
+            return;
+        }
+    }
+    add_attr_domain(config, name, bound, allow_undefined);
 }
 
 void adjust_attr_domains_i(struct config* config, const struct ast_node* node, int64_t min, int64_t max, bool allow_undefined)
