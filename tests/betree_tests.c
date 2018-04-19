@@ -8,6 +8,7 @@
 #include "debug.h"
 #include "minunit.h"
 #include "parser.h"
+#include "utils.h"
 
 const struct sub* make_simple_sub_i(struct config* config, betree_sub_t id, const char* attr, int64_t ivalue)
 {
