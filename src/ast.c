@@ -169,8 +169,7 @@ struct value match_node(const struct event* event, const struct ast_node *node)
                 return false_value;
             }
             if(variable.value_type != node->binary_expr.value.value_type) {
-                fprintf(stderr, "%s value types do not match", __func__);
-                abort();
+                invalid_expr("%s value types do not match");
             }
             switch(node->binary_expr.op) {
                 case AST_BINOP_LT: {
