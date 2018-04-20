@@ -19,14 +19,25 @@ struct ast_node* ast_node_create()
     return node;
 }
 
-struct ast_node* ast_binary_expr_create(const enum ast_binop_e op, const char* name, struct value value)
+struct ast_node* ast_numeric_compare_expr_create(const enum ast_numeric_compare_e op, const char* name, struct numeric_compare_value value)
 {
     struct ast_node* node = ast_node_create();
-    node->type = AST_TYPE_BINARY_EXPR;
-    node->binary_expr.op = op;
-    node->binary_expr.name = strdup(name);
-    node->binary_expr.variable_id = -1;
-    node->binary_expr.value = value;
+    node->type = AST_TYPE_NUMERIC_COMPARE_EXPR;
+    node->numeric_compare_expr.op = op;
+    node->numeric_compare_expr.name = strdup(name);
+    node->numeric_compare_expr.variable_id = -1;
+    node->numeric_compare_expr.value = value;
+    return node;
+}
+
+struct ast_node* ast_equality_expr_create(const enum ast_equality_e op, const char* name, struct equality_value value)
+{
+    struct ast_node* node = ast_node_create();
+    node->type = AST_TYPE_EQUALITY_EXPR;
+    node->equality_expr.op = op;
+    node->equality_expr.name = strdup(name);
+    node->equality_expr.variable_id = -1;
+    node->equality_expr.value = value;
     return node;
 }
 
@@ -67,10 +78,13 @@ void free_ast_node(struct ast_node* node)
         return;
     }
     switch(node->type) {
-        case AST_TYPE_BINARY_EXPR:
-            free((char*)node->binary_expr.name);
-            if(node->binary_expr.value.value_type == VALUE_S) {
-                free((char*)node->binary_expr.value.svalue.string);
+        case AST_TYPE_NUMERIC_COMPARE_EXPR:
+            free((char*)node->numeric_compare_expr.name);
+            break;
+        case AST_TYPE_EQUALITY_EXPR:
+            free((char*)node->equality_expr.name);
+            if(node->equality_expr.value.value_type == AST_EQUALITY_VALUE_STRING) {
+                free((char*)node->equality_expr.value.string_value.string);
             }
             break;
         case AST_TYPE_BOOL_EXPR:
@@ -100,8 +114,6 @@ bool get_variable(betree_var_t variable_id, const struct event* event, struct va
     return false;
 }
 
-static const struct value false_value = { .value_type = VALUE_B, .bvalue = false };
-
 static void invalid_expr(const char* msg)
 {
     fprintf(stderr, "%s", msg);
@@ -118,24 +130,37 @@ bool integer_in_integer_list(int64_t integer, struct integer_list integer_list)
     return false;
 }
 
-struct value match_node(const struct event* event, const struct ast_node *node)
+bool numeric_compare_value_matches(enum ast_numeric_compare_value_e a, enum value_e b) {
+    return
+        (a == AST_NUMERIC_COMPARE_VALUE_INTEGER && b == VALUE_I) ||
+        (a == AST_NUMERIC_COMPARE_VALUE_FLOAT && b == VALUE_F);
+}
+
+bool equality_value_matches(enum ast_equality_value_e a, enum value_e b) {
+    return
+        (a == AST_EQUALITY_VALUE_INTEGER && b == VALUE_I) ||
+        (a == AST_EQUALITY_VALUE_FLOAT && b == VALUE_F) ||
+        (a == AST_EQUALITY_VALUE_STRING && b == VALUE_S);
+}
+
+bool match_node(const struct event* event, const struct ast_node *node)
 {
     switch(node->type) {
         case AST_TYPE_BOOL_EXPR: {
             struct value variable;
             bool found = get_variable(node->bool_expr.variable_id, event, &variable);
             if(!found) {
-                return false_value;
+                return false;
             }
-            struct value value = { .value_type = VALUE_B };
+            if(variable.value_type != VALUE_B) {
+                invalid_expr("boolean expression with a variable that is not a boolean");
+            }
             switch(node->bool_expr.op) {
                 case AST_BOOL_NONE: {
-                    value.bvalue = variable.bvalue;
-                    return value;
+                    return variable.bvalue;
                 }
                 case AST_BOOL_NOT: {
-                    value.bvalue = !variable.bvalue;
-                    return value;
+                    return !variable.bvalue;
                 }
             }
         }
@@ -143,181 +168,138 @@ struct value match_node(const struct event* event, const struct ast_node *node)
             struct value variable;
             bool found = get_variable(node->list_expr.variable_id, event, &variable);
             if(!found) {
-                return false_value;
+                return false;
             }
             switch(node->list_expr.op) {
                 case AST_LISTOP_NOTIN: {
                     if(variable.value_type != VALUE_I) {
                         invalid_expr("variable is not an integer in `not in` expression");
                     }
-                    struct value value = { .value_type = VALUE_B, .bvalue = !integer_in_integer_list(variable.ivalue, node->list_expr.list) };
-                    return value;
+                    bool result = !integer_in_integer_list(variable.ivalue, node->list_expr.list);
+                    return result;
                 }
                 case AST_LISTOP_IN: {
                     if(variable.value_type != VALUE_I) {
                         invalid_expr("variable is not an integer in `in` expression");
                     }
-                    struct value value = { .value_type = VALUE_B, .bvalue = integer_in_integer_list(variable.ivalue, node->list_expr.list) };
-                    return value;
+                    bool result = integer_in_integer_list(variable.ivalue, node->list_expr.list);
+                    return result;
                 }
             }
         }
-        case AST_TYPE_BINARY_EXPR: {
+        case AST_TYPE_NUMERIC_COMPARE_EXPR: {
             struct value variable;
-            bool found = get_variable(node->binary_expr.variable_id, event, &variable);
+            bool found = get_variable(node->numeric_compare_expr.variable_id, event, &variable);
             if(!found) {
-                return false_value;
+                return false;
             }
-            if(variable.value_type != node->binary_expr.value.value_type) {
-                invalid_expr("%s value types do not match");
+            if(!numeric_compare_value_matches(node->numeric_compare_expr.value.value_type, variable.value_type)) {
+                invalid_expr("numeric compare value types do not match");
             }
-            switch(node->binary_expr.op) {
-                case AST_BINOP_LT: {
-                    switch(node->binary_expr.value.value_type) {
-                        case VALUE_I: {
-                            struct value value = { .value_type = VALUE_B, .bvalue = variable.ivalue < node->binary_expr.value.ivalue };
-                            return value;
+            switch(node->numeric_compare_expr.op) {
+                case AST_NUMERIC_COMPARE_LT: {
+                    switch(node->numeric_compare_expr.value.value_type) {
+                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
+                            bool result = variable.ivalue < node->numeric_compare_expr.value.integer_value;
+                            return result;
                         }
-                        case VALUE_F: {
-                            struct value value = { .value_type = VALUE_B, .bvalue = variable.fvalue < node->binary_expr.value.fvalue };
-                            return value;
-                        }
-                        case VALUE_B: {
-                            invalid_expr("Using < on a boolean value");
-                        }
-                        case VALUE_S: {
-                            invalid_expr("Using < on a string value");
-                        }
-                        case VALUE_IL: {
-                            invalid_expr("Using < on a integer list value");
+                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
+                            bool result = variable.fvalue < node->numeric_compare_expr.value.float_value;
+                            return result;
                         }
                     }
                 }
-                case AST_BINOP_LE: {
-                    switch(node->binary_expr.value.value_type) {
-                        case VALUE_I: {
-                            struct value value = { .value_type = VALUE_B, .bvalue = variable.ivalue <= node->binary_expr.value.ivalue };
-                            return value;
+                case AST_NUMERIC_COMPARE_LE: {
+                    switch(node->numeric_compare_expr.value.value_type) {
+                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
+                            bool result = variable.ivalue <= node->numeric_compare_expr.value.integer_value;
+                            return result;
                         }
-                        case VALUE_F: {
-                            struct value value = { .value_type = VALUE_B, .bvalue = variable.fvalue <= node->binary_expr.value.fvalue };
-                            return value;
-                        }
-                        case VALUE_B: {
-                            invalid_expr("Using <= on a boolean value");
-                        }
-                        case VALUE_S: {
-                            invalid_expr("Using <= on a string value");
-                        }
-                        case VALUE_IL: {
-                            invalid_expr("Using <= on a integer list value");
+                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
+                            bool result = variable.fvalue <= node->numeric_compare_expr.value.float_value;
+                            return result;
                         }
                     }
                 }
-                case AST_BINOP_EQ: {
-                    switch(node->binary_expr.value.value_type) {
-                        case VALUE_I: {
-                            struct value value = { .value_type = VALUE_B, .bvalue = variable.ivalue == node->binary_expr.value.ivalue };
-                            return value;
+                case AST_NUMERIC_COMPARE_GT: {
+                    switch(node->numeric_compare_expr.value.value_type) {
+                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
+                            bool result = variable.ivalue > node->numeric_compare_expr.value.integer_value;
+                            return result;
                         }
-                        case VALUE_F: {
-                            struct value value = { .value_type = VALUE_B, .bvalue = feq(variable.fvalue, node->binary_expr.value.fvalue) };
-                            return value;
-                        }
-                        case VALUE_B: {
-                            struct value value = { .value_type = VALUE_B, .bvalue = variable.bvalue == node->binary_expr.value.bvalue };
-                            return value;
-                        }
-                        case VALUE_S: {
-                            struct value value = { .value_type = VALUE_B, .bvalue = variable.svalue.str == node->binary_expr.value.svalue.str };
-                            return value;
-                        }
-                        case VALUE_IL: {
-                            invalid_expr("Using = on a integer list value");
+                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
+                            bool result = variable.fvalue > node->numeric_compare_expr.value.float_value;
+                            return result;
                         }
                     }
                 }
-                case AST_BINOP_NE: {
-                    switch(node->binary_expr.value.value_type) {
-                        case VALUE_I: {
-                            struct value value = { .value_type = VALUE_B, .bvalue = variable.ivalue != node->binary_expr.value.ivalue };
-                            return value;
+                case AST_NUMERIC_COMPARE_GE: {
+                    switch(node->numeric_compare_expr.value.value_type) {
+                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
+                            bool result = variable.ivalue >= node->numeric_compare_expr.value.integer_value;
+                            return result;
                         }
-                        case VALUE_F: {
-                            struct value value = { .value_type = VALUE_B, .bvalue = fne(variable.fvalue, node->binary_expr.value.fvalue) };
-                            return value;
-                        }
-                        case VALUE_B: {
-                            struct value value = { .value_type = VALUE_B, .bvalue = variable.bvalue != node->binary_expr.value.bvalue };
-                            return value;
-                        }
-                        case VALUE_S: {
-                            struct value value = { .value_type = VALUE_B, .bvalue = variable.svalue.str != node->binary_expr.value.svalue.str };
-                            return value;
-                        }
-                        case VALUE_IL: {
-                            invalid_expr("Using <> on a integer list value");
+                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
+                            bool result = variable.fvalue >= node->numeric_compare_expr.value.float_value;
+                            return result;
                         }
                     }
                 }
-                case AST_BINOP_GT: {
-                    switch(node->binary_expr.value.value_type) {
-                        case VALUE_I: {
-                            struct value value = { .value_type = VALUE_B, .bvalue = variable.ivalue > node->binary_expr.value.ivalue };
-                            return value;
+            }
+        }
+        case AST_TYPE_EQUALITY_EXPR: {
+            struct value variable;
+            bool found = get_variable(node->equality_expr.variable_id, event, &variable);
+            if(!found) {
+                return false;
+            }
+            if(!equality_value_matches(node->equality_expr.value.value_type, variable.value_type)) {
+                invalid_expr("equality value types do not match");
+            }
+            switch(node->equality_expr.op) {
+                case AST_EQUALITY_EQ: {
+                    switch(node->equality_expr.value.value_type) {
+                        case AST_EQUALITY_VALUE_INTEGER: {
+                            bool result = variable.ivalue == node->equality_expr.value.integer_value;
+                            return result;
                         }
-                        case VALUE_F: {
-                            struct value value = { .value_type = VALUE_B, .bvalue = variable.fvalue > node->binary_expr.value.fvalue };
-                            return value;
+                        case AST_EQUALITY_VALUE_FLOAT: {
+                            bool result = feq(variable.fvalue, node->equality_expr.value.float_value);
+                            return result;
                         }
-                        case VALUE_B: {
-                            invalid_expr("Using > on a boolean value");
-                        }
-                        case VALUE_S: {
-                            invalid_expr("Using > on a string value");
-                        }
-                        case VALUE_IL: {
-                            invalid_expr("Using > on a integer list value");
+                        case AST_EQUALITY_VALUE_STRING: {
+                            bool result = variable.svalue.str == node->equality_expr.value.string_value.str;
+                            return result;
                         }
                     }
                 }
-                case AST_BINOP_GE: {
-                    switch(node->binary_expr.value.value_type) {
-                        case VALUE_I: {
-                            struct value value = { .value_type = VALUE_B, .bvalue = variable.ivalue >= node->binary_expr.value.ivalue };
-                            return value;
+                case AST_EQUALITY_NE: {
+                    switch(node->equality_expr.value.value_type) {
+                        case AST_EQUALITY_VALUE_INTEGER: {
+                            bool result = variable.ivalue != node->equality_expr.value.integer_value;
+                            return result;
                         }
-                        case VALUE_F: {
-                            struct value value = { .value_type = VALUE_B, .bvalue = variable.fvalue >= node->binary_expr.value.fvalue };
-                            return value;
+                        case AST_EQUALITY_VALUE_FLOAT: {
+                            bool result = fne(variable.fvalue, node->equality_expr.value.float_value);
+                            return result;
                         }
-                        case VALUE_B: {
-                            invalid_expr("Using >= on a boolean value");
-                        }
-                        case VALUE_S: {
-                            invalid_expr("Using >= on a string value");
-                        }
-                        case VALUE_IL: {
-                            invalid_expr("Using >= on a integer list value");
+                        case AST_EQUALITY_VALUE_STRING: {
+                            bool result = variable.svalue.str != node->equality_expr.value.string_value.str;
+                            return result;
                         }
                     }
                 }
             }
         }
         case AST_TYPE_COMBI_EXPR: {
-            struct value lhs = match_node(event, node->combi_expr.lhs);
-            struct value rhs = match_node(event, node->combi_expr.rhs);
-            if(lhs.value_type != VALUE_B || rhs.value_type != VALUE_B) {
-                invalid_expr("Using && or || on a non-boolean value");
-            }
+            bool lhs = match_node(event, node->combi_expr.lhs);
+            bool rhs = match_node(event, node->combi_expr.rhs);
             switch(node->combi_expr.op) {
                 case AST_COMBI_AND: {
-                    struct value value = { .value_type = VALUE_B, .bvalue = lhs.bvalue && rhs.bvalue };
-                    return value;
+                    return lhs && rhs;
                 }
                 case AST_COMBI_OR: {
-                    struct value value = { .value_type = VALUE_B, .bvalue = lhs.bvalue || rhs.bvalue };
-                    return value;
+                    return lhs || rhs;
                 }
             }
         }
@@ -373,149 +355,107 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                 }
             }
         }
-        case AST_TYPE_BINARY_EXPR: {
-            if(domain->bound.value_type != bound->value_type || domain->bound.value_type != node->binary_expr.value.value_type) {
+        case AST_TYPE_EQUALITY_EXPR: {
+            if(domain->bound.value_type != bound->value_type || 
+                !equality_value_matches(node->equality_expr.value.value_type, domain->bound.value_type)) {
                 invalid_expr("Domain, bound or expr type mismatch");
             }
-            switch(node->binary_expr.op) {
-                case AST_BINOP_LT: {
-                    switch(node->binary_expr.value.value_type) {
-                        case VALUE_I: {
-                            bound->imin = domain->bound.imin;
-                            bound->imax = max(bound->imax, node->binary_expr.value.ivalue - 1);
+            switch(node->equality_expr.op) {
+                case AST_EQUALITY_EQ: {
+                    switch(node->equality_expr.value.value_type) {
+                        case AST_EQUALITY_VALUE_INTEGER: {
+                            bound->imin = min(bound->imin, node->equality_expr.value.integer_value);
+                            bound->imax = max(bound->imax, node->equality_expr.value.integer_value);
                             return;
                         }
-                        case VALUE_F: {
-                            bound->fmin = domain->bound.fmin;
-                            bound->fmax = fmax(bound->fmax, node->binary_expr.value.fvalue - __DBL_EPSILON__);
+                        case AST_EQUALITY_VALUE_FLOAT: {
+                            bound->fmin = fmin(bound->fmin, node->equality_expr.value.float_value);
+                            bound->fmax = fmax(bound->fmax, node->equality_expr.value.float_value);
                             return;
                         }
-                        case VALUE_B: {
-                            invalid_expr("Using < on a boolean value");
-                        }
-                        case VALUE_S: {
-                            invalid_expr("Using < on a string value");
-                        }
-                        case VALUE_IL: {
-                            invalid_expr("Using < on a integer list value");
-                        }
-                    }
-                }
-                case AST_BINOP_LE: {
-                    switch(node->binary_expr.value.value_type) {
-                        case VALUE_I: {
-                            bound->imin = domain->bound.imin;
-                            bound->imax = max(bound->imax, node->binary_expr.value.ivalue);
-                            return;
-                        }
-                        case VALUE_F: {
-                            bound->fmin = domain->bound.fmin;
-                            bound->fmax = fmax(bound->fmax, node->binary_expr.value.fvalue);
-                            return;
-                        }
-                        case VALUE_B: {
-                            invalid_expr("Using <= on a boolean value");
-                        }
-                        case VALUE_S: {
-                            invalid_expr("Using <= on a string value");
-                        }
-                        case VALUE_IL: {
-                            invalid_expr("Using <= on a integer list value");
-                        }
-                    }
-                }
-                case AST_BINOP_EQ: {
-                    switch(node->binary_expr.value.value_type) {
-                        case VALUE_I: {
-                            bound->imin = min(bound->imin, node->binary_expr.value.ivalue);
-                            bound->imax = max(bound->imax, node->binary_expr.value.ivalue);
-                            return;
-                        }
-                        case VALUE_F: {
-                            bound->fmin = fmin(bound->fmin, node->binary_expr.value.fvalue);
-                            bound->fmax = fmax(bound->fmax, node->binary_expr.value.fvalue);
-                            return;
-                        }
-                        case VALUE_B: {
-                            bound->bmin = min(bound->bmin, node->binary_expr.value.bvalue);
-                            bound->bmax = max(bound->bmin, node->binary_expr.value.bvalue);
-                            return;
-                        }
-                        case VALUE_S: {
+                        case AST_EQUALITY_VALUE_STRING: {
                             invalid_expr("Trying to get the bound of a string value");
                         }
-                        case VALUE_IL: {
-                            invalid_expr("Using = on a integer list value");
-                        }
                     }
                 }
-                case AST_BINOP_NE: {
-                    switch(node->binary_expr.value.value_type) {
-                        case VALUE_I: {
+                case AST_EQUALITY_NE: {
+                    switch(node->equality_expr.value.value_type) {
+                        case AST_EQUALITY_VALUE_INTEGER: {
                             bound->imin = domain->bound.imin;
                             bound->imax = domain->bound.imax;
                             return;
                         }
-                        case VALUE_F: {
+                        case AST_EQUALITY_VALUE_FLOAT: {
                             bound->fmin = domain->bound.fmin;
                             bound->fmax = domain->bound.fmax;
                             return;
                         }
-                        case VALUE_B: {
-                            bound->bmin = domain->bound.bmin;
-                            bound->bmax = domain->bound.bmax;
-                        }
-                        case VALUE_S: {
+                        case AST_EQUALITY_VALUE_STRING: {
                             invalid_expr("Trying to get the bound of a string value");
                         }
-                        case VALUE_IL: {
-                            invalid_expr("Using <> on a integer list value");
+                    }
+                }
+            }
+        }
+        case AST_TYPE_NUMERIC_COMPARE_EXPR: {
+            if(domain->bound.value_type != bound->value_type || 
+                !numeric_compare_value_matches(node->numeric_compare_expr.value.value_type, domain->bound.value_type)) {
+                invalid_expr("Domain, bound or expr type mismatch");
+            }
+            switch(node->numeric_compare_expr.op) {
+                case AST_NUMERIC_COMPARE_LT: {
+                    switch(node->numeric_compare_expr.value.value_type) {
+                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
+                            bound->imin = domain->bound.imin;
+                            bound->imax = max(bound->imax, node->numeric_compare_expr.value.integer_value - 1);
+                            return;
+                        }
+                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
+                            bound->fmin = domain->bound.fmin;
+                            bound->fmax = fmax(bound->fmax, node->numeric_compare_expr.value.float_value - __DBL_EPSILON__);
+                            return;
                         }
                     }
                 }
-                case AST_BINOP_GT: {
-                    switch(node->binary_expr.value.value_type) {
-                        case VALUE_I: {
-                            bound->imin = min(bound->imin, node->binary_expr.value.ivalue + 1);
-                            bound->imax = domain->bound.imax;
+                case AST_NUMERIC_COMPARE_LE: {
+                    switch(node->numeric_compare_expr.value.value_type) {
+                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
+                            bound->imin = domain->bound.imin;
+                            bound->imax = max(bound->imax, node->numeric_compare_expr.value.integer_value);
                             return;
                         }
-                        case VALUE_F: {
-                            bound->fmin = fmin(bound->fmin, node->binary_expr.value.fvalue + __DBL_EPSILON__);
-                            bound->fmax = domain->bound.fmax;
+                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
+                            bound->fmin = domain->bound.fmin;
+                            bound->fmax = fmax(bound->fmax, node->numeric_compare_expr.value.float_value);
                             return;
-                        }
-                        case VALUE_B: {
-                            invalid_expr("Using > on a boolean value");
-                        }
-                        case VALUE_S: {
-                            invalid_expr("Using > on a string value");
-                        }
-                        case VALUE_IL: {
-                            invalid_expr("Using > on a integer list value");
                         }
                     }
                 }
-                case AST_BINOP_GE: {
-                    switch(node->binary_expr.value.value_type) {
-                        case VALUE_I: {
-                            bound->imin = min(bound->imin, node->binary_expr.value.ivalue);
+                case AST_NUMERIC_COMPARE_GT: {
+                    switch(node->numeric_compare_expr.value.value_type) {
+                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
+                            bound->imin = min(bound->imin, node->numeric_compare_expr.value.integer_value + 1);
                             bound->imax = domain->bound.imax;
                             return;
                         }
-                        case VALUE_F: {
-                            bound->fmin = fmin(bound->fmin, node->binary_expr.value.fvalue);
+                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
+                            bound->fmin = fmin(bound->fmin, node->numeric_compare_expr.value.float_value + __DBL_EPSILON__);
                             bound->fmax = domain->bound.fmax;
                             return;
                         }
-                        case VALUE_B: {
-                            invalid_expr("Using >= on a boolean value");
+                    }
+                }
+                case AST_NUMERIC_COMPARE_GE: {
+                    switch(node->numeric_compare_expr.value.value_type) {
+                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
+                            bound->imin = min(bound->imin, node->numeric_compare_expr.value.integer_value);
+                            bound->imax = domain->bound.imax;
+                            return;
                         }
-                        case VALUE_S: {
-                            invalid_expr("Using >= on a string value");
-                        }
-                        case VALUE_IL: {
-                            invalid_expr("Using >= on a integer list value");
+                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
+                            bound->fmin = fmin(bound->fmin, node->numeric_compare_expr.value.float_value);
+                            bound->fmax = domain->bound.fmax;
+                            return;
                         }
                     }
                 }
@@ -527,9 +467,14 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
 void assign_variable_id(struct config* config, struct ast_node* node) 
 {
     switch(node->type) {
-        case(AST_TYPE_BINARY_EXPR): {
-            betree_var_t variable_id = get_id_for_attr(config, node->binary_expr.name);
-            node->binary_expr.variable_id = variable_id;
+        case(AST_TYPE_NUMERIC_COMPARE_EXPR): {
+            betree_var_t variable_id = get_id_for_attr(config, node->numeric_compare_expr.name);
+            node->numeric_compare_expr.variable_id = variable_id;
+            return;
+        }
+        case(AST_TYPE_EQUALITY_EXPR): {
+            betree_var_t variable_id = get_id_for_attr(config, node->equality_expr.name);
+            node->equality_expr.variable_id = variable_id;
             return;
         }
         case(AST_TYPE_BOOL_EXPR): {
@@ -553,10 +498,13 @@ void assign_variable_id(struct config* config, struct ast_node* node)
 void assign_str_id(struct config* config, struct ast_node* node)
 {
     switch(node->type) {
-        case(AST_TYPE_BINARY_EXPR): {
-            if(node->binary_expr.value.value_type == VALUE_S) {
-                betree_str_t str_id = get_id_for_string(config, node->binary_expr.value.svalue.string);
-                node->binary_expr.value.svalue.str = str_id;
+        case(AST_TYPE_NUMERIC_COMPARE_EXPR): {
+            return;
+        }
+        case(AST_TYPE_EQUALITY_EXPR): {
+            if(node->equality_expr.value.value_type == AST_EQUALITY_VALUE_STRING) {
+                betree_str_t str_id = get_id_for_string(config, node->equality_expr.value.string_value.string);
+                node->equality_expr.value.string_value.str = str_id;
             }
             return;
         }
@@ -620,149 +568,89 @@ const char* ast_to_string(const struct ast_node* node)
                 }
             }
         }
-        case(AST_TYPE_BINARY_EXPR): {
-            switch(node->binary_expr.op) {
-                case AST_BINOP_LT: {
-                    switch(node->binary_expr.value.value_type) {
-                        case VALUE_I: {
-                            asprintf(&expr, "%s < %llu", node->binary_expr.name, node->binary_expr.value.ivalue);
+        case(AST_TYPE_EQUALITY_EXPR): {
+            switch(node->equality_expr.op) {
+                case AST_EQUALITY_EQ: {
+                    switch(node->equality_expr.value.value_type) {
+                        case AST_EQUALITY_VALUE_INTEGER: {
+                            asprintf(&expr, "%s = %llu", node->equality_expr.name, node->equality_expr.value.integer_value);
                             return expr;
                         }
-                        case VALUE_F: {
-                            asprintf(&expr, "%s < %.2f", node->binary_expr.name, node->binary_expr.value.fvalue);
+                        case AST_EQUALITY_VALUE_FLOAT: {
+                            asprintf(&expr, "%s = %.2f", node->equality_expr.name, node->equality_expr.value.float_value);
                             return expr;
                         }
-                        case VALUE_B: {
-                            invalid_expr("Using < on a boolean value");
-                            return NULL;
-                        }
-                        case VALUE_S: {
-                            invalid_expr("Using < on a string value");
-                            return NULL;
-                        }
-                        case VALUE_IL: {
-                            invalid_expr("Using < on a integer list value");
-                            return NULL;
+                        case AST_EQUALITY_VALUE_STRING: {
+                            asprintf(&expr, "%s = \"%s\"", node->equality_expr.name, node->equality_expr.value.string_value.string);
+                            return expr;
                         }
                     }
                 }
-                case AST_BINOP_LE: {
-                    switch(node->binary_expr.value.value_type) {
-                        case VALUE_I: {
-                            asprintf(&expr, "%s <= %llu", node->binary_expr.name, node->binary_expr.value.ivalue);
+                case AST_EQUALITY_NE: {
+                    switch(node->equality_expr.value.value_type) {
+                        case AST_EQUALITY_VALUE_INTEGER: {
+                            asprintf(&expr, "%s <> %llu", node->equality_expr.name, node->equality_expr.value.integer_value);
                             return expr;
                         }
-                        case VALUE_F: {
-                            asprintf(&expr, "%s <= %.2f", node->binary_expr.name, node->binary_expr.value.fvalue);
+                        case AST_EQUALITY_VALUE_FLOAT: {
+                            asprintf(&expr, "%s <> %.2f", node->equality_expr.name, node->equality_expr.value.float_value);
                             return expr;
                         }
-                        case VALUE_B: {
-                            invalid_expr("Using <= on a boolean value");
-                            return NULL;
-                        }
-                        case VALUE_S: {
-                            invalid_expr("Using <= on a string value");
-                            return NULL;
-                        }
-                        case VALUE_IL: {
-                            invalid_expr("Using <= on a integer list value");
-                            return NULL;
+                        case AST_EQUALITY_VALUE_STRING: {
+                            asprintf(&expr, "%s <> \"%s\"", node->equality_expr.name, node->equality_expr.value.string_value.string);
+                            return expr;
                         }
                     }
                 }
-                case AST_BINOP_EQ: {
-                    switch(node->binary_expr.value.value_type) {
-                        case VALUE_I: {
-                            asprintf(&expr, "%s = %llu", node->binary_expr.name, node->binary_expr.value.ivalue);
+            }
+        }
+        case(AST_TYPE_NUMERIC_COMPARE_EXPR): {
+            switch(node->numeric_compare_expr.op) {
+                case AST_NUMERIC_COMPARE_LT: {
+                    switch(node->numeric_compare_expr.value.value_type) {
+                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
+                            asprintf(&expr, "%s < %llu", node->numeric_compare_expr.name, node->numeric_compare_expr.value.integer_value);
                             return expr;
                         }
-                        case VALUE_F: {
-                            asprintf(&expr, "%s = %.2f", node->binary_expr.name, node->binary_expr.value.fvalue);
+                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
+                            asprintf(&expr, "%s < %.2f", node->numeric_compare_expr.name, node->numeric_compare_expr.value.float_value);
                             return expr;
-                        }
-                        case VALUE_B: {
-                            asprintf(&expr, "%s = %s", node->binary_expr.name, node->binary_expr.value.bvalue ? "true" : "false");
-                            return expr;
-                        }
-                        case VALUE_S: {
-                            asprintf(&expr, "%s = \"%s\"", node->binary_expr.name, node->binary_expr.value.svalue.string);
-                            return expr;
-                        }
-                        case VALUE_IL: {
-                            invalid_expr("Using = on a integer list value");
-                            return NULL;
                         }
                     }
                 }
-                case AST_BINOP_NE: {
-                    switch(node->binary_expr.value.value_type) {
-                        case VALUE_I: {
-                            asprintf(&expr, "%s <> %llu", node->binary_expr.name, node->binary_expr.value.ivalue);
+                case AST_NUMERIC_COMPARE_LE: {
+                    switch(node->numeric_compare_expr.value.value_type) {
+                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
+                            asprintf(&expr, "%s <= %llu", node->numeric_compare_expr.name, node->numeric_compare_expr.value.integer_value);
                             return expr;
                         }
-                        case VALUE_F: {
-                            asprintf(&expr, "%s <> %.2f", node->binary_expr.name, node->binary_expr.value.fvalue);
+                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
+                            asprintf(&expr, "%s <= %.2f", node->numeric_compare_expr.name, node->numeric_compare_expr.value.float_value);
                             return expr;
-                        }
-                        case VALUE_B: {
-                            asprintf(&expr, "%s <> %s", node->binary_expr.name, node->binary_expr.value.bvalue ? "true" : "false");
-                            return expr;
-                        }
-                        case VALUE_S: {
-                            asprintf(&expr, "%s <> \"%s\"", node->binary_expr.name, node->binary_expr.value.svalue.string);
-                            return expr;
-                        }
-                        case VALUE_IL: {
-                            invalid_expr("Using <> on a integer list value");
-                            return NULL;
                         }
                     }
                 }
-                case AST_BINOP_GT: {
-                    switch(node->binary_expr.value.value_type) {
-                        case VALUE_I: {
-                            asprintf(&expr, "%s > %llu", node->binary_expr.name, node->binary_expr.value.ivalue);
+                case AST_NUMERIC_COMPARE_GT: {
+                    switch(node->numeric_compare_expr.value.value_type) {
+                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
+                            asprintf(&expr, "%s > %llu", node->numeric_compare_expr.name, node->numeric_compare_expr.value.integer_value);
                             return expr;
                         }
-                        case VALUE_F: {
-                            asprintf(&expr, "%s > %.2f", node->binary_expr.name, node->binary_expr.value.fvalue);
+                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
+                            asprintf(&expr, "%s > %.2f", node->numeric_compare_expr.name, node->numeric_compare_expr.value.float_value);
                             return expr;
-                        }
-                        case VALUE_B: {
-                            invalid_expr("Using > on a boolean value");
-                            return NULL;
-                        }
-                        case VALUE_S: {
-                            invalid_expr("Using > on a string value");
-                            return NULL;
-                        }
-                        case VALUE_IL: {
-                            invalid_expr("Using > on a integer list value");
-                            return NULL;
                         }
                     }
                 }
-                case AST_BINOP_GE: {
-                    switch(node->binary_expr.value.value_type) {
-                        case VALUE_I: {
-                            asprintf(&expr, "%s >= %llu", node->binary_expr.name, node->binary_expr.value.ivalue);
+                case AST_NUMERIC_COMPARE_GE: {
+                    switch(node->numeric_compare_expr.value.value_type) {
+                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
+                            asprintf(&expr, "%s >= %llu", node->numeric_compare_expr.name, node->numeric_compare_expr.value.integer_value);
                             return expr;
                         }
-                        case VALUE_F: {
-                            asprintf(&expr, "%s >= %.2f", node->binary_expr.name, node->binary_expr.value.fvalue);
+                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
+                            asprintf(&expr, "%s >= %.2f", node->numeric_compare_expr.name, node->numeric_compare_expr.value.float_value);
                             return expr;
-                        }
-                        case VALUE_B: {
-                            invalid_expr("Using >= on a boolean value");
-                            return NULL;
-                        }
-                        case VALUE_S: {
-                            invalid_expr("Using >= on a string value");
-                            return NULL;
-                        }
-                        case VALUE_IL: {
-                            invalid_expr("Using >= on a integer list value");
-                            return NULL;
                         }
                     }
                 }

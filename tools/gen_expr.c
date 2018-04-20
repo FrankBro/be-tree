@@ -62,26 +62,37 @@ double* generate(size_t n)
     }
     return values;
 }
+
+const struct ast_node* make_binary_expr(size_t attr_min, size_t attr_max, int64_t value_min, int64_t value_max) 
+{
+    struct ast_node* binary_node;
+    size_t attr_index = random_in_range(attr_min, attr_max);
+    const char* attr = RANDOM_WORDS[attr_index];
+    bool is_equality_node = random_bool(); 
+    if(is_equality_node) {
+        enum ast_equality_e op = random_in_range(0, 1);
+        int64_t integer_value = random_in_range(value_min, value_max);
+        struct equality_value value = { .value_type = AST_EQUALITY_VALUE_INTEGER, .integer_value = integer_value };
+        binary_node = ast_equality_expr_create(op, attr, value);
+    }
+    else {
+        enum ast_numeric_compare_e op = random_in_range(0, 3);
+        int64_t integer_value = random_in_range(value_min, value_max);
+        struct numeric_compare_value value = { .value_type = AST_NUMERIC_COMPARE_VALUE_INTEGER, .integer_value = integer_value };
+        binary_node = ast_numeric_compare_expr_create(op, attr, value);
+    }
+    return binary_node;
+}
  
 const struct ast_node* generate_expr(size_t complexity, size_t attr_min, size_t attr_max, int64_t value_min, int64_t value_max)
 {
     struct ast_node* last_combi_node;
     for(size_t j = 0; j < complexity; j++) {
-        enum ast_binop_e binop = random_in_range(0, 5);
-        size_t attr_index = random_in_range(attr_min, attr_max);
-        const char* attr = RANDOM_WORDS[attr_index];
-        int64_t ivalue = random_in_range(value_min, value_max);
-        struct value value = { .value_type = VALUE_I, .ivalue = ivalue };
-        struct ast_node* bin_node = ast_binary_expr_create(binop, attr, value);
+        const struct ast_node* bin_node = make_binary_expr(attr_min, attr_max, value_min, value_max);
 
         enum ast_combi_e combiop = random_in_range(0, 1);
         if(j == 0) {
-            size_t another_attr_index = random_in_range(attr_min, attr_max);
-            const char* another_attr = RANDOM_WORDS[another_attr_index];
-            enum ast_binop_e another_binop = random_in_range(0, 5);
-            int64_t another_ivalue = random_in_range(value_min, value_max);
-            struct value another_value = { .value_type = VALUE_I, .ivalue = another_ivalue };
-            struct ast_node* another_bin_node = ast_binary_expr_create(another_binop, another_attr, another_value);
+            const struct ast_node* another_bin_node = make_binary_expr(attr_min, attr_max, value_min, value_max);
             last_combi_node = ast_combi_expr_create(combiop, bin_node, another_bin_node);
         }
         else {
@@ -109,35 +120,42 @@ void write_expr(FILE* f, const struct ast_node* node)
             free((char*)integer_list);
             break;
         }
-        case(AST_TYPE_BINARY_EXPR): {
-            fprintf(f, "%s ", node->binary_expr.name);
-            switch(node->binary_expr.op) {
-                case AST_BINOP_LT: {
+        case(AST_TYPE_NUMERIC_COMPARE_EXPR): {
+            fprintf(f, "%s ", node->numeric_compare_expr.name);
+            switch(node->numeric_compare_expr.op) {
+                case AST_NUMERIC_COMPARE_LT: {
                     fprintf(f, "< ");
                     break;
                 }
-                case AST_BINOP_LE: {
+                case AST_NUMERIC_COMPARE_LE: {
                     fprintf(f, "<= ");
                     break;
                 }
-                case AST_BINOP_EQ: {
-                    fprintf(f, "= ");
-                    break;
-                }
-                case AST_BINOP_NE: {
-                    fprintf(f, "<> ");
-                    break;
-                }
-                case AST_BINOP_GT: {
+                case AST_NUMERIC_COMPARE_GT: {
                     fprintf(f, "> ");
                     break;
                 }
-                case AST_BINOP_GE: {
+                case AST_NUMERIC_COMPARE_GE: {
                     fprintf(f, ">= ");
                     break;
                 }
             }
-            fprintf(f, "%llu ", node->binary_expr.value.ivalue);
+            fprintf(f, "%llu ", node->numeric_compare_expr.value.integer_value);
+            break;
+        }
+        case(AST_TYPE_EQUALITY_EXPR): {
+            fprintf(f, "%s ", node->equality_expr.name);
+            switch(node->equality_expr.op) {
+                case AST_EQUALITY_EQ: {
+                    fprintf(f, "= ");
+                    break;
+                }
+                case AST_EQUALITY_NE: {
+                    fprintf(f, "<> ");
+                    break;
+                }
+            }
+            fprintf(f, "%llu ", node->equality_expr.value.integer_value);
             break;
         }
         case(AST_TYPE_BOOL_EXPR): {

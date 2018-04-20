@@ -27,6 +27,9 @@
     double float_value;
     struct integer_list integer_list_value;
     struct value value;
+    struct string_value string_value;
+    struct numeric_compare_value numeric_compare_value;
+    struct equality_value equality_value;
     struct ast_node *node;
     int token;
 }
@@ -41,13 +44,16 @@
 %token<integer_value> TINTEGER
 %token<float_value> TFLOAT
 
-%type<node> expr bexpr_i bexpr_f bexpr_s bexpr_il cexpr boolexpr
+%type<node> expr ncexpr eexpr bexpr_il cexpr boolexpr
 %type<string> ident
 %type<value> boolean
-%type<value> integer
-%type<value> float
-%type<value> string
 %type<value> integer_list
+
+%type<integer_value> integer
+%type<float_value> float
+%type<string_value> string
+%type<numeric_compare_value> ncvalue 
+%type<equality_value> evalue
 
 %type<integer_list_value> integer_list_loop
 
@@ -66,11 +72,11 @@ ident               : TIDENTIFIER                       { $$ = $1; }
 boolean             : TTRUE                             { $$.value_type = VALUE_B; $$.bvalue = true; }
                     | TFALSE                            { $$.value_type = VALUE_B; $$.bvalue = false; }
 
-integer             : TINTEGER                          { $$.value_type = VALUE_I; $$.ivalue = $1; }
+integer             : TINTEGER                          { $$ = $1; }
 
-float               : TFLOAT                            { $$.value_type = VALUE_F; $$.fvalue = $1; }
+float               : TFLOAT                            { $$ = $1; }
 
-string              : TQUOTE ident TQUOTE               { $$.value_type = VALUE_S; $$.svalue.string = strdup($2); $$.svalue.str = -1; free($2); }
+string              : TQUOTE ident TQUOTE               { $$.string = strdup($2); $$.str = -1; free($2); }
 
 integer_list        : TLPAREN integer_list_loop TRPAREN { $$.value_type = VALUE_IL; $$.ilvalue = $2; }
 
@@ -79,33 +85,31 @@ integer_list_loop   : TINTEGER                          { $$.count = 0; $$.integ
 ;
 
 expr                : TLPAREN expr TRPAREN              { $$ = $2; }
-                    | bexpr_i                           { $$ = $1; }
-                    | bexpr_f                           { $$ = $1; }
-                    | bexpr_s                           { $$ = $1; }
+                    | ncexpr                            { $$ = $1; }
+                    | eexpr                             { $$ = $1; }
                     | bexpr_il                          { $$ = $1; }
                     | cexpr                             { $$ = $1; }
                     | boolexpr                          { $$ = $1; }
 ;
 
-bexpr_i             : ident TCEQ integer                { $$ = ast_binary_expr_create(AST_BINOP_EQ, $1, $3); free($1); }
-                    | ident TCNE integer                { $$ = ast_binary_expr_create(AST_BINOP_NE, $1, $3); free($1); }
-                    | ident TCGT integer                { $$ = ast_binary_expr_create(AST_BINOP_GT, $1, $3); free($1); }
-                    | ident TCGE integer                { $$ = ast_binary_expr_create(AST_BINOP_GE, $1, $3); free($1); }
-                    | ident TCLT integer                { $$ = ast_binary_expr_create(AST_BINOP_LT, $1, $3); free($1); }
-                    | ident TCLE integer                { $$ = ast_binary_expr_create(AST_BINOP_LE, $1, $3); free($1); }
-;               
+ncvalue             : integer                           { $$.value_type = AST_NUMERIC_COMPARE_VALUE_INTEGER; $$.integer_value = $1; }
+                    | float                             { $$.value_type = AST_NUMERIC_COMPARE_VALUE_FLOAT; $$.float_value = $1; }
+;
 
-bexpr_f             : ident TCEQ float                  { $$ = ast_binary_expr_create(AST_BINOP_EQ, $1, $3); free($1); }
-                    | ident TCNE float                  { $$ = ast_binary_expr_create(AST_BINOP_NE, $1, $3); free($1); }
-                    | ident TCGT float                  { $$ = ast_binary_expr_create(AST_BINOP_GT, $1, $3); free($1); }
-                    | ident TCGE float                  { $$ = ast_binary_expr_create(AST_BINOP_GE, $1, $3); free($1); }
-                    | ident TCLT float                  { $$ = ast_binary_expr_create(AST_BINOP_LT, $1, $3); free($1); }
-                    | ident TCLE float                  { $$ = ast_binary_expr_create(AST_BINOP_LE, $1, $3); free($1); }
-;               
+ncexpr              : ident TCGT ncvalue                { $$ = ast_numeric_compare_expr_create(AST_NUMERIC_COMPARE_GT, $1, $3); free($1); }
+                    | ident TCGE ncvalue                { $$ = ast_numeric_compare_expr_create(AST_NUMERIC_COMPARE_GE, $1, $3); free($1); }
+                    | ident TCLT ncvalue                { $$ = ast_numeric_compare_expr_create(AST_NUMERIC_COMPARE_LT, $1, $3); free($1); }
+                    | ident TCLE ncvalue                { $$ = ast_numeric_compare_expr_create(AST_NUMERIC_COMPARE_LE, $1, $3); free($1); }
+;
 
-bexpr_s             : ident TCEQ string                 { $$ = ast_binary_expr_create(AST_BINOP_EQ, $1, $3); free($1); }
-                    | ident TCNE string                 { $$ = ast_binary_expr_create(AST_BINOP_NE, $1, $3); free($1); }
-;               
+evalue              : integer                           { $$.value_type = AST_EQUALITY_VALUE_INTEGER; $$.integer_value = $1; }
+                    | float                             { $$.value_type = AST_EQUALITY_VALUE_FLOAT; $$.integer_value = $1; }
+                    | string                            { $$.value_type = AST_EQUALITY_VALUE_STRING; $$.string_value = $1; }
+;
+
+eexpr               : ident TCEQ evalue                 { $$ = ast_equality_expr_create(AST_EQUALITY_EQ, $1, $3); free($1); }
+                    | ident TCNE evalue                 { $$ = ast_equality_expr_create(AST_EQUALITY_NE, $1, $3); free($1); }
+;
 
 bexpr_il            : ident TNOTIN integer_list         { $$ = ast_list_expr_create(AST_LISTOP_NOTIN, $1, $3.ilvalue); free($1); }
                     | ident TIN integer_list            { $$ = ast_list_expr_create(AST_LISTOP_IN, $1, $3.ilvalue); free($1); }

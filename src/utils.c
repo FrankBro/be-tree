@@ -10,6 +10,11 @@ int64_t random_in_range(int64_t min, int64_t max)
     return rand() % (max + 1 - min) + min;
 }
 
+bool random_bool()
+{
+    return random_in_range(false, true);
+}
+
 bool feq(double a, double b) 
 {
     return fabs(a - b) < __DBL_EPSILON__;

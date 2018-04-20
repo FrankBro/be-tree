@@ -4,21 +4,67 @@
 
 #include "betree.h"
 
-enum ast_binop_e {
-    AST_BINOP_LT,
-    AST_BINOP_LE,
-    AST_BINOP_EQ,
-    AST_BINOP_NE,
-    AST_BINOP_GT,
-    AST_BINOP_GE,
+// Numeric comparison (<, <=, >, >=)
+// Work on integer and float
+
+enum ast_numeric_compare_e {
+    AST_NUMERIC_COMPARE_LT,
+    AST_NUMERIC_COMPARE_LE,
+    AST_NUMERIC_COMPARE_GT,
+    AST_NUMERIC_COMPARE_GE,
 };
 
-struct ast_binary_expr {
-    enum ast_binop_e op;
-    betree_var_t variable_id;
-    const char *name;
-    struct value value;
+enum ast_numeric_compare_value_e {
+    AST_NUMERIC_COMPARE_VALUE_INTEGER,
+    AST_NUMERIC_COMPARE_VALUE_FLOAT,
 };
+
+struct numeric_compare_value {
+    enum ast_numeric_compare_value_e value_type;
+    union {
+        int64_t integer_value;
+        double float_value;
+    };
+};
+
+struct ast_numeric_compare_expr {
+    enum ast_numeric_compare_e op;
+    betree_var_t variable_id;
+    const char* name;
+    struct numeric_compare_value value;
+};
+
+// Equality (=, <>)
+// Work on integer, float and string
+
+enum ast_equality_e {
+    AST_EQUALITY_EQ,
+    AST_EQUALITY_NE,
+};
+
+enum ast_equality_value_e {
+    AST_EQUALITY_VALUE_INTEGER,
+    AST_EQUALITY_VALUE_FLOAT,
+    AST_EQUALITY_VALUE_STRING,
+};
+
+struct equality_value {
+    enum ast_equality_value_e value_type;
+    union {
+        int64_t integer_value;
+        double float_value;
+        struct string_value string_value;
+    };
+};
+
+struct ast_equality_expr {
+    enum ast_equality_e op;
+    betree_var_t variable_id;
+    const char* name;
+    struct equality_value value;
+};
+
+// Combination (or, and)
 
 enum ast_combi_e {
     AST_COMBI_OR,
@@ -57,7 +103,8 @@ struct ast_list_expr {
 };
 
 enum ast_node_type_e {
-    AST_TYPE_BINARY_EXPR,
+    AST_TYPE_NUMERIC_COMPARE_EXPR,
+    AST_TYPE_EQUALITY_EXPR,
     AST_TYPE_COMBI_EXPR,
     AST_TYPE_BOOL_EXPR,
     AST_TYPE_LIST_EXPR,
@@ -66,20 +113,22 @@ enum ast_node_type_e {
 struct ast_node {
     enum ast_node_type_e type;
     union {
-        struct ast_binary_expr binary_expr;
+        struct ast_numeric_compare_expr numeric_compare_expr;
+        struct ast_equality_expr equality_expr;
         struct ast_combi_expr combi_expr;
         struct ast_bool_expr bool_expr;
         struct ast_list_expr list_expr;
     };
 };
 
-struct ast_node* ast_binary_expr_create(const enum ast_binop_e op, const char* name, struct value value);
+struct ast_node* ast_numeric_compare_expr_create(const enum ast_numeric_compare_e op, const char* name, struct numeric_compare_value value);
+struct ast_node* ast_equality_expr_create(const enum ast_equality_e op, const char* name, struct equality_value value);
 struct ast_node* ast_combi_expr_create(const enum ast_combi_e op, const struct ast_node* lhs, const struct ast_node* rhs);
 struct ast_node* ast_bool_expr_create(const enum ast_bool_e op, const char* name);
 struct ast_node* ast_list_expr_create(const enum ast_list_e op, const char* name, struct integer_list list);
 void free_ast_node(struct ast_node* node);
 
-struct value match_node(const struct event* event, const struct ast_node *node);
+bool match_node(const struct event* event, const struct ast_node *node);
 
 void get_variable_bound(const struct attr_domain* domain, const struct ast_node* node, struct value_bound* bound);
 

@@ -9,26 +9,32 @@
 
 int parse(const char *text, struct ast_node **node);
 
-int test_all_binop()
+int test_all_numeric_compare()
+{
+    struct ast_node* node = NULL;
+    parse("a < 0", &node);
+    mu_assert(node->type == AST_TYPE_NUMERIC_COMPARE_EXPR && node->numeric_compare_expr.op == AST_NUMERIC_COMPARE_LT, "LT");
+    free_ast_node(node);
+    parse("a <= 0", &node);
+    mu_assert(node->type == AST_TYPE_NUMERIC_COMPARE_EXPR && node->numeric_compare_expr.op == AST_NUMERIC_COMPARE_LE, "LE");
+    free_ast_node(node);
+    parse("a > 0", &node);
+    mu_assert(node->type == AST_TYPE_NUMERIC_COMPARE_EXPR && node->numeric_compare_expr.op == AST_NUMERIC_COMPARE_GT, "GT");
+    free_ast_node(node);
+    parse("a >= 0", &node);
+    mu_assert(node->type == AST_TYPE_NUMERIC_COMPARE_EXPR && node->numeric_compare_expr.op == AST_NUMERIC_COMPARE_GE, "GE");
+    free_ast_node(node);
+    return 0;
+}
+
+int test_all_equality()
 {
     struct ast_node* node = NULL;
     parse("a = 0", &node);
-    mu_assert(node->type == AST_TYPE_BINARY_EXPR && node->binary_expr.op == AST_BINOP_EQ, "EQ");
+    mu_assert(node->type == AST_TYPE_EQUALITY_EXPR && node->equality_expr.op == AST_EQUALITY_EQ, "EQ");
     free_ast_node(node);
     parse("a <> 0", &node);
-    mu_assert(node->type == AST_TYPE_BINARY_EXPR && node->binary_expr.op == AST_BINOP_NE, "NE");
-    free_ast_node(node);
-    parse("a < 0", &node);
-    mu_assert(node->type == AST_TYPE_BINARY_EXPR && node->binary_expr.op == AST_BINOP_LT, "LT");
-    free_ast_node(node);
-    parse("a <= 0", &node);
-    mu_assert(node->type == AST_TYPE_BINARY_EXPR && node->binary_expr.op == AST_BINOP_LE, "LE");
-    free_ast_node(node);
-    parse("a > 0", &node);
-    mu_assert(node->type == AST_TYPE_BINARY_EXPR && node->binary_expr.op == AST_BINOP_GT, "GT");
-    free_ast_node(node);
-    parse("a >= 0", &node);
-    mu_assert(node->type == AST_TYPE_BINARY_EXPR && node->binary_expr.op == AST_BINOP_GE, "GE");
+    mu_assert(node->type == AST_TYPE_EQUALITY_EXPR && node->equality_expr.op == AST_EQUALITY_NE, "NE");
     free_ast_node(node);
     return 0;
 }
@@ -89,15 +95,15 @@ int test_float()
 {
     struct ast_node* node = NULL;
     parse("a = 0.", &node);
-    mu_assert(node->type == AST_TYPE_BINARY_EXPR && 
-        node->binary_expr.value.value_type == VALUE_F && 
-        feq(node->binary_expr.value.fvalue, 0.)
+    mu_assert(node->type == AST_TYPE_EQUALITY_EXPR && 
+        node->equality_expr.value.value_type == AST_EQUALITY_VALUE_FLOAT && 
+        feq(node->equality_expr.value.float_value, 0.)
     , "no decimal");
     free_ast_node(node);
     parse("a = 0.0", &node);
-    mu_assert(node->type == AST_TYPE_BINARY_EXPR && 
-        node->binary_expr.value.value_type == VALUE_F && 
-        feq(node->binary_expr.value.fvalue, 0.)
+    mu_assert(node->type == AST_TYPE_EQUALITY_EXPR && 
+        node->equality_expr.value.value_type == AST_EQUALITY_VALUE_FLOAT && 
+        feq(node->equality_expr.value.float_value, 0.)
     , "with decimal");
     free_ast_node(node);
     return 0;
@@ -123,15 +129,15 @@ int test_string()
 {
     struct ast_node* node = NULL;
     parse("a = \"a\"", &node);
-    mu_assert(node->type == AST_TYPE_BINARY_EXPR &&
-        node->binary_expr.op == AST_BINOP_EQ &&
-        node->binary_expr.value.value_type == VALUE_S
+    mu_assert(node->type == AST_TYPE_EQUALITY_EXPR &&
+        node->equality_expr.op == AST_EQUALITY_EQ &&
+        node->equality_expr.value.value_type == AST_EQUALITY_VALUE_STRING
     , "eq");
     free_ast_node(node);
     parse("a <> \"a\"", &node);
-    mu_assert(node->type == AST_TYPE_BINARY_EXPR &&
-        node->binary_expr.op == AST_BINOP_NE &&
-        node->binary_expr.value.value_type == VALUE_S
+    mu_assert(node->type == AST_TYPE_EQUALITY_EXPR &&
+        node->equality_expr.op == AST_EQUALITY_NE &&
+        node->equality_expr.value.value_type == AST_EQUALITY_VALUE_STRING
     , "ne");
     free_ast_node(node);
     return 0;
@@ -160,7 +166,8 @@ int test_integer_list()
 
 int all_tests() 
 {
-    mu_run_test(test_all_binop);
+    mu_run_test(test_all_numeric_compare);
+    mu_run_test(test_all_equality);
     mu_run_test(test_all_combi);
     mu_run_test(test_paren);
     // mu_run_test(test_precedence);

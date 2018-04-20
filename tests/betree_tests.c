@@ -20,8 +20,8 @@ const struct sub* make_simple_sub_i(struct config* config, betree_sub_t id, cons
         abort();
     }
     sub->variable_ids[0] = get_id_for_attr(config, attr);
-    struct value value = { .value_type = VALUE_I, .ivalue = ivalue };
-    struct ast_node* expr = ast_binary_expr_create(AST_BINOP_EQ, attr, value);
+    struct equality_value value = { .value_type = AST_EQUALITY_VALUE_INTEGER, .integer_value = ivalue };
+    struct ast_node* expr = ast_equality_expr_create(AST_EQUALITY_EQ, attr, value);
     assign_variable_id(config, expr);
     sub->expr = expr;
     return sub;
@@ -54,8 +54,8 @@ const struct sub* make_simple_sub_f(struct config* config, betree_sub_t id, cons
         abort();
     }
     sub->variable_ids[0] = get_id_for_attr(config, attr);
-    struct value value = { .value_type = VALUE_F, .fvalue = fvalue };
-    struct ast_node* expr = ast_binary_expr_create(AST_BINOP_EQ, attr, value);
+    struct equality_value value = { .value_type = AST_EQUALITY_VALUE_FLOAT, .float_value = fvalue };
+    struct ast_node* expr = ast_equality_expr_create(AST_EQUALITY_EQ, attr, value);
     assign_variable_id(config, expr);
     sub->expr = expr;
     return sub;
@@ -87,9 +87,10 @@ const struct sub* make_simple_sub_s(struct config* config, betree_sub_t id, cons
         abort();
     }
     sub->variable_ids[0] = get_id_for_attr(config, attr);
-    struct value value = { .value_type = VALUE_S, .svalue = { .string = strdup(svalue) }};
-    value.svalue.str = get_id_for_string(config, svalue);
-    struct ast_node* expr = ast_binary_expr_create(AST_BINOP_EQ, attr, value);
+    struct equality_value value = { .value_type = AST_EQUALITY_VALUE_STRING, .string_value = { .string = strdup(svalue), .str = -1 } };
+    value.string_value.str = get_id_for_string(config, svalue);
+    struct ast_node* expr = ast_equality_expr_create(AST_EQUALITY_EQ, attr, value);
+
     assign_variable_id(config, expr);
     sub->expr = expr;
     return sub;
@@ -259,25 +260,31 @@ struct ast_node* _AND (const struct ast_node* lhs, const struct ast_node* rhs)
     return ast_combi_expr_create(AST_COMBI_AND, lhs, rhs);
 }
 
-struct ast_node* ast_binary_expr_create_i(enum ast_binop_e op, const char* attr, int64_t ivalue)
+struct ast_node* ast_numeric_compare_expr_create_i(enum ast_numeric_compare_e op, const char* attr, int64_t ivalue)
 {
-    struct value value = { .value_type = VALUE_I, .ivalue = ivalue };
-    return ast_binary_expr_create(op, attr, value);
+    struct numeric_compare_value value = { .value_type = AST_NUMERIC_COMPARE_VALUE_INTEGER, .integer_value = ivalue };
+    return ast_numeric_compare_expr_create(op, attr, value);
+}
+
+struct ast_node* ast_equality_expr_create_i(enum ast_equality_e op, const char* attr, int64_t ivalue)
+{
+    struct equality_value value = { .value_type = AST_EQUALITY_VALUE_INTEGER, .integer_value = ivalue };
+    return ast_equality_expr_create(op, attr, value);
 }
 
 struct ast_node* _GT (const char* attr, uint64_t value)
 {
-    return ast_binary_expr_create_i(AST_BINOP_GT, attr, value);
+    return ast_numeric_compare_expr_create_i(AST_NUMERIC_COMPARE_GT, attr, value);
 }
 
 struct ast_node* _EQ (const char* attr, uint64_t value)
 {
-    return ast_binary_expr_create_i(AST_BINOP_EQ, attr, value);
+    return ast_equality_expr_create_i(AST_EQUALITY_EQ, attr, value);
 }
 
 struct ast_node* _LT (const char* attr, uint64_t value)
 {
-    return ast_binary_expr_create_i(AST_BINOP_LT, attr, value);
+    return ast_numeric_compare_expr_create_i(AST_NUMERIC_COMPARE_LT, attr, value);
 }
 
 bool test_lnode_has_subs(const struct lnode* lnode, size_t sub_count, const struct sub** subs)

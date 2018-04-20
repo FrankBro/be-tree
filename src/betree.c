@@ -16,12 +16,8 @@ bool match_sub(const struct event* event, const struct sub *sub)
     if(sub == NULL) {
         return false;
     }
-    struct value value = match_node(event, sub->expr);
-    if(value.value_type != VALUE_B) {
-        fprintf(stderr, "%s result is not boolean", __func__);
-        abort();
-    }
-    return value.bvalue;
+    bool result = match_node(event, sub->expr);
+    return result;
 } 
 
 void check_sub(const struct event* event, const struct lnode* lnode, struct matched_subs* matched_subs) 
@@ -1167,8 +1163,12 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
             variable_id = expr->bool_expr.variable_id;
             break;
         }
-        case AST_TYPE_BINARY_EXPR: {
-            variable_id = expr->binary_expr.variable_id;
+        case AST_TYPE_NUMERIC_COMPARE_EXPR: {
+            variable_id = expr->numeric_compare_expr.variable_id;
+            break;
+        }
+        case AST_TYPE_EQUALITY_EXPR: {
+            variable_id = expr->equality_expr.variable_id;
             break;
         }
         case AST_TYPE_LIST_EXPR: {
@@ -1425,8 +1425,12 @@ void adjust_attr_domains(struct config* config, const struct ast_node* node, str
             adjust_attr_domains(config, node->combi_expr.rhs, bound, allow_undefined);
             return;
         }
-        case(AST_TYPE_BINARY_EXPR): {
-            name = node->binary_expr.name;
+        case(AST_TYPE_NUMERIC_COMPARE_EXPR): {
+            name = node->numeric_compare_expr.name;
+            break;
+        }
+        case(AST_TYPE_EQUALITY_EXPR): {
+            name = node->equality_expr.name;
             break;
         }
         case(AST_TYPE_BOOL_EXPR): {
