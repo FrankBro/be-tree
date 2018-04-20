@@ -180,13 +180,13 @@ void write_expr(FILE* f, const struct ast_node* node)
 
 int main(void)
 {
-    unsigned int expr_count = 1000;
+    unsigned int expr_count = 100;
     unsigned int attr_min = 0;
-    unsigned int attr_max = 499;
+    unsigned int attr_max = 29;
     unsigned int value_min = 0;
     unsigned int value_max = 100;
     unsigned int complexity_min = 5;
-    unsigned int complexity_max = 55;
+    unsigned int complexity_max = 25;
     unsigned int complexity_mean = (complexity_min + complexity_max) / 2;
     double complexity_stddev = (complexity_max - complexity_mean) / 3;
  
