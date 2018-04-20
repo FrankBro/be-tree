@@ -61,14 +61,13 @@ struct ast_node* ast_combi_expr_create(const enum ast_combi_e op, const struct a
     return node;
 }
 
-struct ast_node* ast_list_expr_create(const enum ast_list_e op, const char* name, struct integer_list list)
+struct ast_node* ast_set_expr_create(const enum ast_set_e op, struct set_left_value left_value, struct set_right_value right_value)
 {
     struct ast_node* node = ast_node_create();
-    node->type = AST_TYPE_LIST_EXPR;
-    node->list_expr.op = op;
-    node->list_expr.name = strdup(name);
-    node->list_expr.variable_id = -1;
-    node->list_expr.list = list;
+    node->type = AST_TYPE_SET_EXPR;
+    node->set_expr.op = op;
+    node->set_expr.left_value = left_value;
+    node->set_expr.right_value = right_value;
     return node;
 }
 
@@ -90,9 +89,37 @@ void free_ast_node(struct ast_node* node)
         case AST_TYPE_BOOL_EXPR:
             free((char*)node->bool_expr.name);
             break;
-        case AST_TYPE_LIST_EXPR:
-            free((char*)node->list_expr.name);
-            free(node->list_expr.list.integers);
+        case AST_TYPE_SET_EXPR:
+            switch(node->set_expr.left_value.value_type) {
+                case AST_SET_LEFT_VALUE_INTEGER: {
+                    break;
+                }
+                case AST_SET_LEFT_VALUE_STRING: {
+                    free((char*)node->set_expr.left_value.string_value.string);
+                    break;
+                }
+                case AST_SET_LEFT_VALUE_VARIABLE: {
+                    free((char*)node->set_expr.left_value.variable_value.name);
+                    break;
+                }
+            }
+            switch(node->set_expr.right_value.value_type) {
+                case AST_SET_RIGHT_VALUE_INTEGER_LIST: {
+                    free(node->set_expr.right_value.integer_list_value.integers);
+                    break;
+                }
+                case AST_SET_RIGHT_VALUE_STRING_LIST: {
+                    for(size_t i = 0; i < node->set_expr.right_value.string_list_value.count; i++) {
+                        free((char*)node->set_expr.right_value.string_list_value.strings[i].string);
+                    }
+                    free(node->set_expr.right_value.string_list_value.strings);
+                    break;
+                }
+                case AST_SET_RIGHT_VALUE_VARIABLE: {
+                    free((char*)node->set_expr.right_value.variable_value.name);
+                    break;
+                }
+            }
             break;
         case AST_TYPE_COMBI_EXPR:
             free_ast_node((struct ast_node*)node->combi_expr.lhs);
@@ -120,10 +147,20 @@ static void invalid_expr(const char* msg)
     abort();
 }
 
-bool integer_in_integer_list(int64_t integer, struct integer_list integer_list)
+bool integer_in_integer_list(int64_t integer, struct integer_list_value list)
 {
-    for(size_t i = 0; i < integer_list.count; i++) {
-        if(integer_list.integers[i] == integer) {
+    for(size_t i = 0; i < list.count; i++) {
+        if(list.integers[i] == integer) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool string_in_string_list(struct string_value string, struct string_list_value list)
+{
+    for(size_t i = 0; i < list.count; i++) {
+        if(list.strings[i].str == string.str) {
             return true;
         }
     }
@@ -164,26 +201,60 @@ bool match_node(const struct event* event, const struct ast_node *node)
                 }
             }
         }
-        case AST_TYPE_LIST_EXPR: {
+        case AST_TYPE_SET_EXPR: {
+            struct set_left_value left = node->set_expr.left_value;
+            struct set_right_value right = node->set_expr.right_value;
             struct value variable;
-            bool found = get_variable(node->list_expr.variable_id, event, &variable);
-            if(!found) {
-                return false;
-            }
-            switch(node->list_expr.op) {
-                case AST_LISTOP_NOTIN: {
-                    if(variable.value_type != VALUE_I) {
-                        invalid_expr("variable is not an integer in `not in` expression");
-                    }
-                    bool result = !integer_in_integer_list(variable.ivalue, node->list_expr.list);
-                    return result;
+            bool is_in;
+            if(left.value_type == AST_SET_LEFT_VALUE_INTEGER && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
+                bool found = get_variable(right.variable_value.variable_id, event, &variable);
+                if(!found) {
+                    return false;
                 }
-                case AST_LISTOP_IN: {
-                    if(variable.value_type != VALUE_I) {
-                        invalid_expr("variable is not an integer in `in` expression");
-                    }
-                    bool result = integer_in_integer_list(variable.ivalue, node->list_expr.list);
-                    return result;
+                if(variable.value_type != VALUE_IL) {
+                    invalid_expr("invalid variable in set expression, should be integer list");
+                }
+                is_in = integer_in_integer_list(left.integer_value, variable.ilvalue);
+            }
+            else if(left.value_type == AST_SET_LEFT_VALUE_STRING && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
+                bool found = get_variable(right.variable_value.variable_id, event, &variable);
+                if(!found) {
+                    return false;
+                }
+                if(variable.value_type != VALUE_SL) {
+                    invalid_expr("invalid variable in set expression, should be string list");
+                }
+                is_in = string_in_string_list(left.string_value, variable.slvalue);
+            }
+            else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE && right.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST) {
+                bool found = get_variable(left.variable_value.variable_id, event, &variable);
+                if(!found) {
+                    return false;
+                }
+                if(variable.value_type != VALUE_I) {
+                    invalid_expr("invalid variable in set expression, should be integer");
+                }
+                is_in = integer_in_integer_list(variable.ivalue, right.integer_list_value);
+            }
+            else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE && right.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
+                bool found = get_variable(left.variable_value.variable_id, event, &variable);
+                if(!found) {
+                    return false;
+                }
+                if(variable.value_type != VALUE_S) {
+                    invalid_expr("invalid variable in set expression, should be string");
+                }
+                is_in = string_in_string_list(variable.svalue, right.string_list_value);
+            }
+            else {
+                invalid_expr("invalid set expression");
+            }
+            switch(node->set_expr.op) {
+                case AST_SET_NOTIN: {
+                    return !is_in;
+                }
+                case AST_SET_IN: {
+                    return is_in;
                 }
             }
         }
@@ -317,29 +388,8 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
             get_variable_bound(domain, node->combi_expr.rhs, bound);
             return;
         }
-        case AST_TYPE_LIST_EXPR: {
-            switch(node->list_expr.op) {
-                case AST_LISTOP_NOTIN: {
-                    bound->imin = domain->bound.imin;
-                    bound->imax = domain->bound.imax;
-                    return;
-                }
-                case AST_LISTOP_IN: {
-                    int64_t min = INT64_MAX, max = INT64_MIN;
-                    for(size_t i = 0; i < node->list_expr.list.count; i++) {
-                        int64_t value = node->list_expr.list.integers[i];
-                        if(value < min) {
-                            min = value;
-                        }
-                        if(value > max) {
-                            max = value;
-                        }
-                    }
-                    bound->imin = min(bound->imin, min);
-                    bound->imax = max(bound->imax, max);
-                    return;
-                }
-            }
+        case AST_TYPE_SET_EXPR: {
+            invalid_expr("Trying to get the bound of an set expression");
         }
         case AST_TYPE_BOOL_EXPR: {
             switch(node->bool_expr.op) {
@@ -482,10 +532,33 @@ void assign_variable_id(struct config* config, struct ast_node* node)
             node->bool_expr.variable_id = variable_id;
             return;
         }
-        case(AST_TYPE_LIST_EXPR): {
-            betree_var_t variable_id = get_id_for_attr(config, node->list_expr.name);
-            node->list_expr.variable_id = variable_id;
-            return;
+        case(AST_TYPE_SET_EXPR): {
+            switch(node->set_expr.left_value.value_type) {
+                case AST_SET_LEFT_VALUE_INTEGER: {
+                    return;
+                }
+                case AST_SET_LEFT_VALUE_STRING: {
+                    return;
+                }
+                case AST_SET_LEFT_VALUE_VARIABLE: {
+                    betree_var_t variable_id = get_id_for_attr(config, node->set_expr.left_value.variable_value.name);
+                    node->set_expr.left_value.variable_value.variable_id = variable_id;
+                    return;
+                }
+            }
+            switch(node->set_expr.right_value.value_type) {
+                case AST_SET_RIGHT_VALUE_INTEGER_LIST: {
+                    return;
+                }
+                case AST_SET_RIGHT_VALUE_STRING_LIST: {
+                    return;
+                }
+                case AST_SET_RIGHT_VALUE_VARIABLE: {
+                    betree_var_t variable_id = get_id_for_attr(config, node->set_expr.right_value.variable_value.name);
+                    node->set_expr.right_value.variable_value.variable_id = variable_id;
+                    return;
+                }
+            }
         }
         case(AST_TYPE_COMBI_EXPR): {
             assign_variable_id(config, (struct ast_node*)node->combi_expr.lhs);
@@ -511,7 +584,7 @@ void assign_str_id(struct config* config, struct ast_node* node)
         case(AST_TYPE_BOOL_EXPR): {
             return;
         }
-        case(AST_TYPE_LIST_EXPR): {
+        case(AST_TYPE_SET_EXPR): {
             return;
         }
         case(AST_TYPE_COMBI_EXPR): {
@@ -543,17 +616,49 @@ const char* ast_to_string(const struct ast_node* node)
             free((char*)b);
             return expr;
         }
-        case(AST_TYPE_LIST_EXPR): {
-            const char* integer_list = integer_list_to_string(node->list_expr.list);
-            switch(node->list_expr.op) {
-                case AST_LISTOP_NOTIN: {
-                    asprintf(&expr, "%s not in (%s)", node->list_expr.name, integer_list);
+        case(AST_TYPE_SET_EXPR): {
+            switch(node->set_expr.left_value.value_type) {
+                case AST_SET_LEFT_VALUE_INTEGER: {
+                    asprintf(&expr, "%llu ", node->set_expr.left_value.integer_value);
+                    break;
                 }
-                case AST_LISTOP_IN: {
-                    asprintf(&expr, "%s in (%s)", node->list_expr.name, integer_list);
+                case AST_SET_LEFT_VALUE_STRING: {
+                    asprintf(&expr, "\"%s\" ", node->set_expr.left_value.string_value.string);
+                    break;
+                }
+                case AST_SET_LEFT_VALUE_VARIABLE: {
+                    asprintf(&expr, "%s ", node->set_expr.left_value.variable_value.name);
+                    break;
                 }
             }
-            free((char*)integer_list);
+            switch(node->set_expr.op) {
+                case AST_SET_NOTIN: {
+                    asprintf(&expr, "not in ");
+                    break;
+                }
+                case AST_SET_IN: {
+                    asprintf(&expr, "in ");
+                    break;
+                }
+            }
+            switch(node->set_expr.right_value.value_type) {
+                case AST_SET_RIGHT_VALUE_INTEGER_LIST: {
+                    const char* list = integer_list_value_to_string(node->set_expr.right_value.integer_list_value);
+                    asprintf(&expr, "(%s) ", list);
+                    free((char*)list);
+                    break;
+                }
+                case AST_SET_RIGHT_VALUE_STRING_LIST: {
+                    const char* list = string_list_value_to_string(node->set_expr.right_value.string_list_value);
+                    asprintf(&expr, "(%s) ", list);
+                    free((char*)list);
+                    break;
+                }
+                case AST_SET_RIGHT_VALUE_VARIABLE: {
+                    asprintf(&expr, "%s ", node->set_expr.right_value.variable_value.name);
+                    break;
+                }
+            }
             return expr;
         }
         case(AST_TYPE_BOOL_EXPR): {

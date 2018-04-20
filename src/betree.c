@@ -152,6 +152,10 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
                     fprintf(stderr, "%s a integer list value cdir should never happen for now", __func__);
                     abort();
                 }
+                case(VALUE_SL): {
+                    fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
+                    abort();
+                }
             }
             get_variable_bound(attr_domain, sub->expr, &bound);
             switch(attr_domain->bound.value_type) {
@@ -170,6 +174,10 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
                 }
                 case(VALUE_IL): {
                     fprintf(stderr, "%s a integer list value cdir should never happen for now", __func__);
+                    abort();
+                }
+                case(VALUE_SL): {
+                    fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
                     abort();
                 }
             }
@@ -694,6 +702,10 @@ bool is_atomic(const struct cdir* cdir)
             fprintf(stderr, "%s a integer list value cdir should never happen for now", __func__);
             abort();
         }
+        case(VALUE_SL): {
+            fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
+            abort();
+        }
     }
 }
 
@@ -802,6 +814,10 @@ struct value_bounds split_value_bound(struct value_bound bound)
         }
         case(VALUE_IL): {
             fprintf(stderr, "%s a integer list value cdir should never happen for now", __func__);
+            abort();
+        }
+        case(VALUE_SL): {
+            fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
             abort();
         }
     }
@@ -1171,8 +1187,16 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
             variable_id = expr->equality_expr.variable_id;
             break;
         }
-        case AST_TYPE_LIST_EXPR: {
-            variable_id = expr->list_expr.variable_id;
+        case AST_TYPE_SET_EXPR: {
+            if(expr->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
+                variable_id = expr->set_expr.left_value.variable_value.variable_id;
+            }
+            else if(expr->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
+                variable_id = expr->set_expr.right_value.variable_value.variable_id;
+            }
+            else {
+                return;
+            }
             break;
         }
     }
@@ -1437,8 +1461,16 @@ void adjust_attr_domains(struct config* config, const struct ast_node* node, str
             name = node->bool_expr.name;
             break;
         }
-        case(AST_TYPE_LIST_EXPR): {
-            name = node->list_expr.name;
+        case(AST_TYPE_SET_EXPR): {
+            if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
+                name = node->set_expr.left_value.variable_value.name;
+            }
+            else if(node->set_expr.right_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
+                name = node->set_expr.right_value.variable_value.name;
+            }
+            else {
+                return;
+            }
             break;
         }
     }
@@ -1497,11 +1529,16 @@ void event_to_string(struct config* config, const struct event* event, char* buf
                 break;
             }
             case(VALUE_IL): {
-                const char* integer_list = integer_list_to_string(pred->value.ilvalue);
+                const char* integer_list = integer_list_value_to_string(pred->value.ilvalue);
                 length += sprintf(buffer + length, "%s = (%s)", attr, integer_list);
                 free((char*)integer_list);
                 break;
-
+            }
+            case(VALUE_SL): {
+                const char* string_list = string_list_value_to_string(pred->value.slvalue);
+                length += sprintf(buffer + length, "%s = (%s)", attr, string_list);
+                free((char*)string_list);
+                break;
             }
         }
     }
@@ -1540,35 +1577,68 @@ betree_str_t get_id_for_string(struct config* config, const char* string)
     return config->string_value_count - 1;
 }
 
-void add_integer_list(int64_t integer, struct integer_list* integer_list)
+void add_integer_list_value(int64_t integer, struct integer_list_value* list)
 {
-    if(integer_list->count == 0) {
-        integer_list->integers = calloc(1, sizeof(*integer_list->integers));
-        if(integer_list->integers == NULL) {
+    if(list->count == 0) {
+        list->integers = calloc(1, sizeof(*list->integers));
+        if(list->integers == NULL) {
             fprintf(stderr, "%s calloc failed", __func__);
             abort();
         }
     }
     else {
-        int64_t* integers = realloc(integer_list->integers, sizeof(*integer_list->integers) * (integer_list->count + 1));
+        int64_t* integers = realloc(list->integers, sizeof(*list->integers) * (list->count + 1));
         if(integers == NULL) {
             fprintf(stderr, "%s realloc failed", __func__);
             abort();
         }
-        integer_list->integers = integers;
+        list->integers = integers;
     }
-    integer_list->integers[integer_list->count] = integer;
-    integer_list->count++;
+    list->integers[list->count] = integer;
+    list->count++;
 }
 
-const char* integer_list_to_string(struct integer_list list)
+const char* integer_list_value_to_string(struct integer_list_value list)
 {
-    char* integer_list;
+    char* string;
     for(size_t i = 0; i < list.count; i++) {
         if(i != 0) {
-            asprintf(&integer_list, ", ");
+            asprintf(&string, ", ");
         }
-        asprintf(&integer_list, "%llu", list.integers[i]);
+        asprintf(&string, "%llu", list.integers[i]);
     }
-    return integer_list;
+    return string;
+}
+
+void add_string_list_value(struct string_value string, struct string_list_value* list)
+{
+    if(list->count == 0) {
+        list->strings = calloc(1, sizeof(*list->strings));
+        if(list->strings == NULL) {
+            fprintf(stderr, "%s calloc failed", __func__);
+            abort();
+        }
+    }
+    else {
+        struct string_value* strings = realloc(list->strings, sizeof(*list->strings) * (list->count + 1));
+        if(strings == NULL) {
+            fprintf(stderr, "%s realloc failed", __func__);
+            abort();
+        }
+        list->strings = strings;
+    }
+    list->strings[list->count] = string;
+    list->count++;
+}
+
+const char* string_list_value_to_string(struct string_list_value list)
+{
+    char* string;
+    for(size_t i = 0; i < list.count; i++) {
+        if(i != 0) {
+            asprintf(&string, ", ");
+        }
+        asprintf(&string, "\"%s\"", list.strings[i].string);
+    }
+    return string;
 }

@@ -14,6 +14,7 @@ enum value_e {
     VALUE_F,
     VALUE_S,
     VALUE_IL,
+    VALUE_SL,
 };
 
 struct string_value {
@@ -21,9 +22,14 @@ struct string_value {
     betree_str_t str;
 };
 
-struct integer_list {
+struct integer_list_value {
     size_t count;
     int64_t* integers;
+};
+
+struct string_list_value {
+    size_t count;
+    struct string_value* strings;
 };
 
 struct value {
@@ -33,7 +39,8 @@ struct value {
         double fvalue;
         bool bvalue;
         struct string_value svalue;
-        struct integer_list ilvalue;
+        struct integer_list_value ilvalue;
+        struct string_list_value slvalue;
     };
 };
 
@@ -197,5 +204,7 @@ void insert_be_tree(const struct config* config, const struct sub* sub, struct c
 void match_be_tree(const struct config* config, const struct event* event, const struct cnode* cnode, struct matched_subs* matched_subs);
 bool delete_be_tree(const struct config* config, struct sub* sub, struct cnode* cnode);
 
-void add_integer_list(int64_t integer, struct integer_list* integer_list);
-const char* integer_list_to_string(struct integer_list list);
+void add_integer_list_value(int64_t integer, struct integer_list_value* list);
+const char* integer_list_value_to_string(struct integer_list_value list);
+void add_string_list_value(struct string_value string, struct string_list_value* list);
+const char* string_list_value_to_string(struct string_list_value list);

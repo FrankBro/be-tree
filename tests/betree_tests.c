@@ -27,7 +27,7 @@ const struct sub* make_simple_sub_i(struct config* config, betree_sub_t id, cons
     return sub;
 }
 
-const struct sub* make_simple_sub_il(struct config* config, betree_sub_t id, const char* attr, enum ast_list_e op, struct integer_list ilvalue)
+const struct sub* make_simple_sub_il(struct config* config, betree_sub_t id, const char* attr, enum ast_set_e op, struct integer_list_value ilvalue)
 {
 
     struct sub* sub = make_empty_sub(id);
@@ -38,7 +38,9 @@ const struct sub* make_simple_sub_il(struct config* config, betree_sub_t id, con
         abort();
     }
     sub->variable_ids[0] = get_id_for_attr(config, attr);
-    struct ast_node* expr = ast_list_expr_create(op, attr, ilvalue);
+    struct set_left_value left = { .value_type = AST_SET_LEFT_VALUE_VARIABLE, .variable_value = { .name = attr, .variable_id = -1 } };
+    struct set_right_value right = { .value_type = AST_SET_RIGHT_VALUE_INTEGER_LIST, .integer_list_value = ilvalue };
+    struct ast_node* expr = ast_set_expr_create(op, left, right);
     assign_variable_id(config, expr);
     sub->expr = expr;
     return sub;
@@ -864,13 +866,13 @@ int test_integer_list()
         struct cnode* cnode = make_cnode(config, NULL);
 
         size_t count = 3;
-        struct integer_list integer_list = { .count = count };
+        struct integer_list_value integer_list = { .count = count };
         integer_list.integers = calloc(3, sizeof(*integer_list.integers));
         integer_list.integers[0] = 1;
         integer_list.integers[1] = 2;
         integer_list.integers[2] = 0;
 
-        struct sub* sub = (struct sub*)make_simple_sub_il(config, 0, "a", AST_LISTOP_IN, integer_list);
+        struct sub* sub = (struct sub*)make_simple_sub_il(config, 0, "a", AST_SET_IN, integer_list);
         insert_be_tree(config, sub, cnode, NULL);
 
         const struct event* event = make_simple_event_i(config, "a", 0);
@@ -888,13 +890,13 @@ int test_integer_list()
         struct cnode* cnode = make_cnode(config, NULL);
 
         size_t count = 3;
-        struct integer_list integer_list = { .count = count };
+        struct integer_list_value integer_list = { .count = count };
         integer_list.integers = calloc(3, sizeof(*integer_list.integers));
         integer_list.integers[0] = 1;
         integer_list.integers[1] = 2;
         integer_list.integers[2] = 0;
 
-        struct sub* sub = (struct sub*)make_simple_sub_il(config, 0, "a", AST_LISTOP_NOTIN, integer_list);
+        struct sub* sub = (struct sub*)make_simple_sub_il(config, 0, "a", AST_SET_NOTIN, integer_list);
         insert_be_tree(config, sub, cnode, NULL);
 
         const struct event* event = make_simple_event_i(config, "a", 0);

@@ -147,18 +147,18 @@ int test_integer_list()
 {
     struct ast_node* node = NULL;
     parse("a in (1,2, 3)", &node);
-    mu_assert(node->type == AST_TYPE_LIST_EXPR &&
-        node->list_expr.op == AST_LISTOP_IN
+    mu_assert(node->type == AST_TYPE_SET_EXPR &&
+        node->set_expr.op == AST_SET_IN
     , "in");
     free_ast_node(node);
     parse("a not in (1,2, 3)", &node);
-    mu_assert(node->type == AST_TYPE_LIST_EXPR &&
-        node->list_expr.op == AST_LISTOP_NOTIN
+    mu_assert(node->type == AST_TYPE_SET_EXPR &&
+        node->set_expr.op == AST_SET_NOTIN
     , "in");
     free_ast_node(node);
     parse("a in (1)", &node);
-    mu_assert(node->type == AST_TYPE_LIST_EXPR &&
-        node->list_expr.op == AST_LISTOP_IN
+    mu_assert(node->type == AST_TYPE_SET_EXPR &&
+        node->set_expr.op == AST_SET_IN
     , "single");
     free_ast_node(node);
     return 0;
