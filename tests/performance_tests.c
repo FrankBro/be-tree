@@ -5,13 +5,14 @@
 #include <inttypes.h>
  
 #include "ast.h" 
+#include "debug.h"
 #include "parser.h" 
 #include "minunit.h" 
 #include "utils.h"
  
 int parse(const char *text, struct ast_node **node); 
  
-#define COUNT 100
+#define COUNT 1000
  
 int test_cdir_split() 
 {
@@ -187,7 +188,7 @@ void fill_event_random(const struct sub** subs, size_t sub_count, struct event* 
 
 int test_complex()
 {
-    struct config* config = make_default_config();
+    struct config* config = make_config(3, 3);
 
     struct timespec start, init_done, parse_done, insert_done, gen_event_done, search_done; 
  
@@ -242,7 +243,7 @@ int test_complex()
 
     struct event* event = (struct event*)make_event();
     srand((unsigned int)time(NULL));
-    fill_event_random(subs, sub_count, event, 5);
+    fill_event_random(subs, sub_count, event, 2);
     
     clock_gettime(CLOCK_MONOTONIC_RAW, &gen_event_done);
 
@@ -278,6 +279,10 @@ int test_complex()
         printf("    No matched subs\n");
     }
 
+    // DEBUG
+    // write_dot_file(config, cnode);
+    // DEBUG
+ 
     free(subs);
     free_matched_subs(matched_subs);
     free_event((struct event*)event);
