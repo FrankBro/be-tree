@@ -41,7 +41,8 @@ CALLGRIND=valgrind --tool=callgrind
 # Default Target
 ################################################################################
 
-all: build/betree.a build/betree.so $(OBJECTS) tool test 
+# all: build/betree.a build/betree.so $(OBJECTS) tool test dot
+all: build/betree.a build/betree.so $(OBJECTS) tool test
 
 dot:
 	dot -Tpng betree.dot -o betree.png
