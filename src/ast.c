@@ -182,6 +182,7 @@ bool equality_value_matches(enum ast_equality_value_e a, enum value_e b) {
 
 bool match_node(const struct event* event, const struct ast_node *node)
 {
+    // TODO allow undefined handling?
     switch(node->type) {
         case AST_TYPE_BOOL_EXPR: {
             struct value variable;
