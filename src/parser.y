@@ -48,15 +48,15 @@
 %token<integer_value> TINTEGER
 %token<float_value> TFLOAT
 
-%type<node> expr ncexpr eexpr sexpr cexpr boolexpr
+%type<node> expr num_comp_expr eq_expr set_expr cexpr boolexpr
 %type<string> ident
 %type<value> boolean
 
 %type<integer_value> integer
 %type<float_value> float
 %type<string_value> string
-%type<numeric_compare_value> ncvalue 
-%type<equality_value> evalue
+%type<numeric_compare_value> num_comp_value 
+%type<equality_value> eq_value
 %type<variable_value> variable_value
 %type<set_left_value> set_left_value
 %type<set_right_value> set_right_value
@@ -98,30 +98,30 @@ string_list_loop    : string                                { $$.count = 0; $$.s
 ;       
 
 expr                : TLPAREN expr TRPAREN                  { $$ = $2; }
-                    | ncexpr                                { $$ = $1; }
-                    | eexpr                                 { $$ = $1; }
-                    | sexpr                                 { $$ = $1; }
+                    | num_comp_expr                         { $$ = $1; }
+                    | eq_expr                               { $$ = $1; }
+                    | set_expr                              { $$ = $1; }
                     | cexpr                                 { $$ = $1; }
                     | boolexpr                              { $$ = $1; }
 ;       
 
-ncvalue             : integer                               { $$.value_type = AST_NUMERIC_COMPARE_VALUE_INTEGER; $$.integer_value = $1; }
+num_comp_value      : integer                               { $$.value_type = AST_NUMERIC_COMPARE_VALUE_INTEGER; $$.integer_value = $1; }
                     | float                                 { $$.value_type = AST_NUMERIC_COMPARE_VALUE_FLOAT; $$.float_value = $1; }
 ;       
 
-ncexpr              : ident TCGT ncvalue                    { $$ = ast_numeric_compare_expr_create(AST_NUMERIC_COMPARE_GT, $1, $3); free($1); }
-                    | ident TCGE ncvalue                    { $$ = ast_numeric_compare_expr_create(AST_NUMERIC_COMPARE_GE, $1, $3); free($1); }
-                    | ident TCLT ncvalue                    { $$ = ast_numeric_compare_expr_create(AST_NUMERIC_COMPARE_LT, $1, $3); free($1); }
-                    | ident TCLE ncvalue                    { $$ = ast_numeric_compare_expr_create(AST_NUMERIC_COMPARE_LE, $1, $3); free($1); }
+num_comp_expr       : ident TCGT num_comp_value             { $$ = ast_numeric_compare_expr_create(AST_NUMERIC_COMPARE_GT, $1, $3); free($1); }
+                    | ident TCGE num_comp_value             { $$ = ast_numeric_compare_expr_create(AST_NUMERIC_COMPARE_GE, $1, $3); free($1); }
+                    | ident TCLT num_comp_value             { $$ = ast_numeric_compare_expr_create(AST_NUMERIC_COMPARE_LT, $1, $3); free($1); }
+                    | ident TCLE num_comp_value             { $$ = ast_numeric_compare_expr_create(AST_NUMERIC_COMPARE_LE, $1, $3); free($1); }
 ;       
 
-evalue              : integer                               { $$.value_type = AST_EQUALITY_VALUE_INTEGER; $$.integer_value = $1; }
+eq_value            : integer                               { $$.value_type = AST_EQUALITY_VALUE_INTEGER; $$.integer_value = $1; }
                     | float                                 { $$.value_type = AST_EQUALITY_VALUE_FLOAT; $$.integer_value = $1; }
                     | string                                { $$.value_type = AST_EQUALITY_VALUE_STRING; $$.string_value = $1; }
 ;       
 
-eexpr               : ident TCEQ evalue                     { $$ = ast_equality_expr_create(AST_EQUALITY_EQ, $1, $3); free($1); }
-                    | ident TCNE evalue                     { $$ = ast_equality_expr_create(AST_EQUALITY_NE, $1, $3); free($1); }
+eq_expr             : ident TCEQ eq_value                   { $$ = ast_equality_expr_create(AST_EQUALITY_EQ, $1, $3); free($1); }
+                    | ident TCNE eq_value                   { $$ = ast_equality_expr_create(AST_EQUALITY_NE, $1, $3); free($1); }
 ;       
 
 variable_value      : ident                                 { $$.name = strdup($1); $$.variable_id = -1; free($1); }
@@ -136,7 +136,7 @@ set_right_value     : integer_list_value                    { $$.value_type = AS
                     | variable_value                        { $$.value_type = AST_SET_RIGHT_VALUE_VARIABLE; $$.variable_value = $1; }
 ;
 
-sexpr               : set_left_value TNOTIN set_right_value { $$ = ast_set_expr_create(AST_SET_NOTIN, $1, $3); }
+set_expr            : set_left_value TNOTIN set_right_value { $$ = ast_set_expr_create(AST_SET_NOTIN, $1, $3); }
                     | set_left_value TIN set_right_value    { $$ = ast_set_expr_create(AST_SET_IN, $1, $3); }
 ;
 
