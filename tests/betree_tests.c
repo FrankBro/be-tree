@@ -38,7 +38,7 @@ const struct sub* make_simple_sub_il(struct config* config, betree_sub_t id, con
         abort();
     }
     sub->variable_ids[0] = get_id_for_attr(config, attr);
-    struct set_left_value left = { .value_type = AST_SET_LEFT_VALUE_VARIABLE, .variable_value = { .name = attr, .variable_id = -1 } };
+    struct set_left_value left = { .value_type = AST_SET_LEFT_VALUE_VARIABLE, .variable_value = { .name = strdup(attr), .variable_id = -1 } };
     struct set_right_value right = { .value_type = AST_SET_RIGHT_VALUE_INTEGER_LIST, .integer_list_value = ilvalue };
     struct ast_node* expr = ast_set_expr_create(op, left, right);
     assign_variable_id(config, expr);
