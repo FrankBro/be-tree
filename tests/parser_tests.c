@@ -143,7 +143,7 @@ int test_string()
     return 0;
 }
 
-int test_integer_list()
+int test_integer_set()
 {
     struct ast_node* node = NULL;
     parse("a in (1,2, 3)", &node);
@@ -175,7 +175,7 @@ int all_tests()
     mu_run_test(test_float);
     mu_run_test(test_bool);
     mu_run_test(test_string);
-    mu_run_test(test_integer_list);
+    mu_run_test(test_integer_set);
 
     return 0;
 }
