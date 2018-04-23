@@ -478,12 +478,16 @@ bool match_node(const struct event* event, const struct ast_node *node)
         }
         case AST_TYPE_COMBI_EXPR: {
             bool lhs = match_node(event, node->combi_expr.lhs);
-            bool rhs = match_node(event, node->combi_expr.rhs);
             switch(node->combi_expr.op) {
                 case AST_COMBI_AND: {
+                    if(lhs == false) {
+                        return false;
+                    }
+                    bool rhs = match_node(event, node->combi_expr.rhs);
                     return lhs && rhs;
                 }
                 case AST_COMBI_OR: {
+                    bool rhs = match_node(event, node->combi_expr.rhs);
                     return lhs || rhs;
                 }
             }
