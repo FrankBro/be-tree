@@ -586,6 +586,16 @@ void assign_str_id(struct config* config, struct ast_node* node)
             return;
         }
         case(AST_TYPE_SET_EXPR): {
+            if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_STRING) {
+                betree_str_t str_id = get_id_for_string(config, node->set_expr.left_value.string_value.string);
+                node->set_expr.left_value.string_value.str = str_id;
+            }
+            if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
+                for(size_t i = 0; i < node->set_expr.right_value.string_list_value.count; i++) {
+                    betree_str_t str_id = get_id_for_string(config, node->set_expr.right_value.string_list_value.strings[i].string);
+                    node->set_expr.right_value.string_list_value.strings[i].str = str_id;
+                }
+            }
             return;
         }
         case(AST_TYPE_COMBI_EXPR): {
