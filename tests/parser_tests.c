@@ -153,7 +153,7 @@ int test_integer_list()
     free_ast_node(node);
     parse("a not in (1,2, 3)", &node);
     mu_assert(node->type == AST_TYPE_SET_EXPR &&
-        node->set_expr.op == AST_SET_NOTIN
+        node->set_expr.op == AST_SET_NOT_IN
     , "in");
     free_ast_node(node);
     parse("a in (1)", &node);

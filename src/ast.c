@@ -251,7 +251,7 @@ bool match_node(const struct event* event, const struct ast_node *node)
                 invalid_expr("invalid set expression");
             }
             switch(node->set_expr.op) {
-                case AST_SET_NOTIN: {
+                case AST_SET_NOT_IN: {
                     return !is_in;
                 }
                 case AST_SET_IN: {
@@ -633,7 +633,7 @@ const char* ast_to_string(const struct ast_node* node)
                 }
             }
             switch(node->set_expr.op) {
-                case AST_SET_NOTIN: {
+                case AST_SET_NOT_IN: {
                     asprintf(&expr, "not in ");
                     break;
                 }

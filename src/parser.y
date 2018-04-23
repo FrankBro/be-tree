@@ -136,7 +136,7 @@ set_right_value     : integer_list_value                    { $$.value_type = AS
                     | variable_value                        { $$.value_type = AST_SET_RIGHT_VALUE_VARIABLE; $$.variable_value = $1; }
 ;
 
-set_expr            : set_left_value TNOTIN set_right_value { $$ = ast_set_expr_create(AST_SET_NOTIN, $1, $3); }
+set_expr            : set_left_value TNOTIN set_right_value { $$ = ast_set_expr_create(AST_SET_NOT_IN, $1, $3); }
                     | set_left_value TIN set_right_value    { $$ = ast_set_expr_create(AST_SET_IN, $1, $3); }
 ;
 

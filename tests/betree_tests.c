@@ -896,7 +896,7 @@ int test_integer_list()
         integer_list.integers[1] = 2;
         integer_list.integers[2] = 0;
 
-        struct sub* sub = (struct sub*)make_simple_sub_il(config, 0, "a", AST_SET_NOTIN, integer_list);
+        struct sub* sub = (struct sub*)make_simple_sub_il(config, 0, "a", AST_SET_NOT_IN, integer_list);
         insert_be_tree(config, sub, cnode, NULL);
 
         const struct event* event = make_simple_event_i(config, "a", 0);

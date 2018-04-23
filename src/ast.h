@@ -130,7 +130,7 @@ struct set_right_value {
 };
 
 enum ast_set_e {
-    AST_SET_NOTIN,
+    AST_SET_NOT_IN,
     AST_SET_IN,
 };
 
