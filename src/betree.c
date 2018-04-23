@@ -1199,6 +1199,10 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
             }
             break;
         }
+        case AST_TYPE_LIST_EXPR: {
+            variable_id = expr->list_expr.variable_id;
+            break;
+        }
     }
     bool is_found = false;
     for(size_t i = 0; i < sub->variable_id_count; i++) {
@@ -1472,6 +1476,9 @@ void adjust_attr_domains(struct config* config, const struct ast_node* node, str
                 return;
             }
             break;
+        }
+        case(AST_TYPE_LIST_EXPR): {
+            name = node->list_expr.name;
         }
     }
     betree_var_t variable_id = get_id_for_attr(config, name);

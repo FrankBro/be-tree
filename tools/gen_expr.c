@@ -109,6 +109,10 @@ void write_expr(FILE* f, const struct ast_node* node)
             fprintf(stderr, "should never happen for now");
             abort();
         }
+        case(AST_TYPE_LIST_EXPR): {
+            fprintf(stderr, "should never happen for now");
+            abort();
+        }
         case(AST_TYPE_NUMERIC_COMPARE_EXPR): {
             fprintf(f, "%s ", node->numeric_compare_expr.name);
             switch(node->numeric_compare_expr.op) {

@@ -28,6 +28,9 @@
 ","                     return TOKEN(TCOMMA);
 "not in"                return TOKEN(TNOTIN);
 "in"                    return TOKEN(TIN);
+"one of"                return TOKEN(TONEOF);
+"none of"               return TOKEN(TNONEOF);
+"all of"                return TOKEN(TALLOF);
 "&&"                    return TOKEN(TAND);
 "and"                   return TOKEN(TAND);
 "||"                    return TOKEN(TOR);

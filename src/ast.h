@@ -140,12 +140,43 @@ struct ast_set_expr {
     struct set_right_value right_value;
 };
 
+// List ('one of'/'none of'/'all of')
+
+enum ast_list_e {
+    AST_LIST_ONE_OF,
+    AST_LIST_NONE_OF,
+    AST_LIST_ALL_OF,
+};
+
+enum ast_list_value_e {
+    AST_LIST_VALUE_INTEGER_LIST,
+    AST_LIST_VALUE_STRING_LIST,
+};
+
+struct list_value {
+    enum ast_list_value_e value_type;
+    union {
+        struct integer_list_value integer_list_value;
+        struct string_list_value string_list_value;
+    };
+};
+
+struct ast_list_expr {
+    enum ast_list_e op;
+    betree_var_t variable_id;
+    const char* name;
+    struct list_value value;
+};
+
+// Expression
+
 enum ast_node_type_e {
     AST_TYPE_NUMERIC_COMPARE_EXPR,
     AST_TYPE_EQUALITY_EXPR,
     AST_TYPE_COMBI_EXPR,
     AST_TYPE_BOOL_EXPR,
     AST_TYPE_SET_EXPR,
+    AST_TYPE_LIST_EXPR,
 };
 
 struct ast_node {
@@ -156,6 +187,7 @@ struct ast_node {
         struct ast_combi_expr combi_expr;
         struct ast_bool_expr bool_expr;
         struct ast_set_expr set_expr;
+        struct ast_list_expr list_expr;
     };
 };
 
@@ -164,6 +196,7 @@ struct ast_node* ast_equality_expr_create(const enum ast_equality_e op, const ch
 struct ast_node* ast_combi_expr_create(const enum ast_combi_e op, const struct ast_node* lhs, const struct ast_node* rhs);
 struct ast_node* ast_bool_expr_create(const enum ast_bool_e op, const char* name);
 struct ast_node* ast_set_expr_create(const enum ast_set_e op, struct set_left_value left_value, struct set_right_value right_value);
+struct ast_node* ast_list_expr_create(const enum ast_list_e op, const char* name, struct list_value list_value);
 void free_ast_node(struct ast_node* node);
 
 bool match_node(const struct event* event, const struct ast_node *node);

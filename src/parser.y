@@ -34,12 +34,13 @@
     struct variable_value variable_value;
     struct set_left_value set_left_value;
     struct set_right_value set_right_value;
+    struct list_value list_value;
     struct ast_node *node;
     int token;
 }
 
 %token<token> TCEQ TCNE TCGT TCGE TCLT TCLE
-%token<token> TLPAREN TRPAREN TCOMMA TNOTIN TIN
+%token<token> TLPAREN TRPAREN TCOMMA TNOTIN TIN TONEOF TNONEOF TALLOF
 %token<token> TAND TOR
 %token<token> TNOT
 %token<token> TQUOTE
@@ -48,7 +49,7 @@
 %token<integer_value> TINTEGER
 %token<float_value> TFLOAT
 
-%type<node> expr num_comp_expr eq_expr set_expr cexpr boolexpr
+%type<node> expr num_comp_expr eq_expr set_expr list_expr cexpr boolexpr
 %type<string> ident
 %type<value> boolean
 
@@ -60,6 +61,7 @@
 %type<variable_value> variable_value
 %type<set_left_value> set_left_value
 %type<set_right_value> set_right_value
+%type<list_value> list_value
 
 %type<integer_list_value> integer_list_value integer_list_loop
 %type<string_list_value> string_list_value string_list_loop
@@ -101,6 +103,7 @@ expr                : TLPAREN expr TRPAREN                  { $$ = $2; }
                     | num_comp_expr                         { $$ = $1; }
                     | eq_expr                               { $$ = $1; }
                     | set_expr                              { $$ = $1; }
+                    | list_expr                             { $$ = $1; }
                     | cexpr                                 { $$ = $1; }
                     | boolexpr                              { $$ = $1; }
 ;       
@@ -138,6 +141,15 @@ set_right_value     : integer_list_value                    { $$.value_type = AS
 
 set_expr            : set_left_value TNOTIN set_right_value { $$ = ast_set_expr_create(AST_SET_NOT_IN, $1, $3); }
                     | set_left_value TIN set_right_value    { $$ = ast_set_expr_create(AST_SET_IN, $1, $3); }
+;
+
+list_value          : integer_list_value                    { $$.value_type = AST_LIST_VALUE_INTEGER_LIST; $$.integer_list_value = $1; }
+                    | string_list_value                     { $$.value_type = AST_LIST_VALUE_STRING_LIST; $$.string_list_value = $1; }
+;
+
+list_expr           : ident TONEOF list_value               { $$ = ast_list_expr_create(AST_LIST_ONE_OF, $1, $3); free($1);}
+                    | ident TNONEOF list_value              { $$ = ast_list_expr_create(AST_LIST_NONE_OF, $1, $3); free($1);}
+                    | ident TALLOF list_value               { $$ = ast_list_expr_create(AST_LIST_ALL_OF, $1, $3); free($1);}
 ;
 
 cexpr               : expr TAND expr                        { $$ = ast_combi_expr_create(AST_COMBI_AND, $1, $3); }

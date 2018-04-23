@@ -71,6 +71,17 @@ struct ast_node* ast_set_expr_create(const enum ast_set_e op, struct set_left_va
     return node;
 }
 
+struct ast_node* ast_list_expr_create(const enum ast_list_e op, const char* name, struct list_value list_value)
+{
+    struct ast_node* node = ast_node_create();
+    node->type = AST_TYPE_LIST_EXPR;
+    node->list_expr.op = op;
+    node->list_expr.name = strdup(name);
+    node->list_expr.variable_id = -1;
+    node->list_expr.value = list_value;
+    return node;
+}
+
 void free_ast_node(struct ast_node* node)
 {
     if(node == NULL) {
@@ -120,6 +131,22 @@ void free_ast_node(struct ast_node* node)
                     break;
                 }
             }
+            break;
+        case AST_TYPE_LIST_EXPR:
+            switch(node->list_expr.value.value_type) {
+                case AST_LIST_VALUE_INTEGER_LIST: {
+                    free(node->list_expr.value.integer_list_value.integers);
+                    break;
+                }
+                case AST_LIST_VALUE_STRING_LIST: {
+                    for(size_t i = 0; i < node->list_expr.value.string_list_value.count; i++) {
+                        free((char*)node->list_expr.value.string_list_value.strings[i].string);
+                    }
+                    free(node->list_expr.value.string_list_value.strings);
+                    break;
+                }
+            }
+            free((char*)node->list_expr.name);
             break;
         case AST_TYPE_COMBI_EXPR:
             free_ast_node((struct ast_node*)node->combi_expr.lhs);
@@ -180,6 +207,12 @@ bool equality_value_matches(enum ast_equality_value_e a, enum value_e b) {
         (a == AST_EQUALITY_VALUE_STRING && b == VALUE_S);
 }
 
+bool list_value_matches(enum ast_list_value_e a, enum value_e b) {
+    return
+        (a == AST_LIST_VALUE_INTEGER_LIST && b == VALUE_IL) ||
+        (a == AST_LIST_VALUE_STRING_LIST && b == VALUE_SL);
+}
+
 bool match_node(const struct event* event, const struct ast_node *node)
 {
     // TODO allow undefined handling?
@@ -199,6 +232,86 @@ bool match_node(const struct event* event, const struct ast_node *node)
                 }
                 case AST_BOOL_NOT: {
                     return !variable.bvalue;
+                }
+            }
+        }
+        case AST_TYPE_LIST_EXPR: {
+            struct value variable;
+            bool found = get_variable(node->list_expr.variable_id, event, &variable);
+            if(!found) {
+                return false;
+            }
+            if(!list_value_matches(node->list_expr.value.value_type, variable.value_type)) {
+                invalid_expr("list value types do not match");
+            }
+            switch(node->list_expr.op) {
+                case AST_LIST_ONE_OF: 
+                case AST_LIST_NONE_OF: {
+                    bool result = false;
+                    switch(node->list_expr.value.value_type) {
+                        case AST_LIST_VALUE_INTEGER_LIST: {
+                            for(size_t i = 0; i < variable.ilvalue.count; i++) {
+                                int64_t left = variable.ilvalue.integers[i];
+                                for(size_t j = 0; j < node->list_expr.value.integer_list_value.count; j++) {
+                                    int64_t right = node->list_expr.value.integer_list_value.integers[j];
+                                    if(left == right) {
+                                        result = true;
+                                    }
+                                }
+                            }
+                        }
+                        case AST_LIST_VALUE_STRING_LIST: {
+                            for(size_t i = 0; i < variable.slvalue.count; i++) {
+                                betree_str_t left = variable.slvalue.strings[i].str;
+                                for(size_t j = 0; j < node->list_expr.value.string_list_value.count; j++) {
+                                    betree_str_t right = node->list_expr.value.string_list_value.strings[j].str;
+                                    if(left == right) {
+                                        result = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    switch(node->list_expr.op) {
+                        case AST_LIST_ONE_OF: 
+                            return result;
+                        case AST_LIST_NONE_OF: 
+                            return !result;
+                        case AST_LIST_ALL_OF:
+                            invalid_expr("Should never happen");
+                    }
+                }
+                case AST_LIST_ALL_OF: {
+                    size_t count = 0, target_count = 0;
+                    switch(node->list_expr.value.value_type) {
+                        case AST_LIST_VALUE_INTEGER_LIST: {
+                            target_count = node->list_expr.value.integer_list_value.count;
+                            for(size_t i = 0; i < target_count; i++) {
+                                int64_t right = node->list_expr.value.integer_list_value.integers[i];
+                                for(size_t j = 0; j < variable.ilvalue.count; j++) {
+                                    int64_t left = variable.ilvalue.integers[j];
+                                    if(left == right) {
+                                        count++;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        case AST_LIST_VALUE_STRING_LIST: {
+                            target_count = node->list_expr.value.string_list_value.count;
+                            for(size_t i = 0; i < target_count; i++) {
+                                betree_str_t right = node->list_expr.value.string_list_value.strings[i].str;
+                                for(size_t j = 0; j < variable.slvalue.count; j++) {
+                                    betree_str_t left = variable.slvalue.strings[j].str;
+                                    if(left == right) {
+                                        count++;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    return count == target_count;
                 }
             }
         }
@@ -389,6 +502,9 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
             get_variable_bound(domain, node->combi_expr.rhs, bound);
             return;
         }
+        case AST_TYPE_LIST_EXPR: {
+            invalid_expr("Trying to get the bound of an list expression");
+        }
         case AST_TYPE_SET_EXPR: {
             invalid_expr("Trying to get the bound of an set expression");
         }
@@ -533,6 +649,11 @@ void assign_variable_id(struct config* config, struct ast_node* node)
             node->bool_expr.variable_id = variable_id;
             return;
         }
+        case(AST_TYPE_LIST_EXPR): {
+            betree_var_t variable_id = get_id_for_attr(config, node->list_expr.name);
+            node->list_expr.variable_id = variable_id;
+            return;
+        }
         case(AST_TYPE_SET_EXPR): {
             switch(node->set_expr.left_value.value_type) {
                 case AST_SET_LEFT_VALUE_INTEGER: {
@@ -583,6 +704,15 @@ void assign_str_id(struct config* config, struct ast_node* node)
             return;
         }
         case(AST_TYPE_BOOL_EXPR): {
+            return;
+        }
+        case(AST_TYPE_LIST_EXPR): {
+            if(node->list_expr.value.value_type == AST_LIST_VALUE_STRING_LIST) {
+                for(size_t i = 0; i < node->list_expr.value.string_list_value.count; i++) {
+                    betree_str_t str_id = get_id_for_string(config, node->list_expr.value.string_list_value.strings[i].string);
+                    node->list_expr.value.string_list_value.strings[i].str = str_id;
+                }
+            }
             return;
         }
         case(AST_TYPE_SET_EXPR): {
@@ -670,6 +800,42 @@ const char* ast_to_string(const struct ast_node* node)
                     break;
                 }
             }
+            return expr;
+        }
+        case(AST_TYPE_LIST_EXPR): {
+            char* list;
+            switch(node->list_expr.value.value_type) {
+                case AST_LIST_VALUE_INTEGER_LIST: {
+                    const char* inner = integer_list_value_to_string(node->list_expr.value.integer_list_value);
+                    asprintf(&list, "(%s) ", inner);
+                    free((char*)inner);
+                    break;
+                }
+                case AST_LIST_VALUE_STRING_LIST: {
+                    const char* inner = string_list_value_to_string(node->list_expr.value.string_list_value);
+                    asprintf(&list, "(%s) ", inner);
+                    free((char*)inner);
+                    break;
+                }
+            }
+            char* op;
+            switch(node->list_expr.op) {
+                case AST_LIST_ONE_OF: {
+                    asprintf(&op, "one of ");
+                    break;
+                }
+                case AST_LIST_NONE_OF: {
+                    asprintf(&op, "none of ");
+                    break;
+                }
+                case AST_LIST_ALL_OF: {
+                    asprintf(&op, "all of ");
+                    break;
+                }
+            }
+            asprintf(&expr, "%s %s %s", node->list_expr.name, op, list);
+            free(list);
+            free(op);
             return expr;
         }
         case(AST_TYPE_BOOL_EXPR): {
