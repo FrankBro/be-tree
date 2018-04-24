@@ -148,18 +148,113 @@ int test_integer_set()
     struct ast_node* node = NULL;
     parse("a in (1,2, 3)", &node);
     mu_assert(node->type == AST_TYPE_SET_EXPR &&
-        node->set_expr.op == AST_SET_IN
+        node->set_expr.op == AST_SET_IN &&
+        node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE &&
+        node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST
     , "in");
     free_ast_node(node);
     parse("a not in (1,2, 3)", &node);
     mu_assert(node->type == AST_TYPE_SET_EXPR &&
-        node->set_expr.op == AST_SET_NOT_IN
+        node->set_expr.op == AST_SET_NOT_IN &&
+        node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE &&
+        node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST
     , "in");
     free_ast_node(node);
     parse("a in (1)", &node);
     mu_assert(node->type == AST_TYPE_SET_EXPR &&
-        node->set_expr.op == AST_SET_IN
+        node->set_expr.op == AST_SET_IN &&
+        node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE &&
+        node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST
     , "single");
+    free_ast_node(node);
+    parse("1 in a", &node);
+    mu_assert(node->type == AST_TYPE_SET_EXPR &&
+        node->set_expr.op == AST_SET_IN &&
+        node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_INTEGER &&
+        node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE
+    , "flipped");
+    free_ast_node(node);
+    return 0;
+}
+
+int test_string_set()
+{
+    struct ast_node* node = NULL;
+    parse("a in (\"1\",\"2\", \"3\")", &node);
+    mu_assert(node->type == AST_TYPE_SET_EXPR &&
+        node->set_expr.op == AST_SET_IN &&
+        node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE &&
+        node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_STRING_LIST
+    , "in");
+    free_ast_node(node);
+    parse("a not in (\"1\",\"2\", \"3\")", &node);
+    mu_assert(node->type == AST_TYPE_SET_EXPR &&
+        node->set_expr.op == AST_SET_NOT_IN &&
+        node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE &&
+        node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_STRING_LIST
+    , "in");
+    free_ast_node(node);
+    parse("a in (\"1\")", &node);
+    mu_assert(node->type == AST_TYPE_SET_EXPR &&
+        node->set_expr.op == AST_SET_IN &&
+        node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE &&
+        node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_STRING_LIST
+    , "single");
+    free_ast_node(node);
+    parse("\"1\" in a", &node);
+    mu_assert(node->type == AST_TYPE_SET_EXPR &&
+        node->set_expr.op == AST_SET_IN &&
+        node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_STRING &&
+        node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE
+    , "flipped");
+    free_ast_node(node);
+    return 0;
+}
+
+int test_integer_list()
+{
+    struct ast_node* node = NULL;
+    parse("a one of (1,2, 3)", &node);
+    mu_assert(node->type == AST_TYPE_LIST_EXPR &&
+        node->list_expr.op == AST_LIST_ONE_OF &&
+        node->list_expr.value.value_type == AST_LIST_VALUE_INTEGER_LIST
+    , "one of");
+    free_ast_node(node);
+    parse("a none of (1,2, 3)", &node);
+    mu_assert(node->type == AST_TYPE_LIST_EXPR &&
+        node->list_expr.op == AST_LIST_NONE_OF &&
+        node->list_expr.value.value_type == AST_LIST_VALUE_INTEGER_LIST
+    , "none of");
+    free_ast_node(node);
+    parse("a all of (1,2, 3)", &node);
+    mu_assert(node->type == AST_TYPE_LIST_EXPR &&
+        node->list_expr.op == AST_LIST_ALL_OF &&
+        node->list_expr.value.value_type == AST_LIST_VALUE_INTEGER_LIST
+    , "all of");
+    free_ast_node(node);
+    return 0;
+}
+
+int test_string_list()
+{
+    struct ast_node* node = NULL;
+    parse("a one of (\"1\",\"2\", \"3\")", &node);
+    mu_assert(node->type == AST_TYPE_LIST_EXPR &&
+        node->list_expr.op == AST_LIST_ONE_OF &&
+        node->list_expr.value.value_type == AST_LIST_VALUE_STRING_LIST
+    , "one of");
+    free_ast_node(node);
+    parse("a none of (\"1\",\"2\", \"3\")", &node);
+    mu_assert(node->type == AST_TYPE_LIST_EXPR &&
+        node->list_expr.op == AST_LIST_NONE_OF &&
+        node->list_expr.value.value_type == AST_LIST_VALUE_STRING_LIST
+    , "none of");
+    free_ast_node(node);
+    parse("a all of (\"1\",\"2\", \"3\")", &node);
+    mu_assert(node->type == AST_TYPE_LIST_EXPR &&
+        node->list_expr.op == AST_LIST_ALL_OF &&
+        node->list_expr.value.value_type == AST_LIST_VALUE_STRING_LIST
+    , "all of");
     free_ast_node(node);
     return 0;
 }
@@ -176,6 +271,9 @@ int all_tests()
     mu_run_test(test_bool);
     mu_run_test(test_string);
     mu_run_test(test_integer_set);
+    mu_run_test(test_string_set);
+    mu_run_test(test_integer_list);
+    mu_run_test(test_string_list);
 
     return 0;
 }

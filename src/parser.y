@@ -11,7 +11,7 @@
     void yyerror(void *scanner, const char *s) { (void)scanner; printf("ERROR: %s\n", s); }
 %}
 
-//%debug
+// %debug
 %pure-parser
 %lex-param {void *scanner}
 %parse-param {void *scanner}
@@ -43,8 +43,7 @@
 %token<token> TLPAREN TRPAREN TCOMMA TNOTIN TIN TONEOF TNONEOF TALLOF
 %token<token> TAND TOR
 %token<token> TNOT
-%token<token> TQUOTE
-%token<string> TIDENTIFIER
+%token<string> TSTRING TIDENTIFIER
 %token<boolean_value> TTRUE TFALSE
 %token<integer_value> TINTEGER
 %token<float_value> TFLOAT
@@ -85,7 +84,7 @@ integer             : TINTEGER                              { $$ = $1; }
 
 float               : TFLOAT                                { $$ = $1; }
 
-string              : TQUOTE ident TQUOTE                   { $$.string = strdup($2); $$.str = -1; free($2); }
+string              : TSTRING                               { $$.string = strdup($1); $$.str = -1; free($1); }
 
 integer_list_value  : TLPAREN integer_list_loop TRPAREN     { $$ = $2; }
 
