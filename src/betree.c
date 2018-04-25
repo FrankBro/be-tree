@@ -1175,7 +1175,7 @@ const struct pred* make_simple_pred_i(betree_var_t variable_id, int64_t ivalue)
 
 const struct pred* make_simple_pred_s(struct config* config, betree_var_t variable_id, const char* svalue)
 {
-    struct value value = { .value_type = VALUE_S, .svalue = { .string = svalue } };
+    struct value value = { .value_type = VALUE_S, .svalue = { .string = strdup(svalue) } };
     value.svalue.str = get_id_for_string(config, svalue);
     return make_simple_pred(variable_id, value);
 }
