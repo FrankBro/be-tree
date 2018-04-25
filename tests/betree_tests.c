@@ -62,6 +62,23 @@ const struct sub* make_simple_sub_list_il(struct config* config, betree_sub_t id
     return sub;
 }
 
+const struct sub* make_simple_sub_list_sl(struct config* config, betree_sub_t id, const char* attr, enum ast_list_e op, struct string_list_value slvalue)
+{
+    struct sub* sub = make_empty_sub(id);
+    sub->variable_id_count = 1;
+    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
+    if(sub->variable_ids == NULL) {
+        fprintf(stderr, "%s calloc failed", __func__);
+        abort();
+    }
+    sub->variable_ids[0] = get_id_for_attr(config, attr);
+    struct list_value value = { .value_type = AST_LIST_VALUE_STRING_LIST, .string_list_value = slvalue };
+    struct ast_node* expr = ast_list_expr_create(op, attr, value);
+    assign_variable_id(config, expr);
+    sub->expr = expr;
+    return sub;
+}
+
 struct string_value make_string_value(struct config* config, const char* attr)
 {
     struct string_value string_value = { .string = strdup(attr) };
@@ -1211,6 +1228,202 @@ int test_integer_list()
     return 0;
 }
 
+int test_string_list()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_sl(config, "a", false);
+
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+
+        size_t count = 3;
+        struct string_list_value string_list = { .count = count };
+        string_list.strings = calloc(3, sizeof(*string_list.strings));
+        string_list.strings[0] = make_string_value(config, "1");
+        string_list.strings[1] = make_string_value(config, "2");
+        string_list.strings[2] = make_string_value(config, "0");
+
+        struct sub* sub = (struct sub*)make_simple_sub_list_sl(config, 0, "a", AST_LIST_ONE_OF, string_list);
+        insert_be_tree(config, sub, cnode, NULL);
+
+        size_t event_count = 3;
+        struct string_list_value event_string_list = { .count = event_count };
+        event_string_list.strings = calloc(3, sizeof(*event_string_list.strings));
+        event_string_list.strings[0] = make_string_value(config, "1");
+        event_string_list.strings[1] = make_string_value(config, "2");
+        event_string_list.strings[2] = make_string_value(config, "0");
+
+        const struct event* event = make_simple_event_sl(config, "a", event_string_list);
+        struct matched_subs* matched_subs = make_matched_subs();
+        match_be_tree(config, event, cnode, matched_subs);
+
+        mu_assert(matched_subs->sub_count == 1, "found our sub");
+
+        free_matched_subs(matched_subs);
+        free_event((struct event*)event);
+        free_cnode(cnode);
+    }
+
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+
+        size_t count = 3;
+        struct string_list_value string_list = { .count = count };
+        string_list.strings = calloc(3, sizeof(*string_list.strings));
+        string_list.strings[0] = make_string_value(config, "1");
+        string_list.strings[1] = make_string_value(config, "2");
+        string_list.strings[2] = make_string_value(config, "0");
+
+        struct sub* sub = (struct sub*)make_simple_sub_list_sl(config, 0, "a", AST_LIST_ONE_OF, string_list);
+        insert_be_tree(config, sub, cnode, NULL);
+
+        size_t event_count = 3;
+        struct string_list_value event_string_list = { .count = event_count };
+        event_string_list.strings = calloc(3, sizeof(*event_string_list.strings));
+        event_string_list.strings[0] = make_string_value(config, "4");
+        event_string_list.strings[1] = make_string_value(config, "5");
+        event_string_list.strings[2] = make_string_value(config, "3");
+
+        const struct event* event = make_simple_event_sl(config, "a", event_string_list);
+        struct matched_subs* matched_subs = make_matched_subs();
+        match_be_tree(config, event, cnode, matched_subs);
+
+        mu_assert(matched_subs->sub_count == 0, "found no sub");
+
+        free_matched_subs(matched_subs);
+        free_event((struct event*)event);
+        free_cnode(cnode);
+    }
+
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+
+        size_t count = 3;
+        struct string_list_value string_list = { .count = count };
+        string_list.strings = calloc(3, sizeof(*string_list.strings));
+        string_list.strings[0] = make_string_value(config, "1");
+        string_list.strings[1] = make_string_value(config, "2");
+        string_list.strings[2] = make_string_value(config, "0");
+
+        struct sub* sub = (struct sub*)make_simple_sub_list_sl(config, 0, "a", AST_LIST_NONE_OF, string_list);
+        insert_be_tree(config, sub, cnode, NULL);
+
+        size_t event_count = 3;
+        struct string_list_value event_string_list = { .count = event_count };
+        event_string_list.strings = calloc(3, sizeof(*event_string_list.strings));
+        event_string_list.strings[0] = make_string_value(config, "4");
+        event_string_list.strings[1] = make_string_value(config, "5");
+        event_string_list.strings[2] = make_string_value(config, "3");
+
+        const struct event* event = make_simple_event_sl(config, "a", event_string_list);
+        struct matched_subs* matched_subs = make_matched_subs();
+        match_be_tree(config, event, cnode, matched_subs);
+
+        mu_assert(matched_subs->sub_count == 1, "found our sub");
+
+        free_matched_subs(matched_subs);
+        free_event((struct event*)event);
+        free_cnode(cnode);
+    }
+
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+
+        size_t count = 3;
+        struct string_list_value string_list = { .count = count };
+        string_list.strings = calloc(3, sizeof(*string_list.strings));
+        string_list.strings[0] = make_string_value(config, "1");
+        string_list.strings[1] = make_string_value(config, "2");
+        string_list.strings[2] = make_string_value(config, "0");
+
+        struct sub* sub = (struct sub*)make_simple_sub_list_sl(config, 0, "a", AST_LIST_NONE_OF, string_list);
+        insert_be_tree(config, sub, cnode, NULL);
+
+        size_t event_count = 3;
+        struct string_list_value event_string_list = { .count = event_count };
+        event_string_list.strings = calloc(3, sizeof(*event_string_list.strings));
+        event_string_list.strings[0] = make_string_value(config, "1");
+        event_string_list.strings[1] = make_string_value(config, "2");
+        event_string_list.strings[2] = make_string_value(config, "0");
+
+        const struct event* event = make_simple_event_sl(config, "a", event_string_list);
+        struct matched_subs* matched_subs = make_matched_subs();
+        match_be_tree(config, event, cnode, matched_subs);
+
+        mu_assert(matched_subs->sub_count == 0, "found no sub");
+
+        free_matched_subs(matched_subs);
+        free_event((struct event*)event);
+        free_cnode(cnode);
+    }
+
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+
+        size_t count = 3;
+        struct string_list_value string_list = { .count = count };
+        string_list.strings = calloc(3, sizeof(*string_list.strings));
+        string_list.strings[0] = make_string_value(config, "1");
+        string_list.strings[1] = make_string_value(config, "2");
+        string_list.strings[2] = make_string_value(config, "0");
+
+        struct sub* sub = (struct sub*)make_simple_sub_list_sl(config, 0, "a", AST_LIST_ALL_OF, string_list);
+        insert_be_tree(config, sub, cnode, NULL);
+
+        size_t event_count = 3;
+        struct string_list_value event_string_list = { .count = event_count };
+        event_string_list.strings = calloc(3, sizeof(*event_string_list.strings));
+        event_string_list.strings[0] = make_string_value(config, "1");
+        event_string_list.strings[1] = make_string_value(config, "2");
+        event_string_list.strings[2] = make_string_value(config, "0");
+
+        const struct event* event = make_simple_event_sl(config, "a", event_string_list);
+        struct matched_subs* matched_subs = make_matched_subs();
+        match_be_tree(config, event, cnode, matched_subs);
+
+        mu_assert(matched_subs->sub_count == 1, "found our sub");
+
+        free_matched_subs(matched_subs);
+        free_event((struct event*)event);
+        free_cnode(cnode);
+    }
+
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+
+        size_t count = 3;
+        struct string_list_value string_list = { .count = count };
+        string_list.strings = calloc(3, sizeof(*string_list.strings));
+        string_list.strings[0] = make_string_value(config, "1");
+        string_list.strings[1] = make_string_value(config, "2");
+        string_list.strings[2] = make_string_value(config, "0");
+
+        struct sub* sub = (struct sub*)make_simple_sub_list_sl(config, 0, "a", AST_LIST_ALL_OF, string_list);
+        insert_be_tree(config, sub, cnode, NULL);
+
+        size_t event_count = 3;
+        struct string_list_value event_string_list = { .count = event_count };
+        event_string_list.strings = calloc(3, sizeof(*event_string_list.strings));
+        event_string_list.strings[0] = make_string_value(config, "1");
+        event_string_list.strings[1] = make_string_value(config, "2");
+        event_string_list.strings[2] = make_string_value(config, "3");
+
+        const struct event* event = make_simple_event_sl(config, "a", event_string_list);
+        struct matched_subs* matched_subs = make_matched_subs();
+        match_be_tree(config, event, cnode, matched_subs);
+
+        mu_assert(matched_subs->sub_count == 0, "found no sub");
+
+        free_matched_subs(matched_subs);
+        free_event((struct event*)event);
+        free_cnode(cnode);
+    }
+
+    free_config(config);
+
+    return 0;
+}
+
 int all_tests() 
 {
     mu_run_test(test_sub_has_attribute);
@@ -1234,6 +1447,7 @@ int all_tests()
     mu_run_test(test_integer_set);
     mu_run_test(test_string_set);
     mu_run_test(test_integer_list);
+    mu_run_test(test_string_list);
 
     return 0;
 }
