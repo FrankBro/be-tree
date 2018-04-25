@@ -160,6 +160,8 @@ void add_attr_domain_i(struct config* config, const char* attr, int64_t min, int
 void add_attr_domain_f(struct config* config, const char* attr, double min, double max, bool allow_undefined);
 void add_attr_domain_b(struct config* config, const char* attr, bool min, bool max, bool allow_undefined);
 void add_attr_domain_s(struct config* config, const char* attr, bool allow_undefined);
+void add_attr_domain_il(struct config* config, const char* attr, bool allow_undefined);
+void add_attr_domain_sl(struct config* config, const char* attr, bool allow_undefined);
 void adjust_attr_domains(struct config* config, const struct ast_node* node, struct value_bound bound, bool allow_undefined);
 void adjust_attr_domains_i(struct config* config, const struct ast_node* node, int64_t min, int64_t max, bool allow_undefined);
 const struct attr_domain* get_attr_domain(const struct config* config, betree_var_t variable_id);
@@ -192,12 +194,15 @@ struct matched_subs* make_matched_subs();
 void free_matched_subs(struct matched_subs* matched_subs);
 const struct pred* make_simple_pred_i(betree_var_t variable_id, int64_t value);
 const struct pred* make_simple_pred_str_i(struct config* config, const char* attr, int64_t value);
+const struct pred* make_simple_pred_str_il(struct config* config, const char* attr, struct integer_list_value value);
+const struct pred* make_simple_pred_str_sl(struct config* config, const char* attr, struct string_list_value value);
 void fill_pred(struct sub* sub, const struct ast_node* expr);
 struct sub* make_empty_sub(betree_sub_t id);
 const struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* expr);
 const struct event* make_event();
 const struct event* make_simple_event_i(struct config* config, const char* attr, int64_t value);
 const struct event* make_simple_event_s(struct config* config, const char* attr, const char* value);
+const struct event* make_simple_event_il(struct config* config, const char* attr, struct integer_list_value value);
 void event_to_string(struct config* config, const struct event* event, char* buffer);
 
 void insert_be_tree(const struct config* config, const struct sub* sub, struct cnode* cnode, struct cdir* cdir);

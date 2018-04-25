@@ -1154,6 +1154,18 @@ const struct pred* make_simple_pred_s(struct config* config, betree_var_t variab
     return make_simple_pred(variable_id, value);
 }
 
+const struct pred* make_simple_pred_il(betree_var_t variable_id, struct integer_list_value ilvalue)
+{
+    struct value value = { .value_type = VALUE_IL, .ilvalue = ilvalue };
+    return make_simple_pred(variable_id, value);
+}
+
+const struct pred* make_simple_pred_sl(betree_var_t variable_id, struct string_list_value slvalue)
+{
+    struct value value = { .value_type = VALUE_SL, .slvalue = slvalue };
+    return make_simple_pred(variable_id, value);
+}
+
 const struct pred* make_simple_pred_str_i(struct config* config, const char* attr, int64_t value)
 {
     betree_var_t variable_id = get_id_for_attr(config, attr);
@@ -1164,6 +1176,18 @@ const struct pred* make_simple_pred_str_s(struct config* config, const char* att
 {
     betree_var_t variable_id = get_id_for_attr(config, attr);
     return make_simple_pred_s(config, variable_id, value);
+}
+
+const struct pred* make_simple_pred_str_il(struct config* config, const char* attr, struct integer_list_value value)
+{
+    betree_var_t variable_id = get_id_for_attr(config, attr);
+    return make_simple_pred_il(variable_id, value);
+}
+
+const struct pred* make_simple_pred_str_sl(struct config* config, const char* attr, struct string_list_value value)
+{
+    betree_var_t variable_id = get_id_for_attr(config, attr);
+    return make_simple_pred_sl(variable_id, value);
 }
 
 void fill_pred(struct sub* sub, const struct ast_node* expr)
@@ -1289,6 +1313,19 @@ const struct event* make_simple_event_s(struct config* config, const char* attr,
         abort();
     }
     event->preds[0] = (struct pred*)make_simple_pred_str_s(config, attr, value);
+    return event;
+}
+
+const struct event* make_simple_event_il(struct config* config, const char* attr, struct integer_list_value value)
+{
+    struct event* event = (struct event*)make_event();
+    event->pred_count = 1;
+    event->preds = calloc(1, sizeof(*event->preds));
+    if(event->preds == NULL) {
+        fprintf(stderr, "%s preds calloc failed", __func__);
+        abort();
+    }
+    event->preds[0] = (struct pred*)make_simple_pred_str_il(config, attr, value);
     return event;
 }
 
@@ -1441,6 +1478,18 @@ void add_attr_domain_b(struct config* config, const char* attr, bool min, bool m
 void add_attr_domain_s(struct config* config, const char* attr, bool allow_undefined)
 {
     struct value_bound bound = { .value_type = VALUE_S };
+    add_attr_domain(config, attr, bound, allow_undefined);
+}
+
+void add_attr_domain_il(struct config* config, const char* attr, bool allow_undefined)
+{
+    struct value_bound bound = { .value_type = VALUE_IL };
+    add_attr_domain(config, attr, bound, allow_undefined);
+}
+
+void add_attr_domain_sl(struct config* config, const char* attr, bool allow_undefined)
+{
+    struct value_bound bound = { .value_type = VALUE_SL };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
