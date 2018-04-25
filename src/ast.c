@@ -697,6 +697,7 @@ void assign_variable_id(struct config* config, struct ast_node* node)
                     break;
                 }
             }
+            return;
         }
         case(AST_TYPE_COMBI_EXPR): {
             assign_variable_id(config, (struct ast_node*)node->combi_expr.lhs);
