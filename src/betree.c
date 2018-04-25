@@ -918,6 +918,14 @@ void free_value(struct value value)
             free(value.slvalue.strings);
             break;
         }
+        case VALUE_S: {
+            free((char*)value.svalue.string);
+        }
+        case VALUE_B: 
+        case VALUE_I:
+        case VALUE_F: {
+            break;
+        }
     }
 }
 
