@@ -203,6 +203,7 @@ const struct event* make_event();
 const struct event* make_simple_event_i(struct config* config, const char* attr, int64_t value);
 const struct event* make_simple_event_s(struct config* config, const char* attr, const char* value);
 const struct event* make_simple_event_il(struct config* config, const char* attr, struct integer_list_value value);
+const struct event* make_simple_event_sl(struct config* config, const char* attr, struct string_list_value value);
 void event_to_string(struct config* config, const struct event* event, char* buffer);
 
 void insert_be_tree(const struct config* config, const struct sub* sub, struct cnode* cnode, struct cdir* cdir);

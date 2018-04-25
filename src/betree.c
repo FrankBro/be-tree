@@ -1329,6 +1329,19 @@ const struct event* make_simple_event_il(struct config* config, const char* attr
     return event;
 }
 
+const struct event* make_simple_event_sl(struct config* config, const char* attr, struct string_list_value value)
+{
+    struct event* event = (struct event*)make_event();
+    event->pred_count = 1;
+    event->preds = calloc(1, sizeof(*event->preds));
+    if(event->preds == NULL) {
+        fprintf(stderr, "%s preds calloc failed", __func__);
+        abort();
+    }
+    event->preds[0] = (struct pred*)make_simple_pred_str_sl(config, attr, value);
+    return event;
+}
+
 const char* get_attr_for_id(const struct config* config, betree_var_t variable_id)
 {
     if(variable_id < config->attr_to_id_count) {
