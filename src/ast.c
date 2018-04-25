@@ -256,9 +256,14 @@ bool match_node(const struct event* event, const struct ast_node *node)
                                     int64_t right = node->list_expr.value.integer_list_value.integers[j];
                                     if(left == right) {
                                         result = true;
+                                        break;
                                     }
                                 }
+                                if(result == true) {
+                                    break;
+                                }
                             }
+                            break;
                         }
                         case AST_LIST_VALUE_STRING_LIST: {
                             for(size_t i = 0; i < variable.slvalue.count; i++) {
@@ -267,9 +272,14 @@ bool match_node(const struct event* event, const struct ast_node *node)
                                     betree_str_t right = node->list_expr.value.string_list_value.strings[j].str;
                                     if(left == right) {
                                         result = true;
+                                        break;
                                     }
                                 }
+                                if(result == true) {
+                                    break;
+                                }
                             }
+                            break;
                         }
                     }
                     switch(node->list_expr.op) {
