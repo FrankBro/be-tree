@@ -306,6 +306,7 @@ bool match_node(const struct event* event, const struct ast_node *node)
                                     }
                                 }
                             }
+                            break;
                         }
                         case AST_LIST_VALUE_STRING_LIST: {
                             target_count = node->list_expr.value.string_list_value.count;
@@ -319,6 +320,7 @@ bool match_node(const struct event* event, const struct ast_node *node)
                                     }
                                 }
                             }
+                            break;
                         }
                     }
                     return count == target_count;
