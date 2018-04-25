@@ -27,9 +27,8 @@ const struct sub* make_simple_sub_i(struct config* config, betree_sub_t id, cons
     return sub;
 }
 
-const struct sub* make_simple_sub_il(struct config* config, betree_sub_t id, const char* attr, enum ast_set_e op, struct integer_list_value ilvalue)
+const struct sub* make_simple_sub_set_il(struct config* config, betree_sub_t id, const char* attr, enum ast_set_e op, struct integer_list_value ilvalue)
 {
-
     struct sub* sub = make_empty_sub(id);
     sub->variable_id_count = 1;
     sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
@@ -40,6 +39,49 @@ const struct sub* make_simple_sub_il(struct config* config, betree_sub_t id, con
     sub->variable_ids[0] = get_id_for_attr(config, attr);
     struct set_left_value left = { .value_type = AST_SET_LEFT_VALUE_VARIABLE, .variable_value = { .name = strdup(attr), .variable_id = -1 } };
     struct set_right_value right = { .value_type = AST_SET_RIGHT_VALUE_INTEGER_LIST, .integer_list_value = ilvalue };
+    struct ast_node* expr = ast_set_expr_create(op, left, right);
+    assign_variable_id(config, expr);
+    sub->expr = expr;
+    return sub;
+}
+
+const struct sub* make_simple_sub_list_il(struct config* config, betree_sub_t id, const char* attr, enum ast_list_e op, struct integer_list_value ilvalue)
+{
+    struct sub* sub = make_empty_sub(id);
+    sub->variable_id_count = 1;
+    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
+    if(sub->variable_ids == NULL) {
+        fprintf(stderr, "%s calloc failed", __func__);
+        abort();
+    }
+    sub->variable_ids[0] = get_id_for_attr(config, attr);
+    struct list_value value = { .value_type = AST_LIST_VALUE_INTEGER_LIST, .integer_list_value = ilvalue };
+    struct ast_node* expr = ast_list_expr_create(op, attr, value);
+    assign_variable_id(config, expr);
+    sub->expr = expr;
+    return sub;
+}
+
+struct string_value make_string_value(struct config* config, const char* attr)
+{
+    struct string_value string_value = { .string = strdup(attr) };
+    betree_var_t str_id = get_id_for_string(config, string_value.string);
+    string_value.str = str_id;
+    return string_value;
+}
+
+const struct sub* make_simple_sub_sl(struct config* config, betree_sub_t id, const char* attr, enum ast_set_e op, struct string_list_value slvalue)
+{
+    struct sub* sub = make_empty_sub(id);
+    sub->variable_id_count = 1;
+    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
+    if(sub->variable_ids == NULL) {
+        fprintf(stderr, "%s calloc failed", __func__);
+        abort();
+    }
+    sub->variable_ids[0] = get_id_for_attr(config, attr);
+    struct set_left_value left = { .value_type = AST_SET_LEFT_VALUE_VARIABLE, .variable_value = { .name = strdup(attr), .variable_id = -1 } };
+    struct set_right_value right = { .value_type = AST_SET_RIGHT_VALUE_STRING_LIST, .string_list_value = slvalue };
     struct ast_node* expr = ast_set_expr_create(op, left, right);
     assign_variable_id(config, expr);
     sub->expr = expr;
@@ -857,7 +899,7 @@ int test_negative_float()
     return 0;
 }
 
-int test_integer_list()
+int test_integer_set()
 {
     struct config* config = make_default_config();
     add_attr_domain_i(config, "a", 0, 10, false);
@@ -872,7 +914,7 @@ int test_integer_list()
         integer_list.integers[1] = 2;
         integer_list.integers[2] = 0;
 
-        struct sub* sub = (struct sub*)make_simple_sub_il(config, 0, "a", AST_SET_IN, integer_list);
+        struct sub* sub = (struct sub*)make_simple_sub_set_il(config, 0, "a", AST_SET_IN, integer_list);
         insert_be_tree(config, sub, cnode, NULL);
 
         const struct event* event = make_simple_event_i(config, "a", 0);
@@ -896,7 +938,7 @@ int test_integer_list()
         integer_list.integers[1] = 2;
         integer_list.integers[2] = 0;
 
-        struct sub* sub = (struct sub*)make_simple_sub_il(config, 0, "a", AST_SET_NOT_IN, integer_list);
+        struct sub* sub = (struct sub*)make_simple_sub_set_il(config, 0, "a", AST_SET_NOT_IN, integer_list);
         insert_be_tree(config, sub, cnode, NULL);
 
         const struct event* event = make_simple_event_i(config, "a", 0);
@@ -904,6 +946,260 @@ int test_integer_list()
         match_be_tree(config, event, cnode, matched_subs);
 
         mu_assert(matched_subs->sub_count == 0, "did not find our sub");
+
+        free_matched_subs(matched_subs);
+        free_event((struct event*)event);
+        free_cnode(cnode);
+    }
+
+    free_config(config);
+
+    return 0;
+}
+
+int test_string_set()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_s(config, "a", false);
+
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+
+        size_t count = 3;
+        struct string_list_value string_list = { .count = count };
+        string_list.strings = calloc(3, sizeof(*string_list.strings));
+        string_list.strings[0] = make_string_value(config, "b");
+        string_list.strings[1] = make_string_value(config, "c");
+        string_list.strings[2] = make_string_value(config, "a");
+
+        struct sub* sub = (struct sub*)make_simple_sub_sl(config, 0, "a", AST_SET_IN, string_list);
+        insert_be_tree(config, sub, cnode, NULL);
+
+        const struct event* event = make_simple_event_s(config, "a", "a");
+        struct matched_subs* matched_subs = make_matched_subs();
+        match_be_tree(config, event, cnode, matched_subs);
+
+        mu_assert(matched_subs->sub_count == 1, "found our sub");
+
+        free_matched_subs(matched_subs);
+        free_event((struct event*)event);
+        free_cnode(cnode);
+    }
+
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+
+        size_t count = 3;
+        struct string_list_value string_list = { .count = count };
+        string_list.strings = calloc(3, sizeof(*string_list.strings));
+        string_list.strings[0] = make_string_value(config, "b");
+        string_list.strings[1] = make_string_value(config, "c");
+        string_list.strings[2] = make_string_value(config, "a");
+
+        struct sub* sub = (struct sub*)make_simple_sub_sl(config, 0, "a", AST_SET_NOT_IN, string_list);
+        insert_be_tree(config, sub, cnode, NULL);
+
+        const struct event* event = make_simple_event_s(config, "a", "a");
+        struct matched_subs* matched_subs = make_matched_subs();
+        match_be_tree(config, event, cnode, matched_subs);
+
+        mu_assert(matched_subs->sub_count == 0, "did not find our sub");
+
+        free_matched_subs(matched_subs);
+        free_event((struct event*)event);
+        free_cnode(cnode);
+    }
+
+    free_config(config);
+
+    return 0;
+}
+
+int test_integer_list()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_il(config, "a", false);
+
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+
+        size_t count = 3;
+        struct integer_list_value integer_list = { .count = count };
+        integer_list.integers = calloc(3, sizeof(*integer_list.integers));
+        integer_list.integers[0] = 1;
+        integer_list.integers[1] = 2;
+        integer_list.integers[2] = 0;
+
+        struct sub* sub = (struct sub*)make_simple_sub_list_il(config, 0, "a", AST_LIST_ONE_OF, integer_list);
+        insert_be_tree(config, sub, cnode, NULL);
+
+        size_t event_count = 3;
+        struct integer_list_value event_integer_list = { .count = event_count };
+        event_integer_list.integers = calloc(3, sizeof(*event_integer_list.integers));
+        event_integer_list.integers[0] = 1;
+        event_integer_list.integers[1] = 2;
+        event_integer_list.integers[2] = 0;
+
+        const struct event* event = make_simple_event_il(config, "a", event_integer_list);
+        struct matched_subs* matched_subs = make_matched_subs();
+        match_be_tree(config, event, cnode, matched_subs);
+
+        mu_assert(matched_subs->sub_count == 1, "found our sub");
+
+        free_matched_subs(matched_subs);
+        free_event((struct event*)event);
+        free_cnode(cnode);
+    }
+
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+
+        size_t count = 3;
+        struct integer_list_value integer_list = { .count = count };
+        integer_list.integers = calloc(3, sizeof(*integer_list.integers));
+        integer_list.integers[0] = 1;
+        integer_list.integers[1] = 2;
+        integer_list.integers[2] = 0;
+
+        struct sub* sub = (struct sub*)make_simple_sub_list_il(config, 0, "a", AST_LIST_ONE_OF, integer_list);
+        insert_be_tree(config, sub, cnode, NULL);
+
+        size_t event_count = 3;
+        struct integer_list_value event_integer_list = { .count = event_count };
+        event_integer_list.integers = calloc(3, sizeof(*event_integer_list.integers));
+        event_integer_list.integers[0] = 4;
+        event_integer_list.integers[1] = 5;
+        event_integer_list.integers[2] = 3;
+
+        const struct event* event = make_simple_event_il(config, "a", event_integer_list);
+        struct matched_subs* matched_subs = make_matched_subs();
+        match_be_tree(config, event, cnode, matched_subs);
+
+        mu_assert(matched_subs->sub_count == 0, "found no sub");
+
+        free_matched_subs(matched_subs);
+        free_event((struct event*)event);
+        free_cnode(cnode);
+    }
+
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+
+        size_t count = 3;
+        struct integer_list_value integer_list = { .count = count };
+        integer_list.integers = calloc(3, sizeof(*integer_list.integers));
+        integer_list.integers[0] = 1;
+        integer_list.integers[1] = 2;
+        integer_list.integers[2] = 0;
+
+        struct sub* sub = (struct sub*)make_simple_sub_list_il(config, 0, "a", AST_LIST_NONE_OF, integer_list);
+        insert_be_tree(config, sub, cnode, NULL);
+
+        size_t event_count = 3;
+        struct integer_list_value event_integer_list = { .count = event_count };
+        event_integer_list.integers = calloc(3, sizeof(*event_integer_list.integers));
+        event_integer_list.integers[0] = 4;
+        event_integer_list.integers[1] = 5;
+        event_integer_list.integers[2] = 3;
+
+        const struct event* event = make_simple_event_il(config, "a", event_integer_list);
+        struct matched_subs* matched_subs = make_matched_subs();
+        match_be_tree(config, event, cnode, matched_subs);
+
+        mu_assert(matched_subs->sub_count == 1, "found our sub");
+
+        free_matched_subs(matched_subs);
+        free_event((struct event*)event);
+        free_cnode(cnode);
+    }
+
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+
+        size_t count = 3;
+        struct integer_list_value integer_list = { .count = count };
+        integer_list.integers = calloc(3, sizeof(*integer_list.integers));
+        integer_list.integers[0] = 1;
+        integer_list.integers[1] = 2;
+        integer_list.integers[2] = 0;
+
+        struct sub* sub = (struct sub*)make_simple_sub_list_il(config, 0, "a", AST_LIST_NONE_OF, integer_list);
+        insert_be_tree(config, sub, cnode, NULL);
+
+        size_t event_count = 3;
+        struct integer_list_value event_integer_list = { .count = event_count };
+        event_integer_list.integers = calloc(3, sizeof(*event_integer_list.integers));
+        event_integer_list.integers[0] = 1;
+        event_integer_list.integers[1] = 2;
+        event_integer_list.integers[2] = 0;
+
+        const struct event* event = make_simple_event_il(config, "a", event_integer_list);
+        struct matched_subs* matched_subs = make_matched_subs();
+        match_be_tree(config, event, cnode, matched_subs);
+
+        mu_assert(matched_subs->sub_count == 0, "found no sub");
+
+        free_matched_subs(matched_subs);
+        free_event((struct event*)event);
+        free_cnode(cnode);
+    }
+
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+
+        size_t count = 3;
+        struct integer_list_value integer_list = { .count = count };
+        integer_list.integers = calloc(3, sizeof(*integer_list.integers));
+        integer_list.integers[0] = 1;
+        integer_list.integers[1] = 2;
+        integer_list.integers[2] = 0;
+
+        struct sub* sub = (struct sub*)make_simple_sub_list_il(config, 0, "a", AST_LIST_ALL_OF, integer_list);
+        insert_be_tree(config, sub, cnode, NULL);
+
+        size_t event_count = 3;
+        struct integer_list_value event_integer_list = { .count = event_count };
+        event_integer_list.integers = calloc(3, sizeof(*event_integer_list.integers));
+        event_integer_list.integers[0] = 1;
+        event_integer_list.integers[1] = 2;
+        event_integer_list.integers[2] = 0;
+
+        const struct event* event = make_simple_event_il(config, "a", event_integer_list);
+        struct matched_subs* matched_subs = make_matched_subs();
+        match_be_tree(config, event, cnode, matched_subs);
+
+        mu_assert(matched_subs->sub_count == 1, "found our sub");
+
+        free_matched_subs(matched_subs);
+        free_event((struct event*)event);
+        free_cnode(cnode);
+    }
+
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+
+        size_t count = 3;
+        struct integer_list_value integer_list = { .count = count };
+        integer_list.integers = calloc(3, sizeof(*integer_list.integers));
+        integer_list.integers[0] = 1;
+        integer_list.integers[1] = 2;
+        integer_list.integers[2] = 0;
+
+        struct sub* sub = (struct sub*)make_simple_sub_list_il(config, 0, "a", AST_LIST_ALL_OF, integer_list);
+        insert_be_tree(config, sub, cnode, NULL);
+
+        size_t event_count = 3;
+        struct integer_list_value event_integer_list = { .count = event_count };
+        event_integer_list.integers = calloc(3, sizeof(*event_integer_list.integers));
+        event_integer_list.integers[0] = 1;
+        event_integer_list.integers[1] = 2;
+        event_integer_list.integers[2] = 3;
+
+        const struct event* event = make_simple_event_il(config, "a", event_integer_list);
+        struct matched_subs* matched_subs = make_matched_subs();
+        match_be_tree(config, event, cnode, matched_subs);
+
+        mu_assert(matched_subs->sub_count == 0, "found no sub");
 
         free_matched_subs(matched_subs);
         free_event((struct event*)event);
@@ -935,6 +1231,8 @@ int all_tests()
     mu_run_test(test_string_wont_split);
     mu_run_test(test_negative_int);
     mu_run_test(test_negative_float);
+    mu_run_test(test_integer_set);
+    mu_run_test(test_string_set);
     mu_run_test(test_integer_list);
 
     return 0;
