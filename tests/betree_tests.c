@@ -45,6 +45,24 @@ const struct sub* make_simple_sub_set_i(struct config* config, betree_sub_t id, 
     return sub;
 }
 
+const struct sub* make_simple_sub_set_s(struct config* config, betree_sub_t id, const char* attr, enum ast_set_e op, struct string_value svalue)
+{
+    struct sub* sub = make_empty_sub(id);
+    sub->variable_id_count = 1;
+    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
+    if(sub->variable_ids == NULL) {
+        fprintf(stderr, "%s calloc failed", __func__);
+        abort();
+    }
+    sub->variable_ids[0] = get_id_for_attr(config, attr);
+    struct set_left_value left = { .value_type = AST_SET_LEFT_VALUE_STRING, .string_value = svalue };
+    struct set_right_value right = { .value_type = AST_SET_RIGHT_VALUE_VARIABLE, .variable_value = { .name = strdup(attr), .variable_id = -1 } };
+    struct ast_node* expr = ast_set_expr_create(op, left, right);
+    assign_variable_id(config, expr);
+    sub->expr = expr;
+    return sub;
+}
+
 const struct sub* make_simple_sub_set_il(struct config* config, betree_sub_t id, const char* attr, enum ast_set_e op, struct integer_list_value ilvalue)
 {
     struct sub* sub = make_empty_sub(id);
@@ -1099,6 +1117,57 @@ int test_string_set()
     return 0;
 }
 
+int test_string_set_reverse()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_sl(config, "a", false);
+
+    size_t count = 3;
+    struct string_list_value string_list = { .count = count };
+    string_list.strings = calloc(3, sizeof(*string_list.strings));
+    string_list.strings[0] = make_string_value(config, "1");
+    string_list.strings[1] = make_string_value(config, "2");
+    string_list.strings[2] = make_string_value(config, "0");
+    const struct event* event = make_simple_event_sl(config, "a", string_list);
+
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+
+        struct string_value value = make_string_value(config, "0");
+        struct sub* sub = (struct sub*)make_simple_sub_set_s(config, 0, "a", AST_SET_IN, value);
+        insert_be_tree(config, sub, cnode, NULL);
+
+        struct matched_subs* matched_subs = make_matched_subs();
+        match_be_tree(config, event, cnode, matched_subs);
+
+        mu_assert(matched_subs->sub_count == 1, "found our sub");
+
+        free_matched_subs(matched_subs);
+        free_cnode(cnode);
+    }
+
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+
+        struct string_value value = make_string_value(config, "0");
+        struct sub* sub = (struct sub*)make_simple_sub_set_s(config, 0, "a", AST_SET_NOT_IN, value);
+        insert_be_tree(config, sub, cnode, NULL);
+
+        struct matched_subs* matched_subs = make_matched_subs();
+        match_be_tree(config, event, cnode, matched_subs);
+
+        mu_assert(matched_subs->sub_count == 0, "did not find our sub");
+
+        free_matched_subs(matched_subs);
+        free_cnode(cnode);
+    }
+
+    free_event((struct event*)event);
+    free_config(config);
+
+    return 0;
+}
+
 int test_integer_list()
 {
     struct config* config = make_default_config();
@@ -1514,6 +1583,7 @@ int all_tests()
     mu_run_test(test_integer_set);
     mu_run_test(test_integer_set_reverse);
     mu_run_test(test_string_set);
+    mu_run_test(test_string_set_reverse);
     mu_run_test(test_integer_list);
     mu_run_test(test_string_list);
 
