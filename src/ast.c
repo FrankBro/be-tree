@@ -673,28 +673,28 @@ void assign_variable_id(struct config* config, struct ast_node* node)
         case(AST_TYPE_SET_EXPR): {
             switch(node->set_expr.left_value.value_type) {
                 case AST_SET_LEFT_VALUE_INTEGER: {
-                    return;
+                    break;
                 }
                 case AST_SET_LEFT_VALUE_STRING: {
-                    return;
+                    break;
                 }
                 case AST_SET_LEFT_VALUE_VARIABLE: {
                     betree_var_t variable_id = get_id_for_attr(config, node->set_expr.left_value.variable_value.name);
                     node->set_expr.left_value.variable_value.variable_id = variable_id;
-                    return;
+                    break;
                 }
             }
             switch(node->set_expr.right_value.value_type) {
                 case AST_SET_RIGHT_VALUE_INTEGER_LIST: {
-                    return;
+                    break;
                 }
                 case AST_SET_RIGHT_VALUE_STRING_LIST: {
-                    return;
+                    break;
                 }
                 case AST_SET_RIGHT_VALUE_VARIABLE: {
                     betree_var_t variable_id = get_id_for_attr(config, node->set_expr.right_value.variable_value.name);
                     node->set_expr.right_value.variable_value.variable_id = variable_id;
-                    return;
+                    break;
                 }
             }
         }
