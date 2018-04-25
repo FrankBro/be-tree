@@ -904,11 +904,29 @@ void free_pdir(struct pdir* pdir)
     free(pdir);
 }
 
+void free_value(struct value value)
+{
+    switch(value.value_type) {
+        case VALUE_IL: {
+            free(value.ilvalue.integers);
+            break;
+        }
+        case VALUE_SL: {
+            for(size_t i = 0; i < value.slvalue.count; i++) {
+                free((char*)value.slvalue.strings[i].string);
+            }
+            free(value.slvalue.strings);
+            break;
+        }
+    }
+}
+
 void free_pred(struct pred* pred)
 {
     if(pred == NULL) {
         return;
     }
+    free_value(pred->value);
     free(pred);
 }
 
