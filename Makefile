@@ -7,15 +7,16 @@
 CFLAGS := -g -std=c11 -Wall -Wextra -Wshadow -Wfloat-equal -Wundef -Wcast-align \
 	-Wwrite-strings -Wunreachable-code -Wformat=2 -Wswitch-enum \
 	-Wswitch-default -Winit-self -Wno-strict-aliasing \
-	-lm
 	# -I$(ERTS_INCLUDE_DIR) \
 
-LDFLAGS := -shared
+LDFLAGS := -lm
 
-UNAME_SYS := $(shell uname -s)
-ifeq ($(UNAME_SYS), Darwin)
-	LDFLAGS += -flat_namespace -undefined suppress
-endif
+# LDFLAGS := -shared
+
+# UNAME_SYS := $(shell uname -s)
+# ifeq ($(UNAME_SYS), Darwin)
+# 	LDFLAGS += -flat_namespace -undefined suppress
+# endif
 
 LEX_SOURCES=$(wildcard src/*.l) 
 LEX_OBJECTS=$(patsubst %.l,%.c,${LEX_SOURCES}) $(patsubst %.l,%.h,${LEX_SOURCES})
@@ -87,7 +88,7 @@ src/parser.c: src/parser.y
 ################################################################################
 
 src.betree.o: src/betree.c
-	$(CC) $(CFLAGS) -c -o $@ $^
+	$(CC) $(CFLAGS) -c -o $@ $^ $(LDFLAGS)
 
 ################################################################################
 # Tools
@@ -99,7 +100,7 @@ build/tools:
 	mkdir -p build/tools
 
 $(TOOL_OBJECTS): %: %.c build/tools
-	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/betree.a
+	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/betree.a $(LDFLAGS)
 
 ################################################################################
 # Tests
@@ -113,7 +114,7 @@ build/tests:
 	mkdir -p build/tests
 
 $(TEST_OBJECTS): %: %.c build/tests build/betree.a
-	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/betree.a
+	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/betree.a $(LDFLAGS)
 
 clean:
 	rm -rf build/betree.so build/betree.a $(OBJECTS) $(LEX_OBJECTS) $(YACC_OBJECTS)
