@@ -4,7 +4,7 @@
 
 # ERTS_INCLUDE_DIR ?= $(shell erl -noshell -s init stop -eval "io:format(\"~s/erts-~s/include/\", [code:root_dir(), erlang:system_info(version)]).")
 
-CFLAGS := -g -std=c11 -Wall -Wextra -Wshadow -Wfloat-equal -Wundef -Wcast-align \
+CFLAGS := -g -std=gnu11 -D_GNU_SOURCE -Wall -Wextra -Wshadow -Wfloat-equal -Wundef -Wcast-align \
 	-Wwrite-strings -Wunreachable-code -Wformat=2 -Wswitch-enum \
 	-Wswitch-default -Winit-self -Wno-strict-aliasing \
 	# -I$(ERTS_INCLUDE_DIR) \

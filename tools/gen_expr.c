@@ -54,7 +54,7 @@ double* generate(size_t n)
                 x = 2.0 * rand() / (double)RAND_MAX - 1.0;
                 y = 2.0 * rand() / (double)RAND_MAX - 1.0;
                 rsq = x * x + y * y;
-            } while (rsq >= 1. || rsq == 0.);
+            } while (rsq >= 1. || feq(rsq, 0.));
             f = sqrt( -2.0 * log(rsq) / rsq );
             values[i]   = x * f;
             values[i+1] = y * f;
@@ -132,11 +132,14 @@ void write_expr(FILE* f, const struct ast_node* node)
                     fprintf(f, ">= ");
                     break;
                 }
+                default: {
+                    switch_default_error("Invalid numeric compare operation");
+                }
             }
-            fprintf(f, "%llu ", node->numeric_compare_expr.value.integer_value);
+            fprintf(f, "%lu ", node->numeric_compare_expr.value.integer_value);
             break;
         }
-        case(AST_TYPE_EQUALITY_EXPR): {
+        case AST_TYPE_EQUALITY_EXPR : {
             fprintf(f, "%s ", node->equality_expr.name);
             switch(node->equality_expr.op) {
                 case AST_EQUALITY_EQ: {
@@ -147,8 +150,11 @@ void write_expr(FILE* f, const struct ast_node* node)
                     fprintf(f, "<> ");
                     break;
                 }
+                default: {
+                    switch_default_error("Invalid equality operation");
+                }
             }
-            fprintf(f, "%llu ", node->equality_expr.value.integer_value);
+            fprintf(f, "%lu ", node->equality_expr.value.integer_value);
             break;
         }
         case(AST_TYPE_BOOL_EXPR): {
@@ -160,6 +166,9 @@ void write_expr(FILE* f, const struct ast_node* node)
                 case AST_BOOL_NOT: {
                     fprintf(f, "not %s", node->bool_expr.name);
                     break;
+                }
+                default: {
+                    switch_default_error("Invalid bool operation");
                 }
             }
             break;
@@ -175,9 +184,15 @@ void write_expr(FILE* f, const struct ast_node* node)
                     fprintf(f, "|| ");
                     break;
                 }
+                default: {
+                    switch_default_error("Invalid combi operation");
+                }
             }
             write_expr(f, node->combi_expr.rhs);
             break;
+        }
+        default: {
+            switch_default_error("Invalid node type");
         }
     }
 }

@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdarg.h>
 
 #define max(a,b) \
     ({ __typeof__ (a) _a = (a); \
@@ -18,3 +19,8 @@ bool random_bool();
 
 bool feq(double a, double b);
 bool fne(double a, double b);
+void switch_default_error(const char* str);
+//char* strdup(const char* str);
+int asprintf(char** buf, const char* format, ...);
+int vasprintf(char** buf, const char* format, va_list va);
+

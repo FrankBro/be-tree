@@ -9,6 +9,11 @@
     struct ast_node *root;
     extern int yylex();
     void yyerror(void *scanner, const char *s) { (void)scanner; printf("ERROR: %s\n", s); }
+#if defined(__GNUC__)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wswitch-default"
+    #pragma GCC diagnostic ignored "-Wshadow"
+#endif
 %}
 
 // %debug
@@ -160,6 +165,10 @@ boolexpr            : TNOT ident                            { $$ = ast_bool_expr
 ;
 
 %%
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 int parse(const char *text, struct ast_node **node)
 {

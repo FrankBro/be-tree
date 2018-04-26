@@ -5,9 +5,16 @@
     #define SAVE_INTEGER yylval->integer_value = atoi(yytext)
     #define SAVE_FLOAT yylval->float_value = atof(yytext)
     #define TOKEN(t) (yylval->token = t)
+#if defined(__clang__)
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wunused-parameter"
     #pragma clang diagnostic ignored "-Wunused-function"
+#elif defined(__GNUC__)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wswitch-default"
+    #pragma GCC diagnostic ignored "-Wsign-compare"
+    #pragma GCC diagnostic ignored "-Wunused-function"
+#endif
 %}
 
 %option noyywrap
@@ -61,4 +68,8 @@
 // "ends_with"                 return TOKEN(TENDSWITH);
 // "not_ends_with"             return TOKEN(TNOTENDSWITH);
 
+#if defined(__clang__)
 #pragma clang diagnostic pop
+#elif defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif

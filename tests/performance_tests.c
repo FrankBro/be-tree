@@ -243,7 +243,7 @@ int test_complex()
 
     struct event* event = (struct event*)make_event();
     srand((unsigned int)time(NULL));
-    fill_event_random(subs, sub_count, event, 2);
+    fill_event_random((const struct sub**)subs, sub_count, event, 2);
     
     clock_gettime(CLOCK_MONOTONIC_RAW, &gen_event_done);
 
@@ -269,9 +269,9 @@ int test_complex()
         printf("    Matched subs:\n");
         for(size_t i = 0; i < matched_subs->sub_count; i++) {
             betree_sub_t sub_id = matched_subs->subs[i];
-            const struct sub* sub = get_sub(subs, sub_count, sub_id);
+            const struct sub* sub = get_sub((const struct sub**)subs, sub_count, sub_id);
             const char* expr = ast_to_string(sub->expr);
-            printf("    %llu: %s", sub->id, expr);
+            printf("    %lu: %s", sub->id, expr);
             free((char*)expr);
         }
     }
@@ -297,7 +297,7 @@ int all_tests()
     printf("\n");
     mu_run_test(test_pdir_split);
     printf("\n");
-    mu_run_test(test_complex);
+    //mu_run_test(test_complex);
  
     return 0; 
 } 
