@@ -42,7 +42,8 @@ CALLGRIND=valgrind --tool=callgrind
 ################################################################################
 
 # all: build/betree.a build/betree.so $(OBJECTS) tool test dot
-all: build/betree.a build/betree.so $(OBJECTS) tool test
+# all: build/betree.a build/betree.so $(OBJECTS) tool test
+all: build/betree.a $(OBJECTS) tool test
 
 dot:
 	dot -Tpng betree.dot -o betree.png
@@ -56,14 +57,14 @@ build/betree.a: build $(LIB_OBJECTS)
 	ar rcs $@ $(LIB_OBJECTS)
 	ranlib $@
 
-src/erlang.c: $(LEX_OBJECTS)
+# src/erlang.c: $(LEX_OBJECTS)
 
-src/erlang.o: src/erlang.c
-	$(CC) $(CFLAGS) -c -o $@ $^
+# src/erlang.o: src/erlang.c
+# 	$(CC) $(CFLAGS) -c -o $@ $^
 
-build/betree.so: $(OBJECTS)
-	# -rdynamic before -o
-	$(CC) $(LDFLAGS) -o $@ src/erlang.o build/betree.a
+# build/betree.so: $(OBJECTS)
+# 	# -rdynamic before -o
+# 	$(CC) $(LDFLAGS) -o $@ src/erlang.o build/betree.a
 
 build:
 	mkdir -p build
