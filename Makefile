@@ -6,7 +6,8 @@
 
 CFLAGS := -g -std=c11 -Wall -Wextra -Wshadow -Wfloat-equal -Wundef -Wcast-align \
 	-Wwrite-strings -Wunreachable-code -Wformat=2 -Wswitch-enum \
-	-Wswitch-default -Winit-self -Wno-strict-aliasing 
+	-Wswitch-default -Winit-self -Wno-strict-aliasing \
+	-lm
 	# -I$(ERTS_INCLUDE_DIR) \
 
 LDFLAGS := -shared
