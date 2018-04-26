@@ -297,7 +297,7 @@ int all_tests()
     printf("\n");
     mu_run_test(test_pdir_split);
     printf("\n");
-    mu_run_test(test_complex);
+    //mu_run_test(test_complex);
  
     return 0; 
 } 
