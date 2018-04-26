@@ -2,11 +2,12 @@
 # Variables
 ################################################################################
 
-ERTS_INCLUDE_DIR ?= $(shell erl -noshell -s init stop -eval "io:format(\"~s/erts-~s/include/\", [code:root_dir(), erlang:system_info(version)]).")
+# ERTS_INCLUDE_DIR ?= $(shell erl -noshell -s init stop -eval "io:format(\"~s/erts-~s/include/\", [code:root_dir(), erlang:system_info(version)]).")
 
 CFLAGS := -g -std=c11 -Wall -Wextra -Wshadow -Wfloat-equal -Wundef -Wcast-align \
 	-Wwrite-strings -Wunreachable-code -Wformat=2 -Wswitch-enum \
-	-Wswitch-default -Winit-self -Wno-strict-aliasing -I$(ERTS_INCLUDE_DIR)
+	-Wswitch-default -Winit-self -Wno-strict-aliasing 
+	# -I$(ERTS_INCLUDE_DIR) \
 
 LDFLAGS := -shared
 
@@ -23,8 +24,8 @@ YACC_OBJECTS=$(patsubst %.y,%.c,${YACC_SOURCES}) $(patsubst %.y,%.h,${YACC_SOURC
 
 SOURCES=$(wildcard src/*.c)
 OBJECTS=$(patsubst %.c,%.o,${SOURCES}) $(patsubst %.l,%.o,${LEX_SOURCES}) $(patsubst %.y,%.o,${YACC_SOURCES})
-LIB_SOURCES=$(filter-out erlang.c,${SOURCES})
-LIB_OBJECTS=$(filter-out erlang.o,${OBJECTS})
+LIB_SOURCES=$(filter-out src/erlang.c,${SOURCES})
+LIB_OBJECTS=$(filter-out src/erlang.o,${OBJECTS})
 TEST_SOURCES=$(wildcard tests/*_tests.c)
 TEST_OBJECTS=$(patsubst %.c,%,${TEST_SOURCES})
 TOOL_SOURCES=$(wildcard tools/*.c)
@@ -43,7 +44,7 @@ CALLGRIND=valgrind --tool=callgrind
 
 # all: build/betree.a build/betree.so $(OBJECTS) tool test dot
 # all: build/betree.a build/betree.so $(OBJECTS) tool test
-all: build/betree.a $(OBJECTS) tool test
+all: build/betree.a tool test
 
 dot:
 	dot -Tpng betree.dot -o betree.png
