@@ -16,34 +16,49 @@
 
 %%
 
-[ \t\n]                 ;
-"="                     return TOKEN(TCEQ);
-"<>"                    return TOKEN(TCNE);
-">"                     return TOKEN(TCGT);
-">="                    return TOKEN(TCGE);
-"<"                     return TOKEN(TCLT);
-"<="                    return TOKEN(TCLE);
-"("                     return TOKEN(TLPAREN);
-")"                     return TOKEN(TRPAREN);
-","                     return TOKEN(TCOMMA);
-"not in"                return TOKEN(TNOTIN);
-"in"                    return TOKEN(TIN);
-"one of"                return TOKEN(TONEOF);
-"none of"               return TOKEN(TNONEOF);
-"all of"                return TOKEN(TALLOF);
-"&&"                    return TOKEN(TAND);
-"and"                   return TOKEN(TAND);
-"||"                    return TOKEN(TOR);
-"or"                    return TOKEN(TOR);
-"not"                   return TOKEN(TNOT);
-"true"                  return TOKEN(TTRUE);
-"false"                 return TOKEN(TFALSE);
-\"[a-zA-Z0-9_]+\"       SAVE_STRING; return TSTRING;
-[a-zA-Z_][a-zA-Z0-9_-]* SAVE_STRING; return TIDENTIFIER;
-[0-9]+                  SAVE_INTEGER; return TINTEGER;
-[0-9]+\.[0-9]*          SAVE_FLOAT; return TFLOAT;
-.                       printf("Unknown token! (%s)\n", yytext); yyterminate();
+[ \t\n]                     ;
+"="                         return TOKEN(TCEQ);
+"<>"                        return TOKEN(TCNE);
+">"                         return TOKEN(TCGT);
+">="                        return TOKEN(TCGE);
+"<"                         return TOKEN(TCLT);
+"<="                        return TOKEN(TCLE);
+"("                         return TOKEN(TLPAREN);
+")"                         return TOKEN(TRPAREN);
+","                         return TOKEN(TCOMMA);
+"not in"                    return TOKEN(TNOTIN);
+"in"                        return TOKEN(TIN);
+"one of"                    return TOKEN(TONEOF);
+"none of"                   return TOKEN(TNONEOF);
+"all of"                    return TOKEN(TALLOF);
+"&&"                        return TOKEN(TAND);
+"and"                       return TOKEN(TAND);
+"||"                        return TOKEN(TOR);
+"or"                        return TOKEN(TOR);
+"not"                       return TOKEN(TNOT);
+"true"                      return TOKEN(TTRUE);
+"false"                     return TOKEN(TFALSE);
+\"[a-zA-Z0-9_]+\"           SAVE_STRING; return TSTRING;
+[a-zA-Z_][a-zA-Z0-9_-]*     SAVE_STRING; return TIDENTIFIER;
+[0-9]+                      SAVE_INTEGER; return TINTEGER;
+[0-9]+\.[0-9]*              SAVE_FLOAT; return TFLOAT;
+.                           printf("Unknown token! (%s)\n", yytext); yyterminate();
 
 %%
+
+// "within_frequency_caps"     return TOKEN(TWITHINFREQUENCYCAPS);
+// "not_within_frequency_caps" return TOKEN(TNOTWITHINFREQUENCYCAP);
+// "segment_within"            return TOKEN(TSEGMENTWITHIN);
+// "segment_not_within"        return TOKEN(TSEGMENTNOTWITHIN);
+// "segment_before"            return TOKEN(TSEGMENTBEFORE);
+// "segment_not_before"        return TOKEN(TSEGMENTNOTBEFORE);
+// "geo_within_radius"         return TOKEN(TGEOWITHINRADIUS);
+// "geo_not_within_radius"     return TOKEN(TGEONOTWITHINRADIUS);
+// "contains"                  return TOKEN(TCONTAINS);
+// "not_contains"              return TOKEN(TNOTCONTAINS);
+// "starts_with"               return TOKEN(TSTARTSWITH);
+// "not_starts_with"           return TOKEN(TNOTSTARTSWITH);
+// "ends_with"                 return TOKEN(TENDSWITH);
+// "not_ends_with"             return TOKEN(TNOTENDSWITH);
 
 #pragma clang diagnostic pop
