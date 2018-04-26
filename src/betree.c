@@ -123,7 +123,7 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
                 }
             }
             if(attr_domain == NULL) {
-                fprintf(stderr, "cannot find variable_id %llu in attr_domains", variable_id);
+                fprintf(stderr, "cannot find variable_id %lu in attr_domains", variable_id);
                 abort();
             }
             struct value_bound bound;
@@ -156,6 +156,9 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
                     fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
                     abort();
                 }
+                default: {
+                    switch_default_error("Invalid bound value type");
+                }
             }
             get_variable_bound(attr_domain, sub->expr, &bound);
             switch(attr_domain->bound.value_type) {
@@ -179,6 +182,9 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
                 case(VALUE_SL): {
                     fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
                     abort();
+                }
+                default: {
+                    switch_default_error("Invalid bound value type");
                 }
             }
         }
@@ -230,6 +236,10 @@ bool is_used_cdir(betree_var_t variable_id, const struct cdir* cdir)
         }
         case CNODE_PARENT_CDIR: {
             return is_used_cdir(variable_id, cdir->cdir_parent);
+        }
+        default: {
+            switch_default_error("Invalid cdir parent type");
+            return false;
         }
     }
 }
@@ -423,7 +433,7 @@ void move(const struct sub* sub, struct lnode* origin, struct lnode* destination
 {
     bool isFound = remove_sub(sub, origin);
     if(!isFound) {
-        fprintf(stderr, "Could not find sub %llu", sub->id);
+        fprintf(stderr, "Could not find sub %lu", sub->id);
         abort();
     }
     if(destination->sub_count == 0) {
@@ -515,7 +525,7 @@ struct pnode* create_pdir(const struct config* config, betree_var_t variable_id,
         }
     }
     if(!found) {
-        fprintf(stderr, "No domain definition for attr %llu in config", variable_id);
+        fprintf(stderr, "No domain definition for attr %lu in config", variable_id);
         abort();
     }
     pnode->cdir = create_cdir_with_pnode_parent(config, pnode, bound);
@@ -588,6 +598,10 @@ bool is_attr_used_in_parent_cdir(betree_var_t variable_id, const struct cdir* cd
         }
         case(CNODE_PARENT_PNODE): {
             return is_attr_used_in_parent_pnode(variable_id, cdir->pnode_parent);
+        }
+        default: {
+            switch_default_error("Invalid cdir parent type");
+            return false;
         }
     }
 }
@@ -664,7 +678,7 @@ void space_partitioning(const struct config* config, struct cnode* cnode)
         if(found == false) {
             break;
         }
-        size_t target_subs_count = count_subs_with_variable(lnode->subs, lnode->sub_count, variable_id);
+        size_t target_subs_count = count_subs_with_variable((const struct sub**)lnode->subs, lnode->sub_count, variable_id);
         if(target_subs_count < config->partition_min_size) {
             break;
         }
@@ -705,6 +719,10 @@ bool is_atomic(const struct cdir* cdir)
         case(VALUE_SL): {
             fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
             abort();
+        }
+        default: {
+            switch_default_error("Invalid bound value type");
+            return false;
         }
     }
 }
@@ -779,12 +797,12 @@ struct value_bounds split_value_bound(struct value_bound bound)
                 lbound.fmax = middle;
                 rbound.fmin = middle;
             }
-            else if(fabs(end - start) == 2) {
+            else if(feq(fabs(end - start), 2)) {
                 double middle = start + 1;
                 lbound.fmax = middle;
                 rbound.fmin = middle;
             }
-            else if(fabs(end - start) == 1) {
+            else if(feq(fabs(end - start), 1)) {
                 lbound.fmax = start;
                 rbound.fmin = end;
             }
@@ -819,6 +837,9 @@ struct value_bounds split_value_bound(struct value_bound bound)
         case(VALUE_SL): {
             fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
             abort();
+        }
+        default: {
+            switch_default_error("Invalid bound value type");
         }
     }
     struct value_bounds bounds = { .lbound = lbound, .rbound = rbound };
@@ -925,6 +946,9 @@ void free_value(struct value value)
         case VALUE_I:
         case VALUE_F: {
             break;
+        }
+        default: {
+            switch_default_error("Invalid value value type");
         }
     }
 }
@@ -1103,8 +1127,11 @@ void try_remove_cdir_from_parent(struct cdir* cdir)
         }
         case CNODE_PARENT_PNODE: {
             cdir->pnode_parent->cdir = NULL;
+            break;
         }
-
+        default: {
+            switch_default_error("Invalid cdir parent type");
+        }
     }
 }
 
@@ -1252,6 +1279,9 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
         case AST_TYPE_LIST_EXPR: {
             variable_id = expr->list_expr.variable_id;
             break;
+        }
+        default: {
+            switch_default_error("Invalid expr type");
         }
     }
     bool is_found = false;
@@ -1557,7 +1587,7 @@ void adjust_attr_domains(struct config* config, const struct ast_node* node, str
             if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
                 name = node->set_expr.left_value.variable_value.name;
             }
-            else if(node->set_expr.right_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
+            else if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
                 name = node->set_expr.right_value.variable_value.name;
             }
             else {
@@ -1567,6 +1597,10 @@ void adjust_attr_domains(struct config* config, const struct ast_node* node, str
         }
         case(AST_TYPE_LIST_EXPR): {
             name = node->list_expr.name;
+            break;
+        }
+        default: {
+            switch_default_error("Invalid expr type");
         }
     }
     betree_var_t variable_id = get_id_for_attr(config, name);
@@ -1607,7 +1641,7 @@ void event_to_string(struct config* config, const struct event* event, char* buf
         const char* attr = get_attr_for_id(config, pred->variable_id);
         switch(pred->value.value_type) {
             case(VALUE_I): {
-                length += sprintf(buffer + length, "%s = %llu", attr, pred->value.ivalue);
+                length += sprintf(buffer + length, "%s = %lu", attr, pred->value.ivalue);
                 break;
             }
             case(VALUE_F): {
@@ -1634,6 +1668,9 @@ void event_to_string(struct config* config, const struct event* event, char* buf
                 length += sprintf(buffer + length, "%s = (%s)", attr, string_list);
                 free((char*)string_list);
                 break;
+            }
+            default: {
+                switch_default_error("Invalid value value type");
             }
         }
     }
@@ -1700,7 +1737,7 @@ const char* integer_list_value_to_string(struct integer_list_value list)
         if(i != 0) {
             asprintf(&string, ", ");
         }
-        asprintf(&string, "%llu", list.integers[i]);
+        asprintf(&string, "%lu", list.integers[i]);
     }
     return string;
 }
