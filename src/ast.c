@@ -155,6 +155,88 @@ struct ast_node* ast_special_string_create(const enum ast_special_string_e op, c
     return node;
 }
 
+void free_special_expr(struct ast_special_expr special_expr)
+{
+    switch(special_expr.type) {
+        case AST_SPECIAL_FREQUENCY:
+            free((char*)special_expr.frequency.type.string);
+            free((char*)special_expr.frequency.ns.string);
+            break;
+        case AST_SPECIAL_SEGMENT:
+            free((char*)special_expr.segment.name);
+            break;
+        case AST_SPECIAL_GEO:
+            break;
+        case AST_SPECIAL_STRING:
+            free((char*)special_expr.string.name);
+            free((char*)special_expr.string.pattern);
+            break;
+        default:
+            switch_default_error("Invalid special expr type");
+    }
+}
+
+void free_set_expr(struct ast_set_expr set_expr) 
+{
+    switch(set_expr.left_value.value_type) {
+        case AST_SET_LEFT_VALUE_INTEGER: {
+            break;
+        }
+        case AST_SET_LEFT_VALUE_STRING: {
+            free((char*)set_expr.left_value.string_value.string);
+            break;
+        }
+        case AST_SET_LEFT_VALUE_VARIABLE: {
+            free((char*)set_expr.left_value.variable_value.name);
+            break;
+        }
+        default: {
+            switch_default_error("Invalid set left value type");
+        }
+    }
+    switch(set_expr.right_value.value_type) {
+        case AST_SET_RIGHT_VALUE_INTEGER_LIST: {
+            free(set_expr.right_value.integer_list_value.integers);
+            break;
+        }
+        case AST_SET_RIGHT_VALUE_STRING_LIST: {
+            for(size_t i = 0; i < set_expr.right_value.string_list_value.count; i++) {
+                free((char*)set_expr.right_value.string_list_value.strings[i].string);
+            }
+            free(set_expr.right_value.string_list_value.strings);
+            break;
+        }
+        case AST_SET_RIGHT_VALUE_VARIABLE: {
+            free((char*)set_expr.right_value.variable_value.name);
+            break;
+        }
+        default: {
+            switch_default_error("Invalid set right value type");
+        }
+    }
+}
+
+void free_list_expr(struct ast_list_expr list_expr)
+{
+    switch(list_expr.value.value_type) {
+        case AST_LIST_VALUE_INTEGER_LIST: {
+            free(list_expr.value.integer_list_value.integers);
+            break;
+        }
+        case AST_LIST_VALUE_STRING_LIST: {
+            for(size_t i = 0; i < list_expr.value.string_list_value.count; i++) {
+                free((char*)list_expr.value.string_list_value.strings[i].string);
+            }
+            free(list_expr.value.string_list_value.strings);
+            break;
+        }
+        default: {
+            switch_default_error("Invalid list value type");
+        }
+    }
+    free((char*)list_expr.name);
+}
+
 void free_ast_node(struct ast_node* node)
 {
     if(node == NULL) {
@@ -162,23 +244,7 @@ void free_ast_node(struct ast_node* node)
     }
     switch(node->type) {
         case AST_TYPE_SPECIAL_EXPR: 
-            switch(node->special_expr.type) {
-                case AST_SPECIAL_FREQUENCY:
-                    free((char*)node->special_expr.frequency.type.string);
-                    free((char*)node->special_expr.frequency.ns.string);
-                    break;
-                case AST_SPECIAL_SEGMENT:
-                    free((char*)node->special_expr.segment.name);
-                    break;
-                case AST_SPECIAL_GEO:
-                    break;
-                case AST_SPECIAL_STRING:
-                    free((char*)node->special_expr.string.name);
-                    free((char*)node->special_expr.string.pattern);
-                    break;
-                default:
-                    switch_default_error("Invalid special expr type");
-            }
+            free_special_expr(node->special_expr);
             break;
         case AST_TYPE_NUMERIC_COMPARE_EXPR:
             free((char*)node->numeric_compare_expr.name);
@@ -193,61 +259,10 @@ void free_ast_node(struct ast_node* node)
             free((char*)node->bool_expr.name);
             break;
         case AST_TYPE_SET_EXPR:
-            switch(node->set_expr.left_value.value_type) {
-                case AST_SET_LEFT_VALUE_INTEGER: {
-                    break;
-                }
-                case AST_SET_LEFT_VALUE_STRING: {
-                    free((char*)node->set_expr.left_value.string_value.string);
-                    break;
-                }
-                case AST_SET_LEFT_VALUE_VARIABLE: {
-                    free((char*)node->set_expr.left_value.variable_value.name);
-                    break;
-                }
-                default: {
-                    switch_default_error("Invalid set left value type");
-                }
-            }
-            switch(node->set_expr.right_value.value_type) {
-                case AST_SET_RIGHT_VALUE_INTEGER_LIST: {
-                    free(node->set_expr.right_value.integer_list_value.integers);
-                    break;
-                }
-                case AST_SET_RIGHT_VALUE_STRING_LIST: {
-                    for(size_t i = 0; i < node->set_expr.right_value.string_list_value.count; i++) {
-                        free((char*)node->set_expr.right_value.string_list_value.strings[i].string);
-                    }
-                    free(node->set_expr.right_value.string_list_value.strings);
-                    break;
-                }
-                case AST_SET_RIGHT_VALUE_VARIABLE: {
-                    free((char*)node->set_expr.right_value.variable_value.name);
-                    break;
-                }
-                default: {
-                    switch_default_error("Invalid set right value type");
-                }
-            }
+            free_set_expr(node->set_expr);
             break;
         case AST_TYPE_LIST_EXPR:
-            switch(node->list_expr.value.value_type) {
-                case AST_LIST_VALUE_INTEGER_LIST: {
-                    free(node->list_expr.value.integer_list_value.integers);
-                    break;
-                }
-                case AST_LIST_VALUE_STRING_LIST: {
-                    for(size_t i = 0; i < node->list_expr.value.string_list_value.count; i++) {
-                        free((char*)node->list_expr.value.string_list_value.strings[i].string);
-                    }
-                    free(node->list_expr.value.string_list_value.strings);
-                    break;
-                }
-                default: {
-                    switch_default_error("Invalid list value type");
-                }
-            }
-            free((char*)node->list_expr.name);
+            free_list_expr(node->list_expr);
             break;
         case AST_TYPE_COMBI_EXPR:
             free_ast_node((struct ast_node*)node->combi_expr.lhs);
