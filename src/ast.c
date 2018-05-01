@@ -332,382 +332,417 @@ bool list_value_matches(enum ast_list_value_e a, enum value_e b) {
         (a == AST_LIST_VALUE_STRING_LIST && b == VALUE_SL);
 }
 
-bool match_node(const struct event* event, const struct ast_node *node)
+bool match_special_expr(const struct event* event, const struct ast_special_expr special_expr)
 {
-    // TODO allow undefined handling?
-    switch(node->type) {
-        case AST_TYPE_SPECIAL_EXPR: {
-            switch(node->special_expr.type) {
-                case AST_SPECIAL_FREQUENCY: {
-                    invalid_expr("TODO");
-                    return false;
-                }
-                case AST_SPECIAL_SEGMENT: {
-                    invalid_expr("TODO");
-                    return false;
-                }
-                case AST_SPECIAL_GEO: {
-                    invalid_expr("TODO");
-                    return false;
-                }
-                case AST_SPECIAL_STRING: {
-                    invalid_expr("TODO");
-                    return false;
-                }
-                default:
-                    switch_default_error("Invalid special expr type");
-                    return false;
-            }
+    switch(special_expr.type) {
+        case AST_SPECIAL_FREQUENCY: {
+            invalid_expr("TODO");
+            return false;
         }
-        case AST_TYPE_BOOL_EXPR: {
-            struct value variable;
-            bool found = get_variable(node->bool_expr.variable_id, event, &variable);
-            if(!found) {
-                return false;
-            }
-            if(variable.value_type != VALUE_B) {
-                invalid_expr("boolean expression with a variable that is not a boolean");
-            }
-            switch(node->bool_expr.op) {
-                case AST_BOOL_NONE: {
-                    return variable.bvalue;
+        case AST_SPECIAL_SEGMENT: {
+            invalid_expr("TODO");
+            return false;
+        }
+        case AST_SPECIAL_GEO: {
+            invalid_expr("TODO");
+            return false;
+        }
+        case AST_SPECIAL_STRING: {
+            invalid_expr("TODO");
+            return false;
+        }
+        default:
+            switch_default_error("Invalid special expr type");
+            return false;
+    }
+}
+
+bool match_bool_expr(const struct event* event, const struct ast_bool_expr bool_expr)
+{
+    struct value variable;
+    bool found = get_variable(bool_expr.variable_id, event, &variable);
+    if(!found) {
+        return false;
+    }
+    if(variable.value_type != VALUE_B) {
+        invalid_expr("boolean expression with a variable that is not a boolean");
+    }
+    switch(bool_expr.op) {
+        case AST_BOOL_NONE: {
+            return variable.bvalue;
+        }
+        case AST_BOOL_NOT: {
+            return !variable.bvalue;
+        }
+        default: {
+            switch_default_error("Invalid bool operation");
+            return false;
+        }
+    }
+}
+
+bool match_list_expr(const struct event* event, const struct ast_list_expr list_expr)
+{
+    struct value variable;
+    bool found = get_variable(list_expr.variable_id, event, &variable);
+    if(!found) {
+        return false;
+    }
+    if(!list_value_matches(list_expr.value.value_type, variable.value_type)) {
+        invalid_expr("list value types do not match");
+    }
+    switch(list_expr.op) {
+        case AST_LIST_ONE_OF: 
+        case AST_LIST_NONE_OF: {
+            bool result = false;
+            switch(list_expr.value.value_type) {
+                case AST_LIST_VALUE_INTEGER_LIST: {
+                    for(size_t i = 0; i < variable.ilvalue.count; i++) {
+                        int64_t left = variable.ilvalue.integers[i];
+                        for(size_t j = 0; j < list_expr.value.integer_list_value.count; j++) {
+                            int64_t right = list_expr.value.integer_list_value.integers[j];
+                            if(left == right) {
+                                result = true;
+                                break;
+                            }
+                        }
+                        if(result == true) {
+                            break;
+                        }
+                    }
+                    break;
                 }
-                case AST_BOOL_NOT: {
-                    return !variable.bvalue;
+                case AST_LIST_VALUE_STRING_LIST: {
+                    for(size_t i = 0; i < variable.slvalue.count; i++) {
+                        betree_str_t left = variable.slvalue.strings[i].str;
+                        for(size_t j = 0; j < list_expr.value.string_list_value.count; j++) {
+                            betree_str_t right = list_expr.value.string_list_value.strings[j].str;
+                            if(left == right) {
+                                result = true;
+                                break;
+                            }
+                        }
+                        if(result == true) {
+                            break;
+                        }
+                    }
+                    break;
                 }
                 default: {
-                    switch_default_error("Invalid bool operation");
-                    return false;
+                    switch_default_error("Invalid list value type");
                 }
             }
-        }
-        case AST_TYPE_LIST_EXPR: {
-            struct value variable;
-            bool found = get_variable(node->list_expr.variable_id, event, &variable);
-            if(!found) {
-                return false;
-            }
-            if(!list_value_matches(node->list_expr.value.value_type, variable.value_type)) {
-                invalid_expr("list value types do not match");
-            }
-            switch(node->list_expr.op) {
+            switch(list_expr.op) {
                 case AST_LIST_ONE_OF: 
-                case AST_LIST_NONE_OF: {
-                    bool result = false;
-                    switch(node->list_expr.value.value_type) {
-                        case AST_LIST_VALUE_INTEGER_LIST: {
-                            for(size_t i = 0; i < variable.ilvalue.count; i++) {
-                                int64_t left = variable.ilvalue.integers[i];
-                                for(size_t j = 0; j < node->list_expr.value.integer_list_value.count; j++) {
-                                    int64_t right = node->list_expr.value.integer_list_value.integers[j];
-                                    if(left == right) {
-                                        result = true;
-                                        break;
-                                    }
-                                }
-                                if(result == true) {
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                        case AST_LIST_VALUE_STRING_LIST: {
-                            for(size_t i = 0; i < variable.slvalue.count; i++) {
-                                betree_str_t left = variable.slvalue.strings[i].str;
-                                for(size_t j = 0; j < node->list_expr.value.string_list_value.count; j++) {
-                                    betree_str_t right = node->list_expr.value.string_list_value.strings[j].str;
-                                    if(left == right) {
-                                        result = true;
-                                        break;
-                                    }
-                                }
-                                if(result == true) {
-                                    break;
-                                }
-                            }
-                            break;
-                        }
-                        default: {
-                            switch_default_error("Invalid list value type");
-                        }
-                    }
-                    switch(node->list_expr.op) {
-                        case AST_LIST_ONE_OF: 
-                            return result;
-                        case AST_LIST_NONE_OF: 
-                            return !result;
-                        case AST_LIST_ALL_OF:
-                            invalid_expr("Should never happen");
-                            return false;
-                        default: {
-                            switch_default_error("Invalid list operation");
-                            return false;
-                        }
-                    }
-                }
-                case AST_LIST_ALL_OF: {
-                    size_t count = 0, target_count = 0;
-                    switch(node->list_expr.value.value_type) {
-                        case AST_LIST_VALUE_INTEGER_LIST: {
-                            target_count = node->list_expr.value.integer_list_value.count;
-                            for(size_t i = 0; i < target_count; i++) {
-                                int64_t right = node->list_expr.value.integer_list_value.integers[i];
-                                for(size_t j = 0; j < variable.ilvalue.count; j++) {
-                                    int64_t left = variable.ilvalue.integers[j];
-                                    if(left == right) {
-                                        count++;
-                                        break;
-                                    }
-                                }
-                            }
-                            break;
-                        }
-                        case AST_LIST_VALUE_STRING_LIST: {
-                            target_count = node->list_expr.value.string_list_value.count;
-                            for(size_t i = 0; i < target_count; i++) {
-                                betree_str_t right = node->list_expr.value.string_list_value.strings[i].str;
-                                for(size_t j = 0; j < variable.slvalue.count; j++) {
-                                    betree_str_t left = variable.slvalue.strings[j].str;
-                                    if(left == right) {
-                                        count++;
-                                        break;
-                                    }
-                                }
-                            }
-                            break;
-                        }
-                        default: {
-                            switch_default_error("Invalid list value type");
-                            return false;
-                        }
-                    }
-                    return count == target_count;
-                }
+                    return result;
+                case AST_LIST_NONE_OF: 
+                    return !result;
+                case AST_LIST_ALL_OF:
+                    invalid_expr("Should never happen");
+                    return false;
                 default: {
                     switch_default_error("Invalid list operation");
                     return false;
                 }
             }
         }
-        case AST_TYPE_SET_EXPR: {
-            struct set_left_value left = node->set_expr.left_value;
-            struct set_right_value right = node->set_expr.right_value;
-            struct value variable;
-            bool is_in;
-            if(left.value_type == AST_SET_LEFT_VALUE_INTEGER && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
-                bool found = get_variable(right.variable_value.variable_id, event, &variable);
-                if(!found) {
-                    return false;
+        case AST_LIST_ALL_OF: {
+            size_t count = 0, target_count = 0;
+            switch(list_expr.value.value_type) {
+                case AST_LIST_VALUE_INTEGER_LIST: {
+                    target_count = list_expr.value.integer_list_value.count;
+                    for(size_t i = 0; i < target_count; i++) {
+                        int64_t right = list_expr.value.integer_list_value.integers[i];
+                        for(size_t j = 0; j < variable.ilvalue.count; j++) {
+                            int64_t left = variable.ilvalue.integers[j];
+                            if(left == right) {
+                                count++;
+                                break;
+                            }
+                        }
+                    }
+                    break;
                 }
-                if(variable.value_type != VALUE_IL) {
-                    invalid_expr("invalid variable in set expression, should be integer list");
-                }
-                is_in = integer_in_integer_list(left.integer_value, variable.ilvalue);
-            }
-            else if(left.value_type == AST_SET_LEFT_VALUE_STRING && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
-                bool found = get_variable(right.variable_value.variable_id, event, &variable);
-                if(!found) {
-                    return false;
-                }
-                if(variable.value_type != VALUE_SL) {
-                    invalid_expr("invalid variable in set expression, should be string list");
-                }
-                is_in = string_in_string_list(left.string_value, variable.slvalue);
-            }
-            else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE && right.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST) {
-                bool found = get_variable(left.variable_value.variable_id, event, &variable);
-                if(!found) {
-                    return false;
-                }
-                if(variable.value_type != VALUE_I) {
-                    invalid_expr("invalid variable in set expression, should be integer");
-                }
-                is_in = integer_in_integer_list(variable.ivalue, right.integer_list_value);
-            }
-            else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE && right.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
-                bool found = get_variable(left.variable_value.variable_id, event, &variable);
-                if(!found) {
-                    return false;
-                }
-                if(variable.value_type != VALUE_S) {
-                    invalid_expr("invalid variable in set expression, should be string");
-                }
-                is_in = string_in_string_list(variable.svalue, right.string_list_value);
-            }
-            else {
-                invalid_expr("invalid set expression");
-                return false;
-            }
-            switch(node->set_expr.op) {
-                case AST_SET_NOT_IN: {
-                    return !is_in;
-                }
-                case AST_SET_IN: {
-                    return is_in;
+                case AST_LIST_VALUE_STRING_LIST: {
+                    target_count = list_expr.value.string_list_value.count;
+                    for(size_t i = 0; i < target_count; i++) {
+                        betree_str_t right = list_expr.value.string_list_value.strings[i].str;
+                        for(size_t j = 0; j < variable.slvalue.count; j++) {
+                            betree_str_t left = variable.slvalue.strings[j].str;
+                            if(left == right) {
+                                count++;
+                                break;
+                            }
+                        }
+                    }
+                    break;
                 }
                 default: {
-                    switch_default_error("Invalid set operation");
+                    switch_default_error("Invalid list value type");
                     return false;
                 }
             }
+            return count == target_count;
+        }
+        default: {
+            switch_default_error("Invalid list operation");
+            return false;
+        }
+    }
+}
+
+bool match_set_expr(const struct event* event, const struct ast_set_expr set_expr)
+{
+    struct set_left_value left = set_expr.left_value;
+    struct set_right_value right = set_expr.right_value;
+    struct value variable;
+    bool is_in;
+    if(left.value_type == AST_SET_LEFT_VALUE_INTEGER && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
+        bool found = get_variable(right.variable_value.variable_id, event, &variable);
+        if(!found) {
+            return false;
+        }
+        if(variable.value_type != VALUE_IL) {
+            invalid_expr("invalid variable in set expression, should be integer list");
+        }
+        is_in = integer_in_integer_list(left.integer_value, variable.ilvalue);
+    }
+    else if(left.value_type == AST_SET_LEFT_VALUE_STRING && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
+        bool found = get_variable(right.variable_value.variable_id, event, &variable);
+        if(!found) {
+            return false;
+        }
+        if(variable.value_type != VALUE_SL) {
+            invalid_expr("invalid variable in set expression, should be string list");
+        }
+        is_in = string_in_string_list(left.string_value, variable.slvalue);
+    }
+    else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE && right.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST) {
+        bool found = get_variable(left.variable_value.variable_id, event, &variable);
+        if(!found) {
+            return false;
+        }
+        if(variable.value_type != VALUE_I) {
+            invalid_expr("invalid variable in set expression, should be integer");
+        }
+        is_in = integer_in_integer_list(variable.ivalue, right.integer_list_value);
+    }
+    else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE && right.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
+        bool found = get_variable(left.variable_value.variable_id, event, &variable);
+        if(!found) {
+            return false;
+        }
+        if(variable.value_type != VALUE_S) {
+            invalid_expr("invalid variable in set expression, should be string");
+        }
+        is_in = string_in_string_list(variable.svalue, right.string_list_value);
+    }
+    else {
+        invalid_expr("invalid set expression");
+        return false;
+    }
+    switch(set_expr.op) {
+        case AST_SET_NOT_IN: {
+            return !is_in;
+        }
+        case AST_SET_IN: {
+            return is_in;
+        }
+        default: {
+            switch_default_error("Invalid set operation");
+            return false;
+        }
+    }
+}
+
+bool match_numeric_compare_expr(const struct event* event, const struct ast_numeric_compare_expr numeric_compare_expr)
+{
+    struct value variable;
+    bool found = get_variable(numeric_compare_expr.variable_id, event, &variable);
+    if(!found) {
+        return false;
+    }
+    if(!numeric_compare_value_matches(numeric_compare_expr.value.value_type, variable.value_type)) {
+        invalid_expr("numeric compare value types do not match");
+        return false;
+    }
+    switch(numeric_compare_expr.op) {
+        case AST_NUMERIC_COMPARE_LT: {
+            switch(numeric_compare_expr.value.value_type) {
+                case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
+                    bool result = variable.ivalue < numeric_compare_expr.value.integer_value;
+                    return result;
+                }
+                case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
+                    bool result = variable.fvalue < numeric_compare_expr.value.float_value;
+                    return result;
+                }
+                default: {
+                    switch_default_error("Invalid numeric compare value type");
+                    return false;
+                }
+            }
+        }
+        case AST_NUMERIC_COMPARE_LE: {
+            switch(numeric_compare_expr.value.value_type) {
+                case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
+                    bool result = variable.ivalue <= numeric_compare_expr.value.integer_value;
+                    return result;
+                }
+                case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
+                    bool result = variable.fvalue <= numeric_compare_expr.value.float_value;
+                    return result;
+                }
+                default: {
+                    switch_default_error("Invalid numeric compare value type");
+                    return false;
+                }
+            }
+        }
+        case AST_NUMERIC_COMPARE_GT: {
+            switch(numeric_compare_expr.value.value_type) {
+                case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
+                    bool result = variable.ivalue > numeric_compare_expr.value.integer_value;
+                    return result;
+                }
+                case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
+                    bool result = variable.fvalue > numeric_compare_expr.value.float_value;
+                    return result;
+                }
+                default: {
+                    switch_default_error("Invalid numeric compare value type");
+                    return false;
+                }
+            }
+        }
+        case AST_NUMERIC_COMPARE_GE: {
+            switch(numeric_compare_expr.value.value_type) {
+                case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
+                    bool result = variable.ivalue >= numeric_compare_expr.value.integer_value;
+                    return result;
+                }
+                case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
+                    bool result = variable.fvalue >= numeric_compare_expr.value.float_value;
+                    return result;
+                }
+                default: {
+                    switch_default_error("Invalid numeric compare value type");
+                    return false;
+                }
+            }
+        }
+        default: {
+            switch_default_error("Invalid numeric compare operation");
+            return false;
+        }
+    }
+}
+
+bool match_equality_expr(const struct event* event, const struct ast_equality_expr equality_expr)
+{
+    struct value variable;
+    bool found = get_variable(equality_expr.variable_id, event, &variable);
+    if(!found) {
+        return false;
+    }
+    if(!equality_value_matches(equality_expr.value.value_type, variable.value_type)) {
+        invalid_expr("equality value types do not match");
+        return false;
+    }
+    switch(equality_expr.op) {
+        case AST_EQUALITY_EQ: {
+            switch(equality_expr.value.value_type) {
+                case AST_EQUALITY_VALUE_INTEGER: {
+                    bool result = variable.ivalue == equality_expr.value.integer_value;
+                    return result;
+                }
+                case AST_EQUALITY_VALUE_FLOAT: {
+                    bool result = feq(variable.fvalue, equality_expr.value.float_value);
+                    return result;
+                }
+                case AST_EQUALITY_VALUE_STRING: {
+                    bool result = variable.svalue.str == equality_expr.value.string_value.str;
+                    return result;
+                }
+                default: {
+                    switch_default_error("Invalid equality value type");
+                    return false;
+                }
+            }
+        }
+        case AST_EQUALITY_NE: {
+            switch(equality_expr.value.value_type) {
+                case AST_EQUALITY_VALUE_INTEGER: {
+                    bool result = variable.ivalue != equality_expr.value.integer_value;
+                    return result;
+                }
+                case AST_EQUALITY_VALUE_FLOAT: {
+                    bool result = fne(variable.fvalue, equality_expr.value.float_value);
+                    return result;
+                }
+                case AST_EQUALITY_VALUE_STRING: {
+                    bool result = variable.svalue.str != equality_expr.value.string_value.str;
+                    return result;
+                }
+                default: {
+                    switch_default_error("Invalid equality value type");
+                    return false;
+                }
+            }
+        }
+        default: {
+            switch_default_error("Invalid equality operation");
+            return false;
+        }
+    }
+}
+
+bool match_combi_expr(const struct event* event, const struct ast_combi_expr combi_expr)
+{
+    bool lhs = match_node(event, combi_expr.lhs);
+    switch(combi_expr.op) {
+        case AST_COMBI_AND: {
+            if(lhs == false) {
+                return false;
+            }
+            bool rhs = match_node(event, combi_expr.rhs);
+            return lhs && rhs;
+        }
+        case AST_COMBI_OR: {
+            bool rhs = match_node(event, combi_expr.rhs);
+            return lhs || rhs;
+        }
+        default: {
+            switch_default_error("Invalid combi operation");
+            return false;
+        }
+    }
+}
+
+bool match_node(const struct event* event, const struct ast_node *node)
+{
+    // TODO allow undefined handling?
+    switch(node->type) {
+        case AST_TYPE_SPECIAL_EXPR: {
+            return match_special_expr(event, node->special_expr);
+        }
+        case AST_TYPE_BOOL_EXPR: {
+            return match_bool_expr(event, node->bool_expr);
+        }
+        case AST_TYPE_LIST_EXPR: {
+            return match_list_expr(event, node->list_expr);
+        }
+        case AST_TYPE_SET_EXPR: {
+            return match_set_expr(event, node->set_expr);
         }
         case AST_TYPE_NUMERIC_COMPARE_EXPR: {
-            struct value variable;
-            bool found = get_variable(node->numeric_compare_expr.variable_id, event, &variable);
-            if(!found) {
-                return false;
-            }
-            if(!numeric_compare_value_matches(node->numeric_compare_expr.value.value_type, variable.value_type)) {
-                invalid_expr("numeric compare value types do not match");
-                return false;
-            }
-            switch(node->numeric_compare_expr.op) {
-                case AST_NUMERIC_COMPARE_LT: {
-                    switch(node->numeric_compare_expr.value.value_type) {
-                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-                            bool result = variable.ivalue < node->numeric_compare_expr.value.integer_value;
-                            return result;
-                        }
-                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-                            bool result = variable.fvalue < node->numeric_compare_expr.value.float_value;
-                            return result;
-                        }
-                        default: {
-                            switch_default_error("Invalid numeric compare value type");
-                            return false;
-                        }
-                    }
-                }
-                case AST_NUMERIC_COMPARE_LE: {
-                    switch(node->numeric_compare_expr.value.value_type) {
-                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-                            bool result = variable.ivalue <= node->numeric_compare_expr.value.integer_value;
-                            return result;
-                        }
-                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-                            bool result = variable.fvalue <= node->numeric_compare_expr.value.float_value;
-                            return result;
-                        }
-                        default: {
-                            switch_default_error("Invalid numeric compare value type");
-                            return false;
-                        }
-                    }
-                }
-                case AST_NUMERIC_COMPARE_GT: {
-                    switch(node->numeric_compare_expr.value.value_type) {
-                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-                            bool result = variable.ivalue > node->numeric_compare_expr.value.integer_value;
-                            return result;
-                        }
-                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-                            bool result = variable.fvalue > node->numeric_compare_expr.value.float_value;
-                            return result;
-                        }
-                        default: {
-                            switch_default_error("Invalid numeric compare value type");
-                            return false;
-                        }
-                    }
-                }
-                case AST_NUMERIC_COMPARE_GE: {
-                    switch(node->numeric_compare_expr.value.value_type) {
-                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-                            bool result = variable.ivalue >= node->numeric_compare_expr.value.integer_value;
-                            return result;
-                        }
-                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-                            bool result = variable.fvalue >= node->numeric_compare_expr.value.float_value;
-                            return result;
-                        }
-                        default: {
-                            switch_default_error("Invalid numeric compare value type");
-                            return false;
-                        }
-                    }
-                }
-                default: {
-                    switch_default_error("Invalid numeric compare operation");
-                    return false;
-                }
-            }
+            return match_numeric_compare_expr(event, node->numeric_compare_expr);
         }
         case AST_TYPE_EQUALITY_EXPR: {
-            struct value variable;
-            bool found = get_variable(node->equality_expr.variable_id, event, &variable);
-            if(!found) {
-                return false;
-            }
-            if(!equality_value_matches(node->equality_expr.value.value_type, variable.value_type)) {
-                invalid_expr("equality value types do not match");
-                return false;
-            }
-            switch(node->equality_expr.op) {
-                case AST_EQUALITY_EQ: {
-                    switch(node->equality_expr.value.value_type) {
-                        case AST_EQUALITY_VALUE_INTEGER: {
-                            bool result = variable.ivalue == node->equality_expr.value.integer_value;
-                            return result;
-                        }
-                        case AST_EQUALITY_VALUE_FLOAT: {
-                            bool result = feq(variable.fvalue, node->equality_expr.value.float_value);
-                            return result;
-                        }
-                        case AST_EQUALITY_VALUE_STRING: {
-                            bool result = variable.svalue.str == node->equality_expr.value.string_value.str;
-                            return result;
-                        }
-                        default: {
-                            switch_default_error("Invalid equality value type");
-                            return false;
-                        }
-                    }
-                }
-                case AST_EQUALITY_NE: {
-                    switch(node->equality_expr.value.value_type) {
-                        case AST_EQUALITY_VALUE_INTEGER: {
-                            bool result = variable.ivalue != node->equality_expr.value.integer_value;
-                            return result;
-                        }
-                        case AST_EQUALITY_VALUE_FLOAT: {
-                            bool result = fne(variable.fvalue, node->equality_expr.value.float_value);
-                            return result;
-                        }
-                        case AST_EQUALITY_VALUE_STRING: {
-                            bool result = variable.svalue.str != node->equality_expr.value.string_value.str;
-                            return result;
-                        }
-                        default: {
-                            switch_default_error("Invalid equality value type");
-                            return false;
-                        }
-                    }
-                }
-                default: {
-                    switch_default_error("Invalid equality operation");
-                    return false;
-                }
-            }
+            return match_equality_expr(event, node->equality_expr);
         }
         case AST_TYPE_COMBI_EXPR: {
-            bool lhs = match_node(event, node->combi_expr.lhs);
-            switch(node->combi_expr.op) {
-                case AST_COMBI_AND: {
-                    if(lhs == false) {
-                        return false;
-                    }
-                    bool rhs = match_node(event, node->combi_expr.rhs);
-                    return lhs && rhs;
-                }
-                case AST_COMBI_OR: {
-                    bool rhs = match_node(event, node->combi_expr.rhs);
-                    return lhs || rhs;
-                }
-                default: {
-                    switch_default_error("Invalid combi operation");
-                    return false;
-                }
-            }
+            return match_combi_expr(event, node->combi_expr);
         }
         default: {
             switch_default_error("Invalid expr type");
