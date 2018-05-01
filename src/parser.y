@@ -203,11 +203,11 @@ s_geo_expr          : TGEOWITHINRADIUS TLPAREN s_geo_expr_value TCOMMA s_geo_exp
 ;
 
 s_string_expr       : TCONTAINS TLPAREN ident TCOMMA string TRPAREN
-                                                            { $$ = ast_special_string_create(AST_SPECIAL_CONTAINS, $3, $5.string); free($3); free($5.string); }
+                                                            { $$ = ast_special_string_create(AST_SPECIAL_CONTAINS, $3, $5.string); free($3); free((char*)$5.string); }
                     | TSTARTSWITH TLPAREN ident TCOMMA string TRPAREN
-                                                            { $$ = ast_special_string_create(AST_SPECIAL_STARTSWITH, $3, $5.string); free($3); free($5.string); }
+                                                            { $$ = ast_special_string_create(AST_SPECIAL_STARTSWITH, $3, $5.string); free($3); free((char*)$5.string); }
                     | TENDSWITH TLPAREN ident TCOMMA string TRPAREN
-                                                            { $$ = ast_special_string_create(AST_SPECIAL_ENDSWITH, $3, $5.string); free($3); free($5.string); }
+                                                            { $$ = ast_special_string_create(AST_SPECIAL_ENDSWITH, $3, $5.string); free($3); free((char*)$5.string); }
 ;
 
 %%
