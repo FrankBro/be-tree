@@ -92,6 +92,7 @@ ident               : TIDENTIFIER                           { $$ = $1; }
 
 boolean             : TTRUE                                 { $$.value_type = VALUE_B; $$.bvalue = true; }
                     | TFALSE                                { $$.value_type = VALUE_B; $$.bvalue = false; }
+;
 
 integer             : TINTEGER                              { $$ = $1; }
 
