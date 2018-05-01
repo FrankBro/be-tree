@@ -82,12 +82,104 @@ struct ast_node* ast_list_expr_create(const enum ast_list_e op, const char* name
     return node;
 }
 
+struct ast_node* ast_special_expr_create()
+{
+    struct ast_node* node = ast_node_create();
+    node->type = AST_TYPE_SPECIAL_EXPR;
+    return node;
+}
+
+struct ast_node* ast_special_frequency_create(const enum ast_special_frequency_e op, struct string_value type, struct string_value ns, int64_t value, size_t length)
+{
+    struct ast_node* node = ast_special_expr_create();
+    struct ast_special_frequency frequency = {
+        .op = op,
+        .type = type,
+        .ns = ns,
+        .value = value,
+        .length = length
+    };
+    node->special_expr.type = AST_SPECIAL_FREQUENCY;
+    node->special_expr.frequency = frequency;
+    return node;
+}
+
+struct ast_node* ast_special_segment_create(const enum ast_special_segment_e op, const char* name, betree_seg_t segment_id, int64_t seconds)
+{
+    struct ast_node* node = ast_special_expr_create();
+    struct ast_special_segment segment = {
+        .op = op,
+        .segment_id = segment_id,
+        .seconds = seconds
+    };
+    if(name == NULL) {
+        segment.has_variable = false;
+        segment.name = NULL;
+    }
+    else {
+        segment.has_variable = true;
+        segment.name = strdup(name);
+    }
+    segment.variable_id = -1;
+    node->special_expr.type = AST_SPECIAL_SEGMENT;
+    node->special_expr.segment = segment;
+    return node;
+}
+
+struct ast_node* ast_special_geo_create(const enum ast_special_geo_e op, struct special_geo_value latitude, struct special_geo_value longitude, bool has_radius, struct special_geo_value radius)
+{
+    struct ast_node* node = ast_special_expr_create();
+    struct ast_special_geo geo = {
+        .op = op,
+        .latitude = latitude,
+        .longitude = longitude,
+        .has_radius = has_radius,
+        .radius = radius
+    };
+    node->special_expr.type = AST_SPECIAL_GEO;
+    node->special_expr.geo = geo;
+    return node;
+}
+
+struct ast_node* ast_special_string_create(const enum ast_special_string_e op, const char* name, const char* pattern)
+{
+    struct ast_node* node = ast_special_expr_create();
+    struct ast_special_string string = {
+        .op = op,
+        .name = strdup(name),
+        .variable_id = -1,
+        .pattern = strdup(pattern)
+    };
+    node->special_expr.type = AST_SPECIAL_STRING;
+    node->special_expr.string = string;
+    return node;
+}
+
 void free_ast_node(struct ast_node* node)
 {
     if(node == NULL) {
         return;
     }
     switch(node->type) {
+        case AST_TYPE_SPECIAL_EXPR: 
+            switch(node->special_expr.type) {
+                case AST_SPECIAL_FREQUENCY:
+                    free((char*)node->special_expr.frequency.type.string);
+                    free((char*)node->special_expr.frequency.ns.string);
+                    break;
+                case AST_SPECIAL_SEGMENT:
+                    free((char*)node->special_expr.segment.name);
+                    break;
+                case AST_SPECIAL_GEO:
+                    break;
+                case AST_SPECIAL_STRING:
+                    free((char*)node->special_expr.string.name);
+                    free((char*)node->special_expr.string.pattern);
+                    break;
+                default:
+                    switch_default_error("Invalid special expr type");
+            }
+            break;
         case AST_TYPE_NUMERIC_COMPARE_EXPR:
             free((char*)node->numeric_compare_expr.name);
             break;
@@ -229,6 +321,29 @@ bool match_node(const struct event* event, const struct ast_node *node)
 {
     // TODO allow undefined handling?
     switch(node->type) {
+        case AST_TYPE_SPECIAL_EXPR: {
+            switch(node->special_expr.type) {
+                case AST_SPECIAL_FREQUENCY: {
+                    invalid_expr("TODO");
+                    return false;
+                }
+                case AST_SPECIAL_SEGMENT: {
+                    invalid_expr("TODO");
+                    return false;
+                }
+                case AST_SPECIAL_GEO: {
+                    invalid_expr("TODO");
+                    return false;
+                }
+                case AST_SPECIAL_STRING: {
+                    invalid_expr("TODO");
+                    return false;
+                }
+                default:
+                    switch_default_error("Invalid special expr type");
+                    return false;
+            }
+        }
         case AST_TYPE_BOOL_EXPR: {
             struct value variable;
             bool found = get_variable(node->bool_expr.variable_id, event, &variable);
@@ -592,6 +707,10 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
         return;
     }
     switch(node->type) {
+        case AST_TYPE_SPECIAL_EXPR: {
+            invalid_expr("Trying t get a bound of an special expression");
+            return;
+        }
         case AST_TYPE_COMBI_EXPR: {
             get_variable_bound(domain, node->combi_expr.lhs, bound);
             get_variable_bound(domain, node->combi_expr.rhs, bound);
@@ -775,6 +894,33 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
 void assign_variable_id(struct config* config, struct ast_node* node) 
 {
     switch(node->type) {
+        case(AST_TYPE_SPECIAL_EXPR): {
+            switch(node->special_expr.type) {
+                case AST_SPECIAL_FREQUENCY: {
+                    return;
+                }
+                case AST_SPECIAL_SEGMENT: {
+                    if(node->special_expr.segment.has_variable) {
+                        betree_var_t variable_id = get_id_for_attr(config, node->special_expr.segment.name);
+                        node->special_expr.segment.variable_id = variable_id;
+                    }
+                    return;
+                }
+                case AST_SPECIAL_GEO: {
+                    return;
+                }
+                case AST_SPECIAL_STRING: {
+                    betree_var_t variable_id = get_id_for_attr(config, node->special_expr.string.name);
+                    node->special_expr.string.variable_id = variable_id;
+                    return;
+                }
+                default: {
+                    switch_default_error("Invalid special expr type");
+                    return;
+                }
+            }
+            return;
+        }
         case(AST_TYPE_NUMERIC_COMPARE_EXPR): {
             betree_var_t variable_id = get_id_for_attr(config, node->numeric_compare_expr.name);
             node->numeric_compare_expr.variable_id = variable_id;
@@ -844,6 +990,31 @@ void assign_variable_id(struct config* config, struct ast_node* node)
 void assign_str_id(struct config* config, struct ast_node* node)
 {
     switch(node->type) {
+        case(AST_TYPE_SPECIAL_EXPR): {
+            switch(node->special_expr.type) {
+                case AST_SPECIAL_FREQUENCY: {
+                    {
+                        betree_str_t str_id = get_id_for_string(config, node->special_expr.frequency.type.string);
+                        node->special_expr.frequency.type.str = str_id;
+                    }
+                    {
+                        betree_str_t str_id = get_id_for_string(config, node->special_expr.frequency.ns.string);
+                        node->special_expr.frequency.ns.str = str_id;
+                    }
+                    return;
+                }
+                case AST_SPECIAL_SEGMENT: {
+                    return;
+                }
+                case AST_SPECIAL_GEO: {
+                    return;
+                }
+                case AST_SPECIAL_STRING: {
+                    return;
+                }
+            }
+            return;
+        }
         case(AST_TYPE_NUMERIC_COMPARE_EXPR): {
             return;
         }
@@ -894,6 +1065,10 @@ const char* ast_to_string(const struct ast_node* node)
 {
     char* expr;
     switch(node->type) {
+        case(AST_TYPE_SPECIAL_EXPR): {
+            invalid_expr("TODO");
+            return NULL;
+        }
         case(AST_TYPE_COMBI_EXPR): {
             const char* a = ast_to_string(node->combi_expr.lhs);
             const char* b = ast_to_string(node->combi_expr.rhs);

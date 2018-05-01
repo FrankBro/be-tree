@@ -29,6 +29,13 @@
 %%
 
 [ \t\n]                     ;
+"within_frequency_cap"      return TOKEN(TWITHINFREQUENCYCAP);
+"segment_within"            return TOKEN(TSEGMENTWITHIN);
+"segment_before"            return TOKEN(TSEGMENTBEFORE);
+"geo_within_radius"         return TOKEN(TGEOWITHINRADIUS);
+"contains"                  return TOKEN(TCONTAINS);
+"starts_with"               return TOKEN(TSTARTSWITH);
+"ends_with"                 return TOKEN(TENDSWITH);
 "="                         return TOKEN(TCEQ);
 "<>"                        return TOKEN(TCNE);
 ">"                         return TOKEN(TCGT);
@@ -57,21 +64,6 @@
 .                           printf("Unknown token! (%s)\n", yytext); yyterminate();
 
 %%
-
-// "within_frequency_caps"     return TOKEN(TWITHINFREQUENCYCAPS);
-// "not_within_frequency_caps" return TOKEN(TNOTWITHINFREQUENCYCAP);
-// "segment_within"            return TOKEN(TSEGMENTWITHIN);
-// "segment_not_within"        return TOKEN(TSEGMENTNOTWITHIN);
-// "segment_before"            return TOKEN(TSEGMENTBEFORE);
-// "segment_not_before"        return TOKEN(TSEGMENTNOTBEFORE);
-// "geo_within_radius"         return TOKEN(TGEOWITHINRADIUS);
-// "geo_not_within_radius"     return TOKEN(TGEONOTWITHINRADIUS);
-// "contains"                  return TOKEN(TCONTAINS);
-// "not_contains"              return TOKEN(TNOTCONTAINS);
-// "starts_with"               return TOKEN(TSTARTSWITH);
-// "not_starts_with"           return TOKEN(TNOTSTARTSWITH);
-// "ends_with"                 return TOKEN(TENDSWITH);
-// "not_ends_with"             return TOKEN(TNOTENDSWITH);
 
 #if defined(__clang__)
 #pragma clang diagnostic pop

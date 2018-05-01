@@ -7,6 +7,7 @@
 typedef uint64_t betree_var_t;
 typedef uint64_t betree_sub_t;
 typedef uint64_t betree_str_t;
+typedef uint64_t betree_seg_t;
 
 enum value_e {
     VALUE_B,

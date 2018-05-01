@@ -40,6 +40,7 @@
     struct set_left_value set_left_value;
     struct set_right_value set_right_value;
     struct list_value list_value;
+    struct special_geo_value special_geo_value;
     struct ast_node *node;
     int token;
 }
@@ -48,12 +49,18 @@
 %token<token> TLPAREN TRPAREN TCOMMA TNOTIN TIN TONEOF TNONEOF TALLOF
 %token<token> TAND TOR
 %token<token> TNOT
+%token<token> TWITHINFREQUENCYCAP 
+%token<token> TSEGMENTWITHIN TSEGMENTBEFORE 
+%token<token> TGEOWITHINRADIUS 
+%token<token> TCONTAINS TSTARTSWITH TENDSWITH 
+
 %token<string> TSTRING TIDENTIFIER
 %token<boolean_value> TTRUE TFALSE
 %token<integer_value> TINTEGER
 %token<float_value> TFLOAT
 
-%type<node> expr num_comp_expr eq_expr set_expr list_expr cexpr boolexpr
+%type<node> expr num_comp_expr eq_expr set_expr list_expr cexpr boolexpr 
+%type<node> special_expr s_frequency_expr s_segment_expr s_geo_expr s_string_expr
 %type<string> ident
 %type<value> boolean
 
@@ -69,6 +76,7 @@
 
 %type<integer_list_value> integer_list_value integer_list_loop
 %type<string_list_value> string_list_value string_list_loop
+%type<special_geo_value> s_geo_expr_value
 
 %left TCEQ TCNE TCGT TCGE TCLT TCLE
 %left TAND TOR
@@ -110,6 +118,7 @@ expr                : TLPAREN expr TRPAREN                  { $$ = $2; }
                     | list_expr                             { $$ = $1; }
                     | cexpr                                 { $$ = $1; }
                     | boolexpr                              { $$ = $1; }
+                    | special_expr                          { $$ = $1; }
 ;       
 
 num_comp_value      : integer                               { $$.value_type = AST_NUMERIC_COMPARE_VALUE_INTEGER; $$.integer_value = $1; }
@@ -162,6 +171,42 @@ cexpr               : expr TAND expr                        { $$ = ast_combi_exp
 
 boolexpr            : TNOT ident                            { $$ = ast_bool_expr_create(AST_BOOL_NOT, $2); free($2); }
                     | ident                                 { $$ = ast_bool_expr_create(AST_BOOL_NONE, $1); free($1); }
+;
+
+special_expr        : s_frequency_expr                      { $$ = $1; }
+                    | s_segment_expr                        { $$ = $1; }
+                    | s_geo_expr                            { $$ = $1; }
+                    | s_string_expr                         { $$ = $1; }
+;
+
+s_frequency_expr    : TWITHINFREQUENCYCAP TLPAREN string TCOMMA string TCOMMA integer TCOMMA integer TRPAREN
+                                                            { $$ = ast_special_frequency_create(AST_SPECIAL_WITHINFREQUENCYCAP, $3, $5, $7, $9); }
+;
+
+s_segment_expr      : TSEGMENTWITHIN TLPAREN integer TCOMMA integer TRPAREN
+                                                            { $$ = ast_special_segment_create(AST_SPECIAL_SEGMENTWITHIN, NULL, $3, $5); }
+                    | TSEGMENTWITHIN TLPAREN ident TCOMMA integer TCOMMA integer TRPAREN
+                                                            { $$ = ast_special_segment_create(AST_SPECIAL_SEGMENTWITHIN, $3, $5, $7); free($3); }
+                    | TSEGMENTBEFORE TLPAREN integer TCOMMA integer TRPAREN
+                                                            { $$ = ast_special_segment_create(AST_SPECIAL_SEGMENTBEFORE, NULL, $3, $5); }
+                    | TSEGMENTBEFORE TLPAREN ident TCOMMA integer TCOMMA integer TRPAREN
+                                                            { $$ = ast_special_segment_create(AST_SPECIAL_SEGMENTBEFORE, $3, $5, $7); free($3); }
+;
+
+s_geo_expr_value    : integer                               { $$.value_type = AST_SPECIAL_GEO_VALUE_INTEGER; $$.integer_value = $1; }
+                    | float                                 { $$.value_type = AST_SPECIAL_GEO_VALUE_FLOAT; $$.float_value = $1; }
+;
+
+s_geo_expr          : TGEOWITHINRADIUS TLPAREN s_geo_expr_value TCOMMA s_geo_expr_value TCOMMA s_geo_expr_value TRPAREN
+                                                            { $$ = ast_special_geo_create(AST_SPECIAL_GEOWITHINRADIUS, $3, $5, true, $7); }
+;
+
+s_string_expr       : TCONTAINS TLPAREN ident TCOMMA string TRPAREN
+                                                            { $$ = ast_special_string_create(AST_SPECIAL_CONTAINS, $3, $5.string); free($3); free($5.string); }
+                    | TSTARTSWITH TLPAREN ident TCOMMA string TRPAREN
+                                                            { $$ = ast_special_string_create(AST_SPECIAL_STARTSWITH, $3, $5.string); free($3); free($5.string); }
+                    | TENDSWITH TLPAREN ident TCOMMA string TRPAREN
+                                                            { $$ = ast_special_string_create(AST_SPECIAL_ENDSWITH, $3, $5.string); free($3); free($5.string); }
 ;
 
 %%

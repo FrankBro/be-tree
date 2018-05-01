@@ -263,6 +263,110 @@ int test_string_list()
     return 0;
 }
 
+int test_special()
+{
+    struct ast_node* node = NULL;
+    parse("within_frequency_cap(\"type\", \"namespace\", 100, 0)", &node);
+    mu_assert(node->type == AST_TYPE_SPECIAL_EXPR &&
+        node->special_expr.type == AST_SPECIAL_FREQUENCY &&
+        node->special_expr.frequency.op == AST_SPECIAL_WITHINFREQUENCYCAP &&
+        strcmp(node->special_expr.frequency.type.string, "type") == 0 &&
+        strcmp(node->special_expr.frequency.ns.string, "namespace") == 0 &&
+        node->special_expr.frequency.value == 100 &&
+        node->special_expr.frequency.length == 0
+    , "within_frequency_cap");
+    free_ast_node(node);
+    parse("segment_within(1, 20)", &node);
+    mu_assert(node->type == AST_TYPE_SPECIAL_EXPR &&
+        node->special_expr.type == AST_SPECIAL_SEGMENT &&
+        node->special_expr.segment.op == AST_SPECIAL_SEGMENTWITHIN &&
+        node->special_expr.segment.has_variable == false &&
+        node->special_expr.segment.segment_id == 1 &&
+        node->special_expr.segment.seconds == 20
+    , "segment_within");
+    free_ast_node(node);
+    parse("segment_before(1, 20)", &node);
+    mu_assert(node->type == AST_TYPE_SPECIAL_EXPR &&
+        node->special_expr.type == AST_SPECIAL_SEGMENT &&
+        node->special_expr.segment.op == AST_SPECIAL_SEGMENTBEFORE &&
+        node->special_expr.segment.has_variable == false &&
+        node->special_expr.segment.segment_id == 1 &&
+        node->special_expr.segment.seconds == 20
+    , "segment_before");
+    free_ast_node(node);
+    parse("segment_within(name, 1, 20)", &node);
+    mu_assert(node->type == AST_TYPE_SPECIAL_EXPR &&
+        node->special_expr.type == AST_SPECIAL_SEGMENT &&
+        node->special_expr.segment.op == AST_SPECIAL_SEGMENTWITHIN &&
+        node->special_expr.segment.has_variable == true &&
+        strcmp(node->special_expr.segment.name, "name") == 0&&
+        node->special_expr.segment.segment_id == 1 &&
+        node->special_expr.segment.seconds == 20
+    , "segment_within");
+    free_ast_node(node);
+    parse("segment_before(name, 1, 20)", &node);
+    mu_assert(node->type == AST_TYPE_SPECIAL_EXPR &&
+        node->special_expr.type == AST_SPECIAL_SEGMENT &&
+        node->special_expr.segment.op == AST_SPECIAL_SEGMENTBEFORE &&
+        node->special_expr.segment.has_variable == true &&
+        strcmp(node->special_expr.segment.name, "name") == 0 &&
+        node->special_expr.segment.segment_id == 1 &&
+        node->special_expr.segment.seconds == 20
+    , "segment_before");
+    free_ast_node(node);
+    parse("geo_within_radius(100, 100, 10)", &node);
+    mu_assert(node->type == AST_TYPE_SPECIAL_EXPR &&
+        node->special_expr.type == AST_SPECIAL_GEO &&
+        node->special_expr.geo.op == AST_SPECIAL_GEOWITHINRADIUS &&
+        node->special_expr.geo.has_radius == true &&
+        node->special_expr.geo.latitude.value_type == AST_SPECIAL_GEO_VALUE_INTEGER &&
+        node->special_expr.geo.latitude.integer_value == 100 &&
+        node->special_expr.geo.longitude.value_type == AST_SPECIAL_GEO_VALUE_INTEGER &&
+        node->special_expr.geo.longitude.integer_value == 100 &&
+        node->special_expr.geo.radius.value_type == AST_SPECIAL_GEO_VALUE_INTEGER &&
+        node->special_expr.geo.radius.integer_value == 10
+    , "geo_within_radius");
+    free_ast_node(node);
+    parse("geo_within_radius(100.0, 100.0, 10.0)", &node);
+    mu_assert(node->type == AST_TYPE_SPECIAL_EXPR &&
+        node->special_expr.type == AST_SPECIAL_GEO &&
+        node->special_expr.geo.op == AST_SPECIAL_GEOWITHINRADIUS &&
+        node->special_expr.geo.has_radius == true &&
+        node->special_expr.geo.latitude.value_type == AST_SPECIAL_GEO_VALUE_FLOAT &&
+        feq(node->special_expr.geo.latitude.float_value, 100.0) &&
+        node->special_expr.geo.longitude.value_type == AST_SPECIAL_GEO_VALUE_FLOAT &&
+        feq(node->special_expr.geo.longitude.float_value, 100.0) &&
+        node->special_expr.geo.radius.value_type == AST_SPECIAL_GEO_VALUE_FLOAT &&
+        feq(node->special_expr.geo.radius.float_value, 10.0)
+    , "geo_within_radius");
+    free_ast_node(node);
+    parse("contains(a, \"abc\")", &node);
+    mu_assert(node->type == AST_TYPE_SPECIAL_EXPR &&
+        node->special_expr.type == AST_SPECIAL_STRING &&
+        node->special_expr.string.op == AST_SPECIAL_CONTAINS &&
+        strcmp(node->special_expr.string.name, "a") == 0 &&
+        strcmp(node->special_expr.string.pattern, "abc") == 0
+    , "contains");
+    free_ast_node(node);
+    parse("starts_with(a, \"abc\")", &node);
+    mu_assert(node->type == AST_TYPE_SPECIAL_EXPR &&
+        node->special_expr.type == AST_SPECIAL_STRING &&
+        node->special_expr.string.op == AST_SPECIAL_STARTSWITH &&
+        strcmp(node->special_expr.string.name, "a") == 0 &&
+        strcmp(node->special_expr.string.pattern, "abc") == 0
+    , "starts_with");
+    free_ast_node(node);
+    parse("ends_with(a, \"abc\")", &node);
+    mu_assert(node->type == AST_TYPE_SPECIAL_EXPR &&
+        node->special_expr.type == AST_SPECIAL_STRING &&
+        node->special_expr.string.op == AST_SPECIAL_ENDSWITH &&
+        strcmp(node->special_expr.string.name, "a") == 0 &&
+        strcmp(node->special_expr.string.pattern, "abc") == 0
+    , "ends_with");
+    free_ast_node(node);
+    return 0;
+}      
+
 int all_tests() 
 {
     mu_run_test(test_all_numeric_compare);
@@ -278,6 +382,7 @@ int all_tests()
     mu_run_test(test_string_set);
     mu_run_test(test_integer_list);
     mu_run_test(test_string_list);
+    mu_run_test(test_special);
 
     return 0;
 }

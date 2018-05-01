@@ -168,6 +168,89 @@ struct ast_list_expr {
     struct list_value value;
 };
 
+// Special
+
+enum ast_special_frequency_e {
+    AST_SPECIAL_WITHINFREQUENCYCAP,
+};
+
+struct ast_special_frequency {
+    enum ast_special_frequency_e op;
+    struct string_value type;
+    struct string_value ns;
+    int64_t value;
+    size_t length;
+};
+
+enum ast_special_segment_e {
+    AST_SPECIAL_SEGMENTWITHIN,
+    AST_SPECIAL_SEGMENTBEFORE,
+};
+
+struct ast_special_segment {
+    enum ast_special_segment_e op;
+    bool has_variable;
+    const char* name;
+    betree_var_t variable_id;
+    betree_seg_t segment_id;
+    int64_t seconds;
+};
+
+enum ast_special_geo_value_e {
+    AST_SPECIAL_GEO_VALUE_INTEGER,
+    AST_SPECIAL_GEO_VALUE_FLOAT,
+};
+
+struct special_geo_value {
+    enum ast_special_geo_value_e value_type;
+    union {
+        int64_t integer_value;
+        double float_value;
+    };
+};
+
+enum ast_special_geo_e {
+    AST_SPECIAL_GEOWITHINRADIUS,
+};
+
+struct ast_special_geo {
+    enum ast_special_geo_e op;
+    bool has_radius;
+    struct special_geo_value latitude;
+    struct special_geo_value longitude;
+    struct special_geo_value radius;
+};
+
+enum ast_special_string_e {
+    AST_SPECIAL_CONTAINS,
+    AST_SPECIAL_STARTSWITH,
+    AST_SPECIAL_ENDSWITH,
+};
+
+struct ast_special_string {
+    enum ast_special_string_e op;
+    const char* name;
+    betree_var_t variable_id;
+    const char* pattern;
+};
+
+enum ast_special_e {
+    AST_SPECIAL_FREQUENCY,
+    AST_SPECIAL_SEGMENT,
+    AST_SPECIAL_GEO,
+    AST_SPECIAL_STRING,
+};
+
+struct ast_special_expr {
+    enum ast_special_e type;
+    union {
+        struct ast_special_frequency frequency;
+        struct ast_special_segment segment;
+        struct ast_special_geo geo;
+        struct ast_special_string string;
+    };
+};
+
 // Expression
 
 enum ast_node_type_e {
@@ -177,6 +260,7 @@ enum ast_node_type_e {
     AST_TYPE_BOOL_EXPR,
     AST_TYPE_SET_EXPR,
     AST_TYPE_LIST_EXPR,
+    AST_TYPE_SPECIAL_EXPR,
 };
 
 struct ast_node {
@@ -188,6 +272,7 @@ struct ast_node {
         struct ast_bool_expr bool_expr;
         struct ast_set_expr set_expr;
         struct ast_list_expr list_expr;
+        struct ast_special_expr special_expr;
     };
 };
 
@@ -197,6 +282,11 @@ struct ast_node* ast_combi_expr_create(const enum ast_combi_e op, const struct a
 struct ast_node* ast_bool_expr_create(const enum ast_bool_e op, const char* name);
 struct ast_node* ast_set_expr_create(const enum ast_set_e op, struct set_left_value left_value, struct set_right_value right_value);
 struct ast_node* ast_list_expr_create(const enum ast_list_e op, const char* name, struct list_value list_value);
+
+struct ast_node* ast_special_frequency_create(const enum ast_special_frequency_e op, struct string_value type, struct string_value ns, int64_t value, size_t length);
+struct ast_node* ast_special_segment_create(const enum ast_special_segment_e op, const char* name, betree_seg_t segment_id, int64_t seconds);
+struct ast_node* ast_special_geo_create(const enum ast_special_geo_e op, struct special_geo_value latitude, struct special_geo_value longitude, bool has_radius, struct special_geo_value radius);
+struct ast_node* ast_special_string_create(const enum ast_special_string_e op, const char* name, const char* pattern);
 void free_ast_node(struct ast_node* node);
 
 bool match_node(const struct event* event, const struct ast_node *node);
