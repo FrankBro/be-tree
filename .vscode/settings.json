@@ -1,12 +1,16 @@
 {
     "files.associations": {
-        "vector.h": "c",
-        "algorithm": "c",
-        "chrono": "c",
-        "limits": "c",
-        "random": "c",
-        "ios": "c",
-        "typeinfo": "c"
+        "ast.c": "c",
+        "ast.h": "c",
+        "betree.c": "c",
+        "betree.h": "c",
+        "debug.c": "c",
+        "debug.h": "c",
+        "erlang.c": "c",
+        "functions.c": "c",
+        "functions.h": "c",
+        "utils.c": "c",
+        "utils.h": "c"
     },
     "files.exclude":{
         "**/.git": true,
