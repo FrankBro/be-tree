@@ -131,13 +131,17 @@ int test_string()
     parse("a = \"a\"", &node);
     mu_assert(node->type == AST_TYPE_EQUALITY_EXPR &&
         node->equality_expr.op == AST_EQUALITY_EQ &&
-        node->equality_expr.value.value_type == AST_EQUALITY_VALUE_STRING
+        node->equality_expr.value.value_type == AST_EQUALITY_VALUE_STRING &&
+        strcmp(node->equality_expr.value.string_value.string, "a") == 0 &&
+        strcmp(node->equality_expr.name, "a") == 0
     , "eq");
     free_ast_node(node);
     parse("a <> \"a\"", &node);
     mu_assert(node->type == AST_TYPE_EQUALITY_EXPR &&
         node->equality_expr.op == AST_EQUALITY_NE &&
-        node->equality_expr.value.value_type == AST_EQUALITY_VALUE_STRING
+        node->equality_expr.value.value_type == AST_EQUALITY_VALUE_STRING &&
+        strcmp(node->equality_expr.value.string_value.string, "a") == 0 &&
+        strcmp(node->equality_expr.name, "a") == 0
     , "ne");
     free_ast_node(node);
     return 0;

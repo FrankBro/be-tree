@@ -1,7 +1,12 @@
 %{
     #include "ast.h"
     #include "parser.h"
-    #define SAVE_STRING yylval->string = strndup(yytext, yyleng)
+    #define SAVE_STRING {\
+        yylval->string = malloc(yyleng - 1);\
+        memcpy(yylval->string, yytext + 1, yyleng - 2);\
+        yylval->string[yyleng - 2] = 0;\
+    }
+    #define SAVE_IDENTIFIER yylval->string = strndup(yytext, yyleng)
     #define SAVE_INTEGER yylval->integer_value = atoi(yytext)
     #define SAVE_FLOAT yylval->float_value = atof(yytext)
     #define TOKEN(t) (yylval->token = t)
@@ -45,8 +50,8 @@
 "not"                       return TOKEN(TNOT);
 "true"                      return TOKEN(TTRUE);
 "false"                     return TOKEN(TFALSE);
-\"[a-zA-Z0-9_]+\"           SAVE_STRING; return TSTRING;
-[a-zA-Z_][a-zA-Z0-9_-]*     SAVE_STRING; return TIDENTIFIER;
+\"[a-zA-Z0-9_-]*\"          SAVE_STRING; return TSTRING;
+[a-zA-Z_][a-zA-Z0-9_-]*     SAVE_IDENTIFIER; return TIDENTIFIER;
 [0-9]+                      SAVE_INTEGER; return TINTEGER;
 [0-9]+\.[0-9]*              SAVE_FLOAT; return TFLOAT;
 .                           printf("Unknown token! (%s)\n", yytext); yyterminate();
