@@ -208,7 +208,7 @@ const struct event* make_simple_event_sl(struct config* config, const char* attr
 void event_to_string(struct config* config, const struct event* event, char* buffer);
 
 void insert_be_tree(const struct config* config, const struct sub* sub, struct cnode* cnode, struct cdir* cdir);
-void match_be_tree(const struct config* config, const struct event* event, const struct cnode* cnode, struct matched_subs* matched_subs);
+void match_be_tree(struct config* config, const struct event* event, const struct cnode* cnode, struct matched_subs* matched_subs);
 bool delete_be_tree(const struct config* config, struct sub* sub, struct cnode* cnode);
 
 void add_integer_list_value(int64_t integer, struct integer_list_value* list);

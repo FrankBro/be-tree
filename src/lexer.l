@@ -57,6 +57,14 @@
 "not"                       return TOKEN(TNOT);
 "true"                      return TOKEN(TTRUE);
 "false"                     return TOKEN(TFALSE);
+\"advertiser\"              return TOKEN(TADVERTISER);
+\"advertiser:ip\"           return TOKEN(TADVERTISERIP);
+\"campaign\"                return TOKEN(TCAMPAIGN);
+\"campaign:ip\"             return TOKEN(TCAMPAIGNIP);
+\"flight\"                  return TOKEN(TFLIGHT);
+\"flight:ip\"               return TOKEN(TFLIGHTIP);
+\"product\"                 return TOKEN(TPRODUCT);
+\"product:ip\"              return TOKEN(TPRODUCTIP);
 \"[a-zA-Z0-9_-]*\"          SAVE_STRING; return TSTRING;
 [a-zA-Z_][a-zA-Z0-9_-]*     SAVE_IDENTIFIER; return TIDENTIFIER;
 [0-9]+                      SAVE_INTEGER; return TINTEGER;

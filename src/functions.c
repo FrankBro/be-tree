@@ -3,11 +3,13 @@
 #include <string.h>
 #include <math.h>
 
+#include "betree.h"
 #include "functions.h"
 
-bool within_frequency_caps(const struct frequency_caps_list *caps, const struct frequency_type type, uint32_t id, const struct frequency_namespace namespace, uint32_t value, size_t length, int64_t now) {
+bool within_frequency_caps(const struct frequency_caps_list *caps, const struct string_value type, uint32_t id, const struct string_value namespace, uint32_t value, size_t length, int64_t now) 
+{
     for (size_t i = 0; i < caps->size; i++) {
-        if (caps->content[i].id == id && caps->content[i].namespace.id == namespace.id && caps->content[i].type.id == type.id) {
+        if (caps->content[i].id == id && caps->content[i].namespace.str == namespace.str && caps->content[i].type.str == type.str) {
             if (length <= 0) {
                 return value > caps->content[i].value;
             }
@@ -82,7 +84,7 @@ bool contains(const char* value, const char* pattern)
     size_t pattern_size = strlen (pattern);
 	if (value_size < pattern_size) return false;
 
-	return memmem(value, value_size, pattern, pattern_size) != NULL;
+	return strstr(value, pattern) != NULL;
 }
 
 bool starts_with(const char* value, const char* pattern) 
@@ -91,7 +93,7 @@ bool starts_with(const char* value, const char* pattern)
     size_t pattern_size = strlen (pattern);
 	if (value_size < pattern_size) return false;
 
-	return memmem(value, pattern_size, pattern, pattern_size) != NULL;
+	return strstr(value, pattern) != NULL;
 }
 
 bool ends_with(const char* value, const char* pattern)
@@ -101,5 +103,5 @@ bool ends_with(const char* value, const char* pattern)
 	if (value_size < pattern_size) return false;
 
 	size_t off = value_size - pattern_size;
-	return memmem(value + off, pattern_size, pattern, pattern_size) != NULL;
+	return strstr(value + off, pattern) != NULL;
 }

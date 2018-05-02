@@ -271,7 +271,7 @@ int test_complex()
             betree_sub_t sub_id = matched_subs->subs[i];
             const struct sub* sub = get_sub((const struct sub**)subs, sub_count, sub_id);
             const char* expr = ast_to_string(sub->expr);
-            printf("    %lu: %s", sub->id, expr);
+            printf("    %llu: %s", sub->id, expr);
             free((char*)expr);
         }
     }

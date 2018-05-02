@@ -11,20 +11,20 @@
 #include "betree.h"
 #include "utils.h"
 
-bool match_sub(const struct event* event, const struct sub *sub)
+bool match_sub(struct config* config, const struct event* event, const struct sub *sub)
 {
     if(sub == NULL) {
         return false;
     }
-    bool result = match_node(event, sub->expr);
+    bool result = match_node(config, event, sub->expr);
     return result;
 } 
 
-void check_sub(const struct event* event, const struct lnode* lnode, struct matched_subs* matched_subs) 
+void check_sub(struct config* config, const struct event* event, const struct lnode* lnode, struct matched_subs* matched_subs) 
 {
     for(size_t i = 0; i < lnode->sub_count; i++) {
         const struct sub* sub = lnode->subs[i];
-        if(match_sub(event, sub) == true) {
+        if(match_sub(config, event, sub) == true) {
             if(matched_subs->sub_count == 0) {
                 matched_subs->subs = calloc(1, sizeof(*matched_subs->subs));
                 if(matched_subs->subs == NULL) {
@@ -60,7 +60,7 @@ struct pnode* search_pdir(betree_var_t variable_id, const struct pdir* pdir)
     return NULL;
 }
 
-void search_cdir(const struct config* config, const struct event* event, struct cdir* cdir, struct matched_subs* matched_subs);
+void search_cdir(struct config* config, const struct event* event, struct cdir* cdir, struct matched_subs* matched_subs);
 
 bool event_contains_variable(const struct event* event, betree_var_t variable_id)
 {
@@ -73,9 +73,9 @@ bool event_contains_variable(const struct event* event, betree_var_t variable_id
     return false;
 }
 
-void match_be_tree(const struct config* config, const struct event* event, const struct cnode* cnode, struct matched_subs* matched_subs) 
+void match_be_tree(struct config* config, const struct event* event, const struct cnode* cnode, struct matched_subs* matched_subs) 
 {
-    check_sub(event, cnode->lnode, matched_subs);
+    check_sub(config, event, cnode->lnode, matched_subs);
     if(cnode->pdir != NULL) {
         for(size_t i = 0; i < cnode->pdir->pnode_count; i++) {
             struct pnode* pnode = cnode->pdir->pnodes[i];
@@ -123,7 +123,7 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
                 }
             }
             if(attr_domain == NULL) {
-                fprintf(stderr, "cannot find variable_id %lu in attr_domains", variable_id);
+                fprintf(stderr, "cannot find variable_id %llu in attr_domains", variable_id);
                 abort();
             }
             struct value_bound bound;
@@ -192,7 +192,7 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
     return false;
 }
 
-void search_cdir(const struct config* config, const struct event* event, struct cdir* cdir, struct matched_subs* matched_subs) 
+void search_cdir(struct config* config, const struct event* event, struct cdir* cdir, struct matched_subs* matched_subs) 
 {
     match_be_tree(config, event, cdir->cnode, matched_subs);
     if(is_event_enclosed(event, cdir->lchild))
@@ -433,7 +433,7 @@ void move(const struct sub* sub, struct lnode* origin, struct lnode* destination
 {
     bool isFound = remove_sub(sub, origin);
     if(!isFound) {
-        fprintf(stderr, "Could not find sub %lu", sub->id);
+        fprintf(stderr, "Could not find sub %llu", sub->id);
         abort();
     }
     if(destination->sub_count == 0) {
@@ -525,7 +525,7 @@ struct pnode* create_pdir(const struct config* config, betree_var_t variable_id,
         }
     }
     if(!found) {
-        fprintf(stderr, "No domain definition for attr %lu in config", variable_id);
+        fprintf(stderr, "No domain definition for attr %llu in config", variable_id);
         abort();
     }
     pnode->cdir = create_cdir_with_pnode_parent(config, pnode, bound);
@@ -1247,6 +1247,11 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
 {
     betree_var_t variable_id;
     switch(expr->type) {
+        case AST_TYPE_SPECIAL_EXPR: {
+            fprintf(stderr, "TODO");
+            abort();
+            return;
+        }
         case AST_TYPE_COMBI_EXPR: {
             fill_pred(sub, expr->combi_expr.lhs);
             fill_pred(sub, expr->combi_expr.rhs);
@@ -1566,6 +1571,11 @@ void adjust_attr_domains(struct config* config, const struct ast_node* node, str
 {
     const char* name;
     switch(node->type) {
+        case(AST_TYPE_SPECIAL_EXPR): {
+            fprintf(stderr, "TODO");
+            abort();
+            return;
+        }
         case(AST_TYPE_COMBI_EXPR): {
             adjust_attr_domains(config, node->combi_expr.lhs, bound, allow_undefined);
             adjust_attr_domains(config, node->combi_expr.rhs, bound, allow_undefined);
@@ -1641,7 +1651,7 @@ void event_to_string(struct config* config, const struct event* event, char* buf
         const char* attr = get_attr_for_id(config, pred->variable_id);
         switch(pred->value.value_type) {
             case(VALUE_I): {
-                length += sprintf(buffer + length, "%s = %lu", attr, pred->value.ivalue);
+                length += sprintf(buffer + length, "%s = %llu", attr, pred->value.ivalue);
                 break;
             }
             case(VALUE_F): {
@@ -1737,7 +1747,7 @@ const char* integer_list_value_to_string(struct integer_list_value list)
         if(i != 0) {
             asprintf(&string, ", ");
         }
-        asprintf(&string, "%lu", list.integers[i]);
+        asprintf(&string, "%llu", list.integers[i]);
     }
     return string;
 }

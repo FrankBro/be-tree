@@ -113,6 +113,10 @@ void write_expr(FILE* f, const struct ast_node* node)
             fprintf(stderr, "should never happen for now");
             abort();
         }
+        case(AST_TYPE_SPECIAL_EXPR): {
+            fprintf(stderr, "should never happen for now");
+            abort();
+        }
         case(AST_TYPE_NUMERIC_COMPARE_EXPR): {
             fprintf(f, "%s ", node->numeric_compare_expr.name);
             switch(node->numeric_compare_expr.op) {
@@ -136,7 +140,7 @@ void write_expr(FILE* f, const struct ast_node* node)
                     switch_default_error("Invalid numeric compare operation");
                 }
             }
-            fprintf(f, "%lu ", node->numeric_compare_expr.value.integer_value);
+            fprintf(f, "%llu ", node->numeric_compare_expr.value.integer_value);
             break;
         }
         case AST_TYPE_EQUALITY_EXPR : {
@@ -154,7 +158,7 @@ void write_expr(FILE* f, const struct ast_node* node)
                     switch_default_error("Invalid equality operation");
                 }
             }
-            fprintf(f, "%lu ", node->equality_expr.value.integer_value);
+            fprintf(f, "%llu ", node->equality_expr.value.integer_value);
             break;
         }
         case(AST_TYPE_BOOL_EXPR): {

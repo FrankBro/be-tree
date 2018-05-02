@@ -7,6 +7,7 @@
 
 #include "ast.h"
 #include "betree.h"
+#include "functions.h"
 #include "utils.h"
 
 struct ast_node* ast_node_create()
@@ -89,7 +90,7 @@ struct ast_node* ast_special_expr_create()
     return node;
 }
 
-struct ast_node* ast_special_frequency_create(const enum ast_special_frequency_e op, struct string_value type, struct string_value ns, int64_t value, size_t length)
+struct ast_node* ast_special_frequency_create(const enum ast_special_frequency_e op, enum ast_special_frequency_type_e type, struct string_value ns, int64_t value, size_t length)
 {
     struct ast_node* node = ast_special_expr_create();
     struct ast_special_frequency frequency = {
@@ -159,7 +160,6 @@ void free_special_expr(struct ast_special_expr special_expr)
 {
     switch(special_expr.type) {
         case AST_SPECIAL_FREQUENCY:
-            free((char*)special_expr.frequency.type.string);
             free((char*)special_expr.frequency.ns.string);
             break;
         case AST_SPECIAL_SEGMENT:
@@ -287,6 +287,69 @@ bool get_variable(betree_var_t variable_id, const struct event* event, struct va
     return false;
 }
 
+double get_float_variable(betree_var_t variable_id, const struct event* event)
+{
+    struct value value;
+    bool found = get_variable(variable_id, event, &value);
+    if(!found) {
+        fprintf(stderr, "Variable %llu not defined in event", variable_id);
+        abort();
+    }
+    if(value.value_type != VALUE_F) {
+        fprintf(stderr, "Variable %llu is not a float", variable_id);
+        abort();
+    }
+    return value.fvalue;
+}
+
+double get_float_variable_str(struct config* config, const struct event* event, const char* name)
+{
+    betree_var_t variable_id = get_id_for_attr(config, name);
+    return get_float_variable(variable_id, event);
+}
+
+struct string_value get_string_variable(betree_var_t variable_id, const struct event* event)
+{
+    struct value value;
+    bool found = get_variable(variable_id, event, &value);
+    if(!found) {
+        fprintf(stderr, "Variable %llu not defined in event", variable_id);
+        abort();
+    }
+    if(value.value_type != VALUE_S) {
+        fprintf(stderr, "Variable %llu is not a string", variable_id);
+        abort();
+    }
+    return value.svalue;
+}
+
+struct string_value get_string_variable_str(struct config* config, const struct event* event, const char* name)
+{
+    betree_var_t variable_id = get_id_for_attr(config, name);
+    return get_string_variable(variable_id, event);
+}
+
+int64_t get_integer_variable(betree_var_t variable_id, const struct event* event)
+{
+    struct value value;
+    bool found = get_variable(variable_id, event, &value);
+    if(!found) {
+        fprintf(stderr, "Variable %llu not defined in event", variable_id);
+        abort();
+    }
+    if(value.value_type != VALUE_I) {
+        fprintf(stderr, "Variable %llu is not an integer", variable_id);
+        abort();
+    }
+    return value.ivalue;
+}
+
+int64_t get_integer_variable_str(struct config* config, const struct event* event, const char* name)
+{
+    betree_var_t variable_id = get_id_for_attr(config, name);
+    return get_integer_variable(variable_id, event);
+}
+
 static void invalid_expr(const char* msg)
 {
     fprintf(stderr, "%s", msg);
@@ -332,23 +395,136 @@ bool list_value_matches(enum ast_list_value_e a, enum value_e b) {
         (a == AST_LIST_VALUE_STRING_LIST && b == VALUE_SL);
 }
 
-bool match_special_expr(const struct event* event, const struct ast_special_expr special_expr)
+double get_geo_value_as_float(const struct special_geo_value value)
+{
+    switch(value.value_type) {
+        case AST_SPECIAL_GEO_VALUE_INTEGER: {
+            return (double)value.integer_value;
+        }
+        case AST_SPECIAL_GEO_VALUE_FLOAT: {
+            return value.float_value;
+        }
+        default: {
+            switch_default_error("Invalid geo value type");
+            return false;
+        }
+    }
+}
+
+struct string_value frequency_type_to_string(struct config* config, enum ast_special_frequency_type_e type)
+{
+    const char* string;
+    switch(type) {
+        case AST_SPECIAL_TYPE_ADVERTISER: {
+            string = "advertiser";
+            break;
+        }
+        case AST_SPECIAL_TYPE_ADVERTISERIP: {
+            string = "advertiser:ip";
+            break;
+        }
+        case AST_SPECIAL_TYPE_CAMPAIGN: {
+            string = "campaign";
+            break;
+        }
+        case AST_SPECIAL_TYPE_CAMPAIGNIP: {
+            string = "campaign:ip";
+            break;
+        }
+        case AST_SPECIAL_TYPE_FLIGHT: {
+            string = "flight";
+            break;
+        }
+        case AST_SPECIAL_TYPE_FLIGHTIP: {
+            string = "flight:ip";
+            break;
+        }
+        case AST_SPECIAL_TYPE_PRODUCT: {
+            string = "product";
+            break;
+        }
+        case AST_SPECIAL_TYPE_PRODUCTIP: {
+            string = "product:ip";
+            break;
+        }
+        default: {
+            switch_default_error("Invalid frequency type");
+            abort();
+        }
+    }
+    betree_str_t str = get_id_for_string(config, string);
+    struct string_value ret = { .string = string, .str = str };
+    return ret;
+}
+
+bool match_special_expr(struct config* config, const struct event* event, const struct ast_special_expr special_expr)
 {
     switch(special_expr.type) {
         case AST_SPECIAL_FREQUENCY: {
-            invalid_expr("TODO");
-            return false;
+            switch(special_expr.frequency.op) {
+                case AST_SPECIAL_WITHINFREQUENCYCAP: {
+                    int64_t now = get_integer_variable_str(config, event, "now");
+                    const struct frequency_caps_list* caps = NULL;
+                    uint32_t id;
+                    struct string_value type = frequency_type_to_string(config, special_expr.frequency.type);
+                    return within_frequency_caps(caps, type, id, special_expr.frequency.ns, special_expr.frequency.value, special_expr.frequency.length, now);
+                }
+                default: {
+                    switch_default_error("Invalid frequency operation");
+                    return false;
+                }
+            }
         }
         case AST_SPECIAL_SEGMENT: {
-            invalid_expr("TODO");
-            return false;
+            int64_t now = get_integer_variable_str(config, event, "now");
+            const struct segments_list* segments = NULL;
+            switch(special_expr.segment.op) {
+                case AST_SPECIAL_SEGMENTWITHIN: {
+                    return segment_within(special_expr.segment.segment_id, special_expr.segment.seconds, segments, now);
+                }
+                case AST_SPECIAL_SEGMENTBEFORE: {
+                    return segment_before(special_expr.segment.segment_id, special_expr.segment.seconds, segments, now);
+                }
+                default: {
+                    switch_default_error("Invalid segment operation");
+                    return false;
+                }
+            }
         }
         case AST_SPECIAL_GEO: {
-            invalid_expr("TODO");
+            switch(special_expr.geo.op) {
+                case AST_SPECIAL_GEOWITHINRADIUS: {
+                    double latitude_cst = get_geo_value_as_float(special_expr.geo.latitude);
+                    double longitude_cst = get_geo_value_as_float(special_expr.geo.longitude);
+                    double latitude_var = get_float_variable_str(config, event, "latitude");
+                    double longitude_var = get_float_variable_str(config, event, "longitude");
+                    double radius_cst = get_geo_value_as_float(special_expr.geo.radius);
+                    return geo_within_radius(latitude_cst, longitude_cst, latitude_var, longitude_var, radius_cst);
+                }
+                default: {
+                    switch_default_error("Invalid geo operation");
+                    return false;
+                }
+            }
             return false;
         }
         case AST_SPECIAL_STRING: {
-            invalid_expr("TODO");
+            struct string_value value = get_string_variable_str(config, event, special_expr.string.name);
+            switch(special_expr.string.op) {
+                case AST_SPECIAL_CONTAINS: {
+                    return contains(value.string, special_expr.string.pattern);
+                }
+                case AST_SPECIAL_STARTSWITH: {
+                    return starts_with(value.string, special_expr.string.pattern);
+                }
+                case AST_SPECIAL_ENDSWITH: {
+                    return ends_with(value.string, special_expr.string.pattern);
+                }
+                default: {
+                    switch_default_error("Invalid string operation");
+                    return false;
+                }
+            }
             return false;
         }
         default:
@@ -697,19 +873,19 @@ bool match_equality_expr(const struct event* event, const struct ast_equality_ex
     }
 }
 
-bool match_combi_expr(const struct event* event, const struct ast_combi_expr combi_expr)
+bool match_combi_expr(struct config* config, const struct event* event, const struct ast_combi_expr combi_expr)
 {
-    bool lhs = match_node(event, combi_expr.lhs);
+    bool lhs = match_node(config, event, combi_expr.lhs);
     switch(combi_expr.op) {
         case AST_COMBI_AND: {
             if(lhs == false) {
                 return false;
             }
-            bool rhs = match_node(event, combi_expr.rhs);
+            bool rhs = match_node(config, event, combi_expr.rhs);
             return lhs && rhs;
         }
         case AST_COMBI_OR: {
-            bool rhs = match_node(event, combi_expr.rhs);
+            bool rhs = match_node(config, event, combi_expr.rhs);
             return lhs || rhs;
         }
         default: {
@@ -719,12 +895,12 @@ bool match_combi_expr(const struct event* event, const struct ast_combi_expr com
     }
 }
 
-bool match_node(const struct event* event, const struct ast_node *node)
+bool match_node(struct config* config, const struct event* event, const struct ast_node *node)
 {
     // TODO allow undefined handling?
     switch(node->type) {
         case AST_TYPE_SPECIAL_EXPR: {
-            return match_special_expr(event, node->special_expr);
+            return match_special_expr(config, event, node->special_expr);
         }
         case AST_TYPE_BOOL_EXPR: {
             return match_bool_expr(event, node->bool_expr);
@@ -742,7 +918,7 @@ bool match_node(const struct event* event, const struct ast_node *node)
             return match_equality_expr(event, node->equality_expr);
         }
         case AST_TYPE_COMBI_EXPR: {
-            return match_combi_expr(event, node->combi_expr);
+            return match_combi_expr(config, event, node->combi_expr);
         }
         default: {
             switch_default_error("Invalid expr type");
@@ -1043,14 +1219,8 @@ void assign_str_id(struct config* config, struct ast_node* node)
         case(AST_TYPE_SPECIAL_EXPR): {
             switch(node->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY: {
-                    {
-                        betree_str_t str_id = get_id_for_string(config, node->special_expr.frequency.type.string);
-                        node->special_expr.frequency.type.str = str_id;
-                    }
-                    {
-                        betree_str_t str_id = get_id_for_string(config, node->special_expr.frequency.ns.string);
-                        node->special_expr.frequency.ns.str = str_id;
-                    }
+                    betree_str_t str_id = get_id_for_string(config, node->special_expr.frequency.ns.string);
+                    node->special_expr.frequency.ns.str = str_id;
                     return;
                 }
                 case AST_SPECIAL_SEGMENT: {
@@ -1142,7 +1312,7 @@ const char* ast_to_string(const struct ast_node* node)
         case(AST_TYPE_SET_EXPR): {
             switch(node->set_expr.left_value.value_type) {
                 case AST_SET_LEFT_VALUE_INTEGER: {
-                    asprintf(&expr, "%lu ", node->set_expr.left_value.integer_value);
+                    asprintf(&expr, "%lld ", node->set_expr.left_value.integer_value);
                     break;
                 }
                 case AST_SET_LEFT_VALUE_STRING: {
@@ -1256,7 +1426,7 @@ const char* ast_to_string(const struct ast_node* node)
                 case AST_EQUALITY_EQ: {
                     switch(node->equality_expr.value.value_type) {
                         case AST_EQUALITY_VALUE_INTEGER: {
-                            asprintf(&expr, "%s = %lu", node->equality_expr.name, node->equality_expr.value.integer_value);
+                            asprintf(&expr, "%s = %lld", node->equality_expr.name, node->equality_expr.value.integer_value);
                             return expr;
                         }
                         case AST_EQUALITY_VALUE_FLOAT: {
@@ -1276,7 +1446,7 @@ const char* ast_to_string(const struct ast_node* node)
                 case AST_EQUALITY_NE: {
                     switch(node->equality_expr.value.value_type) {
                         case AST_EQUALITY_VALUE_INTEGER: {
-                            asprintf(&expr, "%s <> %lu", node->equality_expr.name, node->equality_expr.value.integer_value);
+                            asprintf(&expr, "%s <> %lld", node->equality_expr.name, node->equality_expr.value.integer_value);
                             return expr;
                         }
                         case AST_EQUALITY_VALUE_FLOAT: {
@@ -1304,7 +1474,7 @@ const char* ast_to_string(const struct ast_node* node)
                 case AST_NUMERIC_COMPARE_LT: {
                     switch(node->numeric_compare_expr.value.value_type) {
                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-                            asprintf(&expr, "%s < %lu", node->numeric_compare_expr.name, node->numeric_compare_expr.value.integer_value);
+                            asprintf(&expr, "%s < %lld", node->numeric_compare_expr.name, node->numeric_compare_expr.value.integer_value);
                             return expr;
                         }
                         case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
@@ -1320,7 +1490,7 @@ const char* ast_to_string(const struct ast_node* node)
                 case AST_NUMERIC_COMPARE_LE: {
                     switch(node->numeric_compare_expr.value.value_type) {
                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-                            asprintf(&expr, "%s <= %lu", node->numeric_compare_expr.name, node->numeric_compare_expr.value.integer_value);
+                            asprintf(&expr, "%s <= %lld", node->numeric_compare_expr.name, node->numeric_compare_expr.value.integer_value);
                             return expr;
                         }
                         case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
@@ -1336,7 +1506,7 @@ const char* ast_to_string(const struct ast_node* node)
                 case AST_NUMERIC_COMPARE_GT: {
                     switch(node->numeric_compare_expr.value.value_type) {
                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-                            asprintf(&expr, "%s > %lu", node->numeric_compare_expr.name, node->numeric_compare_expr.value.integer_value);
+                            asprintf(&expr, "%s > %lld", node->numeric_compare_expr.name, node->numeric_compare_expr.value.integer_value);
                             return expr;
                         }
                         case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
@@ -1352,7 +1522,7 @@ const char* ast_to_string(const struct ast_node* node)
                 case AST_NUMERIC_COMPARE_GE: {
                     switch(node->numeric_compare_expr.value.value_type) {
                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-                            asprintf(&expr, "%s >= %lu", node->numeric_compare_expr.name, node->numeric_compare_expr.value.integer_value);
+                            asprintf(&expr, "%s >= %lld", node->numeric_compare_expr.name, node->numeric_compare_expr.value.integer_value);
                             return expr;
                         }
                         case AST_NUMERIC_COMPARE_VALUE_FLOAT: {

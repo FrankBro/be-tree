@@ -20,7 +20,7 @@ void print_lnode(const struct lnode* lnode, uint64_t level)
     print_dashs(level);
     printf(" lnode (%zu) [", lnode->max);
     for(size_t i = 0; i < lnode->sub_count; i++) {
-        printf("%lu", lnode->subs[i]->id);
+        printf("%llu", lnode->subs[i]->id);
         if(i != lnode->sub_count - 1) {
             printf(", ");
         }
@@ -38,7 +38,7 @@ void print_cdir(const struct config* config, const struct cdir* cdir, uint64_t l
     print_dashs(level);
     switch(cdir->bound.value_type) {
         case(VALUE_I): {
-            printf(" cdir [%lu, %lu]", cdir->bound.imin, cdir->bound.imax);
+            printf(" cdir [%llu, %llu]", cdir->bound.imin, cdir->bound.imax);
             break;
         }
         case(VALUE_F): {
@@ -200,7 +200,7 @@ const char* get_path_cdir(const struct config* config, const struct cdir* cdir, 
     char* name;
     switch(cdir->bound.value_type) {
         case(VALUE_I): {
-            asprintf(&name, "%s_%lu_%lu", parent_path, cdir->bound.imin, cdir->bound.imax);
+            asprintf(&name, "%s_%llu_%llu", parent_path, cdir->bound.imin, cdir->bound.imax);
             break;
         }
         case(VALUE_F): {
@@ -307,7 +307,7 @@ void write_dot_file_lnode_names(FILE* f, const struct config* config, const stru
             if(i != 0) {
                 fprintf(f, ", ");
             }
-            fprintf(f, "S<sub>%lu</sub>", lnode->subs[i]->id);
+            fprintf(f, "S<sub>%llu</sub>", lnode->subs[i]->id);
         }
         fprintf(f, "\\}>, color=lightblue1, fillcolor=lightblue1, style=filled, shape=record]\n");
     }
@@ -331,23 +331,23 @@ void write_dot_file_cdir_td(FILE* f, const struct config* config, const struct c
     if(current_depth == 0) {
         print_spaces(f, level);
         if(cdir == NULL) {
-            fprintf(f, "<td colspan=\"%lu\"></td>\n", colspan);
+            fprintf(f, "<td colspan=\"%llu\"></td>\n", colspan);
         }
         else {
             const char* name = get_name_cdir(config, cdir);
             switch(cdir->bound.value_type) {
                 case(VALUE_I): {
-                    fprintf(f, "<td colspan=\"%lu\" port=\"%s\">[%lu, %lu]</td>\n", colspan, name, cdir->bound.imin, cdir->bound.imax);
+                    fprintf(f, "<td colspan=\"%llu\" port=\"%s\">[%llu, %llu]</td>\n", colspan, name, cdir->bound.imin, cdir->bound.imax);
                     break;
                 }
                 case(VALUE_F): {
-                    fprintf(f, "<td colspan=\"%lu\" port=\"%s\">[%.0f, %.0f]</td>\n", colspan, name, cdir->bound.fmin, cdir->bound.fmax);
+                    fprintf(f, "<td colspan=\"%llu\" port=\"%s\">[%.0f, %.0f]</td>\n", colspan, name, cdir->bound.fmin, cdir->bound.fmax);
                     break;
                 }
                 case(VALUE_B): {
                     const char* min = cdir->bound.bmin ? "true" : "false";
                     const char* max = cdir->bound.bmax ? "true" : "false";
-                    fprintf(f, "<td colspan=\"%lu\" port=\"%s\">[%s, %s]</td>\n", colspan, name, min, max);
+                    fprintf(f, "<td colspan=\"%llu\" port=\"%s\">[%s, %s]</td>\n", colspan, name, min, max);
                     break;
                 }
                 case(VALUE_S): {
@@ -829,7 +829,7 @@ void write_dot_file_root_subs(FILE* f, const struct cnode* cnode, uint64_t level
         const char* expr = ast_to_string(sub->expr);
         const char* escaped = escape_label(expr);
         print_spaces(f, level);
-        fprintf(f, "\"sub_%lu\" [label=\"%s\", color=lightblue1, fillcolor=lightblue1, style=filled, shape=record]\n", sub->id, escaped);
+        fprintf(f, "\"sub_%llu\" [label=\"%s\", color=lightblue1, fillcolor=lightblue1, style=filled, shape=record]\n", sub->id, escaped);
         free((char*)expr);
         free((char*)escaped);
     }

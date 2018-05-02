@@ -266,11 +266,11 @@ int test_string_list()
 int test_special()
 {
     struct ast_node* node = NULL;
-    parse("within_frequency_cap(\"type\", \"namespace\", 100, 0)", &node);
+    parse("within_frequency_cap(\"campaign\", \"namespace\", 100, 0)", &node);
     mu_assert(node->type == AST_TYPE_SPECIAL_EXPR &&
         node->special_expr.type == AST_SPECIAL_FREQUENCY &&
         node->special_expr.frequency.op == AST_SPECIAL_WITHINFREQUENCYCAP &&
-        strcmp(node->special_expr.frequency.type.string, "type") == 0 &&
+        node->special_expr.frequency.type == AST_SPECIAL_TYPE_CAMPAIGN &&
         strcmp(node->special_expr.frequency.ns.string, "namespace") == 0 &&
         node->special_expr.frequency.value == 100 &&
         node->special_expr.frequency.length == 0

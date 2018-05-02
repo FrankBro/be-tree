@@ -12,3 +12,5 @@
 ## TODO
 * Allow a way to mark string values as if we know all of the possible values and they could therefore be split.
 * Allow a way to control the splitting of float values. Right now it splits like integers but that won't work well for values that have a small domain (eg -0.01 to 0.01). Use domain to find a good split
+* In match expr, don't search for variable ids, know which they are before hand
+* match_be_tree, config should be const but we don't have a way to get a variable id without also creating if it doesn't exist. Fix that

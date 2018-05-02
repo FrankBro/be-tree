@@ -43,6 +43,7 @@
     struct special_geo_value special_geo_value;
     struct ast_node *node;
     int token;
+    enum ast_special_frequency_type_e frequency_type;
 }
 
 %token<token> TCEQ TCNE TCGT TCGE TCLT TCLE
@@ -53,6 +54,9 @@
 %token<token> TSEGMENTWITHIN TSEGMENTBEFORE 
 %token<token> TGEOWITHINRADIUS 
 %token<token> TCONTAINS TSTARTSWITH TENDSWITH 
+
+%token<token> TADVERTISER TADVERTISERIP TCAMPAIGN TCAMPAIGNIP 
+%token<token> TFLIGHT TFLIGHTIP TPRODUCT TPRODUCTIP
 
 %token<string> TSTRING TIDENTIFIER
 %token<boolean_value> TTRUE TFALSE
@@ -73,6 +77,7 @@
 %type<set_left_value> set_left_value
 %type<set_right_value> set_right_value
 %type<list_value> list_value
+%type<frequency_type> frequency_type
 
 %type<integer_list_value> integer_list_value integer_list_loop
 %type<string_list_value> string_list_value string_list_loop
@@ -180,7 +185,17 @@ special_expr        : s_frequency_expr                      { $$ = $1; }
                     | s_string_expr                         { $$ = $1; }
 ;
 
-s_frequency_expr    : TWITHINFREQUENCYCAP TLPAREN string TCOMMA string TCOMMA integer TCOMMA integer TRPAREN
+frequency_type      : TADVERTISER                           { $$ = AST_SPECIAL_TYPE_ADVERTISER; }
+                    | TADVERTISERIP                         { $$ = AST_SPECIAL_TYPE_ADVERTISERIP; }
+                    | TCAMPAIGN                             { $$ = AST_SPECIAL_TYPE_CAMPAIGN; }
+                    | TCAMPAIGNIP                           { $$ = AST_SPECIAL_TYPE_CAMPAIGNIP; }
+                    | TFLIGHT                               { $$ = AST_SPECIAL_TYPE_FLIGHT; }
+                    | TFLIGHTIP                             { $$ = AST_SPECIAL_TYPE_FLIGHTIP; }
+                    | TPRODUCT                              { $$ = AST_SPECIAL_TYPE_PRODUCT; }
+                    | TPRODUCTIP                            { $$ = AST_SPECIAL_TYPE_PRODUCTIP; }
+;
+
+s_frequency_expr    : TWITHINFREQUENCYCAP TLPAREN frequency_type TCOMMA string TCOMMA integer TCOMMA integer TRPAREN
                                                             { $$ = ast_special_frequency_create(AST_SPECIAL_WITHINFREQUENCYCAP, $3, $5, $7, $9); }
 ;
 
