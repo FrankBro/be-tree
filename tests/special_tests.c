@@ -49,10 +49,10 @@ static int test_contains()
     mu_assert(!contains_a("aabbcc", "abc"), "contains_out_pattern_bigger");
     mu_assert(!contains_a("z", "abc"), "contains_out_pattern_smaller");
     mu_assert(!contains_b("abc", "abc"), "contains_out_undef");
-    mu_assert(!not_contains_a("abc", "aabcc"), "contains_not_mid");
-    mu_assert(!not_contains_a("abc", "abc"), "contains_not_exact");
-    mu_assert(not_contains_a("abc", "aabbcc"), "contains_not_var_bigger");
-    mu_assert(not_contains_a("z", "abc"), "contains_not_pattern_smaller");
+    // mu_assert(!not_contains_a("abc", "aabcc"), "contains_not_mid");
+    // mu_assert(!not_contains_a("abc", "abc"), "contains_not_exact");
+    // mu_assert(not_contains_a("abc", "aabbcc"), "contains_not_var_bigger");
+    // mu_assert(not_contains_a("z", "abc"), "contains_not_pattern_smaller");
     return 0;
 }
 
