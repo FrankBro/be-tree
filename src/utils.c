@@ -86,3 +86,10 @@ int vasprintf(char** buf, const char* format, va_list va)
     return ret;
 }
 
+void betree_assert(bool test, const char* message)
+{
+    if(!test) {
+        fprintf(stderr, "%s", message);
+        abort();
+    }
+}

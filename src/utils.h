@@ -24,3 +24,4 @@ void switch_default_error(const char* str);
 int asprintf(char** buf, const char* format, ...);
 int vasprintf(char** buf, const char* format, va_list va);
 
+void betree_assert(bool test, const char* message);
