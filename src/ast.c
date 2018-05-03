@@ -275,79 +275,122 @@ void free_ast_node(struct ast_node* node)
     free(node);
 }
 
-bool get_variable(betree_var_t variable_id, const struct event* event, struct value* value)
+enum variable_state_e {
+    VARIABLE_DEFINED,
+    VARIABLE_UNDEFINED,
+    VARIABLE_MISSING,
+};
+
+static enum variable_state_e
+get_variable(const struct config* config, betree_var_t variable_id, const struct event* event, struct value* value)
 {
     for(size_t i=0; i < event->pred_count; i++) {
         const struct pred* pred = event->preds[i];
         if(variable_id == pred->variable_id) {
             *value = pred->value;
-            return true;
+            return VARIABLE_DEFINED;
         }
     }
-    return false;
+    bool allow_undefined = is_variable_allow_undefined(config, variable_id);
+    if(allow_undefined) {
+        return VARIABLE_UNDEFINED;
+    }
+    else {
+        return VARIABLE_MISSING;
+    }
 }
 
-double get_float_variable(betree_var_t variable_id, const struct event* event)
+static enum variable_state_e
+get_float_var(const struct config* config, betree_var_t var, const struct event* event, double* ret)
 {
     struct value value;
-    bool found = get_variable(variable_id, event, &value);
-    if(!found) {
-        fprintf(stderr, "Variable %llu not defined in event", variable_id);
-        abort();
+    enum variable_state_e state = get_variable(config, var, event, &value);
+    if(state == VARIABLE_DEFINED) {
+        betree_assert(value.value_type == VALUE_F, "Var is not a float");
+        *ret = value.fvalue;
     }
-    if(value.value_type != VALUE_F) {
-        fprintf(stderr, "Variable %llu is not a float", variable_id);
-        abort();
-    }
-    return value.fvalue;
+    return state;
 }
 
-double get_float_variable_str(struct config* config, const struct event* event, const char* name)
+static enum variable_state_e
+get_float_attr(struct config* config, const struct event* event, const char* attr, double* ret)
 {
-    betree_var_t variable_id = get_id_for_attr(config, name);
-    return get_float_variable(variable_id, event);
+    betree_var_t var = get_id_for_attr(config, attr);
+    return get_float_var(config, var, event, ret);
 }
 
-struct string_value get_string_variable(betree_var_t variable_id, const struct event* event)
+static enum variable_state_e
+get_string_var(const struct config* config, betree_var_t var, const struct event* event, struct string_value* ret)
 {
     struct value value;
-    bool found = get_variable(variable_id, event, &value);
-    if(!found) {
-        fprintf(stderr, "Variable %llu not defined in event", variable_id);
-        abort();
+    enum variable_state_e state = get_variable(config, var, event, &value);
+    if(state == VARIABLE_DEFINED) {
+        betree_assert(value.value_type == VALUE_S, "Var is not a string");
+        *ret = value.svalue;
     }
-    if(value.value_type != VALUE_S) {
-        fprintf(stderr, "Variable %llu is not a string", variable_id);
-        abort();
-    }
-    return value.svalue;
+    return state;
 }
 
-struct string_value get_string_variable_str(struct config* config, const struct event* event, const char* name)
+static enum variable_state_e
+get_string_attr(struct config* config, const struct event* event, const char* attr, struct string_value* ret)
 {
-    betree_var_t variable_id = get_id_for_attr(config, name);
-    return get_string_variable(variable_id, event);
+    betree_var_t var = get_id_for_attr(config, attr);
+    return get_string_var(config, var, event, ret);
 }
 
-int64_t get_integer_variable(betree_var_t variable_id, const struct event* event)
+static enum variable_state_e
+get_integer_var(const struct config* config, betree_var_t var, const struct event* event, int64_t* ret)
 {
     struct value value;
-    bool found = get_variable(variable_id, event, &value);
-    if(!found) {
-        fprintf(stderr, "Variable %llu not defined in event", variable_id);
-        abort();
+    enum variable_state_e state = get_variable(config, var, event, &value);
+    if(state == VARIABLE_DEFINED) {
+        betree_assert(value.value_type == VALUE_I, "Var is not an integer");
+        *ret = value.ivalue;
     }
-    if(value.value_type != VALUE_I) {
-        fprintf(stderr, "Variable %llu is not an integer", variable_id);
-        abort();
-    }
-    return value.ivalue;
+    return state;
 }
 
-int64_t get_integer_variable_str(struct config* config, const struct event* event, const char* name)
+static enum variable_state_e
+get_integer_attr(struct config* config, const struct event* event, const char* attr, int64_t* ret)
 {
-    betree_var_t variable_id = get_id_for_attr(config, name);
-    return get_integer_variable(variable_id, event);
+    betree_var_t var = get_id_for_attr(config, attr);
+    return get_integer_var(config, var, event, ret);
+}
+
+static enum variable_state_e
+get_bool_var(const struct config* config, betree_var_t var, const struct event* event, bool* ret)
+{
+    struct value value;
+    enum variable_state_e state = get_variable(config, var, event, &value);
+    if(state == VARIABLE_DEFINED) {
+        betree_assert(value.value_type == VALUE_B, "Var is not a bool");
+        *ret = value.bvalue;
+    }
+    return state;
+}
+
+static enum variable_state_e
+get_integer_list_var(const struct config* config, betree_var_t var, const struct event* event, struct integer_list_value* ret)
+{
+    struct value value;
+    enum variable_state_e state = get_variable(config, var, event, &value);
+    if(state == VARIABLE_DEFINED) {
+        betree_assert(value.value_type == VALUE_IL, "Var is not an integer list");
+        *ret = value.ilvalue;
+    }
+    return state;
+}
+
+static enum variable_state_e
+get_string_list_var(const struct config* config, betree_var_t var, const struct event* event, struct string_list_value* ret)
+{
+    struct value value;
+    enum variable_state_e state = get_variable(config, var, event, &value);
+    if(state == VARIABLE_DEFINED) {
+        betree_assert(value.value_type == VALUE_SL, "Var is not an string list");
+        *ret = value.slvalue;
+    }
+    return state;
 }
 
 static void invalid_expr(const char* msg)
@@ -463,7 +506,12 @@ bool match_special_expr(struct config* config, const struct event* event, const 
         case AST_SPECIAL_FREQUENCY: {
             switch(special_expr.frequency.op) {
                 case AST_SPECIAL_WITHINFREQUENCYCAP: {
-                    int64_t now = get_integer_variable_str(config, event, "now");
+                    int64_t now;
+                    enum variable_state_e state = get_integer_attr(config, event, "now", &now);
+                    betree_assert(state != VARIABLE_MISSING, "Attribute 'now' is not defined");
+                    if(state == VARIABLE_UNDEFINED) {
+                        return false;
+                    }
                     const struct frequency_caps_list* caps = NULL;
                     uint32_t id;
                     struct string_value type = frequency_type_to_string(config, special_expr.frequency.type);
@@ -476,7 +524,12 @@ bool match_special_expr(struct config* config, const struct event* event, const 
             }
         }
         case AST_SPECIAL_SEGMENT: {
-            int64_t now = get_integer_variable_str(config, event, "now");
+            int64_t now;
+            enum variable_state_e state = get_integer_attr(config, event, "now", &now);
+            betree_assert(state != VARIABLE_MISSING, "Attribute 'now' is not defined");
+            if(state == VARIABLE_UNDEFINED) {
+                return false;
+            }
             const struct segments_list* segments = NULL;
             switch(special_expr.segment.op) {
                 case AST_SPECIAL_SEGMENTWITHIN: {
@@ -494,11 +547,18 @@ bool match_special_expr(struct config* config, const struct event* event, const 
         case AST_SPECIAL_GEO: {
             switch(special_expr.geo.op) {
                 case AST_SPECIAL_GEOWITHINRADIUS: {
+                    double latitude_var, longitude_var;
+                    enum variable_state_e latitude_var_state = get_float_attr(config, event, "latitude", &latitude_var);
+                    enum variable_state_e longitude_var_state = get_float_attr(config, event, "longitude", &longitude_var);
+                    betree_assert(latitude_var_state != VARIABLE_MISSING, "Attribute 'latitude' is not defined");
+                    betree_assert(longitude_var_state != VARIABLE_MISSING, "Attribute 'longitude' is not defined");
+                    if(latitude_var_state == VARIABLE_UNDEFINED || longitude_var_state == VARIABLE_UNDEFINED) {
+                        return false;
+                    }
                     double latitude_cst = get_geo_value_as_float(special_expr.geo.latitude);
                     double longitude_cst = get_geo_value_as_float(special_expr.geo.longitude);
-                    double latitude_var = get_float_variable_str(config, event, "latitude");
-                    double longitude_var = get_float_variable_str(config, event, "longitude");
                     double radius_cst = get_geo_value_as_float(special_expr.geo.radius);
+
                     return geo_within_radius(latitude_cst, longitude_cst, latitude_var, longitude_var, radius_cst);
                 }
                 default: {
@@ -509,7 +569,12 @@ bool match_special_expr(struct config* config, const struct event* event, const 
             return false;
         }
         case AST_SPECIAL_STRING: {
-            struct string_value value = get_string_variable_str(config, event, special_expr.string.name);
+            struct string_value value;
+            enum variable_state_e state = get_string_attr(config, event, special_expr.string.name, &value);
+            betree_assert(state != VARIABLE_MISSING, "Attribute is not defined");
+            if(state == VARIABLE_UNDEFINED) {
+                return false;
+            }
             switch(special_expr.string.op) {
                 case AST_SPECIAL_CONTAINS: {
                     return contains(value.string, special_expr.string.pattern);
@@ -533,22 +598,20 @@ bool match_special_expr(struct config* config, const struct event* event, const 
     }
 }
 
-bool match_bool_expr(const struct event* event, const struct ast_bool_expr bool_expr)
+bool match_bool_expr(const struct config* config, const struct event* event, const struct ast_bool_expr bool_expr)
 {
-    struct value variable;
-    bool found = get_variable(bool_expr.variable_id, event, &variable);
-    if(!found) {
+    bool variable;
+    enum variable_state_e state = get_bool_var(config, bool_expr.variable_id, event, &variable);
+    betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
+    if(state == VARIABLE_UNDEFINED) {
         return false;
-    }
-    if(variable.value_type != VALUE_B) {
-        invalid_expr("boolean expression with a variable that is not a boolean");
     }
     switch(bool_expr.op) {
         case AST_BOOL_NONE: {
-            return variable.bvalue;
+            return variable;
         }
         case AST_BOOL_NOT: {
-            return !variable.bvalue;
+            return !variable;
         }
         default: {
             switch_default_error("Invalid bool operation");
@@ -557,16 +620,15 @@ bool match_bool_expr(const struct event* event, const struct ast_bool_expr bool_
     }
 }
 
-bool match_list_expr(const struct event* event, const struct ast_list_expr list_expr)
+bool match_list_expr(const struct config* config, const struct event* event, const struct ast_list_expr list_expr)
 {
     struct value variable;
-    bool found = get_variable(list_expr.variable_id, event, &variable);
-    if(!found) {
+    enum variable_state_e state = get_variable(config, list_expr.variable_id, event, &variable);
+    betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
+    if(state == VARIABLE_UNDEFINED) {
         return false;
     }
-    if(!list_value_matches(list_expr.value.value_type, variable.value_type)) {
-        invalid_expr("list value types do not match");
-    }
+    betree_assert(list_value_matches(list_expr.value.value_type, variable.value_type), "List value types do not match");
     switch(list_expr.op) {
         case AST_LIST_ONE_OF: 
         case AST_LIST_NONE_OF: {
@@ -667,51 +729,46 @@ bool match_list_expr(const struct event* event, const struct ast_list_expr list_
     }
 }
 
-bool match_set_expr(const struct event* event, const struct ast_set_expr set_expr)
+bool match_set_expr(const struct config* config, const struct event* event, const struct ast_set_expr set_expr)
 {
     struct set_left_value left = set_expr.left_value;
     struct set_right_value right = set_expr.right_value;
-    struct value variable;
     bool is_in;
     if(left.value_type == AST_SET_LEFT_VALUE_INTEGER && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
-        bool found = get_variable(right.variable_value.variable_id, event, &variable);
-        if(!found) {
+        struct integer_list_value variable;
+        enum variable_state_e state = get_integer_list_var(config, right.variable_value.variable_id, event, &variable);
+        betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
+        if(state == VARIABLE_UNDEFINED) {
             return false;
         }
-        if(variable.value_type != VALUE_IL) {
-            invalid_expr("invalid variable in set expression, should be integer list");
-        }
-        is_in = integer_in_integer_list(left.integer_value, variable.ilvalue);
+        is_in = integer_in_integer_list(left.integer_value, variable);
     }
     else if(left.value_type == AST_SET_LEFT_VALUE_STRING && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
-        bool found = get_variable(right.variable_value.variable_id, event, &variable);
-        if(!found) {
+        struct string_list_value variable;
+        enum variable_state_e state = get_string_list_var(config, right.variable_value.variable_id, event, &variable);
+        betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
+        if(state == VARIABLE_UNDEFINED) {
             return false;
         }
-        if(variable.value_type != VALUE_SL) {
-            invalid_expr("invalid variable in set expression, should be string list");
-        }
-        is_in = string_in_string_list(left.string_value, variable.slvalue);
+        is_in = string_in_string_list(left.string_value, variable);
     }
     else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE && right.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST) {
-        bool found = get_variable(left.variable_value.variable_id, event, &variable);
-        if(!found) {
+        int64_t variable;
+        enum variable_state_e state = get_integer_var(config, left.variable_value.variable_id, event, &variable);
+        betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
+        if(state == VARIABLE_UNDEFINED) {
             return false;
         }
-        if(variable.value_type != VALUE_I) {
-            invalid_expr("invalid variable in set expression, should be integer");
-        }
-        is_in = integer_in_integer_list(variable.ivalue, right.integer_list_value);
+        is_in = integer_in_integer_list(variable, right.integer_list_value);
     }
     else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE && right.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
-        bool found = get_variable(left.variable_value.variable_id, event, &variable);
-        if(!found) {
+        struct string_value variable;
+        enum variable_state_e state = get_string_var(config, left.variable_value.variable_id, event, &variable);
+        betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
+        if(state == VARIABLE_UNDEFINED) {
             return false;
         }
-        if(variable.value_type != VALUE_S) {
-            invalid_expr("invalid variable in set expression, should be string");
-        }
-        is_in = string_in_string_list(variable.svalue, right.string_list_value);
+        is_in = string_in_string_list(variable, right.string_list_value);
     }
     else {
         invalid_expr("invalid set expression");
@@ -731,17 +788,15 @@ bool match_set_expr(const struct event* event, const struct ast_set_expr set_exp
     }
 }
 
-bool match_numeric_compare_expr(const struct event* event, const struct ast_numeric_compare_expr numeric_compare_expr)
+bool match_numeric_compare_expr(const struct config* config, const struct event* event, const struct ast_numeric_compare_expr numeric_compare_expr)
 {
     struct value variable;
-    bool found = get_variable(numeric_compare_expr.variable_id, event, &variable);
-    if(!found) {
+    enum variable_state_e state = get_variable(config, numeric_compare_expr.variable_id, event, &variable);
+    betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
+    if(state == VARIABLE_UNDEFINED) {
         return false;
     }
-    if(!numeric_compare_value_matches(numeric_compare_expr.value.value_type, variable.value_type)) {
-        invalid_expr("numeric compare value types do not match");
-        return false;
-    }
+    betree_assert(numeric_compare_value_matches(numeric_compare_expr.value.value_type, variable.value_type), "Numeric compare value types do not match");
     switch(numeric_compare_expr.op) {
         case AST_NUMERIC_COMPARE_LT: {
             switch(numeric_compare_expr.value.value_type) {
@@ -814,17 +869,15 @@ bool match_numeric_compare_expr(const struct event* event, const struct ast_nume
     }
 }
 
-bool match_equality_expr(const struct event* event, const struct ast_equality_expr equality_expr)
+bool match_equality_expr(const struct config* config, const struct event* event, const struct ast_equality_expr equality_expr)
 {
     struct value variable;
-    bool found = get_variable(equality_expr.variable_id, event, &variable);
-    if(!found) {
+    enum variable_state_e state = get_variable(config, equality_expr.variable_id, event, &variable);
+    betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
+    if(state == VARIABLE_UNDEFINED) {
         return false;
     }
-    if(!equality_value_matches(equality_expr.value.value_type, variable.value_type)) {
-        invalid_expr("equality value types do not match");
-        return false;
-    }
+    betree_assert(equality_value_matches(equality_expr.value.value_type, variable.value_type), "Equality value types do not match");
     switch(equality_expr.op) {
         case AST_EQUALITY_EQ: {
             switch(equality_expr.value.value_type) {
@@ -903,19 +956,19 @@ bool match_node(struct config* config, const struct event* event, const struct a
             return match_special_expr(config, event, node->special_expr);
         }
         case AST_TYPE_BOOL_EXPR: {
-            return match_bool_expr(event, node->bool_expr);
+            return match_bool_expr(config, event, node->bool_expr);
         }
         case AST_TYPE_LIST_EXPR: {
-            return match_list_expr(event, node->list_expr);
+            return match_list_expr(config, event, node->list_expr);
         }
         case AST_TYPE_SET_EXPR: {
-            return match_set_expr(event, node->set_expr);
+            return match_set_expr(config, event, node->set_expr);
         }
         case AST_TYPE_NUMERIC_COMPARE_EXPR: {
-            return match_numeric_compare_expr(event, node->numeric_compare_expr);
+            return match_numeric_compare_expr(config, event, node->numeric_compare_expr);
         }
         case AST_TYPE_EQUALITY_EXPR: {
-            return match_equality_expr(event, node->equality_expr);
+            return match_equality_expr(config, event, node->equality_expr);
         }
         case AST_TYPE_COMBI_EXPR: {
             return match_combi_expr(config, event, node->combi_expr);
