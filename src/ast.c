@@ -408,18 +408,21 @@ bool match_special_expr(struct config* config, const struct event* event, const 
         }
         case AST_SPECIAL_SEGMENT: {
             int64_t now;
-            enum variable_state_e state = get_integer_attr(config, event, "now", &now);
-            betree_assert(state != VARIABLE_MISSING, "Attribute 'now' is not defined");
-            if(state == VARIABLE_UNDEFINED) {
+            enum variable_state_e now_state = get_integer_attr(config, event, "now", &now);
+            betree_assert(now_state != VARIABLE_MISSING, "Attribute 'now' is not defined");
+            struct segments_list segments;
+            const char* segments_attr = special_expr.segment.has_variable ? special_expr.segment.name : "segments_with_timestamp";
+            enum variable_state_e segments_state = get_segments_attr(config, event, segments_attr, &segments);
+            betree_assert(segments_state != VARIABLE_MISSING, "Attribute is not defined");
+            if(now_state == VARIABLE_UNDEFINED || segments_state == VARIABLE_UNDEFINED) {
                 return false;
             }
-            const struct segments_list* segments = NULL;
             switch(special_expr.segment.op) {
                 case AST_SPECIAL_SEGMENTWITHIN: {
-                    return segment_within(special_expr.segment.segment_id, special_expr.segment.seconds, segments, now);
+                    return segment_within(special_expr.segment.segment_id, special_expr.segment.seconds, &segments, now);
                 }
                 case AST_SPECIAL_SEGMENTBEFORE: {
-                    return segment_before(special_expr.segment.segment_id, special_expr.segment.seconds, segments, now);
+                    return segment_before(special_expr.segment.segment_id, special_expr.segment.seconds, &segments, now);
                 }
                 default: {
                     switch_default_error("Invalid segment operation");
