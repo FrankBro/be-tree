@@ -9,6 +9,48 @@
 
 int parse(const char *text, struct ast_node **node);
 
+static bool geo(bool has_not, const char* latitude, const char* longitude, const char* radius, double latitude_value, double longitude_value)
+{
+    struct config* config = make_default_config();
+    add_attr_domain_f(config, "latitude", 0.0, 10.0, false);
+    add_attr_domain_f(config, "longitude", 0.0, 10.0, false);
+    struct ast_node* node = NULL;
+    char* expr;
+    const char* pre;
+    if(has_not) {
+        pre = "not ";
+    }
+    else {
+        pre = "";
+    }
+    asprintf(&expr, "%sgeo_within_radius(%s, %s, %s)", pre, latitude, longitude, radius);
+    parse(expr, &node);
+    struct event* event = (struct event*)make_event();
+    event->pred_count = 2;
+    event->preds = calloc(2, sizeof(*event->preds));
+    event->preds[0] = (struct pred*)make_simple_pred_f(0, latitude_value);
+    event->preds[1] = (struct pred*)make_simple_pred_f(1, longitude_value);
+    bool result = match_node(config, event, node);
+    free_config(config);
+    free_ast_node(node);
+    free_event((struct event*)event);
+    return result;
+}
+
+static bool geo_within_radius(const char* latitude, const char* longitude, const char* radius, double latitude_value, double longitude_value) { return geo(false, latitude, longitude, radius, latitude_value, longitude_value); }
+static bool not_geo_within_radius(const char* latitude, const char* longitude, const char* radius, double latitude_value, double longitude_value) { return geo(true, latitude, longitude, radius, latitude_value, longitude_value); }
+
+int test_geo()
+{
+    mu_assert(geo_within_radius("100", "100", "10", 100.0, 100.0), "geo_within_int_inside");
+    mu_assert(!geo_within_radius("100", "100", "10", 200.0, 200.0), "geo_within_int_outside");
+    mu_assert(geo_within_radius("100.0", "100.0", "10.0", 100.0, 100.0), "geo_within_float_inside");
+    mu_assert(!geo_within_radius("100.0", "100.0", "10.0", 200.0, 200.0), "geo_within_float_outside");
+    // mu_assert(!not_geo_within_radius("100.0", "100.0", "10.0", 100.0, 100.0), "geo_not_within_float_inside");
+    // mu_assert(not_geo_within_radius("100.0", "100.0", "10.0", 200.0, 200.0), "geo_not_within_float_outside");
+    return 0;
+}
+
 static bool contains(bool has_not, const char* attr, bool allow_undefined, const char* pattern, const char* value)
 {
     struct config* config = make_default_config();
@@ -148,7 +190,7 @@ int all_tests()
     // mu_run_test(test_within_frequency_cap);
     // mu_run_test(test_segment_within);
     // mu_run_test(test_segment_before);
-    // mu_run_test(test_geo);
+    mu_run_test(test_geo);
     mu_run_test(test_contains);
     mu_run_test(test_starts_with);
     mu_run_test(test_ends_with);
