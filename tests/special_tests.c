@@ -14,7 +14,7 @@ static bool contains(bool has_not, const char* attr, bool allow_undefined, const
     struct config* config = make_default_config();
     add_attr_domain_s(config, attr, allow_undefined);
     struct ast_node* node = NULL;
-    const char* expr;
+    char* expr;
     const char* pre;
     if(has_not) {
         pre = "not ";
@@ -24,11 +24,12 @@ static bool contains(bool has_not, const char* attr, bool allow_undefined, const
     }
     asprintf(&expr, "%scontains(%s, \"%s\")", pre, attr, pattern);
     parse(expr, &node);
-    struct event* event = make_simple_event_s(config, attr, value);
+    const char* event_attr = allow_undefined ? "a" : attr;
+    const struct event* event = make_simple_event_s(config, event_attr, value);
     bool result = match_node(config, event, node);
     free_config(config);
     free_ast_node(node);
-    free_event(event);
+    free_event((struct event*)event);
     return result;
 }
 
