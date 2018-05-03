@@ -9,6 +9,120 @@
 
 int parse(const char *text, struct ast_node **node);
 
+enum segment_function_type {
+    SEGMENT_WITHIN,
+    SEGMENT_BEFORE,
+};
+
+enum segment_var_type {
+    NO_VAR,
+    FIRST_VAR,
+    SECOND_VAR,
+};
+
+static bool 
+segment(bool has_not, enum segment_function_type func_type, 
+    enum segment_var_type var_type, int64_t id, int64_t seconds, 
+    int64_t segment_id, int64_t segment_seconds)
+{
+    struct config* config = make_default_config();
+    add_attr_domain_i(config, "now", 0.0, 10.0, false);
+    add_attr_domain_segments(config, "seg_a", false);
+    add_attr_domain_segments(config, "seg_b", false);
+    add_attr_domain_segments(config, "segments_with_timestamp", false);
+    struct ast_node* node = NULL;
+    char* expr;
+    const char* pre;
+    if(has_not) {
+        pre = "not ";
+    }
+    else {
+        pre = "";
+    }
+    const char* func;
+    switch(func_type) {
+        case SEGMENT_WITHIN:
+            func = "segment_within";
+            break;
+        case SEGMENT_BEFORE:
+            func = "segment_before";
+            break;
+        default:
+            abort();
+            break;
+    }
+    const char* var;
+    switch(var_type) {
+        case NO_VAR:
+            var = "";
+            break;
+        case FIRST_VAR: 
+            var = "seg_a, ";
+            break;
+        case SECOND_VAR: 
+            var = "seg_b, ";
+            break;
+        default:
+            abort();
+            break;
+    }
+    int64_t usec = 1000 * 1000;
+    asprintf(&expr, "%s%s(%s%lld, %lld)", pre, func, var, id, seconds);
+    (void)parse(expr, &node);
+    struct event* event = (struct event*)make_event();
+    event->pred_count = 4;
+    event->preds = calloc(4, sizeof(*event->preds));
+    event->preds[0] = (struct pred*)make_simple_pred_i(0, 40);
+    event->preds[1] = (struct pred*)make_simple_pred_segment(1, 1, 30 * usec);
+    event->preds[2] = (struct pred*)make_simple_pred_segment(2, 1, 10 * usec);
+    event->preds[3] = (struct pred*)make_simple_pred_segment(3, segment_id, segment_seconds * usec);
+    bool result = match_node(config, event, node);
+    free_config(config);
+    free_ast_node(node);
+    free_event((struct event*)event);
+    return result;
+}
+
+static bool segment_within(int64_t id, int64_t seconds, int64_t segment_id, int64_t segment_seconds) { return segment(false, SEGMENT_WITHIN, NO_VAR, id, seconds, segment_id, segment_seconds); }
+static bool segment_within_a(int64_t id, int64_t seconds) { return segment(false, SEGMENT_WITHIN, FIRST_VAR, id, seconds, 0, 0); }
+static bool segment_within_b(int64_t id, int64_t seconds) { return segment(false, SEGMENT_WITHIN, SECOND_VAR, id, seconds, 0, 0); }
+
+static bool segment_before(int64_t id, int64_t seconds, int64_t segment_id, int64_t segment_seconds) { return segment(false, SEGMENT_BEFORE, NO_VAR, id, seconds, segment_id, segment_seconds); }
+static bool segment_before_a(int64_t id, int64_t seconds) { return segment(false, SEGMENT_BEFORE, FIRST_VAR, id, seconds, 0, 0); }
+static bool segment_before_b(int64_t id, int64_t seconds) { return segment(false, SEGMENT_BEFORE, SECOND_VAR, id, seconds, 0, 0); }
+
+static bool not_segment_within(int64_t id, int64_t seconds, int64_t segment_id, int64_t segment_seconds) { return segment(true, SEGMENT_WITHIN, NO_VAR, id, seconds, segment_id, segment_seconds); }
+static bool not_segment_before(int64_t id, int64_t seconds, int64_t segment_id, int64_t segment_seconds) { return segment(true, SEGMENT_BEFORE, NO_VAR, id, seconds, segment_id, segment_seconds); }
+
+int test_segment()
+{
+    mu_assert(segment_within(1, 20, 1, 30), "segment_within_id_eq");
+    mu_assert(!segment_within(1, 20, 2, 30), "segment_within_id_ne");
+    mu_assert(!segment_within(1, 20, 1, 10), "segment_within_ts_lt");
+    mu_assert(segment_within(1, 20, 1, 20), "segment_within_ts_eq");
+    mu_assert(segment_within(1, 20, 1, 30), "segment_within_ts_gt");
+    mu_assert(segment_before(1, 20, 1, 10), "segment_before_id_eq");
+    mu_assert(!segment_before(1, 20, 2, 10), "segment_before_id_ne");
+    mu_assert(segment_before(1, 20, 1, 10), "segment_before_ts_lt");
+    mu_assert(!segment_before(1, 20, 1, 20), "segment_before_ts_eq");
+    mu_assert(!segment_before(1, 20, 1, 30), "segment_before_ts_gt");
+
+    // mu_assert(not_segment_before(1, 20, 1, 30), "segment_not_before_ts_gt");
+    // mu_assert(not_segment_within(1, 20, 1, 30), "segment_not_within_ts_gt");
+
+    mu_assert(segment_before(200030624864, 20, 200030624864, 10), "segment_before_big_id_in");
+    mu_assert(!segment_before(200030624864, 20, 1, 10), "segment_before_big_id_out");
+    mu_assert(segment_within(200030624864, 20, 200030624864, 30), "segment_within_big_id_in");
+    mu_assert(!segment_within(200030624864, 20, 1, 30), "segment_within_big_id_out");
+
+    mu_assert(segment_within_a(1, 20), "segvar_within_a");
+    mu_assert(!segment_within_b(1, 20), "segvar_within_b");
+
+    mu_assert(!segment_before_a(1, 20), "segvar_before_a");
+    mu_assert(segment_before_b(1, 20), "segvar_before_b");
+    return 0;
+}
+
 static bool geo(bool has_not, const char* latitude, const char* longitude, const char* radius, double latitude_value, double longitude_value)
 {
     struct config* config = make_default_config();
@@ -188,8 +302,7 @@ static int test_ends_with()
 int all_tests() 
 {
     // mu_run_test(test_within_frequency_cap);
-    // mu_run_test(test_segment_within);
-    // mu_run_test(test_segment_before);
+    mu_run_test(test_segment);
     mu_run_test(test_geo);
     mu_run_test(test_contains);
     mu_run_test(test_starts_with);
