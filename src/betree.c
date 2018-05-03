@@ -1793,7 +1793,7 @@ bool is_variable_allow_undefined(const struct config* config, const betree_var_t
             return attr_domain->allow_undefined;
         }
     }
-    fprintf(stderr, "Missing attr domain for variable id %d", variable_id);
+    fprintf(stderr, "Missing attr domain for variable id %llu", variable_id);
     abort();
     return false;
 }
