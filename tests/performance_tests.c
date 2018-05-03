@@ -95,7 +95,7 @@ int test_pdir_split()
 
         char* name;
         asprintf(&name, "a%zu", i);
-        add_attr_domain_i(config, name, 0, 10, false);
+        add_attr_domain_i(config, name, 0, 10, true);
         free(name);
     } 
  
