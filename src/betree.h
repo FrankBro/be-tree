@@ -195,6 +195,7 @@ struct matched_subs {
 struct matched_subs* make_matched_subs();
 void free_matched_subs(struct matched_subs* matched_subs);
 const struct pred* make_simple_pred_i(betree_var_t variable_id, int64_t value);
+const struct pred* make_simple_pred_f(betree_var_t variable_id, double fvalue);
 const struct pred* make_simple_pred_str_i(struct config* config, const char* attr, int64_t value);
 const struct pred* make_simple_pred_str_il(struct config* config, const char* attr, struct integer_list_value value);
 const struct pred* make_simple_pred_str_sl(struct config* config, const char* attr, struct string_list_value value);

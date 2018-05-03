@@ -1200,6 +1200,12 @@ const struct pred* make_simple_pred_i(betree_var_t variable_id, int64_t ivalue)
     return make_simple_pred(variable_id, value);
 }
 
+const struct pred* make_simple_pred_f(betree_var_t variable_id, double fvalue)
+{
+    struct value value = { .value_type = VALUE_F, .fvalue = fvalue };
+    return make_simple_pred(variable_id, value);
+}
+
 const struct pred* make_simple_pred_s(struct config* config, betree_var_t variable_id, const char* svalue)
 {
     struct value value = { .value_type = VALUE_S, .svalue = { .string = strdup(svalue) } };
