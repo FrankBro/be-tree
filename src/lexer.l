@@ -1,4 +1,5 @@
 %{
+    #include <stdlib.h>
     #include "ast.h"
     #include "parser.h"
     #define SAVE_STRING {\
@@ -7,7 +8,7 @@
         yylval->string[yyleng - 2] = 0;\
     }
     #define SAVE_IDENTIFIER yylval->string = strndup(yytext, yyleng)
-    #define SAVE_INTEGER yylval->integer_value = atoi(yytext)
+    #define SAVE_INTEGER yylval->integer_value = strtoll(yytext, NULL, 10)
     #define SAVE_FLOAT yylval->float_value = atof(yytext)
     #define TOKEN(t) (yylval->token = t)
 #if defined(__clang__)
