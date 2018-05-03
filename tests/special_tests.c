@@ -100,6 +100,49 @@ static int test_starts_with()
     return 0;
 }
 
+static bool ends_with(bool has_not, const char* attr, bool allow_undefined, const char* pattern, const char* value)
+{
+    struct config* config = make_default_config();
+    add_attr_domain_s(config, attr, allow_undefined);
+    struct ast_node* node = NULL;
+    char* expr;
+    const char* pre;
+    if(has_not) {
+        pre = "not ";
+    }
+    else {
+        pre = "";
+    }
+    asprintf(&expr, "%sends_with(%s, \"%s\")", pre, attr, pattern);
+    parse(expr, &node);
+    const char* event_attr = allow_undefined ? "a" : attr;
+    const struct event* event = make_simple_event_s(config, event_attr, value);
+    bool result = match_node(config, event, node);
+    free_config(config);
+    free_ast_node(node);
+    free_event((struct event*)event);
+    return result;
+}
+
+static bool ends_with_a(const char* pattern, const char* value) { return ends_with(false, "a", false, pattern, value); }
+static bool ends_with_b(const char* pattern, const char* value) { return ends_with(false, "b", true, pattern, value); }
+static bool not_ends_with_a(const char* pattern, const char* value) { return ends_with(true, "a", false, pattern, value); }
+
+static int test_ends_with()
+{
+    mu_assert(ends_with_a("", "abc"), "ends_with_in_nil");
+    mu_assert(ends_with_a("abc", "aabc"), "ends_with_in_start");
+    mu_assert(ends_with_a("abc", "abc"), "ends_with_in_exact");
+    mu_assert(!ends_with_a("abc", "c"), "ends_with_out_var_smaller");
+    mu_assert(!ends_with_a("abc", ""), "ends_with_out_var_nil");
+    mu_assert(!ends_with_b("abc", "abc"), "ends_with_out_undef");
+    // mu_assert(!not_ends_with_a("abc", "aabc"), "ends_with_not_ends);
+    // mu_assert(!not_ends_with_a("abc", "abc"), "ends_with_not_exact");
+    // mu_assert(not_ends_with_a("abc", "c"), "ends_with_not_var_smaller");
+    // mu_assert(not_ends_with_a("abc", "", "ends_with_not_var_nil");
+    return 0;
+}
+
 int all_tests() 
 {
     // mu_run_test(test_within_frequency_cap);
@@ -108,7 +151,7 @@ int all_tests()
     // mu_run_test(test_geo);
     mu_run_test(test_contains);
     mu_run_test(test_starts_with);
-    // mu_run_test(test_ends_with);
+    mu_run_test(test_ends_with);
 
     return 0;
 }
