@@ -18,16 +18,6 @@ struct frequency_caps_list {
     struct frequency_cap* content;
 };
 
-struct segment {
-    int64_t id;
-    int64_t timestamp;
-};
-
-struct segments_list {
-    size_t size;
-    struct segment* content;
-};
-
 bool within_frequency_caps(const struct frequency_caps_list *caps, const struct string_value type, uint32_t id, const struct string_value namespace, uint32_t value, size_t length, int64_t now);
 bool segment_within(int64_t segment_id, int32_t after_seconds, const struct segments_list* segments, int64_t now);
 bool segment_before(int64_t segment_id, int32_t before_seconds, const struct segments_list *segments, int64_t now);

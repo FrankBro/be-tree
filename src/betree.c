@@ -947,6 +947,10 @@ void free_value(struct value value)
         case VALUE_F: {
             break;
         }
+        case VALUE_SEGMENTS: {
+            free(value.segments_value.content);
+            break;
+        }
         default: {
             switch_default_error("Invalid value value type");
         }
@@ -1222,6 +1226,15 @@ const struct pred* make_simple_pred_il(betree_var_t variable_id, struct integer_
 const struct pred* make_simple_pred_sl(betree_var_t variable_id, struct string_list_value slvalue)
 {
     struct value value = { .value_type = VALUE_SL, .slvalue = slvalue };
+    return make_simple_pred(variable_id, value);
+}
+
+const struct pred* make_simple_pred_segment(betree_var_t variable_id, int64_t id, int64_t timestamp)
+{
+    struct segment segment = { .id = id, .timestamp = timestamp };
+    struct segments_list segments_list = { .size = 1, .content = calloc(1, sizeof(*segments_list.content)) };
+    segments_list.content[0] = segment;
+    struct value value = { .value_type = VALUE_SEGMENTS, .segments_value = segments_list };
     return make_simple_pred(variable_id, value);
 }
 
@@ -1570,6 +1583,12 @@ void add_attr_domain_il(struct config* config, const char* attr, bool allow_unde
 void add_attr_domain_sl(struct config* config, const char* attr, bool allow_undefined)
 {
     struct value_bound bound = { .value_type = VALUE_SL };
+    add_attr_domain(config, attr, bound, allow_undefined);
+}
+
+void add_attr_domain_segments(struct config* config, const char* attr, bool allow_undefined)
+{
+    struct value_bound bound = { .value_type = VALUE_SEGMENTS };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 

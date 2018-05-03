@@ -16,6 +16,7 @@ enum value_e {
     VALUE_S,
     VALUE_IL,
     VALUE_SL,
+    VALUE_SEGMENTS,
 };
 
 struct string_value {
@@ -33,6 +34,16 @@ struct string_list_value {
     struct string_value* strings;
 };
 
+struct segment {
+    int64_t id;
+    int64_t timestamp;
+};
+
+struct segments_list {
+    size_t size;
+    struct segment* content;
+};
+
 struct value {
     enum value_e value_type;
     union {
@@ -42,6 +53,7 @@ struct value {
         struct string_value svalue;
         struct integer_list_value ilvalue;
         struct string_list_value slvalue;
+        struct segments_list segments_value;
     };
 };
 
@@ -163,6 +175,7 @@ void add_attr_domain_b(struct config* config, const char* attr, bool min, bool m
 void add_attr_domain_s(struct config* config, const char* attr, bool allow_undefined);
 void add_attr_domain_il(struct config* config, const char* attr, bool allow_undefined);
 void add_attr_domain_sl(struct config* config, const char* attr, bool allow_undefined);
+void add_attr_domain_segments(struct config* config, const char* attr, bool allow_undefined);
 void adjust_attr_domains(struct config* config, const struct ast_node* node, struct value_bound bound, bool allow_undefined);
 void adjust_attr_domains_i(struct config* config, const struct ast_node* node, int64_t min, int64_t max, bool allow_undefined);
 const struct attr_domain* get_attr_domain(const struct config* config, betree_var_t variable_id);
@@ -196,6 +209,7 @@ struct matched_subs* make_matched_subs();
 void free_matched_subs(struct matched_subs* matched_subs);
 const struct pred* make_simple_pred_i(betree_var_t variable_id, int64_t value);
 const struct pred* make_simple_pred_f(betree_var_t variable_id, double fvalue);
+const struct pred* make_simple_pred_segment(betree_var_t variable_id, int64_t id, int64_t timestamp);
 const struct pred* make_simple_pred_str_i(struct config* config, const char* attr, int64_t value);
 const struct pred* make_simple_pred_str_il(struct config* config, const char* attr, struct integer_list_value value);
 const struct pred* make_simple_pred_str_sl(struct config* config, const char* attr, struct string_list_value value);
