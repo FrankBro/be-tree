@@ -1784,3 +1784,16 @@ const char* string_list_value_to_string(struct string_list_value list)
     }
     return string;
 }
+
+bool is_variable_allow_undefined(const struct config* config, const betree_var_t variable_id)
+{
+    for(size_t i = 0; i < config->attr_domain_count; i++) {
+        const struct attr_domain* attr_domain = config->attr_domains[i];
+        if(attr_domain->variable_id == variable_id) {
+            return attr_domain->allow_undefined;
+        }
+    }
+    fprintf(stderr, "Missing attr domain for variable id %d", variable_id);
+    abort();
+    return false;
+}

@@ -166,6 +166,7 @@ void add_attr_domain_sl(struct config* config, const char* attr, bool allow_unde
 void adjust_attr_domains(struct config* config, const struct ast_node* node, struct value_bound bound, bool allow_undefined);
 void adjust_attr_domains_i(struct config* config, const struct ast_node* node, int64_t min, int64_t max, bool allow_undefined);
 const struct attr_domain* get_attr_domain(const struct config* config, betree_var_t variable_id);
+bool is_variable_allow_undefined(const struct config* config, const betree_var_t variable_id);
 
 const char* get_attr_for_id(const struct config* config, betree_var_t variable_id);
 betree_var_t get_id_for_attr(struct config* config, const char* attr);
