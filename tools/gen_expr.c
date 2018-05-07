@@ -90,13 +90,13 @@ const struct ast_node* generate_expr(size_t complexity, size_t attr_min, size_t 
     for(size_t j = 0; j < complexity; j++) {
         const struct ast_node* bin_node = make_binary_expr(attr_min, attr_max, value_min, value_max);
 
-        enum ast_combi_e combiop = random_in_range(0, 1);
+        enum ast_bool_e boolop = random_in_range(0, 1);
         if(j == 0) {
             const struct ast_node* another_bin_node = make_binary_expr(attr_min, attr_max, value_min, value_max);
-            last_combi_node = ast_combi_expr_create(combiop, bin_node, another_bin_node);
+            last_combi_node = ast_bool_expr_binary_create(boolop, bin_node, another_bin_node);
         }
         else {
-            last_combi_node = ast_combi_expr_create(combiop, bin_node, last_combi_node);
+            last_combi_node = ast_bool_expr_binary_create(boolop, bin_node, last_combi_node);
         }
     }
     return last_combi_node;
@@ -163,36 +163,40 @@ void write_expr(FILE* f, const struct ast_node* node)
         }
         case(AST_TYPE_BOOL_EXPR): {
             switch(node->bool_expr.op) {
-                case AST_BOOL_NONE: {
-                    fprintf(f, "%s", node->bool_expr.name);
+                case AST_BOOL_VARIABLE: {
+                    fprintf(f, "%s", node->bool_expr.variable.name);
                     break;
                 }
                 case AST_BOOL_NOT: {
-                    fprintf(f, "not %s", node->bool_expr.name);
+                    fprintf(f, "not ");
+                    write_expr(f, node->bool_expr.unary.expr);
+                    break;
+                }
+                case(AST_BOOL_OR):
+                case(AST_BOOL_AND): {
+                    write_expr(f, node->bool_expr.binary.lhs);
+                    switch(node->bool_expr.op) {
+                        case AST_BOOL_AND: {
+                            fprintf(f, "&& ");
+                            break;
+                        }
+                        case AST_BOOL_OR: {
+                            fprintf(f, "|| ");
+                            break;
+                        }
+                        case AST_BOOL_NOT:
+                        case AST_BOOL_VARIABLE: 
+                        default: {
+                            switch_default_error("Invalid bool operation");
+                        }
+                    }
+                    write_expr(f, node->bool_expr.binary.rhs);
                     break;
                 }
                 default: {
                     switch_default_error("Invalid bool operation");
                 }
             }
-            break;
-        }
-        case(AST_TYPE_COMBI_EXPR): {
-            write_expr(f, node->combi_expr.lhs);
-            switch(node->combi_expr.op) {
-                case AST_COMBI_AND: {
-                    fprintf(f, "&& ");
-                    break;
-                }
-                case AST_COMBI_OR: {
-                    fprintf(f, "|| ");
-                    break;
-                }
-                default: {
-                    switch_default_error("Invalid combi operation");
-                }
-            }
-            write_expr(f, node->combi_expr.rhs);
             break;
         }
         default: {

@@ -1328,13 +1328,20 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
             abort();
             return;
         }
-        case AST_TYPE_COMBI_EXPR: {
-            fill_pred(sub, expr->combi_expr.lhs);
-            fill_pred(sub, expr->combi_expr.rhs);
-            return;
-        }
         case AST_TYPE_BOOL_EXPR: {
-            variable_id = expr->bool_expr.variable_id;
+            switch(expr->bool_expr.op) {
+                case AST_BOOL_AND:
+                case AST_BOOL_OR:
+                    fill_pred(sub, expr->bool_expr.binary.lhs);
+                    fill_pred(sub, expr->bool_expr.binary.rhs);
+                    return;
+                case AST_BOOL_NOT:
+                    fill_pred(sub, expr->bool_expr.unary.expr);
+                    break;
+                case AST_BOOL_VARIABLE:
+                    variable_id = expr->bool_expr.variable.variable_id;
+                    break;
+            }
             break;
         }
         case AST_TYPE_NUMERIC_COMPARE_EXPR: {
@@ -1664,11 +1671,6 @@ void adjust_attr_domains(struct config* config, const struct ast_node* node, str
             abort();
             return;
         }
-        case(AST_TYPE_COMBI_EXPR): {
-            adjust_attr_domains(config, node->combi_expr.lhs, bound, allow_undefined);
-            adjust_attr_domains(config, node->combi_expr.rhs, bound, allow_undefined);
-            return;
-        }
         case(AST_TYPE_NUMERIC_COMPARE_EXPR): {
             name = node->numeric_compare_expr.name;
             break;
@@ -1678,7 +1680,19 @@ void adjust_attr_domains(struct config* config, const struct ast_node* node, str
             break;
         }
         case(AST_TYPE_BOOL_EXPR): {
-            name = node->bool_expr.name;
+            switch(node->bool_expr.op) {
+                case AST_BOOL_VARIABLE:
+                    name = node->bool_expr.variable.name;
+                    break;
+                case AST_BOOL_NOT:
+                    adjust_attr_domains(config, node->bool_expr.unary.expr, bound, allow_undefined);
+                    return;
+                case AST_BOOL_AND:
+                case AST_BOOL_OR:
+                    adjust_attr_domains(config, node->bool_expr.binary.lhs, bound, allow_undefined);
+                    adjust_attr_domains(config, node->bool_expr.binary.rhs, bound, allow_undefined);
+                    return;
+            }
             break;
         }
         case(AST_TYPE_SET_EXPR): {

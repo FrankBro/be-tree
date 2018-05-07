@@ -4,6 +4,11 @@
 
 #include "betree.h"
 
+struct variable_value {
+    const char* name;
+    betree_var_t variable_id;
+};
+
 // Numeric comparison (<, <=, >, >=)
 // Work on integer and float
 
@@ -64,40 +69,41 @@ struct ast_equality_expr {
     struct equality_value value;
 };
 
-// Combination (or, and)
+// Bool 
+// Binary (or, and)
+// Unary (not)
+// Variable
 
-enum ast_combi_e {
-    AST_COMBI_OR,
-    AST_COMBI_AND,
+enum ast_bool_e {
+    AST_BOOL_OR,
+    AST_BOOL_AND,
+    AST_BOOL_NOT,
+    AST_BOOL_VARIABLE,
 };
 
 struct ast_node;
 
-struct ast_combi_expr {
-    enum ast_combi_e op;
+struct ast_bool_binary {
     const struct ast_node* lhs;
     const struct ast_node* rhs;
 };
 
-enum ast_bool_e {
-    AST_BOOL_NONE,
-    AST_BOOL_NOT,
+struct ast_bool_unary {
+    const struct ast_node* expr;
 };
 
 struct ast_bool_expr {
     enum ast_bool_e op;
-    betree_var_t variable_id;
-    const char *name;
+    union {
+        struct ast_bool_binary binary;
+        struct ast_bool_unary unary;
+        struct variable_value variable;
+    };
 };
 
 // Set ('in'/'not in')
 // Left side can be integer, string or variable representing the previous types
 // Right side can be integer list, string list or variable representing the previous types
-
-struct variable_value {
-    const char* name;
-    betree_var_t variable_id;
-};
 
 enum set_left_value_e {
     AST_SET_LEFT_VALUE_INTEGER,
@@ -256,7 +262,6 @@ struct ast_special_expr {
 enum ast_node_type_e {
     AST_TYPE_NUMERIC_COMPARE_EXPR,
     AST_TYPE_EQUALITY_EXPR,
-    AST_TYPE_COMBI_EXPR,
     AST_TYPE_BOOL_EXPR,
     AST_TYPE_SET_EXPR,
     AST_TYPE_LIST_EXPR,
@@ -268,7 +273,6 @@ struct ast_node {
     union {
         struct ast_numeric_compare_expr numeric_compare_expr;
         struct ast_equality_expr equality_expr;
-        struct ast_combi_expr combi_expr;
         struct ast_bool_expr bool_expr;
         struct ast_set_expr set_expr;
         struct ast_list_expr list_expr;
@@ -278,10 +282,11 @@ struct ast_node {
 
 struct ast_node* ast_numeric_compare_expr_create(const enum ast_numeric_compare_e op, const char* name, struct numeric_compare_value value);
 struct ast_node* ast_equality_expr_create(const enum ast_equality_e op, const char* name, struct equality_value value);
-struct ast_node* ast_combi_expr_create(const enum ast_combi_e op, const struct ast_node* lhs, const struct ast_node* rhs);
-struct ast_node* ast_bool_expr_create(const enum ast_bool_e op, const char* name);
 struct ast_node* ast_set_expr_create(const enum ast_set_e op, struct set_left_value left_value, struct set_right_value right_value);
 struct ast_node* ast_list_expr_create(const enum ast_list_e op, const char* name, struct list_value list_value);
+struct ast_node* ast_bool_expr_variable_create(const char* name);
+struct ast_node* ast_bool_expr_unary_create(const struct ast_node* expr);
+struct ast_node* ast_bool_expr_binary_create(const enum ast_bool_e op, const struct ast_node* lhs, const struct ast_node* rhs);
 
 struct ast_node* ast_special_frequency_create(const enum ast_special_frequency_e op, enum frequency_type_e type, struct string_value ns, int64_t value, size_t length);
 struct ast_node* ast_special_segment_create(const enum ast_special_segment_e op, const char* name, betree_seg_t segment_id, int64_t seconds);
@@ -296,5 +301,5 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
 void assign_variable_id(struct config* config, struct ast_node* node);
 void assign_str_id(struct config* config, struct ast_node* node);
 
-const char* ast_to_string(const struct ast_node* node);
+// const char* ast_to_string(const struct ast_node* node);
 struct string_value frequency_type_to_string(struct config* config, enum frequency_type_e type);

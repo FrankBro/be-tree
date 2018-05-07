@@ -63,7 +63,7 @@
 %token<integer_value> TINTEGER
 %token<float_value> TFLOAT
 
-%type<node> expr num_comp_expr eq_expr set_expr list_expr cexpr boolexpr 
+%type<node> expr num_comp_expr eq_expr set_expr list_expr bool_expr
 %type<node> special_expr s_frequency_expr s_segment_expr s_geo_expr s_string_expr
 %type<string> ident
 %type<value> boolean
@@ -122,8 +122,7 @@ expr                : TLPAREN expr TRPAREN                  { $$ = $2; }
                     | eq_expr                               { $$ = $1; }
                     | set_expr                              { $$ = $1; }
                     | list_expr                             { $$ = $1; }
-                    | cexpr                                 { $$ = $1; }
-                    | boolexpr                              { $$ = $1; }
+                    | bool_expr                             { $$ = $1; }
                     | special_expr                          { $$ = $1; }
 ;       
 
@@ -171,13 +170,11 @@ list_expr           : ident TONEOF list_value               { $$ = ast_list_expr
                     | ident TALLOF list_value               { $$ = ast_list_expr_create(AST_LIST_ALL_OF, $1, $3); free($1);}
 ;
 
-cexpr               : expr TAND expr                        { $$ = ast_combi_expr_create(AST_COMBI_AND, $1, $3); }
-                    | expr TOR expr                         { $$ = ast_combi_expr_create(AST_COMBI_OR, $1, $3); }
+bool_expr           : expr TAND expr                        { $$ = ast_bool_expr_binary_create(AST_BOOL_AND, $1, $3); }
+                    | expr TOR expr                         { $$ = ast_bool_expr_binary_create(AST_BOOL_OR, $1, $3); }
+                    | TNOT expr                             { $$ = ast_bool_expr_unary_create($2); }
+                    | ident                                 { $$ = ast_bool_expr_variable_create($1); free($1); }
 ;                       
-
-boolexpr            : TNOT ident                            { $$ = ast_bool_expr_create(AST_BOOL_NOT, $2); free($2); }
-                    | ident                                 { $$ = ast_bool_expr_create(AST_BOOL_NONE, $1); free($1); }
-;
 
 special_expr        : s_frequency_expr                      { $$ = $1; }
                     | s_segment_expr                        { $$ = $1; }

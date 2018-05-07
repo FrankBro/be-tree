@@ -838,29 +838,29 @@ const char* escape_label(const char* input)
     return escaped;
 }
 
-void write_dot_file_root_subs(FILE* f, const struct cnode* cnode, uint64_t level)
-{
-    print_spaces(f, level);
-    fprintf(f, "subgraph \"clustersubs\" {\n");
-    level++;
-    print_spaces(f, level);
-    fprintf(f, "color=lightblue1; fillcolor=lightblue1; style=filled; label=\"Subs\"; fontsize=20; fontname=\"Verdana\"\n");
-    struct gathered_subs gatherer = { .count = 0, .subs = NULL };
-    gather_subs_cnode(cnode, &gatherer);
-    qsort(gatherer.subs, gatherer.count, sizeof(struct sub*), compare_subs);
-    for(size_t i = 0; i < gatherer.count; i++) {
-        const struct sub* sub = gatherer.subs[i];
-        const char* expr = ast_to_string(sub->expr);
-        const char* escaped = escape_label(expr);
-        print_spaces(f, level);
-        fprintf(f, "\"sub_%llu\" [label=\"%s\", color=lightblue1, fillcolor=lightblue1, style=filled, shape=record]\n", sub->id, escaped);
-        free((char*)expr);
-        free((char*)escaped);
-    }
-    level--;
-    print_spaces(f, level);
-    fprintf(f, "}\n");
-}
+// void write_dot_file_root_subs(FILE* f, const struct cnode* cnode, uint64_t level)
+// {
+//     print_spaces(f, level);
+//     fprintf(f, "subgraph \"clustersubs\" {\n");
+//     level++;
+//     print_spaces(f, level);
+//     fprintf(f, "color=lightblue1; fillcolor=lightblue1; style=filled; label=\"Subs\"; fontsize=20; fontname=\"Verdana\"\n");
+//     struct gathered_subs gatherer = { .count = 0, .subs = NULL };
+//     gather_subs_cnode(cnode, &gatherer);
+//     qsort(gatherer.subs, gatherer.count, sizeof(struct sub*), compare_subs);
+//     for(size_t i = 0; i < gatherer.count; i++) {
+//         const struct sub* sub = gatherer.subs[i];
+//         const char* expr = ast_to_string(sub->expr);
+//         const char* escaped = escape_label(expr);
+//         print_spaces(f, level);
+//         fprintf(f, "\"sub_%llu\" [label=\"%s\", color=lightblue1, fillcolor=lightblue1, style=filled, shape=record]\n", sub->id, escaped);
+//         free((char*)expr);
+//         free((char*)escaped);
+//     }
+//     level--;
+//     print_spaces(f, level);
+//     fprintf(f, "}\n");
+// }
 
 void write_dot_file(const struct config* config, const struct cnode* root)
 {
