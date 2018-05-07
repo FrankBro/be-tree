@@ -4,7 +4,7 @@
 #include <math.h>
 
 #include "betree.h"
-#include "functions.h"
+#include "special.h"
 
 bool within_frequency_caps(const struct frequency_caps_list *caps, enum frequency_type_e type, uint32_t id, const struct string_value namespace, uint32_t value, size_t length, int64_t now) 
 {
