@@ -7,7 +7,7 @@
 
 #include "ast.h"
 #include "betree.h"
-#include "functions.h"
+#include "special.h"
 #include "utils.h"
 #include "var.h"
 
