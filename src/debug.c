@@ -63,6 +63,14 @@ void print_cdir(const struct config* config, const struct cdir* cdir, uint64_t l
             fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
             abort();
         }
+        case(VALUE_SEGMENTS): {
+            fprintf(stderr, "%s a segments value cdir should never happen for now", __func__);
+            abort();
+        }
+        case(VALUE_FREQUENCY): {
+            fprintf(stderr, "%s a frequency value cdir should never happen for now", __func__);
+            abort();
+        }
         default: {
             switch_default_error("Invalid bound value type");
         }
@@ -225,6 +233,14 @@ const char* get_path_cdir(const struct config* config, const struct cdir* cdir, 
             fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
             abort();
         }
+        case(VALUE_SEGMENTS): {
+            fprintf(stderr, "%s a segments value cdir should never happen for now", __func__);
+            abort();
+        }
+        case(VALUE_FREQUENCY): {
+            fprintf(stderr, "%s a frequency value cdir should never happen for now", __func__);
+            abort();
+        }
         default: {
             switch_default_error("Invalid bound value type");
         }
@@ -360,6 +376,14 @@ void write_dot_file_cdir_td(FILE* f, const struct config* config, const struct c
                 }
                 case(VALUE_SL): {
                     fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
+                    abort();
+                }
+                case(VALUE_SEGMENTS): {
+                    fprintf(stderr, "%s a segment value cdir should never happen for now", __func__);
+                    abort();
+                }
+                case(VALUE_FREQUENCY): {
+                    fprintf(stderr, "%s a frequency value cdir should never happen for now", __func__);
                     abort();
                 }
                 default: {

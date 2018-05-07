@@ -91,7 +91,7 @@ struct ast_node* ast_special_expr_create()
     return node;
 }
 
-struct ast_node* ast_special_frequency_create(const enum ast_special_frequency_e op, enum ast_special_frequency_type_e type, struct string_value ns, int64_t value, size_t length)
+struct ast_node* ast_special_frequency_create(const enum ast_special_frequency_e op, enum frequency_type_e type, struct string_value ns, int64_t value, size_t length)
 {
     struct ast_node* node = ast_special_expr_create();
     struct ast_special_frequency frequency = {
@@ -337,39 +337,39 @@ double get_geo_value_as_float(const struct special_geo_value value)
     }
 }
 
-struct string_value frequency_type_to_string(struct config* config, enum ast_special_frequency_type_e type)
+struct string_value frequency_type_to_string(struct config* config, enum frequency_type_e type)
 {
     const char* string;
     switch(type) {
-        case AST_SPECIAL_TYPE_ADVERTISER: {
+        case FREQUENCY_TYPE_ADVERTISER: {
             string = "advertiser";
             break;
         }
-        case AST_SPECIAL_TYPE_ADVERTISERIP: {
+        case FREQUENCY_TYPE_ADVERTISERIP: {
             string = "advertiser:ip";
             break;
         }
-        case AST_SPECIAL_TYPE_CAMPAIGN: {
+        case FREQUENCY_TYPE_CAMPAIGN: {
             string = "campaign";
             break;
         }
-        case AST_SPECIAL_TYPE_CAMPAIGNIP: {
+        case FREQUENCY_TYPE_CAMPAIGNIP: {
             string = "campaign:ip";
             break;
         }
-        case AST_SPECIAL_TYPE_FLIGHT: {
+        case FREQUENCY_TYPE_FLIGHT: {
             string = "flight";
             break;
         }
-        case AST_SPECIAL_TYPE_FLIGHTIP: {
+        case FREQUENCY_TYPE_FLIGHTIP: {
             string = "flight:ip";
             break;
         }
-        case AST_SPECIAL_TYPE_PRODUCT: {
+        case FREQUENCY_TYPE_PRODUCT: {
             string = "product";
             break;
         }
-        case AST_SPECIAL_TYPE_PRODUCTIP: {
+        case FREQUENCY_TYPE_PRODUCTIP: {
             string = "product:ip";
             break;
         }
@@ -395,10 +395,42 @@ bool match_special_expr(struct config* config, const struct event* event, const 
                     if(state == VARIABLE_UNDEFINED) {
                         return false;
                     }
-                    const struct frequency_caps_list* caps = NULL;
-                    uint32_t id;
-                    struct string_value type = frequency_type_to_string(config, special_expr.frequency.type);
-                    return within_frequency_caps(caps, type, id, special_expr.frequency.ns, special_expr.frequency.value, special_expr.frequency.length, now);
+                    struct frequency_caps_list caps ;
+                    enum variable_state_e caps_state = get_frequency_attr(config, event, &caps);
+                    betree_assert(caps_state != VARIABLE_MISSING, "Attribute is not defined");
+                    if(caps_state == VARIABLE_UNDEFINED) {
+                        return false;
+
+                    }
+                    else {
+                        uint32_t id;
+                        switch(special_expr.frequency.type) {
+                            case FREQUENCY_TYPE_ADVERTISER:
+                            case FREQUENCY_TYPE_ADVERTISERIP: 
+                                // id = ADVERTISER_ID;
+                                id = 20;
+                                break;
+                            case FREQUENCY_TYPE_CAMPAIGN:
+                            case FREQUENCY_TYPE_CAMPAIGNIP:
+                                // id = CAMPAIGN_ID;
+                                id = 30;
+                                break;
+                            case FREQUENCY_TYPE_FLIGHT:
+                            case FREQUENCY_TYPE_FLIGHTIP:
+                                // id = FLIGHT_ID;
+                                id = 10;
+                                break;
+                            case FREQUENCY_TYPE_PRODUCT:
+                            case FREQUENCY_TYPE_PRODUCTIP:
+                                // id = PRODUCT_ID;
+                                id = 40;
+                                break;
+                            default:
+                                switch_default_error("Invalid frequency type");
+                                break;
+                        }
+                        return within_frequency_caps(&caps, special_expr.frequency.type, id, special_expr.frequency.ns, special_expr.frequency.value, special_expr.frequency.length, now);
+                    }
                 }
                 default: {
                     switch_default_error("Invalid frequency operation");

@@ -174,20 +174,9 @@ enum ast_special_frequency_e {
     AST_SPECIAL_WITHINFREQUENCYCAP,
 };
 
-enum ast_special_frequency_type_e {
-    AST_SPECIAL_TYPE_ADVERTISER,
-    AST_SPECIAL_TYPE_ADVERTISERIP,
-    AST_SPECIAL_TYPE_CAMPAIGN,
-    AST_SPECIAL_TYPE_CAMPAIGNIP,
-    AST_SPECIAL_TYPE_FLIGHT,
-    AST_SPECIAL_TYPE_FLIGHTIP,
-    AST_SPECIAL_TYPE_PRODUCT,
-    AST_SPECIAL_TYPE_PRODUCTIP,
-};
-
 struct ast_special_frequency {
     enum ast_special_frequency_e op;
-    enum ast_special_frequency_type_e type;
+    enum frequency_type_e type;
     struct string_value ns;
     int64_t value;
     size_t length;
@@ -294,7 +283,7 @@ struct ast_node* ast_bool_expr_create(const enum ast_bool_e op, const char* name
 struct ast_node* ast_set_expr_create(const enum ast_set_e op, struct set_left_value left_value, struct set_right_value right_value);
 struct ast_node* ast_list_expr_create(const enum ast_list_e op, const char* name, struct list_value list_value);
 
-struct ast_node* ast_special_frequency_create(const enum ast_special_frequency_e op, enum ast_special_frequency_type_e type, struct string_value ns, int64_t value, size_t length);
+struct ast_node* ast_special_frequency_create(const enum ast_special_frequency_e op, enum frequency_type_e type, struct string_value ns, int64_t value, size_t length);
 struct ast_node* ast_special_segment_create(const enum ast_special_segment_e op, const char* name, betree_seg_t segment_id, int64_t seconds);
 struct ast_node* ast_special_geo_create(const enum ast_special_geo_e op, struct special_geo_value latitude, struct special_geo_value longitude, bool has_radius, struct special_geo_value radius);
 struct ast_node* ast_special_string_create(const enum ast_special_string_e op, const char* name, const char* pattern);
@@ -308,3 +297,4 @@ void assign_variable_id(struct config* config, struct ast_node* node);
 void assign_str_id(struct config* config, struct ast_node* node);
 
 const char* ast_to_string(const struct ast_node* node);
+struct string_value frequency_type_to_string(struct config* config, enum frequency_type_e type);

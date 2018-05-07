@@ -130,3 +130,20 @@ enum variable_state_e get_segments_attr(struct config* config, const struct even
     betree_var_t var = get_id_for_attr(config, attr);
     return get_segments_var(config, var, event, ret);
 }
+
+enum variable_state_e get_frequency_var(const struct config* config, betree_var_t var, const struct event* event, struct frequency_caps_list* ret)
+{
+    struct value value;
+    enum variable_state_e state = get_variable(config, var, event, &value);
+    if(state == VARIABLE_DEFINED) {
+        betree_assert(value.value_type == VALUE_FREQUENCY, "Var is not a frequency");
+        *ret = value.frequency_value;
+    }
+    return state;
+}
+
+enum variable_state_e get_frequency_attr(struct config* config, const struct event* event, struct frequency_caps_list* ret)
+{
+    betree_var_t var = get_id_for_attr(config, "frequency_caps");
+    return get_frequency_var(config, var, event, ret);
+}

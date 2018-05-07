@@ -156,6 +156,14 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
                     fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
                     abort();
                 }
+                case(VALUE_SEGMENTS): {
+                    fprintf(stderr, "%s a segments value cdir should never happen for now", __func__);
+                    abort();
+                }
+                case(VALUE_FREQUENCY): {
+                    fprintf(stderr, "%s a frequency value cdir should never happen for now", __func__);
+                    abort();
+                }
                 default: {
                     switch_default_error("Invalid bound value type");
                 }
@@ -181,6 +189,14 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
                 }
                 case(VALUE_SL): {
                     fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
+                    abort();
+                }
+                case(VALUE_SEGMENTS): {
+                    fprintf(stderr, "%s a segments value cdir should never happen for now", __func__);
+                    abort();
+                }
+                case(VALUE_FREQUENCY): {
+                    fprintf(stderr, "%s a frequency value cdir should never happen for now", __func__);
                     abort();
                 }
                 default: {
@@ -720,6 +736,14 @@ bool is_atomic(const struct cdir* cdir)
             fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
             abort();
         }
+        case(VALUE_SEGMENTS): {
+            fprintf(stderr, "%s a segments value cdir should never happen for now", __func__);
+            abort();
+        }
+        case(VALUE_FREQUENCY): {
+            fprintf(stderr, "%s a frequency value cdir should never happen for now", __func__);
+            abort();
+        }
         default: {
             switch_default_error("Invalid bound value type");
             return false;
@@ -838,6 +862,14 @@ struct value_bounds split_value_bound(struct value_bound bound)
             fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
             abort();
         }
+        case(VALUE_SEGMENTS): {
+            fprintf(stderr, "%s a segment value cdir should never happen for now", __func__);
+            abort();
+        }
+        case(VALUE_FREQUENCY): {
+            fprintf(stderr, "%s a frequency value cdir should never happen for now", __func__);
+            abort();
+        }
         default: {
             switch_default_error("Invalid bound value type");
         }
@@ -949,6 +981,13 @@ void free_value(struct value value)
         }
         case VALUE_SEGMENTS: {
             free(value.segments_value.content);
+            break;
+        }
+        case VALUE_FREQUENCY: {
+            for(size_t i = 0; i < value.frequency_value.size; i++) {
+                free((char*)value.frequency_value.content[i].namespace.string);
+            }
+            free(value.frequency_value.content);
             break;
         }
         default: {
@@ -1235,6 +1274,24 @@ const struct pred* make_simple_pred_segment(betree_var_t variable_id, int64_t id
     struct segments_list segments_list = { .size = 1, .content = calloc(1, sizeof(*segments_list.content)) };
     segments_list.content[0] = segment;
     struct value value = { .value_type = VALUE_SEGMENTS, .segments_value = segments_list };
+    return make_simple_pred(variable_id, value);
+}
+
+const struct pred* make_simple_pred_frequency(betree_var_t variable_id, 
+    enum frequency_type_e type, uint32_t id, struct string_value ns, 
+    bool timestamp_defined, int64_t timestamp, uint32_t cap_value)
+{
+    struct frequency_cap cap = {
+        .type = type,
+        .id = id,
+        .namespace = ns,
+        .timestamp_defined = timestamp_defined,
+        .timestamp = timestamp,
+        .value = cap_value
+    };
+    struct frequency_caps_list caps_list = { .size = 1, .content = calloc(1l, sizeof(*caps_list.content)) };
+    caps_list.content[0] = cap;
+    struct value value = { .value_type = VALUE_FREQUENCY, .frequency_value = caps_list };
     return make_simple_pred(variable_id, value);
 }
 
@@ -1592,6 +1649,12 @@ void add_attr_domain_segments(struct config* config, const char* attr, bool allo
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
+void add_attr_domain_frequency(struct config* config, bool allow_undefined)
+{
+    struct value_bound bound = { .value_type = VALUE_FREQUENCY };
+    add_attr_domain(config, "frequency_caps", bound, allow_undefined);
+}
+
 void adjust_attr_domains(struct config* config, const struct ast_node* node, struct value_bound bound, bool allow_undefined)
 {
     const char* name;
@@ -1696,6 +1759,12 @@ void event_to_string(struct config* config, const struct event* event, char* buf
                 const char* integer_list = integer_list_value_to_string(pred->value.ilvalue);
                 length += sprintf(buffer + length, "%s = (%s)", attr, integer_list);
                 free((char*)integer_list);
+                break;
+            }
+            case(VALUE_SEGMENTS):
+            case(VALUE_FREQUENCY): {
+                fprintf(stderr, "TODO");
+                abort();
                 break;
             }
             case(VALUE_SL): {

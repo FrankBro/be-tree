@@ -27,3 +27,6 @@ enum variable_state_e get_string_list_var(const struct config* config, betree_va
 
 enum variable_state_e get_segments_var(const struct config* config, betree_var_t var, const struct event* event, struct segments_list* ret);
 enum variable_state_e get_segments_attr(struct config* config, const struct event* event, const char* attr, struct segments_list* ret);
+
+enum variable_state_e get_frequency_var(const struct config* config, betree_var_t var, const struct event* event, struct frequency_caps_list* ret);
+enum variable_state_e get_frequency_attr(struct config* config, const struct event* event, struct frequency_caps_list* ret);

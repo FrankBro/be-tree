@@ -9,6 +9,159 @@
 
 int parse(const char *text, struct ast_node **node);
 
+static bool 
+frequency(
+    bool has_not,
+    enum frequency_type_e type, const char* ns, int64_t value, int64_t length, 
+    int64_t now, 
+    enum frequency_type_e cap_type, uint32_t cap_id, const char* cap_ns, uint32_t cap_value, bool timestamp_defined, int64_t timestamp)
+{
+    struct config* config = make_default_config();
+    add_attr_domain_i(config, "now", 0.0, 10.0, false);
+    add_attr_domain_frequency(config, false);
+    struct ast_node* node = NULL;
+    char* expr;
+    const char* pre;
+    if(has_not) {
+        pre = "not ";
+    }
+    else {
+        pre = "";
+    }
+    int64_t usec = 1000 * 1000;
+    struct string_value type_value = frequency_type_to_string(config, type);
+    asprintf(&expr, "%swithin_frequency_cap(\"%s\", \"%s\", %lld, %lld)", pre, type_value.string, ns, value, length);
+    (void)parse(expr, &node);
+    assign_str_id(config, node);
+    struct event* event = (struct event*)make_event();
+    event->pred_count = 2;
+    event->preds = calloc(2, sizeof(*event->preds));
+    event->preds[0] = (struct pred*)make_simple_pred_i(0, now);
+    struct string_value cap_ns_value = { .string = strdup(cap_ns), .str = get_id_for_string(config, cap_ns) };
+    event->preds[1] = (struct pred*)make_simple_pred_frequency(1, cap_type, cap_id, cap_ns_value, timestamp_defined, timestamp * usec, cap_value);
+    bool result = match_node(config, event, node);
+    free_config(config);
+    free_ast_node(node);
+    free_event((struct event*)event);
+    return result;
+}
+
+static bool within_frequency_cap(
+    enum frequency_type_e type, const char* ns, int64_t value, int64_t length, 
+    int64_t now, 
+    enum frequency_type_e cap_type, uint32_t cap_id, const char* cap_ns, uint32_t cap_value, bool timestamp_defined, int64_t timestamp) 
+    { return frequency(false, type, ns, value, length, now, cap_type, cap_id, cap_ns, cap_value, timestamp_defined, timestamp); }
+static bool not_within_frequency_cap(
+    enum frequency_type_e type, const char* ns, int64_t value, int64_t length, 
+    int64_t now, 
+    enum frequency_type_e cap_type, uint32_t cap_id, const char* cap_ns, uint32_t cap_value, bool timestamp_defined, int64_t timestamp) 
+    { return frequency(true, type, ns, value, length, now, cap_type, cap_id, cap_ns, cap_value, timestamp_defined, timestamp); }
+
+int test_frequency()
+{
+    mu_assert(within_frequency_cap(
+        FREQUENCY_TYPE_FLIGHT, "ns", 100, 0,
+        0, 
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 0, false, 0
+    ), "fcap_type_flight");
+    mu_assert(within_frequency_cap(
+        FREQUENCY_TYPE_FLIGHTIP, "ns", 100, 0,
+        0, 
+        FREQUENCY_TYPE_FLIGHTIP, 10, "ns", 0, false, 0
+    ), "fcap_type_flight_ip");
+    mu_assert(within_frequency_cap(
+        FREQUENCY_TYPE_ADVERTISER, "ns", 100, 0,
+        0, 
+        FREQUENCY_TYPE_ADVERTISER, 20, "ns", 0, false, 0
+    ), "fcap_type_advertiser");
+    mu_assert(within_frequency_cap(
+        FREQUENCY_TYPE_ADVERTISERIP, "ns", 100, 0,
+        0, 
+        FREQUENCY_TYPE_ADVERTISERIP, 20, "ns", 0, false, 0
+    ), "fcap_type_advertiser_ip");
+    mu_assert(within_frequency_cap(
+        FREQUENCY_TYPE_CAMPAIGN, "ns", 100, 0,
+        0, 
+        FREQUENCY_TYPE_CAMPAIGN, 30, "ns", 0, false, 0
+    ), "fcap_type_campaign");
+    mu_assert(within_frequency_cap(
+        FREQUENCY_TYPE_CAMPAIGNIP, "ns", 100, 0,
+        0, 
+        FREQUENCY_TYPE_CAMPAIGNIP, 30, "ns", 0, false, 0
+    ), "fcap_type_campaign_ip");
+    mu_assert(within_frequency_cap(
+        FREQUENCY_TYPE_PRODUCT, "ns", 100, 0,
+        0, 
+        FREQUENCY_TYPE_PRODUCT, 40, "ns", 0, false, 0
+    ), "fcap_type_product");
+    mu_assert(within_frequency_cap(
+        FREQUENCY_TYPE_PRODUCTIP, "ns", 100, 0,
+        0, 
+        FREQUENCY_TYPE_PRODUCTIP, 40, "ns", 0, false, 0
+    ), "fcap_type_product_ip");
+
+    mu_assert(within_frequency_cap(
+        FREQUENCY_TYPE_PRODUCT, "ns", 100, 0,
+        0, 
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 200, false, 0
+    ), "fcap_id_type_ne");
+    mu_assert(within_frequency_cap(
+        FREQUENCY_TYPE_FLIGHT, "ns", 100, 0,
+        0, 
+        FREQUENCY_TYPE_FLIGHT, 1, "ns", 200, false, 0
+    ), "fcap_id_id_ne");
+    mu_assert(within_frequency_cap(
+        FREQUENCY_TYPE_FLIGHT, "blah", 100, 0,
+        0, 
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 200, false, 0
+    ), "fcap_id_ns_ne");
+
+    mu_assert(within_frequency_cap(
+        FREQUENCY_TYPE_FLIGHT, "ns", 100, 0,
+        0, 
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 99, false, 0
+    ), "fcap_val_lt");
+    mu_assert(!within_frequency_cap(
+        FREQUENCY_TYPE_FLIGHT, "ns", 100, 0,
+        0, 
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 100, false, 0
+    ), "fcap_val_eq");
+    mu_assert(!within_frequency_cap(
+        FREQUENCY_TYPE_FLIGHT, "ns", 100, 0,
+        0, 
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 101, false, 0
+    ), "fcap_val_gt");
+
+    mu_assert(within_frequency_cap(
+        FREQUENCY_TYPE_FLIGHT, "ns", 100, 20,
+        40, 
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 200, true, 10
+    ), "fcap_ts_lt");
+    mu_assert(!within_frequency_cap(
+        FREQUENCY_TYPE_FLIGHT, "ns", 100, 20,
+        40, 
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 200, true, 20
+    ), "fcap_ts_eq");
+    mu_assert(!within_frequency_cap(
+        FREQUENCY_TYPE_FLIGHT, "ns", 100, 20,
+        40, 
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 200, true, 30
+    ), "fcap_ts_gt");
+
+    mu_assert(within_frequency_cap(
+        FREQUENCY_TYPE_FLIGHT, "ns", 100, 20,
+        40, 
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 99, true, 30
+    ), "fcap_val_lt_ts_gt");
+
+    // mu_assert(!not_within_frequency_cap(
+    //     FREQUENCY_TYPE_FLIGHT, "ns", 100, 20,
+    //     40, 
+    //     FREQUENCY_TYPE_FLIGHT, 10, "ns", 99, true, 30
+    // ), "fcap_not_val_lt_ts_gt");
+    return 0;
+}
+
 enum segment_function_type {
     SEGMENT_WITHIN,
     SEGMENT_BEFORE,
@@ -301,7 +454,7 @@ static int test_ends_with()
 
 int all_tests() 
 {
-    // mu_run_test(test_within_frequency_cap);
+    mu_run_test(test_frequency);
     mu_run_test(test_segment);
     mu_run_test(test_geo);
     mu_run_test(test_contains);

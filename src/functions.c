@@ -6,10 +6,10 @@
 #include "betree.h"
 #include "functions.h"
 
-bool within_frequency_caps(const struct frequency_caps_list *caps, const struct string_value type, uint32_t id, const struct string_value namespace, uint32_t value, size_t length, int64_t now) 
+bool within_frequency_caps(const struct frequency_caps_list *caps, enum frequency_type_e type, uint32_t id, const struct string_value namespace, uint32_t value, size_t length, int64_t now) 
 {
     for (size_t i = 0; i < caps->size; i++) {
-        if (caps->content[i].id == id && caps->content[i].namespace.str == namespace.str && caps->content[i].type.str == type.str) {
+        if (caps->content[i].id == id && caps->content[i].namespace.str == namespace.str && caps->content[i].type == type) {
             if (length <= 0) {
                 return value > caps->content[i].value;
             }

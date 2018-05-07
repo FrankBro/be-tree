@@ -17,6 +17,7 @@ enum value_e {
     VALUE_IL,
     VALUE_SL,
     VALUE_SEGMENTS,
+    VALUE_FREQUENCY,
 };
 
 struct string_value {
@@ -44,6 +45,31 @@ struct segments_list {
     struct segment* content;
 };
 
+enum frequency_type_e {
+    FREQUENCY_TYPE_ADVERTISER,
+    FREQUENCY_TYPE_ADVERTISERIP,
+    FREQUENCY_TYPE_CAMPAIGN,
+    FREQUENCY_TYPE_CAMPAIGNIP,
+    FREQUENCY_TYPE_FLIGHT,
+    FREQUENCY_TYPE_FLIGHTIP,
+    FREQUENCY_TYPE_PRODUCT,
+    FREQUENCY_TYPE_PRODUCTIP,
+};
+
+struct frequency_cap {
+    enum frequency_type_e type;
+    uint32_t id;
+    struct string_value namespace;
+    bool timestamp_defined;
+    int64_t timestamp;
+    uint32_t value;
+};
+
+struct frequency_caps_list {
+    size_t size;
+    struct frequency_cap* content;
+};
+
 struct value {
     enum value_e value_type;
     union {
@@ -54,6 +80,7 @@ struct value {
         struct integer_list_value ilvalue;
         struct string_list_value slvalue;
         struct segments_list segments_value;
+        struct frequency_caps_list frequency_value;
     };
 };
 
@@ -176,6 +203,7 @@ void add_attr_domain_s(struct config* config, const char* attr, bool allow_undef
 void add_attr_domain_il(struct config* config, const char* attr, bool allow_undefined);
 void add_attr_domain_sl(struct config* config, const char* attr, bool allow_undefined);
 void add_attr_domain_segments(struct config* config, const char* attr, bool allow_undefined);
+void add_attr_domain_frequency(struct config* config, bool allow_undefined);
 void adjust_attr_domains(struct config* config, const struct ast_node* node, struct value_bound bound, bool allow_undefined);
 void adjust_attr_domains_i(struct config* config, const struct ast_node* node, int64_t min, int64_t max, bool allow_undefined);
 const struct attr_domain* get_attr_domain(const struct config* config, betree_var_t variable_id);
@@ -210,6 +238,7 @@ void free_matched_subs(struct matched_subs* matched_subs);
 const struct pred* make_simple_pred_i(betree_var_t variable_id, int64_t value);
 const struct pred* make_simple_pred_f(betree_var_t variable_id, double fvalue);
 const struct pred* make_simple_pred_segment(betree_var_t variable_id, int64_t id, int64_t timestamp);
+const struct pred* make_simple_pred_frequency(betree_var_t variable_id, enum frequency_type_e type, uint32_t id, struct string_value ns, bool timestamp_defined, int64_t timestamp, uint32_t cap_value);
 const struct pred* make_simple_pred_str_i(struct config* config, const char* attr, int64_t value);
 const struct pred* make_simple_pred_str_il(struct config* config, const char* attr, struct integer_list_value value);
 const struct pred* make_simple_pred_str_sl(struct config* config, const char* attr, struct string_list_value value);

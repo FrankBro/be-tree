@@ -43,7 +43,7 @@
     struct special_geo_value special_geo_value;
     struct ast_node *node;
     int token;
-    enum ast_special_frequency_type_e frequency_type;
+    enum frequency_type_e frequency_type;
 }
 
 %token<token> TCEQ TCNE TCGT TCGE TCLT TCLE
@@ -185,14 +185,14 @@ special_expr        : s_frequency_expr                      { $$ = $1; }
                     | s_string_expr                         { $$ = $1; }
 ;
 
-frequency_type      : TADVERTISER                           { $$ = AST_SPECIAL_TYPE_ADVERTISER; }
-                    | TADVERTISERIP                         { $$ = AST_SPECIAL_TYPE_ADVERTISERIP; }
-                    | TCAMPAIGN                             { $$ = AST_SPECIAL_TYPE_CAMPAIGN; }
-                    | TCAMPAIGNIP                           { $$ = AST_SPECIAL_TYPE_CAMPAIGNIP; }
-                    | TFLIGHT                               { $$ = AST_SPECIAL_TYPE_FLIGHT; }
-                    | TFLIGHTIP                             { $$ = AST_SPECIAL_TYPE_FLIGHTIP; }
-                    | TPRODUCT                              { $$ = AST_SPECIAL_TYPE_PRODUCT; }
-                    | TPRODUCTIP                            { $$ = AST_SPECIAL_TYPE_PRODUCTIP; }
+frequency_type      : TADVERTISER                           { $$ = FREQUENCY_TYPE_ADVERTISER; }
+                    | TADVERTISERIP                         { $$ = FREQUENCY_TYPE_ADVERTISERIP; }
+                    | TCAMPAIGN                             { $$ = FREQUENCY_TYPE_CAMPAIGN; }
+                    | TCAMPAIGNIP                           { $$ = FREQUENCY_TYPE_CAMPAIGNIP; }
+                    | TFLIGHT                               { $$ = FREQUENCY_TYPE_FLIGHT; }
+                    | TFLIGHTIP                             { $$ = FREQUENCY_TYPE_FLIGHTIP; }
+                    | TPRODUCT                              { $$ = FREQUENCY_TYPE_PRODUCT; }
+                    | TPRODUCTIP                            { $$ = FREQUENCY_TYPE_PRODUCTIP; }
 ;
 
 s_frequency_expr    : TWITHINFREQUENCYCAP TLPAREN frequency_type TCOMMA string TCOMMA integer TCOMMA integer TRPAREN

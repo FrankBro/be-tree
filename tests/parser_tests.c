@@ -270,7 +270,7 @@ int test_special()
     mu_assert(node->type == AST_TYPE_SPECIAL_EXPR &&
         node->special_expr.type == AST_SPECIAL_FREQUENCY &&
         node->special_expr.frequency.op == AST_SPECIAL_WITHINFREQUENCYCAP &&
-        node->special_expr.frequency.type == AST_SPECIAL_TYPE_CAMPAIGN &&
+        node->special_expr.frequency.type == FREQUENCY_TYPE_CAMPAIGN &&
         strcmp(node->special_expr.frequency.ns.string, "namespace") == 0 &&
         node->special_expr.frequency.value == 100 &&
         node->special_expr.frequency.length == 0
