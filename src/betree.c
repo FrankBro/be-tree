@@ -1905,3 +1905,16 @@ bool is_variable_allow_undefined(const struct config* config, const betree_var_t
     abort();
     return false;
 }
+
+int parse(const char *text, struct ast_node **node);
+
+void betree_insert(struct config* config, betree_sub_t id, const char* expr, struct cnode* cnode)
+{
+    struct ast_node* node;
+    if(parse(expr, &node) != 0) {
+        fprintf(stderr, "Failed to parse: %s\n", expr);
+        abort();
+    }
+    const struct sub* sub = make_sub(config, id, node); 
+    insert_be_tree(config, sub, cnode, NULL); 
+}

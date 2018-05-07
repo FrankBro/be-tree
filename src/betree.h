@@ -260,3 +260,5 @@ void add_integer_list_value(int64_t integer, struct integer_list_value* list);
 const char* integer_list_value_to_string(struct integer_list_value list);
 void add_string_list_value(struct string_value string, struct string_list_value* list);
 const char* string_list_value_to_string(struct string_list_value list);
+
+void betree_insert(struct config* config, betree_sub_t id, const char* expr, struct cnode* cnode);
