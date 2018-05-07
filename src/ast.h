@@ -305,5 +305,6 @@ bool match_node(struct config* config, const struct event* event, const struct a
 void get_variable_bound(const struct attr_domain* domain, const struct ast_node* node, struct value_bound* bound);
 
 void assign_variable_id(struct config* config, struct ast_node* node);
+void assign_str_id(struct config* config, struct ast_node* node);
 
 const char* ast_to_string(const struct ast_node* node);
