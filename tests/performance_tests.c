@@ -3,7 +3,8 @@
 #include <stdlib.h> 
 #include <string.h> 
 #include <inttypes.h>
- 
+#include <float.h>
+
 #include "ast.h" 
 #include "debug.h"
 #include "parser.h" 
@@ -178,10 +179,10 @@ void fill_event_random(const struct sub** subs, size_t sub_count, struct event* 
     for(size_t i = 0; i < count; i++) {
         size_t sub_index = random_in_range(0, sub_count - 1);
         const struct sub* sub = subs[sub_index];
-        size_t variable_id_index = random_in_range(0, sub->variable_id_count - 1);
-        betree_var_t variable_id = sub->variable_ids[variable_id_index];
+        size_t variable_id_index = random_in_range(0, sub->attr_var_count - 1);
+        struct attr_var attr_var = sub->attr_vars[variable_id_index];
         int64_t value = random_in_range(0, 100);
-        struct pred* pred = (struct pred*)make_simple_pred_i(variable_id, value);
+        struct pred* pred = (struct pred*)make_simple_pred_i(attr_var.attr, attr_var.var, value);
         event->preds[i] = pred;
     }
 }

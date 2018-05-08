@@ -36,7 +36,7 @@ frequency(
     struct event* event = (struct event*)make_event();
     event->pred_count = 2;
     event->preds = calloc(2, sizeof(*event->preds));
-    event->preds[0] = (struct pred*)make_simple_pred_i(0, now);
+    event->preds[0] = (struct pred*)make_simple_pred_i("now", 0, now);
     struct string_value cap_ns_value = { .string = strdup(cap_ns), .str = get_id_for_string(config, cap_ns) };
     event->preds[1] = (struct pred*)make_simple_pred_frequency(1, cap_type, cap_id, cap_ns_value, timestamp_defined, timestamp * usec, cap_value);
     bool result = match_node(config, event, node);
@@ -225,10 +225,10 @@ segment(bool has_not, enum segment_function_type func_type,
     struct event* event = (struct event*)make_event();
     event->pred_count = 4;
     event->preds = calloc(4, sizeof(*event->preds));
-    event->preds[0] = (struct pred*)make_simple_pred_i(0, 40);
-    event->preds[1] = (struct pred*)make_simple_pred_segment(1, 1, 30 * usec);
-    event->preds[2] = (struct pred*)make_simple_pred_segment(2, 1, 10 * usec);
-    event->preds[3] = (struct pred*)make_simple_pred_segment(3, segment_id, segment_seconds * usec);
+    event->preds[0] = (struct pred*)make_simple_pred_i("now", 0, 40);
+    event->preds[1] = (struct pred*)make_simple_pred_segment("seg_a", 1, 1, 30 * usec);
+    event->preds[2] = (struct pred*)make_simple_pred_segment("seg_b", 2, 1, 10 * usec);
+    event->preds[3] = (struct pred*)make_simple_pred_segment("segments_with_timestamp", 3, segment_id, segment_seconds * usec);
     bool result = match_node(config, event, node);
     free_config(config);
     free_ast_node(node);
@@ -295,8 +295,8 @@ static bool geo(bool has_not, const char* latitude, const char* longitude, const
     struct event* event = (struct event*)make_event();
     event->pred_count = 2;
     event->preds = calloc(2, sizeof(*event->preds));
-    event->preds[0] = (struct pred*)make_simple_pred_f(0, latitude_value);
-    event->preds[1] = (struct pred*)make_simple_pred_f(1, longitude_value);
+    event->preds[0] = (struct pred*)make_simple_pred_f("latitude", 0, latitude_value);
+    event->preds[1] = (struct pred*)make_simple_pred_f("longitude", 1, longitude_value);
     bool result = match_node(config, event, node);
     free_config(config);
     free_ast_node(node);

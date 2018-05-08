@@ -102,15 +102,20 @@ struct value_bound {
     };
 };
 
+struct attr_var {
+    const char* attr;
+    betree_var_t var;
+};
+
 struct pred {
-    betree_var_t variable_id;
+    struct attr_var attr_var;
     struct value value;
 };
 
 struct sub {
     betree_sub_t id;
-    size_t variable_id_count;
-    betree_var_t* variable_ids;
+    size_t attr_var_count;
+    struct attr_var* attr_vars;
     const struct ast_node *expr;
 };
 
@@ -145,7 +150,7 @@ struct pdir;
 
 struct pnode {
     struct pdir* parent;
-    betree_var_t variable_id;
+    struct attr_var attr_var;
     struct cdir *cdir;
     float score;
 };
@@ -161,7 +166,7 @@ struct cdir {
         struct pnode* pnode_parent;
         struct cdir* cdir_parent;
     };
-    betree_var_t variable_id;
+    struct attr_var attr_var;
     struct value_bound bound;
     struct cnode *cnode;
     struct cdir *lchild;
@@ -175,7 +180,7 @@ struct pdir {
 };
 
 struct attr_domain {
-    betree_var_t variable_id;
+    struct attr_var attr_var;
     struct value_bound bound;
     bool allow_undefined;
 };
@@ -235,9 +240,9 @@ struct matched_subs {
 
 struct matched_subs* make_matched_subs();
 void free_matched_subs(struct matched_subs* matched_subs);
-const struct pred* make_simple_pred_i(betree_var_t variable_id, int64_t value);
-const struct pred* make_simple_pred_f(betree_var_t variable_id, double fvalue);
-const struct pred* make_simple_pred_segment(betree_var_t variable_id, int64_t id, int64_t timestamp);
+const struct pred* make_simple_pred_i(const char* attr, betree_var_t variable_id, int64_t value);
+const struct pred* make_simple_pred_f(const char* attr, betree_var_t variable_id, double fvalue);
+const struct pred* make_simple_pred_segment(const char* attr, betree_var_t variable_id, int64_t id, int64_t timestamp);
 const struct pred* make_simple_pred_frequency(betree_var_t variable_id, enum frequency_type_e type, uint32_t id, struct string_value ns, bool timestamp_defined, int64_t timestamp, uint32_t cap_value);
 const struct pred* make_simple_pred_str_i(struct config* config, const char* attr, int64_t value);
 const struct pred* make_simple_pred_str_il(struct config* config, const char* attr, struct integer_list_value value);
@@ -250,7 +255,7 @@ const struct event* make_simple_event_i(struct config* config, const char* attr,
 const struct event* make_simple_event_s(struct config* config, const char* attr, const char* value);
 const struct event* make_simple_event_il(struct config* config, const char* attr, struct integer_list_value value);
 const struct event* make_simple_event_sl(struct config* config, const char* attr, struct string_list_value value);
-void event_to_string(struct config* config, const struct event* event, char* buffer);
+void event_to_string(const struct event* event, char* buffer);
 
 void insert_be_tree(const struct config* config, const struct sub* sub, struct cnode* cnode, struct cdir* cdir);
 void match_be_tree(struct config* config, const struct event* event, const struct cnode* cnode, struct matched_subs* matched_subs);
@@ -262,3 +267,7 @@ void add_string_list_value(struct string_value string, struct string_list_value*
 const char* string_list_value_to_string(struct string_list_value list);
 
 void betree_insert(struct config* config, betree_sub_t id, const char* expr, struct cnode* cnode);
+
+struct attr_var make_attr_var(const char* attr, struct config* config);
+struct attr_var copy_attr_var(struct attr_var attr_var);
+void free_attr_var(struct attr_var attr_var);

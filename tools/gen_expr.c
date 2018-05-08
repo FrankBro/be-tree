@@ -118,7 +118,7 @@ void write_expr(FILE* f, const struct ast_node* node)
             abort();
         }
         case(AST_TYPE_NUMERIC_COMPARE_EXPR): {
-            fprintf(f, "%s ", node->numeric_compare_expr.name);
+            fprintf(f, "%s ", node->numeric_compare_expr.attr_var.attr);
             switch(node->numeric_compare_expr.op) {
                 case AST_NUMERIC_COMPARE_LT: {
                     fprintf(f, "< ");
@@ -144,7 +144,7 @@ void write_expr(FILE* f, const struct ast_node* node)
             break;
         }
         case AST_TYPE_EQUALITY_EXPR : {
-            fprintf(f, "%s ", node->equality_expr.name);
+            fprintf(f, "%s ", node->equality_expr.attr_var.attr);
             switch(node->equality_expr.op) {
                 case AST_EQUALITY_EQ: {
                     fprintf(f, "= ");
@@ -164,7 +164,7 @@ void write_expr(FILE* f, const struct ast_node* node)
         case(AST_TYPE_BOOL_EXPR): {
             switch(node->bool_expr.op) {
                 case AST_BOOL_VARIABLE: {
-                    fprintf(f, "%s", node->bool_expr.variable.name);
+                    fprintf(f, "%s", node->bool_expr.variable.attr);
                     break;
                 }
                 case AST_BOOL_NOT: {

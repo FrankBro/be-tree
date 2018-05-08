@@ -36,7 +36,7 @@
     struct string_value string_value;
     struct numeric_compare_value numeric_compare_value;
     struct equality_value equality_value;
-    struct variable_value variable_value;
+    struct attr_var variable_value;
     struct set_left_value set_left_value;
     struct set_right_value set_right_value;
     struct list_value list_value;
@@ -145,7 +145,7 @@ eq_expr             : ident TCEQ eq_value                   { $$ = ast_equality_
                     | ident TCNE eq_value                   { $$ = ast_equality_expr_create(AST_EQUALITY_NE, $1, $3); free($1); }
 ;       
 
-variable_value      : ident                                 { $$.name = strdup($1); $$.variable_id = -1; free($1); }
+variable_value      : ident                                 { $$ = make_attr_var($1, NULL); free($1); }
 
 set_left_value      : integer                               { $$.value_type = AST_SET_LEFT_VALUE_INTEGER; $$.integer_value = $1; }
                     | string                                { $$.value_type = AST_SET_LEFT_VALUE_STRING; $$.string_value = $1; }

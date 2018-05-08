@@ -127,7 +127,7 @@ int test_string()
         node->equality_expr.op == AST_EQUALITY_EQ &&
         node->equality_expr.value.value_type == AST_EQUALITY_VALUE_STRING &&
         strcmp(node->equality_expr.value.string_value.string, "a") == 0 &&
-        strcmp(node->equality_expr.name, "a") == 0
+        strcmp(node->equality_expr.attr_var.attr, "a") == 0
     , "eq");
     free_ast_node(node);
     parse("a <> \"a\"", &node);
@@ -135,7 +135,7 @@ int test_string()
         node->equality_expr.op == AST_EQUALITY_NE &&
         node->equality_expr.value.value_type == AST_EQUALITY_VALUE_STRING &&
         strcmp(node->equality_expr.value.string_value.string, "a") == 0 &&
-        strcmp(node->equality_expr.name, "a") == 0
+        strcmp(node->equality_expr.attr_var.attr, "a") == 0
     , "ne");
     free_ast_node(node);
     return 0;
@@ -293,7 +293,7 @@ int test_special()
         node->special_expr.type == AST_SPECIAL_SEGMENT &&
         node->special_expr.segment.op == AST_SPECIAL_SEGMENTWITHIN &&
         node->special_expr.segment.has_variable == true &&
-        strcmp(node->special_expr.segment.name, "name") == 0&&
+        strcmp(node->special_expr.segment.attr_var.attr, "name") == 0&&
         node->special_expr.segment.segment_id == 1 &&
         node->special_expr.segment.seconds == 20
     , "segment_within");
@@ -303,7 +303,7 @@ int test_special()
         node->special_expr.type == AST_SPECIAL_SEGMENT &&
         node->special_expr.segment.op == AST_SPECIAL_SEGMENTBEFORE &&
         node->special_expr.segment.has_variable == true &&
-        strcmp(node->special_expr.segment.name, "name") == 0 &&
+        strcmp(node->special_expr.segment.attr_var.attr, "name") == 0 &&
         node->special_expr.segment.segment_id == 1 &&
         node->special_expr.segment.seconds == 20
     , "segment_before");
@@ -338,7 +338,7 @@ int test_special()
     mu_assert(node->type == AST_TYPE_SPECIAL_EXPR &&
         node->special_expr.type == AST_SPECIAL_STRING &&
         node->special_expr.string.op == AST_SPECIAL_CONTAINS &&
-        strcmp(node->special_expr.string.name, "a") == 0 &&
+        strcmp(node->special_expr.string.attr_var.attr, "a") == 0 &&
         strcmp(node->special_expr.string.pattern, "abc") == 0
     , "contains");
     free_ast_node(node);
@@ -346,7 +346,7 @@ int test_special()
     mu_assert(node->type == AST_TYPE_SPECIAL_EXPR &&
         node->special_expr.type == AST_SPECIAL_STRING &&
         node->special_expr.string.op == AST_SPECIAL_STARTSWITH &&
-        strcmp(node->special_expr.string.name, "a") == 0 &&
+        strcmp(node->special_expr.string.attr_var.attr, "a") == 0 &&
         strcmp(node->special_expr.string.pattern, "abc") == 0
     , "starts_with");
     free_ast_node(node);
@@ -354,7 +354,7 @@ int test_special()
     mu_assert(node->type == AST_TYPE_SPECIAL_EXPR &&
         node->special_expr.type == AST_SPECIAL_STRING &&
         node->special_expr.string.op == AST_SPECIAL_ENDSWITH &&
-        strcmp(node->special_expr.string.name, "a") == 0 &&
+        strcmp(node->special_expr.string.attr_var.attr, "a") == 0 &&
         strcmp(node->special_expr.string.pattern, "abc") == 0
     , "ends_with");
     free_ast_node(node);

@@ -7,7 +7,7 @@ get_variable(const struct config* config, betree_var_t variable_id, const struct
 {
     for(size_t i=0; i < event->pred_count; i++) {
         const struct pred* pred = event->preds[i];
-        if(variable_id == pred->variable_id) {
+        if(variable_id == pred->attr_var.var) {
             *value = pred->value;
             return VARIABLE_DEFINED;
         }

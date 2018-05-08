@@ -26,8 +26,7 @@ struct ast_node* ast_numeric_compare_expr_create(const enum ast_numeric_compare_
     struct ast_node* node = ast_node_create();
     node->type = AST_TYPE_NUMERIC_COMPARE_EXPR;
     node->numeric_compare_expr.op = op;
-    node->numeric_compare_expr.name = strdup(name);
-    node->numeric_compare_expr.variable_id = -1;
+    node->numeric_compare_expr.attr_var = make_attr_var(name, NULL);
     node->numeric_compare_expr.value = value;
     return node;
 }
@@ -37,8 +36,7 @@ struct ast_node* ast_equality_expr_create(const enum ast_equality_e op, const ch
     struct ast_node* node = ast_node_create();
     node->type = AST_TYPE_EQUALITY_EXPR;
     node->equality_expr.op = op;
-    node->equality_expr.name = strdup(name);
-    node->equality_expr.variable_id = -1;
+    node->equality_expr.attr_var = make_attr_var(name, NULL);
     node->equality_expr.value = value;
     return node;
 }
@@ -54,8 +52,7 @@ static struct ast_node* ast_bool_expr_create(enum ast_bool_e op)
 struct ast_node* ast_bool_expr_variable_create(const char* name)
 {
     struct ast_node* node = ast_bool_expr_create(AST_BOOL_VARIABLE);
-    node->bool_expr.variable.name = strdup(name);
-    node->bool_expr.variable.variable_id = -1;
+    node->bool_expr.variable = make_attr_var(name, NULL);
     return node;
 }
 
@@ -89,8 +86,7 @@ struct ast_node* ast_list_expr_create(const enum ast_list_e op, const char* name
     struct ast_node* node = ast_node_create();
     node->type = AST_TYPE_LIST_EXPR;
     node->list_expr.op = op;
-    node->list_expr.name = strdup(name);
-    node->list_expr.variable_id = -1;
+    node->list_expr.attr_var = make_attr_var(name, NULL);
     node->list_expr.value = list_value;
     return node;
 }
@@ -127,13 +123,12 @@ struct ast_node* ast_special_segment_create(const enum ast_special_segment_e op,
     };
     if(name == NULL) {
         segment.has_variable = false;
-        segment.name = NULL;
+        segment.attr_var = make_attr_var(NULL, NULL);
     }
     else {
         segment.has_variable = true;
-        segment.name = strdup(name);
+        segment.attr_var = make_attr_var(name, NULL);
     }
-    segment.variable_id = -1;
     node->special_expr.type = AST_SPECIAL_SEGMENT;
     node->special_expr.segment = segment;
     return node;
@@ -159,8 +154,7 @@ struct ast_node* ast_special_string_create(const enum ast_special_string_e op, c
     struct ast_node* node = ast_special_expr_create();
     struct ast_special_string string = {
         .op = op,
-        .name = strdup(name),
-        .variable_id = -1,
+        .attr_var = make_attr_var(name, NULL),
         .pattern = strdup(pattern)
     };
     node->special_expr.type = AST_SPECIAL_STRING;
@@ -175,12 +169,12 @@ void free_special_expr(struct ast_special_expr special_expr)
             free((char*)special_expr.frequency.ns.string);
             break;
         case AST_SPECIAL_SEGMENT:
-            free((char*)special_expr.segment.name);
+            free_attr_var(special_expr.segment.attr_var);
             break;
         case AST_SPECIAL_GEO:
             break;
         case AST_SPECIAL_STRING:
-            free((char*)special_expr.string.name);
+            free_attr_var(special_expr.string.attr_var);
             free((char*)special_expr.string.pattern);
             break;
         default:
@@ -199,7 +193,7 @@ void free_set_expr(struct ast_set_expr set_expr)
             break;
         }
         case AST_SET_LEFT_VALUE_VARIABLE: {
-            free((char*)set_expr.left_value.variable_value.name);
+            free_attr_var(set_expr.left_value.variable_value);
             break;
         }
         default: {
@@ -219,7 +213,7 @@ void free_set_expr(struct ast_set_expr set_expr)
             break;
         }
         case AST_SET_RIGHT_VALUE_VARIABLE: {
-            free((char*)set_expr.right_value.variable_value.name);
+            free_attr_var(set_expr.right_value.variable_value);
             break;
         }
         default: {
@@ -246,7 +240,7 @@ void free_list_expr(struct ast_list_expr list_expr)
             switch_default_error("Invalid list value type");
         }
     }
-    free((char*)list_expr.name);
+    free_attr_var(list_expr.attr_var);
 }
 
 void free_ast_node(struct ast_node* node)
@@ -259,10 +253,10 @@ void free_ast_node(struct ast_node* node)
             free_special_expr(node->special_expr);
             break;
         case AST_TYPE_NUMERIC_COMPARE_EXPR:
-            free((char*)node->numeric_compare_expr.name);
+            free_attr_var(node->numeric_compare_expr.attr_var);
             break;
         case AST_TYPE_EQUALITY_EXPR:
-            free((char*)node->equality_expr.name);
+            free_attr_var(node->equality_expr.attr_var);
             if(node->equality_expr.value.value_type == AST_EQUALITY_VALUE_STRING) {
                 free((char*)node->equality_expr.value.string_value.string);
             }
@@ -278,7 +272,7 @@ void free_ast_node(struct ast_node* node)
                     free_ast_node((struct ast_node*)node->bool_expr.binary.rhs);
                     break;
                 case AST_BOOL_VARIABLE:
-                    free((char*)node->bool_expr.variable.name);
+                    free_attr_var(node->bool_expr.variable);
                     break;
                 default:
                     switch_default_error("Invalid bool expr operation");
@@ -465,7 +459,7 @@ bool match_special_expr(struct config* config, const struct event* event, const 
             enum variable_state_e now_state = get_integer_attr(config, event, "now", &now);
             betree_assert(now_state != VARIABLE_MISSING, "Attribute 'now' is not defined");
             struct segments_list segments;
-            const char* segments_attr = special_expr.segment.has_variable ? special_expr.segment.name : "segments_with_timestamp";
+            const char* segments_attr = special_expr.segment.has_variable ? special_expr.segment.attr_var.attr : "segments_with_timestamp";
             enum variable_state_e segments_state = get_segments_attr(config, event, segments_attr, &segments);
             betree_assert(segments_state != VARIABLE_MISSING, "Attribute is not defined");
             if(now_state == VARIABLE_UNDEFINED || segments_state == VARIABLE_UNDEFINED) {
@@ -510,7 +504,7 @@ bool match_special_expr(struct config* config, const struct event* event, const 
         }
         case AST_SPECIAL_STRING: {
             struct string_value value;
-            enum variable_state_e state = get_string_attr(config, event, special_expr.string.name, &value);
+            enum variable_state_e state = get_string_attr(config, event, special_expr.string.attr_var.attr, &value);
             betree_assert(state != VARIABLE_MISSING, "Attribute is not defined");
             if(state == VARIABLE_UNDEFINED) {
                 return false;
@@ -541,7 +535,7 @@ bool match_special_expr(struct config* config, const struct event* event, const 
 bool match_list_expr(const struct config* config, const struct event* event, const struct ast_list_expr list_expr)
 {
     struct value variable;
-    enum variable_state_e state = get_variable(config, list_expr.variable_id, event, &variable);
+    enum variable_state_e state = get_variable(config, list_expr.attr_var.var, event, &variable);
     betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
     if(state == VARIABLE_UNDEFINED) {
         return false;
@@ -654,7 +648,7 @@ bool match_set_expr(const struct config* config, const struct event* event, cons
     bool is_in;
     if(left.value_type == AST_SET_LEFT_VALUE_INTEGER && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
         struct integer_list_value variable;
-        enum variable_state_e state = get_integer_list_var(config, right.variable_value.variable_id, event, &variable);
+        enum variable_state_e state = get_integer_list_var(config, right.variable_value.var, event, &variable);
         betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
         if(state == VARIABLE_UNDEFINED) {
             return false;
@@ -663,7 +657,7 @@ bool match_set_expr(const struct config* config, const struct event* event, cons
     }
     else if(left.value_type == AST_SET_LEFT_VALUE_STRING && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
         struct string_list_value variable;
-        enum variable_state_e state = get_string_list_var(config, right.variable_value.variable_id, event, &variable);
+        enum variable_state_e state = get_string_list_var(config, right.variable_value.var, event, &variable);
         betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
         if(state == VARIABLE_UNDEFINED) {
             return false;
@@ -672,7 +666,7 @@ bool match_set_expr(const struct config* config, const struct event* event, cons
     }
     else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE && right.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST) {
         int64_t variable;
-        enum variable_state_e state = get_integer_var(config, left.variable_value.variable_id, event, &variable);
+        enum variable_state_e state = get_integer_var(config, left.variable_value.var, event, &variable);
         betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
         if(state == VARIABLE_UNDEFINED) {
             return false;
@@ -681,7 +675,7 @@ bool match_set_expr(const struct config* config, const struct event* event, cons
     }
     else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE && right.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
         struct string_value variable;
-        enum variable_state_e state = get_string_var(config, left.variable_value.variable_id, event, &variable);
+        enum variable_state_e state = get_string_var(config, left.variable_value.var, event, &variable);
         betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
         if(state == VARIABLE_UNDEFINED) {
             return false;
@@ -709,7 +703,7 @@ bool match_set_expr(const struct config* config, const struct event* event, cons
 bool match_numeric_compare_expr(const struct config* config, const struct event* event, const struct ast_numeric_compare_expr numeric_compare_expr)
 {
     struct value variable;
-    enum variable_state_e state = get_variable(config, numeric_compare_expr.variable_id, event, &variable);
+    enum variable_state_e state = get_variable(config, numeric_compare_expr.attr_var.var, event, &variable);
     betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
     if(state == VARIABLE_UNDEFINED) {
         return false;
@@ -790,7 +784,7 @@ bool match_numeric_compare_expr(const struct config* config, const struct event*
 bool match_equality_expr(const struct config* config, const struct event* event, const struct ast_equality_expr equality_expr)
 {
     struct value variable;
-    enum variable_state_e state = get_variable(config, equality_expr.variable_id, event, &variable);
+    enum variable_state_e state = get_variable(config, equality_expr.attr_var.var, event, &variable);
     betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
     if(state == VARIABLE_UNDEFINED) {
         return false;
@@ -869,7 +863,7 @@ bool match_bool_expr(struct config* config, const struct event* event, const str
         }
         case AST_BOOL_VARIABLE: {
             bool value;
-            enum variable_state_e state = get_bool_var(config, bool_expr.variable.variable_id, event, &value);
+            enum variable_state_e state = get_bool_var(config, bool_expr.variable.var, event, &value);
             betree_assert(state != VARIABLE_MISSING, "Variable is missing");
             if(state == VARIABLE_UNDEFINED) {
                 return false;
@@ -1110,8 +1104,8 @@ void assign_variable_id(struct config* config, struct ast_node* node)
                 }
                 case AST_SPECIAL_SEGMENT: {
                     if(node->special_expr.segment.has_variable) {
-                        betree_var_t variable_id = get_id_for_attr(config, node->special_expr.segment.name);
-                        node->special_expr.segment.variable_id = variable_id;
+                        betree_var_t variable_id = get_id_for_attr(config, node->special_expr.segment.attr_var.attr);
+                        node->special_expr.segment.attr_var.var = variable_id;
                     }
                     return;
                 }
@@ -1119,8 +1113,8 @@ void assign_variable_id(struct config* config, struct ast_node* node)
                     return;
                 }
                 case AST_SPECIAL_STRING: {
-                    betree_var_t variable_id = get_id_for_attr(config, node->special_expr.string.name);
-                    node->special_expr.string.variable_id = variable_id;
+                    betree_var_t variable_id = get_id_for_attr(config, node->special_expr.string.attr_var.attr);
+                    node->special_expr.string.attr_var.var = variable_id;
                     return;
                 }
                 default: {
@@ -1131,13 +1125,13 @@ void assign_variable_id(struct config* config, struct ast_node* node)
             return;
         }
         case(AST_TYPE_NUMERIC_COMPARE_EXPR): {
-            betree_var_t variable_id = get_id_for_attr(config, node->numeric_compare_expr.name);
-            node->numeric_compare_expr.variable_id = variable_id;
+            betree_var_t variable_id = get_id_for_attr(config, node->numeric_compare_expr.attr_var.attr);
+            node->numeric_compare_expr.attr_var.var = variable_id;
             return;
         }
         case(AST_TYPE_EQUALITY_EXPR): {
-            betree_var_t variable_id = get_id_for_attr(config, node->equality_expr.name);
-            node->equality_expr.variable_id = variable_id;
+            betree_var_t variable_id = get_id_for_attr(config, node->equality_expr.attr_var.attr);
+            node->equality_expr.attr_var.var = variable_id;
             return;
         }
         case(AST_TYPE_BOOL_EXPR): {
@@ -1153,8 +1147,8 @@ void assign_variable_id(struct config* config, struct ast_node* node)
                     return;
                 }
                 case AST_BOOL_VARIABLE: {
-                    betree_var_t variable_id = get_id_for_attr(config, node->bool_expr.variable.name);
-                    node->bool_expr.variable.variable_id = variable_id;
+                    betree_var_t variable_id = get_id_for_attr(config, node->bool_expr.variable.attr);
+                    node->bool_expr.variable.var = variable_id;
                     return;
                 }
                 default:
@@ -1163,8 +1157,8 @@ void assign_variable_id(struct config* config, struct ast_node* node)
             }
         }
         case(AST_TYPE_LIST_EXPR): {
-            betree_var_t variable_id = get_id_for_attr(config, node->list_expr.name);
-            node->list_expr.variable_id = variable_id;
+            betree_var_t variable_id = get_id_for_attr(config, node->list_expr.attr_var.attr);
+            node->list_expr.attr_var.var = variable_id;
             return;
         }
         case(AST_TYPE_SET_EXPR): {
@@ -1176,8 +1170,8 @@ void assign_variable_id(struct config* config, struct ast_node* node)
                     break;
                 }
                 case AST_SET_LEFT_VALUE_VARIABLE: {
-                    betree_var_t variable_id = get_id_for_attr(config, node->set_expr.left_value.variable_value.name);
-                    node->set_expr.left_value.variable_value.variable_id = variable_id;
+                    betree_var_t variable_id = get_id_for_attr(config, node->set_expr.left_value.variable_value.attr);
+                    node->set_expr.left_value.variable_value.var = variable_id;
                     break;
                 }
                 default: {
@@ -1192,8 +1186,8 @@ void assign_variable_id(struct config* config, struct ast_node* node)
                     break;
                 }
                 case AST_SET_RIGHT_VALUE_VARIABLE: {
-                    betree_var_t variable_id = get_id_for_attr(config, node->set_expr.right_value.variable_value.name);
-                    node->set_expr.right_value.variable_value.variable_id = variable_id;
+                    betree_var_t variable_id = get_id_for_attr(config, node->set_expr.right_value.variable_value.attr);
+                    node->set_expr.right_value.variable_value.var = variable_id;
                     break;
                 }
                 default: {

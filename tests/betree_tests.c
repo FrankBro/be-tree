@@ -9,16 +9,22 @@
 #include "minunit.h"
 #include "utils.h"
 
-const struct sub* make_simple_sub_i(struct config* config, betree_sub_t id, const char* attr, int64_t ivalue)
+struct sub* make_simple_sub1(struct config* config, betree_sub_t id, const char* attr)
 {
     struct sub* sub = make_empty_sub(id);
-    sub->variable_id_count = 1;
-    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
-    if(sub->variable_ids == NULL) {
+    sub->attr_var_count = 1;
+    sub->attr_vars = calloc(1, sizeof(*sub->attr_vars));
+    if(sub->attr_vars == NULL) {
         fprintf(stderr, "%s calloc failed", __func__);
         abort();
     }
-    sub->variable_ids[0] = get_id_for_attr(config, attr);
+    sub->attr_vars[0] = make_attr_var(attr, config);
+    return sub;
+}
+
+const struct sub* make_simple_sub_i(struct config* config, betree_sub_t id, const char* attr, int64_t ivalue)
+{
+    struct sub* sub = make_simple_sub1(config, id, attr);
     struct equality_value value = { .value_type = AST_EQUALITY_VALUE_INTEGER, .integer_value = ivalue };
     struct ast_node* expr = ast_equality_expr_create(AST_EQUALITY_EQ, attr, value);
     assign_variable_id(config, expr);
@@ -28,16 +34,9 @@ const struct sub* make_simple_sub_i(struct config* config, betree_sub_t id, cons
 
 const struct sub* make_simple_sub_set_i(struct config* config, betree_sub_t id, const char* attr, enum ast_set_e op, int64_t ivalue)
 {
-    struct sub* sub = make_empty_sub(id);
-    sub->variable_id_count = 1;
-    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
-    if(sub->variable_ids == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
-        abort();
-    }
-    sub->variable_ids[0] = get_id_for_attr(config, attr);
+    struct sub* sub = make_simple_sub1(config, id, attr);
     struct set_left_value left = { .value_type = AST_SET_LEFT_VALUE_INTEGER, .integer_value = ivalue };
-    struct set_right_value right = { .value_type = AST_SET_RIGHT_VALUE_VARIABLE, .variable_value = { .name = strdup(attr), .variable_id = -1 } };
+    struct set_right_value right = { .value_type = AST_SET_RIGHT_VALUE_VARIABLE, .variable_value = make_attr_var(attr, config) };
     struct ast_node* expr = ast_set_expr_create(op, left, right);
     assign_variable_id(config, expr);
     sub->expr = expr;
@@ -46,16 +45,9 @@ const struct sub* make_simple_sub_set_i(struct config* config, betree_sub_t id, 
 
 const struct sub* make_simple_sub_set_s(struct config* config, betree_sub_t id, const char* attr, enum ast_set_e op, struct string_value svalue)
 {
-    struct sub* sub = make_empty_sub(id);
-    sub->variable_id_count = 1;
-    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
-    if(sub->variable_ids == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
-        abort();
-    }
-    sub->variable_ids[0] = get_id_for_attr(config, attr);
+    struct sub* sub = make_simple_sub1(config, id, attr);
     struct set_left_value left = { .value_type = AST_SET_LEFT_VALUE_STRING, .string_value = svalue };
-    struct set_right_value right = { .value_type = AST_SET_RIGHT_VALUE_VARIABLE, .variable_value = { .name = strdup(attr), .variable_id = -1 } };
+    struct set_right_value right = { .value_type = AST_SET_RIGHT_VALUE_VARIABLE, .variable_value = make_attr_var(attr, config) };
     struct ast_node* expr = ast_set_expr_create(op, left, right);
     assign_variable_id(config, expr);
     sub->expr = expr;
@@ -64,15 +56,8 @@ const struct sub* make_simple_sub_set_s(struct config* config, betree_sub_t id, 
 
 const struct sub* make_simple_sub_set_il(struct config* config, betree_sub_t id, const char* attr, enum ast_set_e op, struct integer_list_value ilvalue)
 {
-    struct sub* sub = make_empty_sub(id);
-    sub->variable_id_count = 1;
-    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
-    if(sub->variable_ids == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
-        abort();
-    }
-    sub->variable_ids[0] = get_id_for_attr(config, attr);
-    struct set_left_value left = { .value_type = AST_SET_LEFT_VALUE_VARIABLE, .variable_value = { .name = strdup(attr), .variable_id = -1 } };
+    struct sub* sub = make_simple_sub1(config, id, attr);
+    struct set_left_value left = { .value_type = AST_SET_LEFT_VALUE_VARIABLE, .variable_value = make_attr_var(attr, config) };
     struct set_right_value right = { .value_type = AST_SET_RIGHT_VALUE_INTEGER_LIST, .integer_list_value = ilvalue };
     struct ast_node* expr = ast_set_expr_create(op, left, right);
     assign_variable_id(config, expr);
@@ -82,14 +67,7 @@ const struct sub* make_simple_sub_set_il(struct config* config, betree_sub_t id,
 
 const struct sub* make_simple_sub_list_il(struct config* config, betree_sub_t id, const char* attr, enum ast_list_e op, struct integer_list_value ilvalue)
 {
-    struct sub* sub = make_empty_sub(id);
-    sub->variable_id_count = 1;
-    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
-    if(sub->variable_ids == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
-        abort();
-    }
-    sub->variable_ids[0] = get_id_for_attr(config, attr);
+    struct sub* sub = make_simple_sub1(config, id, attr);
     struct list_value value = { .value_type = AST_LIST_VALUE_INTEGER_LIST, .integer_list_value = ilvalue };
     struct ast_node* expr = ast_list_expr_create(op, attr, value);
     assign_variable_id(config, expr);
@@ -99,14 +77,7 @@ const struct sub* make_simple_sub_list_il(struct config* config, betree_sub_t id
 
 const struct sub* make_simple_sub_list_sl(struct config* config, betree_sub_t id, const char* attr, enum ast_list_e op, struct string_list_value slvalue)
 {
-    struct sub* sub = make_empty_sub(id);
-    sub->variable_id_count = 1;
-    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
-    if(sub->variable_ids == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
-        abort();
-    }
-    sub->variable_ids[0] = get_id_for_attr(config, attr);
+    struct sub* sub = make_simple_sub1(config, id, attr);
     struct list_value value = { .value_type = AST_LIST_VALUE_STRING_LIST, .string_list_value = slvalue };
     struct ast_node* expr = ast_list_expr_create(op, attr, value);
     assign_variable_id(config, expr);
@@ -124,15 +95,8 @@ struct string_value make_string_value(struct config* config, const char* attr)
 
 const struct sub* make_simple_sub_sl(struct config* config, betree_sub_t id, const char* attr, enum ast_set_e op, struct string_list_value slvalue)
 {
-    struct sub* sub = make_empty_sub(id);
-    sub->variable_id_count = 1;
-    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
-    if(sub->variable_ids == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
-        abort();
-    }
-    sub->variable_ids[0] = get_id_for_attr(config, attr);
-    struct set_left_value left = { .value_type = AST_SET_LEFT_VALUE_VARIABLE, .variable_value = { .name = strdup(attr), .variable_id = -1 } };
+    struct sub* sub = make_simple_sub1(config, id, attr);
+    struct set_left_value left = { .value_type = AST_SET_LEFT_VALUE_VARIABLE, .variable_value = make_attr_var(attr, config) };
     struct set_right_value right = { .value_type = AST_SET_RIGHT_VALUE_STRING_LIST, .string_list_value = slvalue };
     struct ast_node* expr = ast_set_expr_create(op, left, right);
     assign_variable_id(config, expr);
@@ -142,14 +106,7 @@ const struct sub* make_simple_sub_sl(struct config* config, betree_sub_t id, con
 
 const struct sub* make_simple_sub_f(struct config* config, betree_sub_t id, const char* attr, double fvalue)
 {
-    struct sub* sub = make_empty_sub(id);
-    sub->variable_id_count = 1;
-    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
-    if(sub->variable_ids == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
-        abort();
-    }
-    sub->variable_ids[0] = get_id_for_attr(config, attr);
+    struct sub* sub = make_simple_sub1(config, id, attr);
     struct equality_value value = { .value_type = AST_EQUALITY_VALUE_FLOAT, .float_value = fvalue };
     struct ast_node* expr = ast_equality_expr_create(AST_EQUALITY_EQ, attr, value);
     assign_variable_id(config, expr);
@@ -175,15 +132,8 @@ const struct sub* make_simple_sub_f(struct config* config, betree_sub_t id, cons
 
 const struct sub* make_simple_sub_s(struct config* config, betree_sub_t id, const char* attr, const char* svalue)
 {
-    struct sub* sub = make_empty_sub(id);
-    sub->variable_id_count = 1;
-    sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
-    if(sub->variable_ids == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
-        abort();
-    }
-    sub->variable_ids[0] = get_id_for_attr(config, attr);
-    struct equality_value value = { .value_type = AST_EQUALITY_VALUE_STRING, .string_value = { .string = strdup(svalue), .str = -1 } };
+    struct sub* sub = make_simple_sub1(config, id, attr);
+    struct equality_value value = { .value_type = AST_EQUALITY_VALUE_STRING, .string_value = make_string_value(config, svalue) };
     value.string_value.str = get_id_for_string(config, svalue);
     struct ast_node* expr = ast_equality_expr_create(AST_EQUALITY_EQ, attr, value);
 
@@ -304,7 +254,7 @@ bool test_attr_in_pnode(struct config* config, const char* attr, const struct pn
         return false;
     }
     betree_var_t variable_id = get_id_for_attr(config, attr);
-    return pnode->variable_id == variable_id;
+    return pnode->attr_var.var == variable_id;
 }
 
 bool test_attr_in_cdir(struct config* config, const char* attr, const struct cdir* cdir)
@@ -313,7 +263,7 @@ bool test_attr_in_cdir(struct config* config, const char* attr, const struct cdi
         return false;
     }
     betree_var_t variable_id = get_id_for_attr(config, attr);
-    return cdir->variable_id == variable_id;
+    return cdir->attr_var.var == variable_id;
 }
 
 int test_insert_first_split()
@@ -663,7 +613,7 @@ int test_min_partition()
 
     mu_assert(cnode->lnode->sub_count == 2, "First lnode has two subs");
     mu_assert( cnode->pdir->pnode_count == 1 &&
-        cnode->pdir->pnodes[0]->variable_id == 0 &&
+        cnode->pdir->pnodes[0]->attr_var.var == 0 &&
         cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 2, "Has a pnode for 'a' and two subs"
     );
 

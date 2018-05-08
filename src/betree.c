@@ -53,7 +53,7 @@ struct pnode* search_pdir(betree_var_t variable_id, const struct pdir* pdir)
     }
     for(size_t i=0; i < pdir->pnode_count; i++) {
         struct pnode* pnode = pdir->pnodes[i];
-        if(variable_id == pnode->variable_id) {
+        if(variable_id == pnode->attr_var.var) {
             return pnode;
         }
     }
@@ -66,7 +66,7 @@ bool event_contains_variable(const struct event* event, betree_var_t variable_id
 {
     for(size_t i = 0; i < event->pred_count; i++) {
         const struct pred* pred = event->preds[i];
-        if(variable_id == pred->variable_id) {
+        if(variable_id == pred->attr_var.var) {
             return true;
         }
     }
@@ -79,13 +79,13 @@ void match_be_tree(struct config* config, const struct event* event, const struc
     if(cnode->pdir != NULL) {
         for(size_t i = 0; i < cnode->pdir->pnode_count; i++) {
             struct pnode* pnode = cnode->pdir->pnodes[i];
-            const struct attr_domain* attr_domain = get_attr_domain(config, pnode->variable_id);
+            const struct attr_domain* attr_domain = get_attr_domain(config, pnode->attr_var.var);
             if(attr_domain == NULL) {
-                const char* attr = get_attr_for_id(config, pnode->variable_id);
+                const char* attr = get_attr_for_id(config, pnode->attr_var.var);
                 fprintf(stderr, "Could not find attr_domain for attr '%s'", attr);
                 abort();
             }
-            if(attr_domain->allow_undefined || event_contains_variable(event, pnode->variable_id)) {
+            if(attr_domain->allow_undefined || event_contains_variable(event, pnode->attr_var.var)) {
                 search_cdir(config, event, pnode->cdir, matched_subs);
             }
         }
@@ -98,8 +98,8 @@ bool is_event_enclosed(const struct event* event, const struct cdir* cdir)
         return false;
     }
     for(size_t i = 0; i < event->pred_count; i++) {
-        betree_var_t variable_id = event->preds[i]->variable_id;
-        if(variable_id == cdir->variable_id) {
+        betree_var_t variable_id = event->preds[i]->attr_var.var;
+        if(variable_id == cdir->attr_var.var) {
             return true;
         }
     }
@@ -111,13 +111,13 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
     if(cdir == NULL) {
         return false;
     }
-    for(size_t i = 0; i < sub->variable_id_count; i++) {
-        betree_var_t variable_id = sub->variable_ids[i];
-        if(variable_id == cdir->variable_id) {
+    for(size_t i = 0; i < sub->attr_var_count; i++) {
+        betree_var_t variable_id = sub->attr_vars[i].var;
+        if(variable_id == cdir->attr_var.var) {
             const struct attr_domain* attr_domain = NULL;
             for(size_t j = 0; j < config->attr_domain_count; j++) {
                 const struct attr_domain* current_attr_domain = config->attr_domains[j];
-                if(current_attr_domain->variable_id == variable_id) {
+                if(current_attr_domain->attr_var.var == variable_id) {
                     attr_domain = current_attr_domain;
                     break;
                 }
@@ -232,7 +232,7 @@ bool is_used_pnode(betree_var_t variable_id, const struct pnode* pnode)
     if(pnode == NULL || pnode->parent == NULL) {
         return false;
     }
-    if(pnode->variable_id == variable_id) {
+    if(pnode->attr_var.var == variable_id) {
         return true;
     }
     return is_used_pdir(variable_id, pnode->parent);
@@ -243,7 +243,7 @@ bool is_used_cdir(betree_var_t variable_id, const struct cdir* cdir)
     if(cdir == NULL) {
         return false;
     }
-    if(cdir->variable_id == variable_id) {
+    if(cdir->attr_var.var == variable_id) {
         return true;
     }
     switch(cdir->parent_type) {
@@ -323,11 +323,11 @@ void update_partition_score(const struct config* config, struct pnode* pnode)
 {
     // TODO: Wutdo
     float alpha = 0.5;
-    size_t gain = count_attr_in_cdir(pnode->variable_id, pnode->cdir);
+    size_t gain = count_attr_in_cdir(pnode->attr_var.var, pnode->cdir);
     // TODO: Idk man
-    const struct attr_domain* attr_domain = get_attr_domain(config, pnode->variable_id);
+    const struct attr_domain* attr_domain = get_attr_domain(config, pnode->attr_var.var);
     if(attr_domain == NULL) {
-        const char* attr = get_attr_for_id(config, pnode->variable_id);
+        const char* attr = get_attr_for_id(config, pnode->attr_var.var);
         fprintf(stderr, "Could not find attr_domain for attr '%s'", attr);
         abort();
     }
@@ -346,8 +346,8 @@ void insert_be_tree(const struct config* config, const struct sub* sub, struct c
     struct pnode* max_pnode = NULL;
     if(cnode->pdir != NULL) {
         float max_score = -1;
-        for(size_t i = 0; i < sub->variable_id_count; i++) {
-            betree_var_t variable_id = sub->variable_ids[i];
+        for(size_t i = 0; i < sub->attr_var_count; i++) {
+            betree_var_t variable_id = sub->attr_vars[i].var;
             if(!is_used_cnode(variable_id, cnode)) {
                 struct pnode* pnode = search_pdir(variable_id, cnode->pdir);
                 if(pnode != NULL) {
@@ -404,8 +404,8 @@ bool is_overflowed(const struct lnode* lnode)
 
 bool sub_has_attribute(const struct sub* sub, betree_var_t variable_id)
 {
-    for(size_t i = 0; i < sub->variable_id_count; i++) {
-        if(sub->variable_ids[i] == variable_id) {
+    for(size_t i = 0; i < sub->attr_var_count; i++) {
+        if(sub->attr_vars[i].var == variable_id) {
             return true;
         }
     }
@@ -471,14 +471,15 @@ void move(const struct sub* sub, struct lnode* origin, struct lnode* destination
     destination->sub_count++;
 }
 
-struct cdir* create_cdir(const struct config* config, betree_var_t variable_id, struct value_bound bound)
+struct cdir* create_cdir(const struct config* config, const char* attr, betree_var_t variable_id, struct value_bound bound)
 {
     struct cdir* cdir = calloc(1, sizeof(*cdir));
     if(cdir == NULL) {
         fprintf(stderr, "%s calloc failed", __func__);
         abort();
     }
-    cdir->variable_id = variable_id;
+    cdir->attr_var.attr = strdup(attr); 
+    cdir->attr_var.var = variable_id;
     cdir->bound = bound;
     cdir->cnode = make_cnode(config, cdir);
     cdir->lchild = NULL;
@@ -488,7 +489,7 @@ struct cdir* create_cdir(const struct config* config, betree_var_t variable_id, 
 
 struct cdir* create_cdir_with_cdir_parent(const struct config* config, struct cdir* parent, struct value_bound bound)
 {
-    struct cdir* cdir = create_cdir(config, parent->variable_id, bound);
+    struct cdir* cdir = create_cdir(config, parent->attr_var.attr, parent->attr_var.var, bound);
     cdir->parent_type = CNODE_PARENT_CDIR;
     cdir->cdir_parent = parent;
     return cdir;
@@ -496,13 +497,13 @@ struct cdir* create_cdir_with_cdir_parent(const struct config* config, struct cd
 
 struct cdir* create_cdir_with_pnode_parent(const struct config* config, struct pnode* parent, struct value_bound bound)
 {
-    struct cdir* cdir = create_cdir(config, parent->variable_id, bound);
+    struct cdir* cdir = create_cdir(config, parent->attr_var.attr, parent->attr_var.var, bound);
     cdir->parent_type = CNODE_PARENT_PNODE;
     cdir->pnode_parent = parent;
     return cdir;
 }
 
-struct pnode* create_pdir(const struct config* config, betree_var_t variable_id, struct cnode* cnode)
+struct pnode* create_pdir(const struct config* config, const char* attr, betree_var_t variable_id, struct cnode* cnode)
 {
     if(cnode == NULL) {
         fprintf(stderr, "cnode is NULL, cannot create a pdir and pnode");
@@ -528,13 +529,14 @@ struct pnode* create_pdir(const struct config* config, betree_var_t variable_id,
     }
     pnode->cdir = NULL;
     pnode->parent = pdir;
-    pnode->variable_id = variable_id;
+    pnode->attr_var.attr = strdup(attr);
+    pnode->attr_var.var = variable_id;
     pnode->score = 0.f;
     struct value_bound bound;
     bool found = false;
     for(size_t i = 0; i < config->attr_domain_count; i++) {
         const struct attr_domain* attr_domain = config->attr_domains[i];
-        if(attr_domain->variable_id == variable_id) {
+        if(attr_domain->attr_var.var == variable_id) {
             bound = attr_domain->bound;
             found = true;
             break;
@@ -578,8 +580,8 @@ size_t count_attr_in_lnode(betree_var_t variable_id, const struct lnode* lnode)
             fprintf(stderr, "%s, sub is NULL", __func__);
             continue;
         }
-        for(size_t j = 0; j < sub->variable_id_count; j++) {
-            betree_var_t variable_id_to_count = sub->variable_ids[j];
+        for(size_t j = 0; j < sub->attr_var_count; j++) {
+            betree_var_t variable_id_to_count = sub->attr_vars[j].var;
             if(variable_id_to_count == variable_id) {
                 count++;
             }
@@ -597,7 +599,7 @@ bool is_attr_used_in_parent_pdir(betree_var_t variable_id, const struct pdir* pd
 
 bool is_attr_used_in_parent_pnode(betree_var_t variable_id, const struct pnode* pnode)
 {
-    if(pnode->variable_id == variable_id) {
+    if(pnode->attr_var.var == variable_id) {
         return true;
     }
     return is_attr_used_in_parent_pdir(variable_id, pnode->parent);
@@ -605,7 +607,7 @@ bool is_attr_used_in_parent_pnode(betree_var_t variable_id, const struct pnode* 
 
 bool is_attr_used_in_parent_cdir(betree_var_t variable_id, const struct cdir* cdir)
 {
-    if(cdir->variable_id == variable_id) {
+    if(cdir->attr_var.var == variable_id) {
         return true;
     }
     switch(cdir->parent_type) {
@@ -635,20 +637,40 @@ bool is_attr_used_in_parent_lnode(betree_var_t variable_id, const struct lnode* 
     return is_attr_used_in_parent_cnode(variable_id, lnode->parent);
 }
 
-bool get_next_highest_score_unused_attr(const struct config* config, const struct lnode* lnode, betree_var_t* variable_id)
+bool splitable_attr_domain(const struct attr_domain* attr_domain)
+{
+    switch(attr_domain->bound.value_type) {
+        case VALUE_I:
+        case VALUE_F:
+        case VALUE_B:
+            return true;
+        case VALUE_S:
+        case VALUE_FREQUENCY:
+        case VALUE_IL:
+        case VALUE_SL:
+        case VALUE_SEGMENTS:
+            return false;
+        default:
+            switch_default_error("Invalid bound value type");
+            return false;
+    }
+}
+
+bool get_next_highest_score_unused_attr(const struct config* config, const struct lnode* lnode, struct attr_var* attr_var)
 {
     size_t highest_count = 0;
-    betree_var_t highest_variable_id = 0;
+    struct attr_var highest_attr_var;
     for(size_t i = 0; i < lnode->sub_count; i++) {
         const struct sub* sub = lnode->subs[i];
-        for(size_t j = 0; j < sub->variable_id_count; j++) {
-            betree_var_t current_variable_id = sub->variable_ids[j];
+        for(size_t j = 0; j < sub->attr_var_count; j++) {
+            struct attr_var current_attr_var = sub->attr_vars[j];
+            betree_var_t current_variable_id = current_attr_var.var;
             const struct attr_domain* attr_domain = get_attr_domain(config, current_variable_id);
-            if(attr_domain->bound.value_type != VALUE_S && !is_attr_used_in_parent_lnode(current_variable_id, lnode)) {
+            if(splitable_attr_domain(attr_domain) && !is_attr_used_in_parent_lnode(current_variable_id, lnode)) {
                 size_t current_count = count_attr_in_lnode(current_variable_id, lnode);
                 if(current_count > highest_count) {
                     highest_count = current_count;
-                    highest_variable_id = current_variable_id;
+                    highest_attr_var = current_attr_var;
                 }
             }
         }
@@ -657,7 +679,7 @@ bool get_next_highest_score_unused_attr(const struct config* config, const struc
         return false;
     }
     else {
-        *variable_id = highest_variable_id;
+        *attr_var = highest_attr_var;
         return true;
     }
 }
@@ -689,16 +711,17 @@ void space_partitioning(const struct config* config, struct cnode* cnode)
 {
     struct lnode* lnode = cnode->lnode;
     while(is_overflowed(lnode) == true) {
-        betree_var_t variable_id;
-        bool found = get_next_highest_score_unused_attr(config, lnode, &variable_id);
+        struct attr_var attr_var;
+        bool found = get_next_highest_score_unused_attr(config, lnode, &attr_var);
         if(found == false) {
             break;
         }
+        betree_var_t variable_id = attr_var.var;
         size_t target_subs_count = count_subs_with_variable((const struct sub**)lnode->subs, lnode->sub_count, variable_id);
         if(target_subs_count < config->partition_min_size) {
             break;
         }
-        struct pnode* pnode = create_pdir(config, variable_id, cnode);
+        struct pnode* pnode = create_pdir(config, attr_var.attr, variable_id, cnode);
         for(size_t i = 0; i < lnode->sub_count; i++) {
             const struct sub* sub = lnode->subs[i];
             if(sub_has_attribute(sub, variable_id)) {
@@ -1001,6 +1024,7 @@ void free_pred(struct pred* pred)
     if(pred == NULL) {
         return;
     }
+    free((char*)pred->attr_var.attr);
     free_value(pred->value);
     free(pred);
 }
@@ -1010,8 +1034,11 @@ void free_sub(struct sub* sub)
     if(sub == NULL) {
         return;
     }
-    free(sub->variable_ids);
-    sub->variable_ids = NULL;
+    for(size_t i = 0; i < sub->attr_var_count; i++) {
+        free((char*)sub->attr_vars[i].attr);
+    }
+    free(sub->attr_vars);
+    sub->attr_vars = NULL;
     free_ast_node((struct ast_node*)sub->expr);
     sub->expr = NULL;
     free(sub);
@@ -1062,6 +1089,7 @@ void free_cdir(struct cdir* cdir)
     if(cdir == NULL) {
         return;
     }
+    free((char*)cdir->attr_var.attr);
     free_cnode(cdir->cnode);
     cdir->cnode = NULL;
     free_cdir(cdir->lchild);
@@ -1102,6 +1130,7 @@ void free_pnode(struct pnode* pnode)
     if(pnode == NULL) {
         return;
     }
+    free((char*)pnode->attr_var.attr);
     free_cdir(pnode->cdir);
     pnode->cdir = NULL;
     free(pnode);
@@ -1112,8 +1141,8 @@ bool delete_be_tree(const struct config* config, struct sub* sub, struct cnode* 
     struct pnode* pnode = NULL;
     bool isFound = delete_sub_from_leaf(sub, cnode->lnode);
     if(!isFound) {
-        for(size_t i = 0; i < sub->variable_id_count; i++) {
-            betree_var_t variable_id = sub->variable_ids[i];
+        for(size_t i = 0; i < sub->attr_var_count; i++) {
+            betree_var_t variable_id = sub->attr_vars[i].var;
             pnode = search_pdir(variable_id, cnode->pdir);
             if(pnode != NULL) {
                 isFound = search_delete_cdir(config, sub, pnode->cdir);
@@ -1225,56 +1254,58 @@ void free_matched_subs(struct matched_subs* matched_subs)
     free(matched_subs);
 }
 
-struct pred* make_simple_pred(betree_var_t variable_id, struct value value)
+struct pred* make_simple_pred(const char* attr, betree_var_t variable_id, struct value value)
 {
     struct pred* pred = calloc(1, sizeof(*pred));
     if(pred == NULL) {
         fprintf(stderr, "%s calloc failed", __func__);
         abort();
     }
-    pred->variable_id = variable_id;
+    pred->attr_var.attr = strdup(attr);
+    pred->attr_var.var = variable_id;
     pred->value = value;
     return pred;
 }
 
-const struct pred* make_simple_pred_i(betree_var_t variable_id, int64_t ivalue)
+const struct pred* make_simple_pred_i(const char* attr, betree_var_t variable_id, int64_t ivalue)
 {
     struct value value = { .value_type = VALUE_I, .ivalue = ivalue };
-    return make_simple_pred(variable_id, value);
+    return make_simple_pred(attr, variable_id, value);
 }
 
-const struct pred* make_simple_pred_f(betree_var_t variable_id, double fvalue)
+const struct pred* make_simple_pred_f(const char* attr, betree_var_t variable_id, double fvalue)
 {
     struct value value = { .value_type = VALUE_F, .fvalue = fvalue };
-    return make_simple_pred(variable_id, value);
+    return make_simple_pred(attr, variable_id, value);
 }
 
 const struct pred* make_simple_pred_s(struct config* config, betree_var_t variable_id, const char* svalue)
 {
     struct value value = { .value_type = VALUE_S, .svalue = { .string = strdup(svalue) } };
     value.svalue.str = get_id_for_string(config, svalue);
-    return make_simple_pred(variable_id, value);
+    const char* attr = get_attr_for_id(config, variable_id);
+    return make_simple_pred(attr, variable_id, value);
 }
 
-const struct pred* make_simple_pred_il(betree_var_t variable_id, struct integer_list_value ilvalue)
+const struct pred* make_simple_pred_il(const char* attr, betree_var_t variable_id, struct integer_list_value ilvalue)
 {
     struct value value = { .value_type = VALUE_IL, .ilvalue = ilvalue };
-    return make_simple_pred(variable_id, value);
+    return make_simple_pred(attr, variable_id, value);
 }
 
-const struct pred* make_simple_pred_sl(betree_var_t variable_id, struct string_list_value slvalue)
+const struct pred* make_simple_pred_sl(const char* attr, betree_var_t variable_id, struct string_list_value slvalue)
 {
     struct value value = { .value_type = VALUE_SL, .slvalue = slvalue };
-    return make_simple_pred(variable_id, value);
+    return make_simple_pred(attr, variable_id, value);
 }
 
-const struct pred* make_simple_pred_segment(betree_var_t variable_id, int64_t id, int64_t timestamp)
+const struct pred* make_simple_pred_segment(const char* attr, betree_var_t variable_id, int64_t id, int64_t timestamp)
 {
     struct segment segment = { .id = id, .timestamp = timestamp };
     struct segments_list segments_list = { .size = 1, .content = calloc(1, sizeof(*segments_list.content)) };
     segments_list.content[0] = segment;
     struct value value = { .value_type = VALUE_SEGMENTS, .segments_value = segments_list };
-    return make_simple_pred(variable_id, value);
+    return make_simple_pred(attr, variable_id, value);
 }
 
 const struct pred* make_simple_pred_frequency(betree_var_t variable_id, 
@@ -1292,13 +1323,13 @@ const struct pred* make_simple_pred_frequency(betree_var_t variable_id,
     struct frequency_caps_list caps_list = { .size = 1, .content = calloc(1l, sizeof(*caps_list.content)) };
     caps_list.content[0] = cap;
     struct value value = { .value_type = VALUE_FREQUENCY, .frequency_value = caps_list };
-    return make_simple_pred(variable_id, value);
+    return make_simple_pred("frequency_caps", variable_id, value);
 }
 
 const struct pred* make_simple_pred_str_i(struct config* config, const char* attr, int64_t value)
 {
     betree_var_t variable_id = get_id_for_attr(config, attr);
-    return make_simple_pred_i(variable_id, value);
+    return make_simple_pred_i(attr, variable_id, value);
 }
 
 const struct pred* make_simple_pred_str_s(struct config* config, const char* attr, const char* value)
@@ -1310,18 +1341,18 @@ const struct pred* make_simple_pred_str_s(struct config* config, const char* att
 const struct pred* make_simple_pred_str_il(struct config* config, const char* attr, struct integer_list_value value)
 {
     betree_var_t variable_id = get_id_for_attr(config, attr);
-    return make_simple_pred_il(variable_id, value);
+    return make_simple_pred_il(attr, variable_id, value);
 }
 
 const struct pred* make_simple_pred_str_sl(struct config* config, const char* attr, struct string_list_value value)
 {
     betree_var_t variable_id = get_id_for_attr(config, attr);
-    return make_simple_pred_sl(variable_id, value);
+    return make_simple_pred_sl(attr, variable_id, value);
 }
 
 void fill_pred(struct sub* sub, const struct ast_node* expr)
 {
-    betree_var_t variable_id;
+    struct attr_var attr_var;
     switch(expr->type) {
         case AST_TYPE_SPECIAL_EXPR: {
             fprintf(stderr, "TODO");
@@ -1339,25 +1370,25 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
                     fill_pred(sub, expr->bool_expr.unary.expr);
                     break;
                 case AST_BOOL_VARIABLE:
-                    variable_id = expr->bool_expr.variable.variable_id;
+                    attr_var = expr->bool_expr.variable;
                     break;
             }
             break;
         }
         case AST_TYPE_NUMERIC_COMPARE_EXPR: {
-            variable_id = expr->numeric_compare_expr.variable_id;
+            attr_var = expr->numeric_compare_expr.attr_var;
             break;
         }
         case AST_TYPE_EQUALITY_EXPR: {
-            variable_id = expr->equality_expr.variable_id;
+            attr_var = expr->equality_expr.attr_var;
             break;
         }
         case AST_TYPE_SET_EXPR: {
             if(expr->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
-                variable_id = expr->set_expr.left_value.variable_value.variable_id;
+                attr_var = expr->set_expr.left_value.variable_value;
             }
             else if(expr->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
-                variable_id = expr->set_expr.right_value.variable_value.variable_id;
+                attr_var = expr->set_expr.right_value.variable_value;
             }
             else {
                 return;
@@ -1365,7 +1396,7 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
             break;
         }
         case AST_TYPE_LIST_EXPR: {
-            variable_id = expr->list_expr.variable_id;
+            attr_var = expr->list_expr.attr_var;
             break;
         }
         default: {
@@ -1373,30 +1404,30 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
         }
     }
     bool is_found = false;
-    for(size_t i = 0; i < sub->variable_id_count; i++) {
-        if(sub->variable_ids[i] == variable_id) {
+    for(size_t i = 0; i < sub->attr_var_count; i++) {
+        if(sub->attr_vars[i].var == attr_var.var) {
             is_found = true;
             break;
         }
     }
     if(!is_found) {
-        if(sub->variable_id_count == 0) {
-            sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
-            if(sub->variable_ids == NULL) {
+        if(sub->attr_var_count == 0) {
+            sub->attr_vars = calloc(1, sizeof(*sub->attr_vars));
+            if(sub->attr_vars == NULL) {
                 fprintf(stderr, "%s calloc failed", __func__);
                 abort();
             }
         }
         else {
-            betree_var_t* variable_ids = realloc(sub->variable_ids, sizeof(*sub->variable_ids) * (sub->variable_id_count + 1));
+            struct attr_var* attr_vars = realloc(sub->attr_vars, sizeof(*sub->attr_vars) * (sub->attr_var_count + 1));
             if(sub == NULL) {
                 fprintf(stderr, "%s realloc failed", __func__);
                 abort();
             }
-            sub->variable_ids = variable_ids;
+            sub->attr_vars = attr_vars;
         }
-        sub->variable_ids[sub->variable_id_count] = variable_id;
-        sub->variable_id_count++;
+        sub->attr_vars[sub->attr_var_count] = copy_attr_var(attr_var);
+        sub->attr_var_count++;
     }
 }
 
@@ -1408,8 +1439,8 @@ struct sub* make_empty_sub(betree_sub_t id)
         abort();
     }
     sub->id = id;
-    sub->variable_id_count = 0;
-    sub->variable_ids = NULL;
+    sub->attr_var_count = 0;
+    sub->attr_vars = NULL;
     return sub;
 }
 
@@ -1563,6 +1594,7 @@ void free_config(struct config* config)
     }
     if(config->attr_domains != NULL) {
         for(size_t i = 0; i < config->attr_domain_count; i++) {
+            free((char*)config->attr_domains[i]->attr_var.attr);
             free(config->attr_domains[i]);
         }
         free(config->attr_domains);
@@ -1578,14 +1610,15 @@ void free_config(struct config* config)
     free(config);
 }
 
-struct attr_domain* make_attr_domain(betree_var_t variable_id, struct value_bound bound, bool allow_undefined)
+struct attr_domain* make_attr_domain(const char* attr, betree_var_t variable_id, struct value_bound bound, bool allow_undefined)
 {
     struct attr_domain* attr_domain = calloc(1, sizeof(*attr_domain));
     if(attr_domain == NULL) {
         fprintf(stderr, "%s calloc faild", __func__);
         abort();
     }
-    attr_domain->variable_id = variable_id;
+    attr_domain->attr_var.attr = strdup(attr);
+    attr_domain->attr_var.var = variable_id;
     attr_domain->bound = bound;
     attr_domain->allow_undefined = allow_undefined;
     return attr_domain;
@@ -1594,7 +1627,7 @@ struct attr_domain* make_attr_domain(betree_var_t variable_id, struct value_boun
 void add_attr_domain(struct config* config, const char* attr, struct value_bound bound, bool allow_undefined)
 {
     betree_var_t variable_id = get_id_for_attr(config, attr);
-    struct attr_domain* attr_domain =  make_attr_domain(variable_id, bound, allow_undefined);
+    struct attr_domain* attr_domain =  make_attr_domain(attr, variable_id, bound, allow_undefined);
     if(config->attr_domain_count == 0) {
         config->attr_domains = calloc(1, sizeof(*config->attr_domains));
         if(config->attr_domains == NULL) {
@@ -1672,17 +1705,17 @@ void adjust_attr_domains(struct config* config, const struct ast_node* node, str
             return;
         }
         case(AST_TYPE_NUMERIC_COMPARE_EXPR): {
-            name = node->numeric_compare_expr.name;
+            name = node->numeric_compare_expr.attr_var.attr;
             break;
         }
         case(AST_TYPE_EQUALITY_EXPR): {
-            name = node->equality_expr.name;
+            name = node->equality_expr.attr_var.attr;
             break;
         }
         case(AST_TYPE_BOOL_EXPR): {
             switch(node->bool_expr.op) {
                 case AST_BOOL_VARIABLE:
-                    name = node->bool_expr.variable.name;
+                    name = node->bool_expr.variable.attr;
                     break;
                 case AST_BOOL_NOT:
                     adjust_attr_domains(config, node->bool_expr.unary.expr, bound, allow_undefined);
@@ -1697,10 +1730,10 @@ void adjust_attr_domains(struct config* config, const struct ast_node* node, str
         }
         case(AST_TYPE_SET_EXPR): {
             if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
-                name = node->set_expr.left_value.variable_value.name;
+                name = node->set_expr.left_value.variable_value.attr;
             }
             else if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
-                name = node->set_expr.right_value.variable_value.name;
+                name = node->set_expr.right_value.variable_value.attr;
             }
             else {
                 return;
@@ -1708,7 +1741,7 @@ void adjust_attr_domains(struct config* config, const struct ast_node* node, str
             break;
         }
         case(AST_TYPE_LIST_EXPR): {
-            name = node->list_expr.name;
+            name = node->list_expr.attr_var.attr;
             break;
         }
         default: {
@@ -1718,7 +1751,7 @@ void adjust_attr_domains(struct config* config, const struct ast_node* node, str
     betree_var_t variable_id = get_id_for_attr(config, name);
     for(size_t i = 0; i < config->attr_domain_count; i++) {
         const struct attr_domain* attr_domain = config->attr_domains[i];
-        if(variable_id == attr_domain->variable_id) {
+        if(variable_id == attr_domain->attr_var.var) {
             return;
         }
     }
@@ -1735,14 +1768,14 @@ const struct attr_domain* get_attr_domain(const struct config* config, betree_va
 {
     for(size_t i = 0; i < config->attr_domain_count; i++) {
         const struct attr_domain* attr_domain = config->attr_domains[i];
-        if(attr_domain->variable_id == variable_id) {
+        if(attr_domain->attr_var.var == variable_id) {
             return attr_domain;
         }
     }
     return NULL;
 }
 
-void event_to_string(struct config* config, const struct event* event, char* buffer)
+void event_to_string(const struct event* event, char* buffer)
 {
     size_t length = 0;
     for(size_t i = 0; i < event->pred_count; i++) {
@@ -1750,7 +1783,7 @@ void event_to_string(struct config* config, const struct event* event, char* buf
         if(i != 0) {
             length += sprintf(buffer + length, ", ");
         }
-        const char* attr = get_attr_for_id(config, pred->variable_id);
+        const char* attr = pred->attr_var.attr;
         switch(pred->value.value_type) {
             case(VALUE_I): {
                 length += sprintf(buffer + length, "%s = %llu", attr, pred->value.ivalue);
@@ -1897,7 +1930,7 @@ bool is_variable_allow_undefined(const struct config* config, const betree_var_t
 {
     for(size_t i = 0; i < config->attr_domain_count; i++) {
         const struct attr_domain* attr_domain = config->attr_domains[i];
-        if(attr_domain->variable_id == variable_id) {
+        if(attr_domain->attr_var.var == variable_id) {
             return attr_domain->allow_undefined;
         }
     }
@@ -1917,4 +1950,28 @@ void betree_insert(struct config* config, betree_sub_t id, const char* expr, str
     }
     const struct sub* sub = make_sub(config, id, node); 
     insert_be_tree(config, sub, cnode, NULL); 
+}
+
+struct attr_var make_attr_var(const char* attr, struct config* config)
+{
+    struct attr_var attr_var;
+    attr_var.attr = attr == NULL ? NULL : strdup(attr);
+    if(config == NULL) {
+        attr_var.var = -1;
+    }
+    else {
+        attr_var.var = get_id_for_attr(config, attr);
+    }
+    return attr_var;
+}
+
+void free_attr_var(struct attr_var attr_var)
+{
+    free((char*)attr_var.attr);
+}
+
+struct attr_var copy_attr_var(struct attr_var attr_var)
+{
+    struct attr_var copy = { .attr = strdup(attr_var.attr), .var = attr_var.var };
+    return copy;
 }

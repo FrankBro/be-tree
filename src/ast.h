@@ -4,11 +4,6 @@
 
 #include "betree.h"
 
-struct variable_value {
-    const char* name;
-    betree_var_t variable_id;
-};
-
 // Numeric comparison (<, <=, >, >=)
 // Work on integer and float
 
@@ -34,8 +29,7 @@ struct numeric_compare_value {
 
 struct ast_numeric_compare_expr {
     enum ast_numeric_compare_e op;
-    betree_var_t variable_id;
-    const char* name;
+    struct attr_var attr_var;
     struct numeric_compare_value value;
 };
 
@@ -64,8 +58,7 @@ struct equality_value {
 
 struct ast_equality_expr {
     enum ast_equality_e op;
-    betree_var_t variable_id;
-    const char* name;
+    struct attr_var attr_var;
     struct equality_value value;
 };
 
@@ -97,7 +90,7 @@ struct ast_bool_expr {
     union {
         struct ast_bool_binary binary;
         struct ast_bool_unary unary;
-        struct variable_value variable;
+        struct attr_var variable;
     };
 };
 
@@ -116,7 +109,7 @@ struct set_left_value {
     union {
         int64_t integer_value;
         struct string_value string_value;
-        struct variable_value variable_value;
+        struct attr_var variable_value;
     };
 };
 
@@ -131,7 +124,7 @@ struct set_right_value {
     union {
         struct integer_list_value integer_list_value;
         struct string_list_value string_list_value;
-        struct variable_value variable_value;
+        struct attr_var variable_value;
     };
 };
 
@@ -169,8 +162,7 @@ struct list_value {
 
 struct ast_list_expr {
     enum ast_list_e op;
-    betree_var_t variable_id;
-    const char* name;
+    struct attr_var attr_var;
     struct list_value value;
 };
 
@@ -196,8 +188,7 @@ enum ast_special_segment_e {
 struct ast_special_segment {
     enum ast_special_segment_e op;
     bool has_variable;
-    const char* name;
-    betree_var_t variable_id;
+    struct attr_var attr_var;
     betree_seg_t segment_id;
     int64_t seconds;
 };
@@ -235,8 +226,7 @@ enum ast_special_string_e {
 
 struct ast_special_string {
     enum ast_special_string_e op;
-    const char* name;
-    betree_var_t variable_id;
+    struct attr_var attr_var;
     const char* pattern;
 };
 
