@@ -1355,9 +1355,8 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
     struct attr_var attr_var;
     switch(expr->type) {
         case AST_TYPE_SPECIAL_EXPR: {
-            fprintf(stderr, "TODO");
-            abort();
-            return;
+            attr_var = expr->special_expr.frequency.attr_var;
+            break;
         }
         case AST_TYPE_BOOL_EXPR: {
             switch(expr->bool_expr.op) {

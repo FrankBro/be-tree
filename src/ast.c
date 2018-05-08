@@ -103,6 +103,7 @@ struct ast_node* ast_special_frequency_create(const enum ast_special_frequency_e
     struct ast_node* node = ast_special_expr_create();
     struct ast_special_frequency frequency = {
         .op = op,
+        .attr_var = make_attr_var("frequency_caps", NULL),
         .type = type,
         .ns = ns,
         .value = value,
@@ -123,7 +124,7 @@ struct ast_node* ast_special_segment_create(const enum ast_special_segment_e op,
     };
     if(name == NULL) {
         segment.has_variable = false;
-        segment.attr_var = make_attr_var(NULL, NULL);
+        segment.attr_var = make_attr_var("segments_with_timestamp", NULL);
     }
     else {
         segment.has_variable = true;
@@ -166,6 +167,7 @@ void free_special_expr(struct ast_special_expr special_expr)
 {
     switch(special_expr.type) {
         case AST_SPECIAL_FREQUENCY:
+            free_attr_var(special_expr.frequency.attr_var);
             free((char*)special_expr.frequency.ns.string);
             break;
         case AST_SPECIAL_SEGMENT:
@@ -1103,13 +1105,13 @@ void assign_variable_id(struct config* config, struct ast_node* node)
         case(AST_TYPE_SPECIAL_EXPR): {
             switch(node->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY: {
+                    betree_var_t variable_id = get_id_for_attr(config, node->special_expr.frequency.attr_var.attr);
+                    node->special_expr.frequency.attr_var.var = variable_id;
                     return;
                 }
                 case AST_SPECIAL_SEGMENT: {
-                    if(node->special_expr.segment.has_variable) {
-                        betree_var_t variable_id = get_id_for_attr(config, node->special_expr.segment.attr_var.attr);
-                        node->special_expr.segment.attr_var.var = variable_id;
-                    }
+                    betree_var_t variable_id = get_id_for_attr(config, node->special_expr.segment.attr_var.attr);
+                    node->special_expr.segment.attr_var.var = variable_id;
                     return;
                 }
                 case AST_SPECIAL_GEO: {

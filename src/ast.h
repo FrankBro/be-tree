@@ -174,6 +174,7 @@ enum ast_special_frequency_e {
 
 struct ast_special_frequency {
     enum ast_special_frequency_e op;
+    struct attr_var attr_var;
     enum frequency_type_e type;
     struct string_value ns;
     int64_t value;
