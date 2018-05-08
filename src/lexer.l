@@ -67,6 +67,7 @@
 \"product\"                 return TOKEN(TPRODUCT);
 \"product:ip\"              return TOKEN(TPRODUCTIP);
 \"[a-zA-Z0-9_-]*\"          SAVE_STRING; return TSTRING;
+\'[a-zA-Z0-9_-]*\'          SAVE_STRING; return TSTRING;
 [a-zA-Z_][a-zA-Z0-9_-]*     SAVE_IDENTIFIER; return TIDENTIFIER;
 [0-9]+                      SAVE_INTEGER; return TINTEGER;
 [0-9]+\.[0-9]*              SAVE_FLOAT; return TFLOAT;
