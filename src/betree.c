@@ -1368,7 +1368,7 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
                     return;
                 case AST_BOOL_NOT:
                     fill_pred(sub, expr->bool_expr.unary.expr);
-                    break;
+                    return;
                 case AST_BOOL_VARIABLE:
                     attr_var = expr->bool_expr.variable;
                     break;
