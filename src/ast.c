@@ -913,15 +913,12 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
     }
     switch(node->type) {
         case AST_TYPE_SPECIAL_EXPR: {
-            invalid_expr("Trying t get a bound of an special expression");
             return;
         }
         case AST_TYPE_LIST_EXPR: {
-            invalid_expr("Trying to get the bound of an list expression");
             return;
         }
         case AST_TYPE_SET_EXPR: {
-            invalid_expr("Trying to get the bound of an set expression");
             return;
         }
         case AST_TYPE_BOOL_EXPR: {
@@ -946,6 +943,9 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
             }
         }
         case AST_TYPE_EQUALITY_EXPR: {
+            if(domain->attr_var.var != node->equality_expr.attr_var.var) {
+                return;
+            }
             if(domain->bound.value_type != bound->value_type || 
               !equality_value_matches(node->equality_expr.value.value_type, domain->bound.value_type)) {
                 invalid_expr("Domain, bound or expr type mismatch");
@@ -1003,6 +1003,9 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
             }
         }
         case AST_TYPE_NUMERIC_COMPARE_EXPR: {
+            if(domain->attr_var.var != node->numeric_compare_expr.attr_var.var) {
+                return;
+            }
             if(domain->bound.value_type != bound->value_type || 
               !numeric_compare_value_matches(node->numeric_compare_expr.value.value_type, domain->bound.value_type)) {
                 invalid_expr("Domain, bound or expr type mismatch");
