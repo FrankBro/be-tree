@@ -1944,7 +1944,7 @@ void betree_insert(struct config* config, betree_sub_t id, const char* expr, str
 {
     struct ast_node* node;
     if(parse(expr, &node) != 0) {
-        fprintf(stderr, "Failed to parse: %s\n", expr);
+        fprintf(stderr, "Failed to parse id %llu: %s\n", id, expr);
         abort();
     }
     const struct sub* sub = make_sub(config, id, node); 
