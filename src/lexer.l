@@ -37,6 +37,7 @@
 "contains"                  return TOKEN(TCONTAINS);
 "starts_with"               return TOKEN(TSTARTSWITH);
 "ends_with"                 return TOKEN(TENDSWITH);
+"-"                         return TOKEN(TMINUS);
 "="                         return TOKEN(TCEQ);
 "<>"                        return TOKEN(TCNE);
 ">"                         return TOKEN(TCGT);

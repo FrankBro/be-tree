@@ -46,6 +46,7 @@
     enum frequency_type_e frequency_type;
 }
 
+%token<token> TMINUS
 %token<token> TCEQ TCNE TCGT TCGE TCLT TCLE
 %token<token> TLPAREN TRPAREN TCOMMA TNOTIN TIN TONEOF TNONEOF TALLOF
 %token<token> TAND TOR
@@ -100,8 +101,12 @@ boolean             : TTRUE                                 { $$.value_type = VA
 ;
 
 integer             : TINTEGER                              { $$ = $1; }
+                    | TMINUS TINTEGER                       { $$ = - $2; }
+;
 
 float               : TFLOAT                                { $$ = $1; }
+                    | TMINUS TFLOAT                         { $$ = - $2; }
+;
 
 string              : TSTRING                               { $$.string = strdup($1); $$.str = -1; free($1); }
 

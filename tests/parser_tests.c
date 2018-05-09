@@ -24,6 +24,13 @@ int test_all_numeric_compare()
     parse("a >= 0", &node);
     mu_assert(node->type == AST_TYPE_NUMERIC_COMPARE_EXPR && node->numeric_compare_expr.op == AST_NUMERIC_COMPARE_GE, "GE");
     free_ast_node(node);
+    parse("a > -1", &node);
+    mu_assert(node->type == AST_TYPE_NUMERIC_COMPARE_EXPR && 
+        node->numeric_compare_expr.op == AST_NUMERIC_COMPARE_GT &&
+        node->numeric_compare_expr.value.value_type == AST_NUMERIC_COMPARE_VALUE_INTEGER &&
+        node->numeric_compare_expr.value.integer_value == -1
+    , "minus");
+    free_ast_node(node);
     return 0;
 }
 
@@ -35,6 +42,13 @@ int test_all_equality()
     free_ast_node(node);
     parse("a <> 0", &node);
     mu_assert(node->type == AST_TYPE_EQUALITY_EXPR && node->equality_expr.op == AST_EQUALITY_NE, "NE");
+    free_ast_node(node);
+    parse("a = -1", &node);
+    mu_assert(node->type == AST_TYPE_EQUALITY_EXPR && 
+        node->equality_expr.op == AST_EQUALITY_EQ &&
+        node->equality_expr.value.value_type == AST_EQUALITY_VALUE_INTEGER &&
+        node->equality_expr.value.integer_value == -1
+    , "minus");
     free_ast_node(node);
     return 0;
 }
@@ -87,6 +101,12 @@ int test_float()
         node->equality_expr.value.value_type == AST_EQUALITY_VALUE_FLOAT && 
         feq(node->equality_expr.value.float_value, 0.)
     , "with decimal");
+    free_ast_node(node);
+    parse("a = - 1.", &node);
+    mu_assert(node->type == AST_TYPE_EQUALITY_EXPR && 
+        node->equality_expr.value.value_type == AST_EQUALITY_VALUE_FLOAT && 
+        feq(node->equality_expr.value.float_value, -1.)
+    , "minus");
     free_ast_node(node);
     return 0;
 }
@@ -188,6 +208,22 @@ int test_integer_set()
         node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE
     , "flipped");
     free_ast_node(node);
+    parse("a in (-1)", &node);
+    mu_assert(node->type == AST_TYPE_SET_EXPR &&
+        node->set_expr.op == AST_SET_IN &&
+        node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE &&
+        node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST &&
+        node->set_expr.right_value.integer_list_value.integers[0] == -1
+    , "minus");
+    free_ast_node(node);
+    parse("-1 in a", &node);
+    mu_assert(node->type == AST_TYPE_SET_EXPR &&
+        node->set_expr.op == AST_SET_IN &&
+        node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_INTEGER &&
+        node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE &&
+        node->set_expr.left_value.integer_value == -1
+    , "minus flipped");
+    free_ast_node(node);
     return 0;
 }
 
@@ -245,6 +281,13 @@ int test_integer_list()
         node->list_expr.op == AST_LIST_ALL_OF &&
         node->list_expr.value.value_type == AST_LIST_VALUE_INTEGER_LIST
     , "all of");
+    free_ast_node(node);
+    parse("a one of (-1)", &node);
+    mu_assert(node->type == AST_TYPE_LIST_EXPR &&
+        node->list_expr.op == AST_LIST_ONE_OF &&
+        node->list_expr.value.value_type == AST_LIST_VALUE_INTEGER_LIST &&
+        node->list_expr.value.integer_list_value.integers[0] == -1
+    , "minus");
     free_ast_node(node);
     return 0;
 }
