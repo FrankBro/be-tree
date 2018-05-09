@@ -107,8 +107,8 @@ string              : TSTRING                               { $$.string = strdup
 
 integer_list_value  : TLPAREN integer_list_loop TRPAREN     { $$ = $2; }
 
-integer_list_loop   : TINTEGER                              { $$.count = 0; $$.integers = NULL; add_integer_list_value($1, &$$); }
-                    | integer_list_loop TCOMMA TINTEGER     { add_integer_list_value($3, &$1); $$ = $1; }
+integer_list_loop   : integer                               { $$.count = 0; $$.integers = NULL; add_integer_list_value($1, &$$); }
+                    | integer_list_loop TCOMMA integer      { add_integer_list_value($3, &$1); $$ = $1; }
 ;       
 
 string_list_value   : TLPAREN string_list_loop TRPAREN      { $$ = $2; }
