@@ -154,11 +154,11 @@ int test_frequency()
         FREQUENCY_TYPE_FLIGHT, 10, "ns", 99, true, 30
     ), "fcap_val_lt_ts_gt");
 
-    // mu_assert(!not_within_frequency_cap(
-    //     FREQUENCY_TYPE_FLIGHT, "ns", 100, 20,
-    //     40, 
-    //     FREQUENCY_TYPE_FLIGHT, 10, "ns", 99, true, 30
-    // ), "fcap_not_val_lt_ts_gt");
+    mu_assert(!not_within_frequency_cap(
+        FREQUENCY_TYPE_FLIGHT, "ns", 100, 20,
+        40, 
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 99, true, 30
+    ), "fcap_not_val_lt_ts_gt");
     return 0;
 }
 
@@ -260,8 +260,8 @@ int test_segment()
     mu_assert(!segment_before(1, 20, 1, 20), "segment_before_ts_eq");
     mu_assert(!segment_before(1, 20, 1, 30), "segment_before_ts_gt");
 
-    // mu_assert(not_segment_before(1, 20, 1, 30), "segment_not_before_ts_gt");
-    // mu_assert(not_segment_within(1, 20, 1, 30), "segment_not_within_ts_gt");
+    mu_assert(not_segment_before(1, 20, 1, 30), "segment_not_before_ts_gt");
+    mu_assert(!not_segment_within(1, 20, 1, 30), "segment_not_within_ts_gt");
 
     mu_assert(segment_before(200030624864, 20, 200030624864, 10), "segment_before_big_id_in");
     mu_assert(!segment_before(200030624864, 20, 1, 10), "segment_before_big_id_out");
@@ -313,8 +313,8 @@ int test_geo()
     mu_assert(!geo_within_radius("100", "100", "10", 200.0, 200.0), "geo_within_int_outside");
     mu_assert(geo_within_radius("100.0", "100.0", "10.0", 100.0, 100.0), "geo_within_float_inside");
     mu_assert(!geo_within_radius("100.0", "100.0", "10.0", 200.0, 200.0), "geo_within_float_outside");
-    // mu_assert(!not_geo_within_radius("100.0", "100.0", "10.0", 100.0, 100.0), "geo_not_within_float_inside");
-    // mu_assert(not_geo_within_radius("100.0", "100.0", "10.0", 200.0, 200.0), "geo_not_within_float_outside");
+    mu_assert(!not_geo_within_radius("100.0", "100.0", "10.0", 100.0, 100.0), "geo_not_within_float_inside");
+    mu_assert(not_geo_within_radius("100.0", "100.0", "10.0", 200.0, 200.0), "geo_not_within_float_outside");
     return 0;
 }
 
@@ -359,10 +359,10 @@ static int test_contains()
     mu_assert(!contains_a("aabbcc", "abc"), "contains_out_pattern_bigger");
     mu_assert(!contains_a("z", "abc"), "contains_out_pattern_smaller");
     mu_assert(!contains_b("abc", "abc"), "contains_out_undef");
-    // mu_assert(!not_contains_a("abc", "aabcc"), "contains_not_mid");
-    // mu_assert(!not_contains_a("abc", "abc"), "contains_not_exact");
-    // mu_assert(not_contains_a("abc", "aabbcc"), "contains_not_var_bigger");
-    // mu_assert(not_contains_a("z", "abc"), "contains_not_pattern_smaller");
+    mu_assert(!not_contains_a("abc", "aabcc"), "contains_not_mid");
+    mu_assert(!not_contains_a("abc", "abc"), "contains_not_exact");
+    mu_assert(not_contains_a("abc", "aabbcc"), "contains_not_var_bigger");
+    mu_assert(not_contains_a("z", "abc"), "contains_not_pattern_smaller");
     return 0;
 }
 
@@ -402,10 +402,10 @@ static int test_starts_with()
     mu_assert(!starts_with_a("abc", "a"), "starts_with_out_var_smaller");
     mu_assert(!starts_with_a("abc", ""), "starts_with_out_var_nil");
     mu_assert(!starts_with_b("abc", "abc"), "starts_with_out_undef");
-    // mu_assert(!not_starts_with_a("abc", "abcc"), "starts_with_not_start");
-    // mu_assert(!not_starts_with_a("abc", "abc"), "starts_with_not_exact");
-    // mu_assert(not_starts_with_a("abc", "a"), "starts_with_not_var_smaller");
-    // mu_assert(not_starts_with_a("abc", "", "starts_with_not_var_nil");
+    mu_assert(!not_starts_with_a("abc", "abcc"), "starts_with_not_start");
+    mu_assert(!not_starts_with_a("abc", "abc"), "starts_with_not_exact");
+    mu_assert(not_starts_with_a("abc", "a"), "starts_with_not_var_smaller");
+    mu_assert(not_starts_with_a("abc", ""), "starts_with_not_var_nil");
     return 0;
 }
 
@@ -445,10 +445,10 @@ static int test_ends_with()
     mu_assert(!ends_with_a("abc", "c"), "ends_with_out_var_smaller");
     mu_assert(!ends_with_a("abc", ""), "ends_with_out_var_nil");
     mu_assert(!ends_with_b("abc", "abc"), "ends_with_out_undef");
-    // mu_assert(!not_ends_with_a("abc", "aabc"), "ends_with_not_ends);
-    // mu_assert(!not_ends_with_a("abc", "abc"), "ends_with_not_exact");
-    // mu_assert(not_ends_with_a("abc", "c"), "ends_with_not_var_smaller");
-    // mu_assert(not_ends_with_a("abc", "", "ends_with_not_var_nil");
+    mu_assert(!not_ends_with_a("abc", "aabc"), "ends_with_not_ends");
+    mu_assert(!not_ends_with_a("abc", "abc"), "ends_with_not_exact");
+    mu_assert(not_ends_with_a("abc", "c"), "ends_with_not_var_smaller");
+    mu_assert(not_ends_with_a("abc", ""), "ends_with_not_var_nil");
     return 0;
 }
 
