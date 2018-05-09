@@ -137,7 +137,7 @@ num_comp_expr       : ident TCGT num_comp_value             { $$ = ast_numeric_c
 ;       
 
 eq_value            : integer                               { $$.value_type = AST_EQUALITY_VALUE_INTEGER; $$.integer_value = $1; }
-                    | float                                 { $$.value_type = AST_EQUALITY_VALUE_FLOAT; $$.integer_value = $1; }
+                    | float                                 { $$.value_type = AST_EQUALITY_VALUE_FLOAT; $$.float_value = $1; }
                     | string                                { $$.value_type = AST_EQUALITY_VALUE_STRING; $$.string_value = $1; }
 ;       
 
