@@ -12,3 +12,7 @@ output.be
 betree.dot
 betree.png
 betree.svg
+
+betree_defs
+betree_exprs
+betree_events
