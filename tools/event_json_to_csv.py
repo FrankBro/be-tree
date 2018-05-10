@@ -21,7 +21,9 @@ with open('betree_events', 'w') as csvfile:
                 if column in data:
                     value = data[column]
                 else:
-                    ''
+                    value = ''
+                if value == None:
+                    value = ''
                 if i != 0:
                     csvfile.write("|")
                 csvfile.write(str(value))
