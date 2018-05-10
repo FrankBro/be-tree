@@ -17,8 +17,8 @@ frequency(
     enum frequency_type_e cap_type, uint32_t cap_id, const char* cap_ns, uint32_t cap_value, bool timestamp_defined, int64_t timestamp)
 {
     struct config* config = make_default_config();
-    add_attr_domain_i(config, "now", 0.0, 10.0, false);
-    add_attr_domain_frequency(config, false);
+    add_attr_domain_i(config, "now", 0, 10, false);
+    add_attr_domain_frequency(config, "frequency_caps", false);
     struct ast_node* node = NULL;
     char* expr;
     const char* pre;

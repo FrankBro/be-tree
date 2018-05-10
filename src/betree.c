@@ -1688,10 +1688,10 @@ void add_attr_domain_segments(struct config* config, const char* attr, bool allo
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
-void add_attr_domain_frequency(struct config* config, bool allow_undefined)
+void add_attr_domain_frequency(struct config* config, const char* attr, bool allow_undefined)
 {
     struct value_bound bound = { .value_type = VALUE_FREQUENCY };
-    add_attr_domain(config, "frequency_caps", bound, allow_undefined);
+    add_attr_domain(config, attr, bound, allow_undefined);
 }
 
 void adjust_attr_domains(struct config* config, const struct ast_node* node, struct value_bound bound, bool allow_undefined)
