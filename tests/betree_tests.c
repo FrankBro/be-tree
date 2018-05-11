@@ -531,7 +531,6 @@ int test_match_deeper()
     const struct cnode* cnode_b = cdir_b->cnode;
     const struct lnode* lnode_b = cnode_b->lnode;
 
-
     mu_assert(
         lnode->sub_count == 0 &&
         pdir_a->pnode_count == 1 &&
