@@ -7,8 +7,7 @@ static ERL_NIF_TERM atom_error;
 static ERL_NIF_TERM atom_ok;
 static ERL_NIF_TERM atom_bad_expr;
 
-static ERL_NIF_TERM
-make_atom(ErlNifEnv *env, const char *name)
+static ERL_NIF_TERM make_atom(ErlNifEnv* env, const char* name)
 {
     ERL_NIF_TERM ret;
 
@@ -35,10 +34,9 @@ void initialize_config()
     // config->attr_domains[2] = attr_domain_c;
 }
 
-static int
-on_load(ErlNifEnv* env, void** priv, ERL_NIF_TERM info)
+static int on_load(ErlNifEnv* env, void** priv, ERL_NIF_TERM info)
 {
-    (void) priv, (void) info;
+    (void)priv, (void)info;
 
     atom_ok = make_atom(env, "ok");
     atom_error = make_atom(env, "error");
@@ -50,7 +48,7 @@ on_load(ErlNifEnv* env, void** priv, ERL_NIF_TERM info)
     return 0;
 }
 
-int parse(const char *text, struct ast_node **node);
+int parse(const char* text, struct ast_node** node);
 
 /*
 static ERL_NIF_TERM
