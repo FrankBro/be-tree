@@ -13,6 +13,7 @@ NamespaceIndentation: None
 PointerBindsToType: true
 IndentCaseLabels: true
 SpaceBeforeParens: Never
+AlignEscapedNewlines: Left
 BreakBeforeBraces: Custom
 BraceWrapping:
     AfterControlStatement: false
