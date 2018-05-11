@@ -5,10 +5,11 @@
 #include "betree.h"
 #include "utils.h"
 
-#define SEP_DASH  "------------------------------------------------------"
+#define SEP_DASH "------------------------------------------------------"
 #define SEP_SPACE "                                                      "
 
-void print_dashs(uint64_t level) {
+void print_dashs(uint64_t level)
+{
     printf("%.*s", (int)level * 2, SEP_DASH);
 }
 
@@ -307,15 +308,20 @@ const char* get_name_pdir(const struct config* config, const struct pdir* pdir)
     return name;
 }
 
-void print_spaces(FILE* f, uint64_t level) {
+void print_spaces(FILE* f, uint64_t level)
+{
     fprintf(f, "%.*s", (int)level * 4, SEP_SPACE);
 }
 
-void write_dot_file_lnode_names(FILE* f, const struct config* config, const struct lnode* lnode, uint64_t level)
+void write_dot_file_lnode_names(
+    FILE* f, const struct config* config, const struct lnode* lnode, uint64_t level)
 {
     const char* name = get_name_lnode(config, lnode);
     print_spaces(f, level);
-    fprintf(f, "\"%s\" [label=\"l-node\", fillcolor=black, style=filled, fontcolor=white, shape=circle, fixedsize=true, width=0.8]\n", name);
+    fprintf(f,
+        "\"%s\" [label=\"l-node\", fillcolor=black, style=filled, fontcolor=white, shape=circle, "
+        "fixedsize=true, width=0.8]\n",
+        name);
     if(lnode->sub_count > 0) {
         print_spaces(f, level);
         fprintf(f, "\"%s_subs\" [label=<\\\{", name);
@@ -330,20 +336,27 @@ void write_dot_file_lnode_names(FILE* f, const struct config* config, const stru
     free((char*)name);
 }
 
-void write_dot_file_cnode_names(FILE* f, const struct config* config, const struct cnode* cnode, uint64_t level);
+void write_dot_file_cnode_names(
+    FILE* f, const struct config* config, const struct cnode* cnode, uint64_t level);
 
-uint64_t colspan_value(uint64_t level) {
+uint64_t colspan_value(uint64_t level)
+{
     if(level == 0) {
         return 1;
     }
     return colspan_value(level - 1) * 2;
 }
 
-void write_dot_file_cdir_td(FILE* f, const struct config* config, const struct cdir* cdir, uint64_t level, size_t current_depth, uint64_t colspan)
+void write_dot_file_cdir_td(FILE* f,
+    const struct config* config,
+    const struct cdir* cdir,
+    uint64_t level,
+    size_t current_depth,
+    uint64_t colspan)
 {
     const struct cdir* left = cdir != NULL ? cdir->lchild : NULL;
     const struct cdir* right = cdir != NULL ? cdir->rchild : NULL;
-    
+
     if(current_depth == 0) {
         print_spaces(f, level);
         if(cdir == NULL) {
@@ -353,17 +366,32 @@ void write_dot_file_cdir_td(FILE* f, const struct config* config, const struct c
             const char* name = get_name_cdir(config, cdir);
             switch(cdir->bound.value_type) {
                 case(VALUE_I): {
-                    fprintf(f, "<td colspan=\"%llu\" port=\"%s\">[%llu, %llu]</td>\n", colspan, name, cdir->bound.imin, cdir->bound.imax);
+                    fprintf(f,
+                        "<td colspan=\"%llu\" port=\"%s\">[%llu, %llu]</td>\n",
+                        colspan,
+                        name,
+                        cdir->bound.imin,
+                        cdir->bound.imax);
                     break;
                 }
                 case(VALUE_F): {
-                    fprintf(f, "<td colspan=\"%llu\" port=\"%s\">[%.0f, %.0f]</td>\n", colspan, name, cdir->bound.fmin, cdir->bound.fmax);
+                    fprintf(f,
+                        "<td colspan=\"%llu\" port=\"%s\">[%.0f, %.0f]</td>\n",
+                        colspan,
+                        name,
+                        cdir->bound.fmin,
+                        cdir->bound.fmax);
                     break;
                 }
                 case(VALUE_B): {
                     const char* min = cdir->bound.bmin ? "true" : "false";
                     const char* max = cdir->bound.bmax ? "true" : "false";
-                    fprintf(f, "<td colspan=\"%llu\" port=\"%s\">[%s, %s]</td>\n", colspan, name, min, max);
+                    fprintf(f,
+                        "<td colspan=\"%llu\" port=\"%s\">[%s, %s]</td>\n",
+                        colspan,
+                        name,
+                        min,
+                        max);
                     break;
                 }
                 case(VALUE_S): {
@@ -371,19 +399,25 @@ void write_dot_file_cdir_td(FILE* f, const struct config* config, const struct c
                     abort();
                 }
                 case(VALUE_IL): {
-                    fprintf(stderr, "%s a integer list value cdir should never happen for now", __func__);
+                    fprintf(stderr,
+                        "%s a integer list value cdir should never happen for now",
+                        __func__);
                     abort();
                 }
                 case(VALUE_SL): {
-                    fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
+                    fprintf(stderr,
+                        "%s a string list value cdir should never happen for now",
+                        __func__);
                     abort();
                 }
                 case(VALUE_SEGMENTS): {
-                    fprintf(stderr, "%s a segment value cdir should never happen for now", __func__);
+                    fprintf(
+                        stderr, "%s a segment value cdir should never happen for now", __func__);
                     abort();
                 }
                 case(VALUE_FREQUENCY): {
-                    fprintf(stderr, "%s a frequency value cdir should never happen for now", __func__);
+                    fprintf(
+                        stderr, "%s a frequency value cdir should never happen for now", __func__);
                     abort();
                 }
                 default: {
@@ -399,7 +433,11 @@ void write_dot_file_cdir_td(FILE* f, const struct config* config, const struct c
     }
 }
 
-void write_dot_file_cdir_inner_names(FILE* f, const struct config* config, const struct cdir* cdir, uint64_t level, size_t depth_of_cdir)
+void write_dot_file_cdir_inner_names(FILE* f,
+    const struct config* config,
+    const struct cdir* cdir,
+    uint64_t level,
+    size_t depth_of_cdir)
 {
     for(size_t current_depth = 0; current_depth < depth_of_cdir; current_depth++) {
         print_spaces(f, level);
@@ -413,7 +451,8 @@ void write_dot_file_cdir_inner_names(FILE* f, const struct config* config, const
     }
 }
 
-void write_dot_file_cdir_cnode_names(FILE* f, const struct config* config, const struct cdir* cdir, uint64_t level)
+void write_dot_file_cdir_cnode_names(
+    FILE* f, const struct config* config, const struct cdir* cdir, uint64_t level)
 {
     if(cdir->cnode != NULL) {
         write_dot_file_cnode_names(f, config, cdir->cnode, level);
@@ -426,7 +465,8 @@ void write_dot_file_cdir_cnode_names(FILE* f, const struct config* config, const
     }
 }
 
-void write_dot_file_cdir_cdir_ranks(FILE* f, const struct config* config, const struct cdir* cdir, uint64_t level);
+void write_dot_file_cdir_cdir_ranks(
+    FILE* f, const struct config* config, const struct cdir* cdir, uint64_t level);
 
 size_t depth_of_cdir(const struct cdir* cdir)
 {
@@ -448,14 +488,17 @@ size_t depth_of_cdir(const struct cdir* cdir)
     return max(ret, current);
 }
 
-void write_dot_file_cdir_names(FILE* f, const struct config* config, const struct cdir* cdir, uint64_t level)
+void write_dot_file_cdir_names(
+    FILE* f, const struct config* config, const struct cdir* cdir, uint64_t level)
 {
     const char* name = get_name_cdir(config, cdir);
     print_spaces(f, level);
     fprintf(f, "subgraph \"cluster%s\" {\n", name);
     level++;
     print_spaces(f, level);
-    fprintf(f, "color=orange; fillcolor=orange; style=filled; label=\"c-directory\"; fontsize=20; fontname=\"Verdana\"\n");
+    fprintf(f,
+        "color=orange; fillcolor=orange; style=filled; label=\"c-directory\"; fontsize=20; "
+        "fontname=\"Verdana\"\n");
     print_spaces(f, level);
     fprintf(f, "%s [fillcolor=darkolivegreen3, style=filled, shape=box, label=<\n", name);
     level++;
@@ -477,40 +520,54 @@ void write_dot_file_cdir_names(FILE* f, const struct config* config, const struc
     write_dot_file_cdir_cnode_names(f, config, cdir, level);
 }
 
-void write_dot_file_pnode_names(FILE* f, const struct config* config, const struct pnode* pnode, uint64_t level)
+void write_dot_file_pnode_names(
+    FILE* f, const struct config* config, const struct pnode* pnode, uint64_t level)
 {
     const char* name = get_name_pnode(config, pnode);
     const char* attr = get_attr_for_id(config, pnode->attr_var.var);
     print_spaces(f, level);
-    fprintf(f, "\"%s\" [label=\"%s\", color=cyan2, fillcolor=cyan2, style=filled, shape=record]\n", name, attr);
+    fprintf(f,
+        "\"%s\" [label=\"%s\", color=cyan2, fillcolor=cyan2, style=filled, shape=record]\n",
+        name,
+        attr);
     print_spaces(f, level);
-    fprintf(f, "\"%s_fake\" [label=\"p-node\", color=cyan2, fillcolor=cyan2, style=filled, shape=circle, fixedsize=true, width=0.8]\n", name);
+    fprintf(f,
+        "\"%s_fake\" [label=\"p-node\", color=cyan2, fillcolor=cyan2, style=filled, shape=circle, "
+        "fixedsize=true, width=0.8]\n",
+        name);
     free((char*)name);
     if(pnode->cdir != NULL) {
         write_dot_file_cdir_names(f, config, pnode->cdir, level);
     }
 }
 
-void write_dot_file_pdir_inner_names(FILE* f, const struct config* config, const struct pdir* pdir, uint64_t level)
+void write_dot_file_pdir_inner_names(
+    FILE* f, const struct config* config, const struct pdir* pdir, uint64_t level)
 {
     for(size_t i = 0; i < pdir->pnode_count; i++) {
         const struct pnode* pnode = pdir->pnodes[i];
         const char* name = get_name_pnode(config, pnode);
         const char* attr = get_attr_for_id(config, pnode->attr_var.var);
         print_spaces(f, level);
-        fprintf(f, "\"%s\" [label=\"%s\", color=cyan2, fillcolor=cyan2, style=filled, shape=record]\n", name, attr);
+        fprintf(f,
+            "\"%s\" [label=\"%s\", color=cyan2, fillcolor=cyan2, style=filled, shape=record]\n",
+            name,
+            attr);
         free((char*)name);
     }
 }
 
-void write_dot_file_pdir_names(FILE* f, const struct config* config, const struct pdir* pdir, uint64_t level)
+void write_dot_file_pdir_names(
+    FILE* f, const struct config* config, const struct pdir* pdir, uint64_t level)
 {
     const char* name = get_name_pdir(config, pdir);
     print_spaces(f, level);
     fprintf(f, "subgraph \"cluster%s\" {\n", name);
     level++;
     print_spaces(f, level);
-    fprintf(f, "color=lightpink; fillcolor=lightpink; style=filled; label=\"p-directory\"; fontsize=20; fontname=\"Verdana\"\n");
+    fprintf(f,
+        "color=lightpink; fillcolor=lightpink; style=filled; label=\"p-directory\"; fontsize=20; "
+        "fontname=\"Verdana\"\n");
     write_dot_file_pdir_inner_names(f, config, pdir, level);
     level--;
     print_spaces(f, level);
@@ -521,11 +578,15 @@ void write_dot_file_pdir_names(FILE* f, const struct config* config, const struc
     }
 }
 
-void write_dot_file_cnode_names(FILE* f, const struct config* config, const struct cnode* cnode, uint64_t level)
+void write_dot_file_cnode_names(
+    FILE* f, const struct config* config, const struct cnode* cnode, uint64_t level)
 {
     const char* name = get_name_cnode(config, cnode);
     print_spaces(f, level);
-    fprintf(f, "\"%s\" [label=\"c-node\", color=darkolivegreen3, fillcolor=darkolivegreen3, style=filled, shape=circle, fixedsize=true, width=0.8]\n", name);
+    fprintf(f,
+        "\"%s\" [label=\"c-node\", color=darkolivegreen3, fillcolor=darkolivegreen3, style=filled, "
+        "shape=circle, fixedsize=true, width=0.8]\n",
+        name);
     free((char*)name);
     if(cnode->lnode != NULL) {
         write_dot_file_lnode_names(f, config, cnode->lnode, level);
@@ -535,9 +596,14 @@ void write_dot_file_cnode_names(FILE* f, const struct config* config, const stru
     }
 }
 
-void write_dot_file_cnode_links(FILE* f, const struct config* config, const struct cnode* cnode, uint64_t level);
+void write_dot_file_cnode_links(
+    FILE* f, const struct config* config, const struct cnode* cnode, uint64_t level);
 
-void write_dot_file_cdir_links(FILE* f, const struct config* config, const struct cdir* cdir, uint64_t level, const char* table_name)
+void write_dot_file_cdir_links(FILE* f,
+    const struct config* config,
+    const struct cdir* cdir,
+    uint64_t level,
+    const char* table_name)
 {
     const char* cdir_name = get_name_cdir(config, cdir);
     if(cdir->cnode != NULL) {
@@ -556,7 +622,8 @@ void write_dot_file_cdir_links(FILE* f, const struct config* config, const struc
     free((char*)cdir_name);
 }
 
-void write_dot_file_pnode_links(FILE* f, const struct config* config, const struct pnode* pnode, uint64_t level)
+void write_dot_file_pnode_links(
+    FILE* f, const struct config* config, const struct pnode* pnode, uint64_t level)
 {
     if(pnode->cdir != NULL) {
         const char* pnode_name = get_name_pnode(config, pnode);
@@ -564,14 +631,16 @@ void write_dot_file_pnode_links(FILE* f, const struct config* config, const stru
         print_spaces(f, level);
         fprintf(f, "\"%s\" -> \"%s_fake\"\n", pnode_name, pnode_name);
         print_spaces(f, level);
-        fprintf(f, "\"%s_fake\" -> \"%s\" [lhead=\"cluster%s\"]\n", pnode_name, cdir_name, cdir_name);
+        fprintf(
+            f, "\"%s_fake\" -> \"%s\" [lhead=\"cluster%s\"]\n", pnode_name, cdir_name, cdir_name);
         free((char*)pnode_name);
         write_dot_file_cdir_links(f, config, pnode->cdir, level, cdir_name);
         free((char*)cdir_name);
     }
 }
 
-void write_dot_file_pdir_links(FILE* f, const struct config* config, const struct pdir* pdir, uint64_t level)
+void write_dot_file_pdir_links(
+    FILE* f, const struct config* config, const struct pdir* pdir, uint64_t level)
 {
     for(size_t i = 0; i < pdir->pnode_count; i++) {
         const struct pnode* pnode = pdir->pnodes[i];
@@ -579,7 +648,8 @@ void write_dot_file_pdir_links(FILE* f, const struct config* config, const struc
     }
 }
 
-void write_dot_file_cnode_links(FILE* f, const struct config* config, const struct cnode* cnode, uint64_t level)
+void write_dot_file_cnode_links(
+    FILE* f, const struct config* config, const struct cnode* cnode, uint64_t level)
 {
     const char* cnode_name = get_name_cnode(config, cnode);
     if(cnode->lnode != NULL) {
@@ -604,7 +674,8 @@ void write_dot_file_cnode_links(FILE* f, const struct config* config, const stru
     free((char*)cnode_name);
 }
 
-void write_dot_file_cdir_cnode_ranks(FILE* f, const struct config* config, const struct cdir* cdir, uint64_t level, bool first)
+void write_dot_file_cdir_cnode_ranks(
+    FILE* f, const struct config* config, const struct cdir* cdir, uint64_t level, bool first)
 {
     if(cdir->cnode != NULL) {
         const char* cnode_name = get_name_cnode(config, cdir->cnode);
@@ -648,7 +719,8 @@ void add_cdir(const struct cdir* cdir, struct cdir_acc* acc)
     acc->count++;
 }
 
-void get_inner_cdir(const struct cdir* cdir, size_t remaining, struct cdir_acc* acc) {
+void get_inner_cdir(const struct cdir* cdir, size_t remaining, struct cdir_acc* acc)
+{
     if(remaining == 0) {
         add_cdir(cdir, acc);
     }
@@ -662,7 +734,8 @@ void get_inner_cdir(const struct cdir* cdir, size_t remaining, struct cdir_acc* 
     }
 }
 
-void write_dot_file_cdir_cdir_ranks(FILE* f, const struct config* config, const struct cdir* cdir, uint64_t level)
+void write_dot_file_cdir_cdir_ranks(
+    FILE* f, const struct config* config, const struct cdir* cdir, uint64_t level)
 {
     size_t remaining = 0;
     while(true) {
@@ -688,9 +761,11 @@ void write_dot_file_cdir_cdir_ranks(FILE* f, const struct config* config, const 
     }
 }
 
-void write_dot_file_cnode_ranks(FILE* f, const struct config* config, const struct cnode* cnode, uint64_t level);
+void write_dot_file_cnode_ranks(
+    FILE* f, const struct config* config, const struct cnode* cnode, uint64_t level);
 
-void write_dot_file_cdir_ranks(FILE* f, const struct config* config, const struct cdir* cdir, uint64_t level, bool first)
+void write_dot_file_cdir_ranks(
+    FILE* f, const struct config* config, const struct cdir* cdir, uint64_t level, bool first)
 {
     if(first) {
         print_spaces(f, level);
@@ -709,14 +784,16 @@ void write_dot_file_cdir_ranks(FILE* f, const struct config* config, const struc
     }
 }
 
-void write_dot_file_pnode_ranks(FILE* f, const struct config* config, const struct pnode* pnode, uint64_t level)
+void write_dot_file_pnode_ranks(
+    FILE* f, const struct config* config, const struct pnode* pnode, uint64_t level)
 {
     if(pnode->cdir != NULL) {
         write_dot_file_cdir_ranks(f, config, pnode->cdir, level, true);
     }
 }
 
-void write_dot_file_pdir_ranks(FILE* f, const struct config* config, const struct pdir* pdir, uint64_t level)
+void write_dot_file_pdir_ranks(
+    FILE* f, const struct config* config, const struct pdir* pdir, uint64_t level)
 {
     print_spaces(f, level);
     fprintf(f, "{ rank=same; ");
@@ -734,7 +811,8 @@ void write_dot_file_pdir_ranks(FILE* f, const struct config* config, const struc
     }
 }
 
-void write_dot_file_cnode_ranks(FILE* f, const struct config* config, const struct cnode* cnode, uint64_t level)
+void write_dot_file_cnode_ranks(
+    FILE* f, const struct config* config, const struct cnode* cnode, uint64_t level)
 {
     if(cnode->pdir != NULL) {
         write_dot_file_pdir_ranks(f, config, cnode->pdir, level);
@@ -811,9 +889,12 @@ int compare_subs(const void* a, const void* b)
     struct sub* sub_a = *(struct sub**)a;
     struct sub* sub_b = *(struct sub**)b;
 
-    if(sub_a->id == sub_b->id) return 0;
-    else if (sub_a->id < sub_b->id) return -1;
-    else return 1;
+    if(sub_a->id == sub_b->id)
+        return 0;
+    else if(sub_a->id < sub_b->id)
+        return -1;
+    else
+        return 1;
 }
 
 const char* escape_label(const char* input)
@@ -844,17 +925,16 @@ const char* escape_label(const char* input)
 //     fprintf(f, "subgraph \"clustersubs\" {\n");
 //     level++;
 //     print_spaces(f, level);
-//     fprintf(f, "color=lightblue1; fillcolor=lightblue1; style=filled; label=\"Subs\"; fontsize=20; fontname=\"Verdana\"\n");
-//     struct gathered_subs gatherer = { .count = 0, .subs = NULL };
-//     gather_subs_cnode(cnode, &gatherer);
-//     qsort(gatherer.subs, gatherer.count, sizeof(struct sub*), compare_subs);
-//     for(size_t i = 0; i < gatherer.count; i++) {
+//     fprintf(f, "color=lightblue1; fillcolor=lightblue1; style=filled; label=\"Subs\";
+//     fontsize=20; fontname=\"Verdana\"\n"); struct gathered_subs gatherer = { .count = 0, .subs =
+//     NULL }; gather_subs_cnode(cnode, &gatherer); qsort(gatherer.subs, gatherer.count,
+//     sizeof(struct sub*), compare_subs); for(size_t i = 0; i < gatherer.count; i++) {
 //         const struct sub* sub = gatherer.subs[i];
 //         const char* expr = ast_to_string(sub->expr);
 //         const char* escaped = escape_label(expr);
 //         print_spaces(f, level);
-//         fprintf(f, "\"sub_%llu\" [label=\"%s\", color=lightblue1, fillcolor=lightblue1, style=filled, shape=record]\n", sub->id, escaped);
-//         free((char*)expr);
+//         fprintf(f, "\"sub_%llu\" [label=\"%s\", color=lightblue1, fillcolor=lightblue1,
+//         style=filled, shape=record]\n", sub->id, escaped); free((char*)expr);
 //         free((char*)escaped);
 //     }
 //     level--;
