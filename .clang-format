@@ -13,3 +13,8 @@ NamespaceIndentation: None
 PointerBindsToType: true
 IndentCaseLabels: true
 SpaceBeforeParens: Never
+BreakBeforeBraces: Custom
+BraceWrapping:
+    AfterControlStatement: false
+    AfterFunction: true
+    BeforeElse: true
