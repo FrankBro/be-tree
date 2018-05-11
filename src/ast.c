@@ -1,9 +1,9 @@
+#include <ctype.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
 #include <string.h>
-#include <ctype.h>
 
 #include "ast.h"
 #include "betree.h"
@@ -21,7 +21,8 @@ struct ast_node* ast_node_create()
     return node;
 }
 
-struct ast_node* ast_numeric_compare_expr_create(const enum ast_numeric_compare_e op, const char* name, struct numeric_compare_value value)
+struct ast_node* ast_numeric_compare_expr_create(
+    const enum ast_numeric_compare_e op, const char* name, struct numeric_compare_value value)
 {
     struct ast_node* node = ast_node_create();
     node->type = AST_TYPE_NUMERIC_COMPARE_EXPR;
@@ -31,7 +32,8 @@ struct ast_node* ast_numeric_compare_expr_create(const enum ast_numeric_compare_
     return node;
 }
 
-struct ast_node* ast_equality_expr_create(const enum ast_equality_e op, const char* name, struct equality_value value)
+struct ast_node* ast_equality_expr_create(
+    const enum ast_equality_e op, const char* name, struct equality_value value)
 {
     struct ast_node* node = ast_node_create();
     node->type = AST_TYPE_EQUALITY_EXPR;
@@ -63,7 +65,8 @@ struct ast_node* ast_bool_expr_unary_create(const struct ast_node* expr)
     return node;
 }
 
-struct ast_node* ast_bool_expr_binary_create(const enum ast_bool_e op, const struct ast_node* lhs, const struct ast_node* rhs)
+struct ast_node* ast_bool_expr_binary_create(
+    const enum ast_bool_e op, const struct ast_node* lhs, const struct ast_node* rhs)
 {
     struct ast_node* node = ast_bool_expr_create(op);
     node->bool_expr.binary.lhs = lhs;
@@ -71,7 +74,8 @@ struct ast_node* ast_bool_expr_binary_create(const enum ast_bool_e op, const str
     return node;
 }
 
-struct ast_node* ast_set_expr_create(const enum ast_set_e op, struct set_left_value left_value, struct set_right_value right_value)
+struct ast_node* ast_set_expr_create(
+    const enum ast_set_e op, struct set_left_value left_value, struct set_right_value right_value)
 {
     struct ast_node* node = ast_node_create();
     node->type = AST_TYPE_SET_EXPR;
@@ -81,7 +85,8 @@ struct ast_node* ast_set_expr_create(const enum ast_set_e op, struct set_left_va
     return node;
 }
 
-struct ast_node* ast_list_expr_create(const enum ast_list_e op, const char* name, struct list_value list_value)
+struct ast_node* ast_list_expr_create(
+    const enum ast_list_e op, const char* name, struct list_value list_value)
 {
     struct ast_node* node = ast_node_create();
     node->type = AST_TYPE_LIST_EXPR;
@@ -98,35 +103,33 @@ struct ast_node* ast_special_expr_create()
     return node;
 }
 
-struct ast_node* ast_special_frequency_create(const enum ast_special_frequency_e op, enum frequency_type_e type, struct string_value ns, int64_t value, size_t length)
+struct ast_node* ast_special_frequency_create(const enum ast_special_frequency_e op,
+    enum frequency_type_e type,
+    struct string_value ns,
+    int64_t value,
+    size_t length)
 {
     struct ast_node* node = ast_special_expr_create();
-    struct ast_special_frequency frequency = {
-        .op = op,
+    struct ast_special_frequency frequency = { .op = op,
         .attr_var = make_attr_var("frequency_caps", NULL),
         .type = type,
         .ns = ns,
         .value = value,
-        .length = length
-    };
+        .length = length };
     node->special_expr.type = AST_SPECIAL_FREQUENCY;
     node->special_expr.frequency = frequency;
     return node;
 }
 
-struct ast_node* ast_special_segment_create(const enum ast_special_segment_e op, const char* name, betree_seg_t segment_id, int64_t seconds)
+struct ast_node* ast_special_segment_create(
+    const enum ast_special_segment_e op, const char* name, betree_seg_t segment_id, int64_t seconds)
 {
     struct ast_node* node = ast_special_expr_create();
-    struct ast_special_segment segment = {
-        .op = op,
-        .segment_id = segment_id,
-        .seconds = seconds
-    };
+    struct ast_special_segment segment = { .op = op, .segment_id = segment_id, .seconds = seconds };
     if(name == NULL) {
         segment.has_variable = false;
         segment.attr_var = make_attr_var("segments_with_timestamp", NULL);
-    }
-    else {
+    } else {
         segment.has_variable = true;
         segment.attr_var = make_attr_var(name, NULL);
     }
@@ -135,29 +138,29 @@ struct ast_node* ast_special_segment_create(const enum ast_special_segment_e op,
     return node;
 }
 
-struct ast_node* ast_special_geo_create(const enum ast_special_geo_e op, struct special_geo_value latitude, struct special_geo_value longitude, bool has_radius, struct special_geo_value radius)
+struct ast_node* ast_special_geo_create(const enum ast_special_geo_e op,
+    struct special_geo_value latitude,
+    struct special_geo_value longitude,
+    bool has_radius,
+    struct special_geo_value radius)
 {
     struct ast_node* node = ast_special_expr_create();
-    struct ast_special_geo geo = {
-        .op = op,
+    struct ast_special_geo geo = { .op = op,
         .latitude = latitude,
         .longitude = longitude,
         .has_radius = has_radius,
-        .radius = radius
-    };
+        .radius = radius };
     node->special_expr.type = AST_SPECIAL_GEO;
     node->special_expr.geo = geo;
     return node;
 }
 
-struct ast_node* ast_special_string_create(const enum ast_special_string_e op, const char* name, const char* pattern)
+struct ast_node* ast_special_string_create(
+    const enum ast_special_string_e op, const char* name, const char* pattern)
 {
     struct ast_node* node = ast_special_expr_create();
-    struct ast_special_string string = {
-        .op = op,
-        .attr_var = make_attr_var(name, NULL),
-        .pattern = strdup(pattern)
-    };
+    struct ast_special_string string
+        = { .op = op, .attr_var = make_attr_var(name, NULL), .pattern = strdup(pattern) };
     node->special_expr.type = AST_SPECIAL_STRING;
     node->special_expr.string = string;
     return node;
@@ -184,7 +187,7 @@ void free_special_expr(struct ast_special_expr special_expr)
     }
 }
 
-void free_set_expr(struct ast_set_expr set_expr) 
+void free_set_expr(struct ast_set_expr set_expr)
 {
     switch(set_expr.left_value.value_type) {
         case AST_SET_LEFT_VALUE_INTEGER: {
@@ -251,7 +254,7 @@ void free_ast_node(struct ast_node* node)
         return;
     }
     switch(node->type) {
-        case AST_TYPE_SPECIAL_EXPR: 
+        case AST_TYPE_SPECIAL_EXPR:
             free_special_expr(node->special_expr);
             break;
         case AST_TYPE_NUMERIC_COMPARE_EXPR:
@@ -320,23 +323,23 @@ bool string_in_string_list(struct string_value string, struct string_list_value 
     return false;
 }
 
-bool numeric_compare_value_matches(enum ast_numeric_compare_value_e a, enum value_e b) {
-    return
-        (a == AST_NUMERIC_COMPARE_VALUE_INTEGER && b == VALUE_I) ||
-        (a == AST_NUMERIC_COMPARE_VALUE_FLOAT && b == VALUE_F);
+bool numeric_compare_value_matches(enum ast_numeric_compare_value_e a, enum value_e b)
+{
+    return (a == AST_NUMERIC_COMPARE_VALUE_INTEGER && b == VALUE_I)
+        || (a == AST_NUMERIC_COMPARE_VALUE_FLOAT && b == VALUE_F);
 }
 
-bool equality_value_matches(enum ast_equality_value_e a, enum value_e b) {
-    return
-        (a == AST_EQUALITY_VALUE_INTEGER && b == VALUE_I) ||
-        (a == AST_EQUALITY_VALUE_FLOAT && b == VALUE_F) ||
-        (a == AST_EQUALITY_VALUE_STRING && b == VALUE_S);
+bool equality_value_matches(enum ast_equality_value_e a, enum value_e b)
+{
+    return (a == AST_EQUALITY_VALUE_INTEGER && b == VALUE_I)
+        || (a == AST_EQUALITY_VALUE_FLOAT && b == VALUE_F)
+        || (a == AST_EQUALITY_VALUE_STRING && b == VALUE_S);
 }
 
-bool list_value_matches(enum ast_list_value_e a, enum value_e b) {
-    return
-        (a == AST_LIST_VALUE_INTEGER_LIST && b == VALUE_IL) ||
-        (a == AST_LIST_VALUE_STRING_LIST && b == VALUE_SL);
+bool list_value_matches(enum ast_list_value_e a, enum value_e b)
+{
+    return (a == AST_LIST_VALUE_INTEGER_LIST && b == VALUE_IL)
+        || (a == AST_LIST_VALUE_STRING_LIST && b == VALUE_SL);
 }
 
 double get_geo_value_as_float(const struct special_geo_value value)
@@ -401,7 +404,8 @@ struct string_value frequency_type_to_string(struct config* config, enum frequen
     return ret;
 }
 
-bool match_special_expr(struct config* config, const struct event* event, const struct ast_special_expr special_expr)
+bool match_special_expr(
+    struct config* config, const struct event* event, const struct ast_special_expr special_expr)
 {
     switch(special_expr.type) {
         case AST_SPECIAL_FREQUENCY: {
@@ -413,18 +417,17 @@ bool match_special_expr(struct config* config, const struct event* event, const 
                     if(state == VARIABLE_UNDEFINED) {
                         return false;
                     }
-                    struct frequency_caps_list caps ;
+                    struct frequency_caps_list caps;
                     enum variable_state_e caps_state = get_frequency_attr(config, event, &caps);
                     betree_assert(caps_state != VARIABLE_MISSING, "Attribute is not defined");
                     if(caps_state == VARIABLE_UNDEFINED) {
                         return false;
 
-                    }
-                    else {
+                    } else {
                         uint32_t id;
                         switch(special_expr.frequency.type) {
                             case FREQUENCY_TYPE_ADVERTISER:
-                            case FREQUENCY_TYPE_ADVERTISERIP: 
+                            case FREQUENCY_TYPE_ADVERTISERIP:
                                 // id = ADVERTISER_ID;
                                 id = 20;
                                 break;
@@ -447,7 +450,13 @@ bool match_special_expr(struct config* config, const struct event* event, const 
                                 switch_default_error("Invalid frequency type");
                                 break;
                         }
-                        return within_frequency_caps(&caps, special_expr.frequency.type, id, special_expr.frequency.ns, special_expr.frequency.value, special_expr.frequency.length, now);
+                        return within_frequency_caps(&caps,
+                            special_expr.frequency.type,
+                            id,
+                            special_expr.frequency.ns,
+                            special_expr.frequency.value,
+                            special_expr.frequency.length,
+                            now);
                     }
                 }
                 default: {
@@ -461,18 +470,27 @@ bool match_special_expr(struct config* config, const struct event* event, const 
             enum variable_state_e now_state = get_integer_attr(config, event, "now", &now);
             betree_assert(now_state != VARIABLE_MISSING, "Attribute 'now' is not defined");
             struct segments_list segments;
-            const char* segments_attr = special_expr.segment.has_variable ? special_expr.segment.attr_var.attr : "segments_with_timestamp";
-            enum variable_state_e segments_state = get_segments_attr(config, event, segments_attr, &segments);
+            const char* segments_attr = special_expr.segment.has_variable
+                ? special_expr.segment.attr_var.attr
+                : "segments_with_timestamp";
+            enum variable_state_e segments_state
+                = get_segments_attr(config, event, segments_attr, &segments);
             betree_assert(segments_state != VARIABLE_MISSING, "Attribute is not defined");
             if(now_state == VARIABLE_UNDEFINED || segments_state == VARIABLE_UNDEFINED) {
                 return false;
             }
             switch(special_expr.segment.op) {
                 case AST_SPECIAL_SEGMENTWITHIN: {
-                    return segment_within(special_expr.segment.segment_id, special_expr.segment.seconds, &segments, now);
+                    return segment_within(special_expr.segment.segment_id,
+                        special_expr.segment.seconds,
+                        &segments,
+                        now);
                 }
                 case AST_SPECIAL_SEGMENTBEFORE: {
-                    return segment_before(special_expr.segment.segment_id, special_expr.segment.seconds, &segments, now);
+                    return segment_before(special_expr.segment.segment_id,
+                        special_expr.segment.seconds,
+                        &segments,
+                        now);
                 }
                 default: {
                     switch_default_error("Invalid segment operation");
@@ -484,18 +502,24 @@ bool match_special_expr(struct config* config, const struct event* event, const 
             switch(special_expr.geo.op) {
                 case AST_SPECIAL_GEOWITHINRADIUS: {
                     double latitude_var, longitude_var;
-                    enum variable_state_e latitude_var_state = get_float_attr(config, event, "latitude", &latitude_var);
-                    enum variable_state_e longitude_var_state = get_float_attr(config, event, "longitude", &longitude_var);
-                    betree_assert(latitude_var_state != VARIABLE_MISSING, "Attribute 'latitude' is not defined");
-                    betree_assert(longitude_var_state != VARIABLE_MISSING, "Attribute 'longitude' is not defined");
-                    if(latitude_var_state == VARIABLE_UNDEFINED || longitude_var_state == VARIABLE_UNDEFINED) {
+                    enum variable_state_e latitude_var_state
+                        = get_float_attr(config, event, "latitude", &latitude_var);
+                    enum variable_state_e longitude_var_state
+                        = get_float_attr(config, event, "longitude", &longitude_var);
+                    betree_assert(latitude_var_state != VARIABLE_MISSING,
+                        "Attribute 'latitude' is not defined");
+                    betree_assert(longitude_var_state != VARIABLE_MISSING,
+                        "Attribute 'longitude' is not defined");
+                    if(latitude_var_state == VARIABLE_UNDEFINED
+                        || longitude_var_state == VARIABLE_UNDEFINED) {
                         return false;
                     }
                     double latitude_cst = get_geo_value_as_float(special_expr.geo.latitude);
                     double longitude_cst = get_geo_value_as_float(special_expr.geo.longitude);
                     double radius_cst = get_geo_value_as_float(special_expr.geo.radius);
 
-                    return geo_within_radius(latitude_cst, longitude_cst, latitude_var, longitude_var, radius_cst);
+                    return geo_within_radius(
+                        latitude_cst, longitude_cst, latitude_var, longitude_var, radius_cst);
                 }
                 default: {
                     switch_default_error("Invalid geo operation");
@@ -506,7 +530,8 @@ bool match_special_expr(struct config* config, const struct event* event, const 
         }
         case AST_SPECIAL_STRING: {
             struct string_value value;
-            enum variable_state_e state = get_string_attr(config, event, special_expr.string.attr_var.attr, &value);
+            enum variable_state_e state
+                = get_string_attr(config, event, special_expr.string.attr_var.attr, &value);
             betree_assert(state != VARIABLE_MISSING, "Attribute is not defined");
             if(state == VARIABLE_UNDEFINED) {
                 return false;
@@ -534,7 +559,8 @@ bool match_special_expr(struct config* config, const struct event* event, const 
     }
 }
 
-bool match_list_expr(const struct config* config, const struct event* event, const struct ast_list_expr list_expr)
+bool match_list_expr(
+    const struct config* config, const struct event* event, const struct ast_list_expr list_expr)
 {
     struct value variable;
     enum variable_state_e state = get_variable(config, list_expr.attr_var.var, event, &variable);
@@ -542,9 +568,10 @@ bool match_list_expr(const struct config* config, const struct event* event, con
     if(state == VARIABLE_UNDEFINED) {
         return false;
     }
-    betree_assert(list_value_matches(list_expr.value.value_type, variable.value_type), "List value types do not match");
+    betree_assert(list_value_matches(list_expr.value.value_type, variable.value_type),
+        "List value types do not match");
     switch(list_expr.op) {
-        case AST_LIST_ONE_OF: 
+        case AST_LIST_ONE_OF:
         case AST_LIST_NONE_OF: {
             bool result = false;
             switch(list_expr.value.value_type) {
@@ -585,9 +612,9 @@ bool match_list_expr(const struct config* config, const struct event* event, con
                 }
             }
             switch(list_expr.op) {
-                case AST_LIST_ONE_OF: 
+                case AST_LIST_ONE_OF:
                     return result;
-                case AST_LIST_NONE_OF: 
+                case AST_LIST_NONE_OF:
                     return !result;
                 case AST_LIST_ALL_OF:
                     invalid_expr("Should never happen");
@@ -643,48 +670,53 @@ bool match_list_expr(const struct config* config, const struct event* event, con
     }
 }
 
-bool match_set_expr(const struct config* config, const struct event* event, const struct ast_set_expr set_expr)
+bool match_set_expr(
+    const struct config* config, const struct event* event, const struct ast_set_expr set_expr)
 {
     struct set_left_value left = set_expr.left_value;
     struct set_right_value right = set_expr.right_value;
     bool is_in;
-    if(left.value_type == AST_SET_LEFT_VALUE_INTEGER && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
+    if(left.value_type == AST_SET_LEFT_VALUE_INTEGER
+        && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
         struct integer_list_value variable;
-        enum variable_state_e state = get_integer_list_var(config, right.variable_value.var, event, &variable);
+        enum variable_state_e state
+            = get_integer_list_var(config, right.variable_value.var, event, &variable);
         betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
         if(state == VARIABLE_UNDEFINED) {
             return false;
         }
         is_in = integer_in_integer_list(left.integer_value, variable);
-    }
-    else if(left.value_type == AST_SET_LEFT_VALUE_STRING && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
+    } else if(left.value_type == AST_SET_LEFT_VALUE_STRING
+        && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
         struct string_list_value variable;
-        enum variable_state_e state = get_string_list_var(config, right.variable_value.var, event, &variable);
+        enum variable_state_e state
+            = get_string_list_var(config, right.variable_value.var, event, &variable);
         betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
         if(state == VARIABLE_UNDEFINED) {
             return false;
         }
         is_in = string_in_string_list(left.string_value, variable);
-    }
-    else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE && right.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST) {
+    } else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE
+        && right.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST) {
         int64_t variable;
-        enum variable_state_e state = get_integer_var(config, left.variable_value.var, event, &variable);
+        enum variable_state_e state
+            = get_integer_var(config, left.variable_value.var, event, &variable);
         betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
         if(state == VARIABLE_UNDEFINED) {
             return false;
         }
         is_in = integer_in_integer_list(variable, right.integer_list_value);
-    }
-    else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE && right.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
+    } else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE
+        && right.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
         struct string_value variable;
-        enum variable_state_e state = get_string_var(config, left.variable_value.var, event, &variable);
+        enum variable_state_e state
+            = get_string_var(config, left.variable_value.var, event, &variable);
         betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
         if(state == VARIABLE_UNDEFINED) {
             return false;
         }
         is_in = string_in_string_list(variable, right.string_list_value);
-    }
-    else {
+    } else {
         invalid_expr("invalid set expression");
         return false;
     }
@@ -702,15 +734,20 @@ bool match_set_expr(const struct config* config, const struct event* event, cons
     }
 }
 
-bool match_numeric_compare_expr(const struct config* config, const struct event* event, const struct ast_numeric_compare_expr numeric_compare_expr)
+bool match_numeric_compare_expr(const struct config* config,
+    const struct event* event,
+    const struct ast_numeric_compare_expr numeric_compare_expr)
 {
     struct value variable;
-    enum variable_state_e state = get_variable(config, numeric_compare_expr.attr_var.var, event, &variable);
+    enum variable_state_e state
+        = get_variable(config, numeric_compare_expr.attr_var.var, event, &variable);
     betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
     if(state == VARIABLE_UNDEFINED) {
         return false;
     }
-    betree_assert(numeric_compare_value_matches(numeric_compare_expr.value.value_type, variable.value_type), "Numeric compare value types do not match");
+    betree_assert(
+        numeric_compare_value_matches(numeric_compare_expr.value.value_type, variable.value_type),
+        "Numeric compare value types do not match");
     switch(numeric_compare_expr.op) {
         case AST_NUMERIC_COMPARE_LT: {
             switch(numeric_compare_expr.value.value_type) {
@@ -783,15 +820,19 @@ bool match_numeric_compare_expr(const struct config* config, const struct event*
     }
 }
 
-bool match_equality_expr(const struct config* config, const struct event* event, const struct ast_equality_expr equality_expr)
+bool match_equality_expr(const struct config* config,
+    const struct event* event,
+    const struct ast_equality_expr equality_expr)
 {
     struct value variable;
-    enum variable_state_e state = get_variable(config, equality_expr.attr_var.var, event, &variable);
+    enum variable_state_e state
+        = get_variable(config, equality_expr.attr_var.var, event, &variable);
     betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
     if(state == VARIABLE_UNDEFINED) {
         return false;
     }
-    betree_assert(equality_value_matches(equality_expr.value.value_type, variable.value_type), "Equality value types do not match");
+    betree_assert(equality_value_matches(equality_expr.value.value_type, variable.value_type),
+        "Equality value types do not match");
     switch(equality_expr.op) {
         case AST_EQUALITY_EQ: {
             switch(equality_expr.value.value_type) {
@@ -840,7 +881,8 @@ bool match_equality_expr(const struct config* config, const struct event* event,
     }
 }
 
-bool match_bool_expr(struct config* config, const struct event* event, const struct ast_bool_expr bool_expr)
+bool match_bool_expr(
+    struct config* config, const struct event* event, const struct ast_bool_expr bool_expr)
 {
     switch(bool_expr.op) {
         case AST_BOOL_AND: {
@@ -865,7 +907,8 @@ bool match_bool_expr(struct config* config, const struct event* event, const str
         }
         case AST_BOOL_VARIABLE: {
             bool value;
-            enum variable_state_e state = get_bool_var(config, bool_expr.variable.var, event, &value);
+            enum variable_state_e state
+                = get_bool_var(config, bool_expr.variable.var, event, &value);
             betree_assert(state != VARIABLE_MISSING, "Variable is missing");
             if(state == VARIABLE_UNDEFINED) {
                 return false;
@@ -879,7 +922,7 @@ bool match_bool_expr(struct config* config, const struct event* event, const str
     }
 }
 
-bool match_node(struct config* config, const struct event* event, const struct ast_node *node)
+bool match_node(struct config* config, const struct event* event, const struct ast_node* node)
 {
     // TODO allow undefined handling?
     switch(node->type) {
@@ -908,7 +951,8 @@ bool match_node(struct config* config, const struct event* event, const struct a
     }
 }
 
-void get_variable_bound(const struct attr_domain* domain, const struct ast_node* node, struct value_bound* bound)
+void get_variable_bound(
+    const struct attr_domain* domain, const struct ast_node* node, struct value_bound* bound)
 {
     if(node == NULL) {
         return;
@@ -931,12 +975,12 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                 case AST_BOOL_NOT: {
                     get_variable_bound(domain, node->bool_expr.unary.expr, bound);
                     return;
+                }
                 case AST_BOOL_OR:
                 case AST_BOOL_AND: {
                     get_variable_bound(domain, node->bool_expr.binary.lhs, bound);
                     get_variable_bound(domain, node->bool_expr.binary.rhs, bound);
                     return;
-                }
                 }
                 default: {
                     switch_default_error("Invalid bool operation");
@@ -948,8 +992,9 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
             if(domain->attr_var.var != node->equality_expr.attr_var.var) {
                 return;
             }
-            if(domain->bound.value_type != bound->value_type || 
-              !equality_value_matches(node->equality_expr.value.value_type, domain->bound.value_type)) {
+            if(domain->bound.value_type != bound->value_type
+                || !equality_value_matches(
+                       node->equality_expr.value.value_type, domain->bound.value_type)) {
                 invalid_expr("Domain, bound or expr type mismatch");
                 return;
             }
@@ -1008,8 +1053,9 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
             if(domain->attr_var.var != node->numeric_compare_expr.attr_var.var) {
                 return;
             }
-            if(domain->bound.value_type != bound->value_type || 
-              !numeric_compare_value_matches(node->numeric_compare_expr.value.value_type, domain->bound.value_type)) {
+            if(domain->bound.value_type != bound->value_type
+                || !numeric_compare_value_matches(
+                       node->numeric_compare_expr.value.value_type, domain->bound.value_type)) {
                 invalid_expr("Domain, bound or expr type mismatch");
                 return;
             }
@@ -1018,12 +1064,14 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                     switch(node->numeric_compare_expr.value.value_type) {
                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
                             bound->imin = domain->bound.imin;
-                            bound->imax = max(bound->imax, node->numeric_compare_expr.value.integer_value - 1);
+                            bound->imax = max(
+                                bound->imax, node->numeric_compare_expr.value.integer_value - 1);
                             return;
                         }
                         case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
                             bound->fmin = domain->bound.fmin;
-                            bound->fmax = fmax(bound->fmax, node->numeric_compare_expr.value.float_value - __DBL_EPSILON__);
+                            bound->fmax = fmax(bound->fmax,
+                                node->numeric_compare_expr.value.float_value - __DBL_EPSILON__);
                             return;
                         }
                         default: {
@@ -1036,12 +1084,14 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                     switch(node->numeric_compare_expr.value.value_type) {
                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
                             bound->imin = domain->bound.imin;
-                            bound->imax = max(bound->imax, node->numeric_compare_expr.value.integer_value);
+                            bound->imax
+                                = max(bound->imax, node->numeric_compare_expr.value.integer_value);
                             return;
                         }
                         case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
                             bound->fmin = domain->bound.fmin;
-                            bound->fmax = fmax(bound->fmax, node->numeric_compare_expr.value.float_value);
+                            bound->fmax
+                                = fmax(bound->fmax, node->numeric_compare_expr.value.float_value);
                             return;
                         }
                         default: {
@@ -1053,12 +1103,14 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                 case AST_NUMERIC_COMPARE_GT: {
                     switch(node->numeric_compare_expr.value.value_type) {
                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-                            bound->imin = min(bound->imin, node->numeric_compare_expr.value.integer_value + 1);
+                            bound->imin = min(
+                                bound->imin, node->numeric_compare_expr.value.integer_value + 1);
                             bound->imax = domain->bound.imax;
                             return;
                         }
                         case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-                            bound->fmin = fmin(bound->fmin, node->numeric_compare_expr.value.float_value + __DBL_EPSILON__);
+                            bound->fmin = fmin(bound->fmin,
+                                node->numeric_compare_expr.value.float_value + __DBL_EPSILON__);
                             bound->fmax = domain->bound.fmax;
                             return;
                         }
@@ -1071,12 +1123,14 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
                 case AST_NUMERIC_COMPARE_GE: {
                     switch(node->numeric_compare_expr.value.value_type) {
                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-                            bound->imin = min(bound->imin, node->numeric_compare_expr.value.integer_value);
+                            bound->imin
+                                = min(bound->imin, node->numeric_compare_expr.value.integer_value);
                             bound->imax = domain->bound.imax;
                             return;
                         }
                         case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-                            bound->fmin = fmin(bound->fmin, node->numeric_compare_expr.value.float_value);
+                            bound->fmin
+                                = fmin(bound->fmin, node->numeric_compare_expr.value.float_value);
                             bound->fmax = domain->bound.fmax;
                             return;
                         }
@@ -1099,18 +1153,20 @@ void get_variable_bound(const struct attr_domain* domain, const struct ast_node*
     }
 }
 
-void assign_variable_id(struct config* config, struct ast_node* node) 
+void assign_variable_id(struct config* config, struct ast_node* node)
 {
     switch(node->type) {
         case(AST_TYPE_SPECIAL_EXPR): {
             switch(node->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY: {
-                    betree_var_t variable_id = get_id_for_attr(config, node->special_expr.frequency.attr_var.attr);
+                    betree_var_t variable_id
+                        = get_id_for_attr(config, node->special_expr.frequency.attr_var.attr);
                     node->special_expr.frequency.attr_var.var = variable_id;
                     return;
                 }
                 case AST_SPECIAL_SEGMENT: {
-                    betree_var_t variable_id = get_id_for_attr(config, node->special_expr.segment.attr_var.attr);
+                    betree_var_t variable_id
+                        = get_id_for_attr(config, node->special_expr.segment.attr_var.attr);
                     node->special_expr.segment.attr_var.var = variable_id;
                     return;
                 }
@@ -1118,7 +1174,8 @@ void assign_variable_id(struct config* config, struct ast_node* node)
                     return;
                 }
                 case AST_SPECIAL_STRING: {
-                    betree_var_t variable_id = get_id_for_attr(config, node->special_expr.string.attr_var.attr);
+                    betree_var_t variable_id
+                        = get_id_for_attr(config, node->special_expr.string.attr_var.attr);
                     node->special_expr.string.attr_var.var = variable_id;
                     return;
                 }
@@ -1130,7 +1187,8 @@ void assign_variable_id(struct config* config, struct ast_node* node)
             return;
         }
         case(AST_TYPE_NUMERIC_COMPARE_EXPR): {
-            betree_var_t variable_id = get_id_for_attr(config, node->numeric_compare_expr.attr_var.attr);
+            betree_var_t variable_id
+                = get_id_for_attr(config, node->numeric_compare_expr.attr_var.attr);
             node->numeric_compare_expr.attr_var.var = variable_id;
             return;
         }
@@ -1152,7 +1210,8 @@ void assign_variable_id(struct config* config, struct ast_node* node)
                     return;
                 }
                 case AST_BOOL_VARIABLE: {
-                    betree_var_t variable_id = get_id_for_attr(config, node->bool_expr.variable.attr);
+                    betree_var_t variable_id
+                        = get_id_for_attr(config, node->bool_expr.variable.attr);
                     node->bool_expr.variable.var = variable_id;
                     return;
                 }
@@ -1175,7 +1234,8 @@ void assign_variable_id(struct config* config, struct ast_node* node)
                     break;
                 }
                 case AST_SET_LEFT_VALUE_VARIABLE: {
-                    betree_var_t variable_id = get_id_for_attr(config, node->set_expr.left_value.variable_value.attr);
+                    betree_var_t variable_id
+                        = get_id_for_attr(config, node->set_expr.left_value.variable_value.attr);
                     node->set_expr.left_value.variable_value.var = variable_id;
                     break;
                 }
@@ -1191,7 +1251,8 @@ void assign_variable_id(struct config* config, struct ast_node* node)
                     break;
                 }
                 case AST_SET_RIGHT_VALUE_VARIABLE: {
-                    betree_var_t variable_id = get_id_for_attr(config, node->set_expr.right_value.variable_value.attr);
+                    betree_var_t variable_id
+                        = get_id_for_attr(config, node->set_expr.right_value.variable_value.attr);
                     node->set_expr.right_value.variable_value.var = variable_id;
                     break;
                 }
@@ -1213,7 +1274,8 @@ void assign_str_id(struct config* config, struct ast_node* node)
         case(AST_TYPE_SPECIAL_EXPR): {
             switch(node->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY: {
-                    betree_str_t str_id = get_id_for_string(config, node->special_expr.frequency.ns.string);
+                    betree_str_t str_id
+                        = get_id_for_string(config, node->special_expr.frequency.ns.string);
                     node->special_expr.frequency.ns.str = str_id;
                     return;
                 }
@@ -1234,7 +1296,8 @@ void assign_str_id(struct config* config, struct ast_node* node)
         }
         case(AST_TYPE_EQUALITY_EXPR): {
             if(node->equality_expr.value.value_type == AST_EQUALITY_VALUE_STRING) {
-                betree_str_t str_id = get_id_for_string(config, node->equality_expr.value.string_value.string);
+                betree_str_t str_id
+                    = get_id_for_string(config, node->equality_expr.value.string_value.string);
                 node->equality_expr.value.string_value.str = str_id;
             }
             return;
@@ -1262,7 +1325,8 @@ void assign_str_id(struct config* config, struct ast_node* node)
         case(AST_TYPE_LIST_EXPR): {
             if(node->list_expr.value.value_type == AST_LIST_VALUE_STRING_LIST) {
                 for(size_t i = 0; i < node->list_expr.value.string_list_value.count; i++) {
-                    betree_str_t str_id = get_id_for_string(config, node->list_expr.value.string_list_value.strings[i].string);
+                    betree_str_t str_id = get_id_for_string(
+                        config, node->list_expr.value.string_list_value.strings[i].string);
                     node->list_expr.value.string_list_value.strings[i].str = str_id;
                 }
             }
@@ -1270,12 +1334,14 @@ void assign_str_id(struct config* config, struct ast_node* node)
         }
         case(AST_TYPE_SET_EXPR): {
             if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_STRING) {
-                betree_str_t str_id = get_id_for_string(config, node->set_expr.left_value.string_value.string);
+                betree_str_t str_id
+                    = get_id_for_string(config, node->set_expr.left_value.string_value.string);
                 node->set_expr.left_value.string_value.str = str_id;
             }
             if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
                 for(size_t i = 0; i < node->set_expr.right_value.string_list_value.count; i++) {
-                    betree_str_t str_id = get_id_for_string(config, node->set_expr.right_value.string_list_value.strings[i].string);
+                    betree_str_t str_id = get_id_for_string(
+                        config, node->set_expr.right_value.string_list_value.strings[i].string);
                     node->set_expr.right_value.string_list_value.strings[i].str = str_id;
                 }
             }
@@ -1364,13 +1430,15 @@ void assign_str_id(struct config* config, struct ast_node* node)
 //             }
 //             switch(node->set_expr.right_value.value_type) {
 //                 case AST_SET_RIGHT_VALUE_INTEGER_LIST: {
-//                     const char* list = integer_list_value_to_string(node->set_expr.right_value.integer_list_value);
+//                     const char* list =
+//                     integer_list_value_to_string(node->set_expr.right_value.integer_list_value);
 //                     asprintf(&expr, "(%s) ", list);
 //                     free((char*)list);
 //                     break;
 //                 }
 //                 case AST_SET_RIGHT_VALUE_STRING_LIST: {
-//                     const char* list = string_list_value_to_string(node->set_expr.right_value.string_list_value);
+//                     const char* list =
+//                     string_list_value_to_string(node->set_expr.right_value.string_list_value);
 //                     asprintf(&expr, "(%s) ", list);
 //                     free((char*)list);
 //                     break;
@@ -1389,13 +1457,15 @@ void assign_str_id(struct config* config, struct ast_node* node)
 //             char* list;
 //             switch(node->list_expr.value.value_type) {
 //                 case AST_LIST_VALUE_INTEGER_LIST: {
-//                     const char* inner = integer_list_value_to_string(node->list_expr.value.integer_list_value);
+//                     const char* inner =
+//                     integer_list_value_to_string(node->list_expr.value.integer_list_value);
 //                     asprintf(&list, "(%s) ", inner);
 //                     free((char*)inner);
 //                     break;
 //                 }
 //                 case AST_LIST_VALUE_STRING_LIST: {
-//                     const char* inner = string_list_value_to_string(node->list_expr.value.string_list_value);
+//                     const char* inner =
+//                     string_list_value_to_string(node->list_expr.value.string_list_value);
 //                     asprintf(&list, "(%s) ", inner);
 //                     free((char*)inner);
 //                     break;
@@ -1432,16 +1502,16 @@ void assign_str_id(struct config* config, struct ast_node* node)
 //                 case AST_EQUALITY_EQ: {
 //                     switch(node->equality_expr.value.value_type) {
 //                         case AST_EQUALITY_VALUE_INTEGER: {
-//                             asprintf(&expr, "%s = %lld", node->equality_expr.name, node->equality_expr.value.integer_value);
-//                             return expr;
+//                             asprintf(&expr, "%s = %lld", node->equality_expr.name,
+//                             node->equality_expr.value.integer_value); return expr;
 //                         }
 //                         case AST_EQUALITY_VALUE_FLOAT: {
-//                             asprintf(&expr, "%s = %.2f", node->equality_expr.name, node->equality_expr.value.float_value);
-//                             return expr;
+//                             asprintf(&expr, "%s = %.2f", node->equality_expr.name,
+//                             node->equality_expr.value.float_value); return expr;
 //                         }
 //                         case AST_EQUALITY_VALUE_STRING: {
-//                             asprintf(&expr, "%s = \"%s\"", node->equality_expr.name, node->equality_expr.value.string_value.string);
-//                             return expr;
+//                             asprintf(&expr, "%s = \"%s\"", node->equality_expr.name,
+//                             node->equality_expr.value.string_value.string); return expr;
 //                         }
 //                         default: {
 //                             switch_default_error("Invalid equality value type");
@@ -1452,16 +1522,16 @@ void assign_str_id(struct config* config, struct ast_node* node)
 //                 case AST_EQUALITY_NE: {
 //                     switch(node->equality_expr.value.value_type) {
 //                         case AST_EQUALITY_VALUE_INTEGER: {
-//                             asprintf(&expr, "%s <> %lld", node->equality_expr.name, node->equality_expr.value.integer_value);
-//                             return expr;
+//                             asprintf(&expr, "%s <> %lld", node->equality_expr.name,
+//                             node->equality_expr.value.integer_value); return expr;
 //                         }
 //                         case AST_EQUALITY_VALUE_FLOAT: {
-//                             asprintf(&expr, "%s <> %.2f", node->equality_expr.name, node->equality_expr.value.float_value);
-//                             return expr;
+//                             asprintf(&expr, "%s <> %.2f", node->equality_expr.name,
+//                             node->equality_expr.value.float_value); return expr;
 //                         }
 //                         case AST_EQUALITY_VALUE_STRING: {
-//                             asprintf(&expr, "%s <> \"%s\"", node->equality_expr.name, node->equality_expr.value.string_value.string);
-//                             return expr;
+//                             asprintf(&expr, "%s <> \"%s\"", node->equality_expr.name,
+//                             node->equality_expr.value.string_value.string); return expr;
 //                         }
 //                         default: {
 //                             switch_default_error("Invalid equality value type");
@@ -1480,12 +1550,12 @@ void assign_str_id(struct config* config, struct ast_node* node)
 //                 case AST_NUMERIC_COMPARE_LT: {
 //                     switch(node->numeric_compare_expr.value.value_type) {
 //                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-//                             asprintf(&expr, "%s < %lld", node->numeric_compare_expr.name, node->numeric_compare_expr.value.integer_value);
-//                             return expr;
+//                             asprintf(&expr, "%s < %lld", node->numeric_compare_expr.name,
+//                             node->numeric_compare_expr.value.integer_value); return expr;
 //                         }
 //                         case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-//                             asprintf(&expr, "%s < %.2f", node->numeric_compare_expr.name, node->numeric_compare_expr.value.float_value);
-//                             return expr;
+//                             asprintf(&expr, "%s < %.2f", node->numeric_compare_expr.name,
+//                             node->numeric_compare_expr.value.float_value); return expr;
 //                         }
 //                         default: {
 //                             switch_default_error("Invalid numeric compare value type");
@@ -1496,12 +1566,12 @@ void assign_str_id(struct config* config, struct ast_node* node)
 //                 case AST_NUMERIC_COMPARE_LE: {
 //                     switch(node->numeric_compare_expr.value.value_type) {
 //                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-//                             asprintf(&expr, "%s <= %lld", node->numeric_compare_expr.name, node->numeric_compare_expr.value.integer_value);
-//                             return expr;
+//                             asprintf(&expr, "%s <= %lld", node->numeric_compare_expr.name,
+//                             node->numeric_compare_expr.value.integer_value); return expr;
 //                         }
 //                         case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-//                             asprintf(&expr, "%s <= %.2f", node->numeric_compare_expr.name, node->numeric_compare_expr.value.float_value);
-//                             return expr;
+//                             asprintf(&expr, "%s <= %.2f", node->numeric_compare_expr.name,
+//                             node->numeric_compare_expr.value.float_value); return expr;
 //                         }
 //                         default: {
 //                             switch_default_error("Invalid numeric compare value type");
@@ -1512,12 +1582,12 @@ void assign_str_id(struct config* config, struct ast_node* node)
 //                 case AST_NUMERIC_COMPARE_GT: {
 //                     switch(node->numeric_compare_expr.value.value_type) {
 //                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-//                             asprintf(&expr, "%s > %lld", node->numeric_compare_expr.name, node->numeric_compare_expr.value.integer_value);
-//                             return expr;
+//                             asprintf(&expr, "%s > %lld", node->numeric_compare_expr.name,
+//                             node->numeric_compare_expr.value.integer_value); return expr;
 //                         }
 //                         case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-//                             asprintf(&expr, "%s > %.2f", node->numeric_compare_expr.name, node->numeric_compare_expr.value.float_value);
-//                             return expr;
+//                             asprintf(&expr, "%s > %.2f", node->numeric_compare_expr.name,
+//                             node->numeric_compare_expr.value.float_value); return expr;
 //                         }
 //                         default: {
 //                             switch_default_error("Invalid numeric compare value type");
@@ -1528,12 +1598,12 @@ void assign_str_id(struct config* config, struct ast_node* node)
 //                 case AST_NUMERIC_COMPARE_GE: {
 //                     switch(node->numeric_compare_expr.value.value_type) {
 //                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-//                             asprintf(&expr, "%s >= %lld", node->numeric_compare_expr.name, node->numeric_compare_expr.value.integer_value);
-//                             return expr;
+//                             asprintf(&expr, "%s >= %lld", node->numeric_compare_expr.name,
+//                             node->numeric_compare_expr.value.integer_value); return expr;
 //                         }
 //                         case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-//                             asprintf(&expr, "%s >= %.2f", node->numeric_compare_expr.name, node->numeric_compare_expr.value.float_value);
-//                             return expr;
+//                             asprintf(&expr, "%s >= %.2f", node->numeric_compare_expr.name,
+//                             node->numeric_compare_expr.value.float_value); return expr;
 //                         }
 //                         default: {
 //                             switch_default_error("Invalid numeric compare value type");
