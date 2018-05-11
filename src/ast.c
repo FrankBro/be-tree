@@ -129,7 +129,8 @@ struct ast_node* ast_special_segment_create(
     if(name == NULL) {
         segment.has_variable = false;
         segment.attr_var = make_attr_var("segments_with_timestamp", NULL);
-    } else {
+    }
+    else {
         segment.has_variable = true;
         segment.attr_var = make_attr_var(name, NULL);
     }
@@ -422,8 +423,8 @@ bool match_special_expr(
                     betree_assert(caps_state != VARIABLE_MISSING, "Attribute is not defined");
                     if(caps_state == VARIABLE_UNDEFINED) {
                         return false;
-
-                    } else {
+                    }
+                    else {
                         uint32_t id;
                         switch(special_expr.frequency.type) {
                             case FREQUENCY_TYPE_ADVERTISER:
@@ -686,7 +687,8 @@ bool match_set_expr(
             return false;
         }
         is_in = integer_in_integer_list(left.integer_value, variable);
-    } else if(left.value_type == AST_SET_LEFT_VALUE_STRING
+    }
+    else if(left.value_type == AST_SET_LEFT_VALUE_STRING
         && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
         struct string_list_value variable;
         enum variable_state_e state
@@ -696,7 +698,8 @@ bool match_set_expr(
             return false;
         }
         is_in = string_in_string_list(left.string_value, variable);
-    } else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE
+    }
+    else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE
         && right.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST) {
         int64_t variable;
         enum variable_state_e state
@@ -706,7 +709,8 @@ bool match_set_expr(
             return false;
         }
         is_in = integer_in_integer_list(variable, right.integer_list_value);
-    } else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE
+    }
+    else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE
         && right.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
         struct string_value variable;
         enum variable_state_e state
@@ -716,7 +720,8 @@ bool match_set_expr(
             return false;
         }
         is_in = string_in_string_list(variable, right.string_list_value);
-    } else {
+    }
+    else {
         invalid_expr("invalid set expression");
         return false;
     }
