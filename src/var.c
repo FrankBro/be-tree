@@ -1,11 +1,13 @@
-#include "betree.h"
 #include "var.h"
+#include "betree.h"
 #include "utils.h"
 
-enum variable_state_e
-get_variable(const struct config* config, betree_var_t variable_id, const struct event* event, struct value* value)
+enum variable_state_e get_variable(const struct config* config,
+    betree_var_t variable_id,
+    const struct event* event,
+    struct value* value)
 {
-    for(size_t i=0; i < event->pred_count; i++) {
+    for(size_t i = 0; i < event->pred_count; i++) {
         const struct pred* pred = event->preds[i];
         if(variable_id == pred->attr_var.var) {
             *value = pred->value;
@@ -21,8 +23,8 @@ get_variable(const struct config* config, betree_var_t variable_id, const struct
     }
 }
 
-enum variable_state_e
-get_float_var(const struct config* config, betree_var_t var, const struct event* event, double* ret)
+enum variable_state_e get_float_var(
+    const struct config* config, betree_var_t var, const struct event* event, double* ret)
 {
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
@@ -33,15 +35,17 @@ get_float_var(const struct config* config, betree_var_t var, const struct event*
     return state;
 }
 
-enum variable_state_e
-get_float_attr(struct config* config, const struct event* event, const char* attr, double* ret)
+enum variable_state_e get_float_attr(
+    struct config* config, const struct event* event, const char* attr, double* ret)
 {
     betree_var_t var = get_id_for_attr(config, attr);
     return get_float_var(config, var, event, ret);
 }
 
-enum variable_state_e
-get_string_var(const struct config* config, betree_var_t var, const struct event* event, struct string_value* ret)
+enum variable_state_e get_string_var(const struct config* config,
+    betree_var_t var,
+    const struct event* event,
+    struct string_value* ret)
 {
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
@@ -52,15 +56,15 @@ get_string_var(const struct config* config, betree_var_t var, const struct event
     return state;
 }
 
-enum variable_state_e
-get_string_attr(struct config* config, const struct event* event, const char* attr, struct string_value* ret)
+enum variable_state_e get_string_attr(
+    struct config* config, const struct event* event, const char* attr, struct string_value* ret)
 {
     betree_var_t var = get_id_for_attr(config, attr);
     return get_string_var(config, var, event, ret);
 }
 
-enum variable_state_e
-get_integer_var(const struct config* config, betree_var_t var, const struct event* event, int64_t* ret)
+enum variable_state_e get_integer_var(
+    const struct config* config, betree_var_t var, const struct event* event, int64_t* ret)
 {
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
@@ -71,15 +75,15 @@ get_integer_var(const struct config* config, betree_var_t var, const struct even
     return state;
 }
 
-enum variable_state_e
-get_integer_attr(struct config* config, const struct event* event, const char* attr, int64_t* ret)
+enum variable_state_e get_integer_attr(
+    struct config* config, const struct event* event, const char* attr, int64_t* ret)
 {
     betree_var_t var = get_id_for_attr(config, attr);
     return get_integer_var(config, var, event, ret);
 }
 
-enum variable_state_e
-get_bool_var(const struct config* config, betree_var_t var, const struct event* event, bool* ret)
+enum variable_state_e get_bool_var(
+    const struct config* config, betree_var_t var, const struct event* event, bool* ret)
 {
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
@@ -90,8 +94,10 @@ get_bool_var(const struct config* config, betree_var_t var, const struct event* 
     return state;
 }
 
-enum variable_state_e
-get_integer_list_var(const struct config* config, betree_var_t var, const struct event* event, struct integer_list_value* ret)
+enum variable_state_e get_integer_list_var(const struct config* config,
+    betree_var_t var,
+    const struct event* event,
+    struct integer_list_value* ret)
 {
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
@@ -102,8 +108,10 @@ get_integer_list_var(const struct config* config, betree_var_t var, const struct
     return state;
 }
 
-enum variable_state_e
-get_string_list_var(const struct config* config, betree_var_t var, const struct event* event, struct string_list_value* ret)
+enum variable_state_e get_string_list_var(const struct config* config,
+    betree_var_t var,
+    const struct event* event,
+    struct string_list_value* ret)
 {
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
@@ -114,7 +122,10 @@ get_string_list_var(const struct config* config, betree_var_t var, const struct 
     return state;
 }
 
-enum variable_state_e get_segments_var(const struct config* config, betree_var_t var, const struct event* event, struct segments_list* ret)
+enum variable_state_e get_segments_var(const struct config* config,
+    betree_var_t var,
+    const struct event* event,
+    struct segments_list* ret)
 {
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
@@ -125,13 +136,17 @@ enum variable_state_e get_segments_var(const struct config* config, betree_var_t
     return state;
 }
 
-enum variable_state_e get_segments_attr(struct config* config, const struct event* event, const char* attr, struct segments_list* ret)
+enum variable_state_e get_segments_attr(
+    struct config* config, const struct event* event, const char* attr, struct segments_list* ret)
 {
     betree_var_t var = get_id_for_attr(config, attr);
     return get_segments_var(config, var, event, ret);
 }
 
-enum variable_state_e get_frequency_var(const struct config* config, betree_var_t var, const struct event* event, struct frequency_caps_list* ret)
+enum variable_state_e get_frequency_var(const struct config* config,
+    betree_var_t var,
+    const struct event* event,
+    struct frequency_caps_list* ret)
 {
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
@@ -142,7 +157,8 @@ enum variable_state_e get_frequency_var(const struct config* config, betree_var_
     return state;
 }
 
-enum variable_state_e get_frequency_attr(struct config* config, const struct event* event, struct frequency_caps_list* ret)
+enum variable_state_e get_frequency_attr(
+    struct config* config, const struct event* event, struct frequency_caps_list* ret)
 {
     betree_var_t var = get_id_for_attr(config, "frequency_caps");
     return get_frequency_var(config, var, event, ret);
