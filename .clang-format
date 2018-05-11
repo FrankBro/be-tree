@@ -1,7 +1,7 @@
 BasedOnStyle: WebKit
 Standard: Cpp11
-AllowShortBlocksOnASingleLine: true
-AllowShortCaseLabelsOnASingleLine: true
+AllowShortBlocksOnASingleLine: false
+AllowShortCaseLabelsOnASingleLine: false
 AllowShortFunctionsOnASingleLine: All
 AllowShortIfStatementsOnASingleLine: true
 AllowShortLoopsOnASingleLine: true
@@ -10,4 +10,6 @@ BinPackParameters: false
 ColumnLimit: 100
 MaxEmptyLinesToKeep: 2
 NamespaceIndentation: None
-PointerBindsToType: false
+PointerBindsToType: true
+IndentCaseLabels: true
+SpaceBeforeParens: Never
