@@ -9,6 +9,7 @@
 #include "betree.h"
 #include "special.h"
 #include "utils.h"
+#include "value.h"
 #include "var.h"
 
 struct ast_node* ast_node_create()
