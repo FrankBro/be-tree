@@ -159,8 +159,11 @@ struct matched_subs {
 
 struct matched_subs* make_matched_subs();
 void free_matched_subs(struct matched_subs* matched_subs);
+const struct pred* make_simple_pred_b(const char* attr, betree_var_t variable_id, bool bvalue);
 const struct pred* make_simple_pred_i(const char* attr, betree_var_t variable_id, int64_t value);
 const struct pred* make_simple_pred_f(const char* attr, betree_var_t variable_id, double fvalue);
+const struct pred* make_simple_pred_s(
+    struct config* config, betree_var_t variable_id, const char* svalue);
 const struct pred* make_simple_pred_segment(
     const char* attr, betree_var_t variable_id, int64_t id, int64_t timestamp);
 const struct pred* make_simple_pred_frequency(betree_var_t variable_id,
