@@ -297,3 +297,6 @@ void betree_insert(struct config* config, betree_sub_t id, const char* expr, str
 struct attr_var make_attr_var(const char* attr, struct config* config);
 struct attr_var copy_attr_var(struct attr_var attr_var);
 void free_attr_var(struct attr_var attr_var);
+
+struct pred* make_pred(const char* attr, betree_var_t variable_id, struct value value);
+void add_pred(struct pred* pred, struct event* event);

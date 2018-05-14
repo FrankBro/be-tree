@@ -1295,7 +1295,7 @@ void free_matched_subs(struct matched_subs* matched_subs)
     free(matched_subs);
 }
 
-struct pred* make_simple_pred(const char* attr, betree_var_t variable_id, struct value value)
+struct pred* make_pred(const char* attr, betree_var_t variable_id, struct value value)
 {
     struct pred* pred = calloc(1, sizeof(*pred));
     if(pred == NULL) {
@@ -1308,16 +1308,22 @@ struct pred* make_simple_pred(const char* attr, betree_var_t variable_id, struct
     return pred;
 }
 
+const struct pred* make_simple_pred_b(const char* attr, betree_var_t variable_id, bool bvalue)
+{
+    struct value value = { .value_type = VALUE_B, .bvalue = bvalue };
+    return make_pred(attr, variable_id, value);
+}
+
 const struct pred* make_simple_pred_i(const char* attr, betree_var_t variable_id, int64_t ivalue)
 {
     struct value value = { .value_type = VALUE_I, .ivalue = ivalue };
-    return make_simple_pred(attr, variable_id, value);
+    return make_pred(attr, variable_id, value);
 }
 
 const struct pred* make_simple_pred_f(const char* attr, betree_var_t variable_id, double fvalue)
 {
     struct value value = { .value_type = VALUE_F, .fvalue = fvalue };
-    return make_simple_pred(attr, variable_id, value);
+    return make_pred(attr, variable_id, value);
 }
 
 const struct pred* make_simple_pred_s(
@@ -1326,21 +1332,21 @@ const struct pred* make_simple_pred_s(
     struct value value = { .value_type = VALUE_S, .svalue = { .string = strdup(svalue) } };
     value.svalue.str = get_id_for_string(config, svalue);
     const char* attr = get_attr_for_id(config, variable_id);
-    return make_simple_pred(attr, variable_id, value);
+    return make_pred(attr, variable_id, value);
 }
 
 const struct pred* make_simple_pred_il(
     const char* attr, betree_var_t variable_id, struct integer_list_value ilvalue)
 {
     struct value value = { .value_type = VALUE_IL, .ilvalue = ilvalue };
-    return make_simple_pred(attr, variable_id, value);
+    return make_pred(attr, variable_id, value);
 }
 
 const struct pred* make_simple_pred_sl(
     const char* attr, betree_var_t variable_id, struct string_list_value slvalue)
 {
     struct value value = { .value_type = VALUE_SL, .slvalue = slvalue };
-    return make_simple_pred(attr, variable_id, value);
+    return make_pred(attr, variable_id, value);
 }
 
 const struct pred* make_simple_pred_segment(
@@ -1351,7 +1357,7 @@ const struct pred* make_simple_pred_segment(
         = { .size = 1, .content = calloc(1, sizeof(*segments_list.content)) };
     segments_list.content[0] = segment;
     struct value value = { .value_type = VALUE_SEGMENTS, .segments_value = segments_list };
-    return make_simple_pred(attr, variable_id, value);
+    return make_pred(attr, variable_id, value);
 }
 
 const struct pred* make_simple_pred_frequency(betree_var_t variable_id,
@@ -1372,7 +1378,7 @@ const struct pred* make_simple_pred_frequency(betree_var_t variable_id,
         = { .size = 1, .content = calloc(1l, sizeof(*caps_list.content)) };
     caps_list.content[0] = cap;
     struct value value = { .value_type = VALUE_FREQUENCY, .frequency_value = caps_list };
-    return make_simple_pred("frequency_caps", variable_id, value);
+    return make_pred("frequency_caps", variable_id, value);
 }
 
 const struct pred* make_simple_pred_str_i(struct config* config, const char* attr, int64_t value)
@@ -2044,4 +2050,25 @@ struct attr_var copy_attr_var(struct attr_var attr_var)
 {
     struct attr_var copy = { .attr = strdup(attr_var.attr), .var = attr_var.var };
     return copy;
+}
+
+void add_pred(struct pred* pred, struct event* event)
+{
+    if(event->pred_count == 0) {
+        event->preds = calloc(1, sizeof(*event->preds));
+        if(event->preds == NULL) {
+            fprintf(stderr, "%s calloc failed", __func__);
+            abort();
+        }
+    }
+    else {
+        struct pred** preds = realloc(event->preds, sizeof(*preds) * (event->pred_count + 1));
+        if(preds == NULL) {
+            fprintf(stderr, "%s realloc failed", __func__);
+            abort();
+        }
+        event->preds = preds;
+    }
+    event->preds[event->pred_count] = pred;
+    event->pred_count++;
 }
