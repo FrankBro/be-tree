@@ -69,3 +69,45 @@ const char* string_list_value_to_string(struct string_list_value list)
     }
     return string;
 }
+
+void add_segment(struct segment segment, struct segments_list* list)
+{
+    if(list->size == 0) {
+        list->content = calloc(1, sizeof(*list->content));
+        if(list->content == NULL) {
+            fprintf(stderr, "%s calloc failed", __func__);
+            abort();
+        }
+    }
+    else {
+        int64_t* content = realloc(list->content, sizeof(*list->content) * (list->size + 1));
+        if(content == NULL) {
+            fprintf(stderr, "%s realloc failed", __func__);
+            abort();
+        }
+        list->content = content;
+    }
+    list->content[list->size] = segment;
+    list->size++;
+}
+
+void add_frequency(struct frequency_cap frequency, struct frequency_caps_list* list)
+{
+    if(list->size == 0) {
+        list->content = calloc(1, sizeof(*list->content));
+        if(list->content == NULL) {
+            fprintf(stderr, "%s calloc failed", __func__);
+            abort();
+        }
+    }
+    else {
+        int64_t* content = realloc(list->content, sizeof(*list->content) * (list->size + 1));
+        if(content == NULL) {
+            fprintf(stderr, "%s realloc failed", __func__);
+            abort();
+        }
+        list->content = content;
+    }
+    list->content[list->size] = frequency;
+    list->size++;
+}

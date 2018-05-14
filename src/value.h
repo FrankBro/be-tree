@@ -102,3 +102,5 @@ void add_integer_list_value(int64_t integer, struct integer_list_value* list);
 const char* integer_list_value_to_string(struct integer_list_value list);
 void add_string_list_value(struct string_value string, struct string_list_value* list);
 const char* string_list_value_to_string(struct string_list_value list);
+void add_segment(struct segment segment, struct segments_list* list);
+void add_frequency(struct frequency_cap frequency, struct frequency_caps_list* list);
