@@ -1,14 +1,15 @@
 %{
     #include <stdint.h>
     #include <stdbool.h>
-    #include "stdio.h"
+    #include <stdio.h>
+    #include <string.h>
     #include "ast.h"
     #include "betree.h"
     #include "parser.h"
-    #include "lexer.h"
+    #include "value.h"
     struct ast_node *root;
-    extern int yylex();
-    void yyerror(void *scanner, const char *s) { (void)scanner; printf("ERROR: %s\n", s); }
+    extern int xxlex();
+    void xxerror(void *scanner, const char *s) { (void)scanner; printf("ERROR: %s\n", s); }
 #if defined(__GNUC__)
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wswitch-default"
@@ -20,6 +21,7 @@
 %pure-parser
 %lex-param {void *scanner}
 %parse-param {void *scanner}
+%define api.prefix {xx}
 
 %{
     int parse(const char *text, struct ast_node **node);
@@ -233,17 +235,19 @@ s_string_expr       : TCONTAINS TLPAREN ident TCOMMA string TRPAREN
 #pragma GCC diagnostic pop
 #endif
 
+#include "lexer.h"
+
 int parse(const char *text, struct ast_node **node)
 {
-    // yydebug = 1;
+    // xxdebug = 1;
     
     // Parse using Bison.
     yyscan_t scanner;
-    yylex_init(&scanner);
-    YY_BUFFER_STATE buffer = yy_scan_string(text, scanner);
-    int rc = yyparse(scanner);
-    yy_delete_buffer(buffer, scanner);
-    yylex_destroy(scanner);
+    xxlex_init(&scanner);
+    YY_BUFFER_STATE buffer = xx_scan_string(text, scanner);
+    int rc = xxparse(scanner);
+    xx_delete_buffer(buffer, scanner);
+    xxlex_destroy(scanner);
     
     if(rc == 0) {
         *node = root;

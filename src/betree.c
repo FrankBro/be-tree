@@ -1987,6 +1987,9 @@ struct attr_var copy_attr_var(struct attr_var attr_var)
 
 void add_pred(struct pred* pred, struct event* event)
 {
+    if(pred == NULL) {
+        return;
+    }
     if(event->pred_count == 0) {
         event->preds = calloc(1, sizeof(*event->preds));
         if(event->preds == NULL) {

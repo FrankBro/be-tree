@@ -104,3 +104,9 @@ void add_string_list_value(struct string_value string, struct string_list_value*
 const char* string_list_value_to_string(struct string_list_value list);
 void add_segment(struct segment segment, struct segments_list* list);
 void add_frequency(struct frequency_cap frequency, struct frequency_caps_list* list);
+struct segment make_segment(int64_t id, int64_t timestamp);
+struct frequency_cap make_frequency_cap(enum frequency_type_e type,
+    uint32_t id,
+    struct string_value namespace,
+    int64_t timestamp,
+    uint32_t value);

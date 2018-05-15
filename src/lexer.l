@@ -11,6 +11,7 @@
     #define SAVE_INTEGER yylval->integer_value = strtoll(yytext, NULL, 10)
     #define SAVE_FLOAT yylval->float_value = atof(yytext)
     #define TOKEN(t) (yylval->token = t)
+    #define YYSTYPE XXSTYPE
 #if defined(__clang__)
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -23,6 +24,7 @@
 #endif
 %}
 
+%option prefix="xx"
 %option noyywrap
 %option reentrant
 %option bison-bridge

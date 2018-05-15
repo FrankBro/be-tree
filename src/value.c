@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "betree.h"
 #include "value.h"
 
 void add_integer_list_value(int64_t integer, struct integer_list_value* list)
@@ -80,7 +81,7 @@ void add_segment(struct segment segment, struct segments_list* list)
         }
     }
     else {
-        int64_t* content = realloc(list->content, sizeof(*list->content) * (list->size + 1));
+        struct segment* content = realloc(list->content, sizeof(*list->content) * (list->size + 1));
         if(content == NULL) {
             fprintf(stderr, "%s realloc failed", __func__);
             abort();
@@ -101,7 +102,8 @@ void add_frequency(struct frequency_cap frequency, struct frequency_caps_list* l
         }
     }
     else {
-        int64_t* content = realloc(list->content, sizeof(*list->content) * (list->size + 1));
+        struct frequency_cap* content
+            = realloc(list->content, sizeof(*list->content) * (list->size + 1));
         if(content == NULL) {
             fprintf(stderr, "%s realloc failed", __func__);
             abort();
@@ -110,4 +112,25 @@ void add_frequency(struct frequency_cap frequency, struct frequency_caps_list* l
     }
     list->content[list->size] = frequency;
     list->size++;
+}
+
+struct segment make_segment(int64_t id, int64_t timestamp)
+{
+    struct segment segment = { .id = id, .timestamp = timestamp };
+    return segment;
+}
+
+struct frequency_cap make_frequency_cap(enum frequency_type_e type,
+    uint32_t id,
+    struct string_value namespace,
+    int64_t timestamp,
+    uint32_t value)
+{
+    struct frequency_cap frequency_cap = { .type = type,
+        .id = id,
+        .namespace = namespace,
+        .timestamp_defined = true,
+        .timestamp = timestamp,
+        .value = value };
+    return frequency_cap;
 }
