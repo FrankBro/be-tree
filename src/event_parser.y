@@ -92,7 +92,7 @@
 
 program             : EVENT_LCURLY pred_loop EVENT_RCURLY   { root = $2; }
 
-pred_loop           : pred                                  { $$->pred_count = 0; $$->preds = NULL; add_pred($1, $$); }
+pred_loop           : pred                                  { $$ = make_event(); add_pred($1, $$); }
                     | pred_loop EVENT_COMMA pred            { add_pred($3, $1); $$ = $1; }
 ;       
 
