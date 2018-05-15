@@ -109,8 +109,8 @@ value               : boolean                               { $$.value_type = VA
                     | segments_value                        { $$.value_type = VALUE_SEGMENTS; $$.segments_value = $1; }
                     | frequencies_value                     { $$.value_type = VALUE_FREQUENCY; $$.frequency_value = $1; }
 
-boolean             : EVENT_TRUE                            { $$ = $1; }
-                    | EVENT_FALSE                           { $$ = $1; }
+boolean             : EVENT_TRUE                            { $$ = true; }
+                    | EVENT_FALSE                           { $$ = false; }
 ;                       
 
 integer             : EVENT_INTEGER                         { $$ = $1; }
