@@ -4,7 +4,6 @@
 
 #include "ast.h"
 #include "minunit.h"
-#include "parser.h"
 #include "utils.h"
 
 int event_parse(const char* text, struct event** event);
@@ -23,9 +22,23 @@ int test_bool()
     return 0;
 }
 
+int test_integer()
+{
+    struct event* event;
+    event_parse("{\"positive\": 1, \"negative\": -1}", &event);
+    mu_assert(event->pred_count == 2 && strcmp(event->preds[0]->attr_var.attr, "positive") == 0
+            && event->preds[0]->value.value_type == VALUE_I && event->preds[0]->value.ivalue == 1
+            && strcmp(event->preds[1]->attr_var.attr, "negative") == 0
+            && event->preds[1]->value.value_type == VALUE_I && event->preds[1]->value.ivalue == -1,
+        "positive and negative");
+    free_event(event);
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_bool);
+    mu_run_test(test_integer);
     return 0;
 }
 
