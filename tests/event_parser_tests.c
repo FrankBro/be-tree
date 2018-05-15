@@ -129,6 +129,57 @@ bool test_string_list_pred2(
     return test_string_list_pred(attr, list, event, index);
 }
 
+bool test_segment_list_pred(
+    const char* attr, struct segments_list list, const struct event* event, size_t index)
+{
+    const struct pred* pred = event->preds[index];
+    if(strcmp(pred->attr_var.attr, attr) == 0
+        && (test_empty_list(pred) || pred->value.value_type == VALUE_SEGMENTS)) {
+        if(list.size == pred->value.segments_value.size) {
+            for(size_t i = 0; i < list.size; i++) {
+                struct segment target = list.content[i];
+                struct segment value = pred->value.segments_value.content[i];
+                if(target.id != value.id || target.timestamp != value.timestamp) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+bool test_segment_list_pred0(const char* attr, const struct event* event, size_t index)
+{
+    struct segments_list list = { .size = 0, .content = NULL };
+    return test_segment_list_pred(attr, list, event, index);
+}
+
+bool test_segment_list_pred1(
+    const char* attr, int64_t id1, int64_t timestamp1, const struct event* event, size_t index)
+{
+    struct segments_list list = { .size = 0, .content = NULL };
+    struct segment s1 = make_segment(id1, timestamp1);
+    add_segment(s1, &list);
+    return test_segment_list_pred(attr, list, event, index);
+}
+
+bool test_segment_list_pred2(const char* attr,
+    int64_t id1,
+    int64_t timestamp1,
+    int64_t id2,
+    int64_t timestamp2,
+    const struct event* event,
+    size_t index)
+{
+    struct segments_list list = { .size = 0, .content = NULL };
+    struct segment s1 = make_segment(id1, timestamp1);
+    struct segment s2 = make_segment(id2, timestamp2);
+    add_segment(s1, &list);
+    add_segment(s2, &list);
+    return test_segment_list_pred(attr, list, event, index);
+}
+
 int test_bool()
 {
     struct event* event;
@@ -198,6 +249,14 @@ int test_string_list()
     return 0;
 }
 
+int test_segment()
+{
+    struct event* event;
+    event_parse("{\"single\":[[1,2]], \"two\": [[1,2],[3,4]], \"empty\":[]}", &event);
+    free_event(event);
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_bool);
@@ -206,7 +265,7 @@ int all_tests()
     mu_run_test(test_string);
     mu_run_test(test_integer_list);
     mu_run_test(test_string_list);
-    // | segments_value
+    mu_run_test(test_segment);
     // | frequencies_value
     return 0;
 }
