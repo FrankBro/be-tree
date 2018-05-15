@@ -253,6 +253,10 @@ int test_segment()
 {
     struct event* event;
     event_parse("{\"single\":[[1,2]], \"two\": [[1,2],[3,4]], \"empty\":[]}", &event);
+    mu_assert(event->pred_count == 3 && test_segment_list_pred1("single", 1, 2, event, 0)
+            && test_segment_list_pred2("two", 1, 2, 3, 4, event, 1)
+            && test_segment_list_pred0("empty", event, 2),
+        "all cases");
     free_event(event);
     return 0;
 }
