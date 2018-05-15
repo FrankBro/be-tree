@@ -57,6 +57,7 @@ int test_integer()
     free_event(event);
     return 0;
 }
+
 int test_float()
 {
     struct event* event;
