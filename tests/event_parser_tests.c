@@ -29,6 +29,13 @@ bool test_float_pred(const char* attr, double value, const struct event* event, 
         && feq(pred->value.fvalue, value);
 }
 
+bool test_string_pred(const char* attr, const char* value, const struct event* event, size_t index)
+{
+    const struct pred* pred = event->preds[index];
+    return strcmp(pred->attr_var.attr, attr) == 0 && pred->value.value_type == VALUE_S
+        && strcmp(pred->value.svalue.string, value) == 0;
+}
+
 int test_bool()
 {
     struct event* event;
@@ -62,11 +69,23 @@ int test_float()
     return 0;
 }
 
+int test_string()
+{
+    struct event* event;
+    event_parse("{\"normal\": \"normal\", \"empty\": \"\"}", &event);
+    mu_assert(event->pred_count == 2 && test_string_pred("normal", "normal", event, 0)
+            && test_string_pred("empty", "", event, 1),
+        "empty or not");
+    free_event(event);
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_bool);
     mu_run_test(test_integer);
     mu_run_test(test_float);
+    mu_run_test(test_string);
     return 0;
 }
 
