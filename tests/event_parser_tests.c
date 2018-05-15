@@ -36,11 +36,21 @@ bool test_string_pred(const char* attr, const char* value, const struct event* e
         && strcmp(pred->value.svalue.string, value) == 0;
 }
 
+bool test_empty_list(const struct pred* pred)
+{
+    return (pred->value.value_type == VALUE_IL || pred->value.value_type == VALUE_SL
+               || pred->value.value_type == VALUE_SEGMENTS
+               || pred->value.value_type == VALUE_FREQUENCY)
+        && pred->value.ilvalue.count == 0 && pred->value.slvalue.count == 0
+        && pred->value.segments_value.size == 0 && pred->value.frequency_value.size == 0;
+}
+
 bool test_integer_list_pred(
     const char* attr, struct integer_list_value list, const struct event* event, size_t index)
 {
     const struct pred* pred = event->preds[index];
-    if(strcmp(pred->attr_var.attr, attr) == 0 && pred->value.value_type == VALUE_IL) {
+    if(strcmp(pred->attr_var.attr, attr) == 0
+        && (test_empty_list(pred) || pred->value.value_type == VALUE_IL)) {
         if(list.count == pred->value.ilvalue.count) {
             for(size_t i = 0; i < list.count; i++) {
                 if(list.integers[i] != pred->value.ilvalue.integers[i]) {
@@ -73,6 +83,50 @@ bool test_integer_list_pred2(
     add_integer_list_value(i1, &list);
     add_integer_list_value(i2, &list);
     return test_integer_list_pred(attr, list, event, index);
+}
+
+bool test_string_list_pred(
+    const char* attr, struct string_list_value list, const struct event* event, size_t index)
+{
+    const struct pred* pred = event->preds[index];
+    if(strcmp(pred->attr_var.attr, attr) == 0
+        && (test_empty_list(pred) || pred->value.value_type == VALUE_SL)) {
+        if(list.count == pred->value.slvalue.count) {
+            for(size_t i = 0; i < list.count; i++) {
+                if(strcmp(list.strings[i].string, pred->value.slvalue.strings[i].string) != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+bool test_string_list_pred0(const char* attr, const struct event* event, size_t index)
+{
+    struct string_list_value list = { .count = 0, .strings = NULL };
+    return test_string_list_pred(attr, list, event, index);
+}
+
+bool test_string_list_pred1(
+    const char* attr, const char* s1, const struct event* event, size_t index)
+{
+    struct string_list_value list = { .count = 0, .strings = NULL };
+    struct string_value sv1 = { .string = s1 };
+    add_string_list_value(sv1, &list);
+    return test_string_list_pred(attr, list, event, index);
+}
+
+bool test_string_list_pred2(
+    const char* attr, const char* s1, const char* s2, const struct event* event, size_t index)
+{
+    struct string_list_value list = { .count = 0, .strings = NULL };
+    struct string_value sv1 = { .string = s1 };
+    struct string_value sv2 = { .string = s2 };
+    add_string_list_value(sv1, &list);
+    add_string_list_value(sv2, &list);
+    return test_string_list_pred(attr, list, event, index);
 }
 
 int test_bool()
@@ -132,6 +186,18 @@ int test_integer_list()
     return 0;
 }
 
+int test_string_list()
+{
+    struct event* event;
+    event_parse("{\"single\":[\"1\"], \"two\":[\"1\",\"2\"], \"empty\":[]}", &event);
+    mu_assert(event->pred_count == 3 && test_string_list_pred1("single", "1", event, 0)
+            && test_string_list_pred2("two", "1", "2", event, 1)
+            && test_string_list_pred0("empty", event, 2),
+        "all cases");
+    free_event(event);
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_bool);
@@ -139,7 +205,7 @@ int all_tests()
     mu_run_test(test_float);
     mu_run_test(test_string);
     mu_run_test(test_integer_list);
-    // | string_list_value
+    mu_run_test(test_string_list);
     // | segments_value
     // | frequencies_value
     return 0;
