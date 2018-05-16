@@ -5,6 +5,7 @@
 #include "ast.h"
 #include "minunit.h"
 #include "utils.h"
+#include "var.h"
 
 int event_parse(const char* text, struct event** event);
 
@@ -38,11 +39,7 @@ bool test_string_pred(const char* attr, const char* value, const struct event* e
 
 bool test_empty_list(const struct pred* pred)
 {
-    return (pred->value.value_type == VALUE_IL || pred->value.value_type == VALUE_SL
-               || pred->value.value_type == VALUE_SEGMENTS
-               || pred->value.value_type == VALUE_FREQUENCY)
-        && pred->value.ilvalue.count == 0 && pred->value.slvalue.count == 0
-        && pred->value.segments_value.size == 0 && pred->value.frequency_value.size == 0;
+    return is_empty_list(pred->value);
 }
 
 bool test_integer_list_pred(
