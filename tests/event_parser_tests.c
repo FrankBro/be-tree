@@ -180,6 +180,75 @@ bool test_segment_list_pred2(const char* attr,
     return test_segment_list_pred(attr, list, event, index);
 }
 
+bool test_frequency_list_pred(
+    const char* attr, struct frequency_caps_list list, const struct event* event, size_t index)
+{
+    const struct pred* pred = event->preds[index];
+    if(strcmp(pred->attr_var.attr, attr) == 0
+        && (test_empty_list(pred) || pred->value.value_type == VALUE_FREQUENCY)) {
+        if(list.size == pred->value.frequency_value.size) {
+            for(size_t i = 0; i < list.size; i++) {
+                struct frequency_cap target = list.content[i];
+                struct frequency_cap value = pred->value.frequency_value.content[i];
+                if(target.id != value.id || target.timestamp != value.timestamp
+                    || target.timestamp_defined != value.timestamp_defined
+                    || target.type != value.type || target.value != value.value
+                    || strcmp(target.namespace.string, value.namespace.string) != 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+bool test_frequency_list_pred0(const char* attr, const struct event* event, size_t index)
+{
+    struct frequency_caps_list list = { .size = 0, .content = NULL };
+    return test_frequency_list_pred(attr, list, event, index);
+}
+
+bool test_frequency_list_pred1(const char* attr,
+    const char* type1,
+    int64_t id1,
+    const char* namespace1,
+    int64_t timestamp1,
+    int64_t value1,
+    const struct event* event,
+    size_t index)
+{
+    struct frequency_caps_list list = { .size = 0, .content = NULL };
+    struct string_value ns1 = { .string = namespace1 };
+    struct frequency_cap s1 = make_frequency_cap(type1, id1, ns1, timestamp1, value1);
+    add_frequency(s1, &list);
+    return test_frequency_list_pred(attr, list, event, index);
+}
+
+bool test_frequency_list_pred2(const char* attr,
+    const char* type1,
+    int64_t id1,
+    const char* namespace1,
+    int64_t timestamp1,
+    int64_t value1,
+    const char* type2,
+    int64_t id2,
+    const char* namespace2,
+    int64_t timestamp2,
+    int64_t value2,
+    const struct event* event,
+    size_t index)
+{
+    struct frequency_caps_list list = { .size = 0, .content = NULL };
+    struct string_value ns1 = { .string = namespace1 };
+    struct frequency_cap s1 = make_frequency_cap(type1, id1, ns1, timestamp1, value1);
+    struct string_value ns2 = { .string = namespace2 };
+    struct frequency_cap s2 = make_frequency_cap(type2, id2, ns2, timestamp2, value2);
+    add_frequency(s1, &list);
+    add_frequency(s2, &list);
+    return test_frequency_list_pred(attr, list, event, index);
+}
+
 int test_bool()
 {
     struct event* event;
@@ -261,6 +330,67 @@ int test_segment()
     return 0;
 }
 
+int test_frequency()
+{
+    struct event* event;
+    event_parse("{\"single\":[[\"flight\",1,\"ns\",2,3]], \"two\": "
+                "[[\"flight\",1,\"ns1\",2,3],[\"flight\",4,\"ns2\",5,6]], \"empty\":[]}",
+        &event);
+    mu_assert(event->pred_count == 3
+            && test_frequency_list_pred1("single", "flight", 1, "ns", 2, 3, event, 0)
+            && test_frequency_list_pred2("two",
+                   "flight",
+                   1,
+                   "ns1",
+                   2,
+                   3,
+                   "flight",
+                   4,
+                   "ns2",
+                   5,
+                   6,
+                   event,
+                   1)
+            && test_frequency_list_pred0("empty", event, 2),
+        "all cases");
+    free_event(event);
+    // event_parse("{\"test:test\": [[\"advertiser:ip\",0,\"\",0,0]]}", &event);
+    // event_parse("{\"advertiser\": [[\"advertiser\",0,\"\",0,0]]}", &event);
+    // mu_assert(event->pred_count == 1
+    //         && test_frequency_list_pred1(
+    //                "test:test", FREQUENCY_TYPE_ADVERTISER, 0, "", 0, 0, event, 0),
+    //     "colon");
+    event_parse("{\"advertiser\": [[\"advertiser\",0,\"\",0,0]],"
+                "\"advertiser:ip\": [[\"advertiser:ip\",0,\"\",0,0]],"
+                "\"campaign\": [[\"campaign\",0,\"\",0,0]],"
+                "\"campaign:ip\": [[\"campaign:ip\",0,\"\",0,0]],"
+                "\"flight\": [[\"flight\",0,\"\",0,0]],"
+                "\"flight:ip\": [[\"flight:ip\",0,\"\",0,0]],"
+                "\"product\": [[\"product\",0,\"\",0,0]],"
+                "\"product:ip\": [[\"product:ip\",0,\"\",0,0]]}",
+        &event);
+    mu_assert(event->pred_count == 8
+            && test_frequency_list_pred1(
+                   "advertiser", "advertiser", 0, "", 0, 0, event, 0)
+            && test_frequency_list_pred1(
+                   "advertiser:ip", "advertiser:ip", 0, "", 0, 0, event, 1)
+            && test_frequency_list_pred1(
+                   "campaign", "campaign", 0, "", 0, 0, event, 2)
+            && test_frequency_list_pred1(
+                   "campaign:ip", "campaign:ip", 0, "", 0, 0, event, 3)
+            && test_frequency_list_pred1(
+                   "flight", "flight", 0, "", 0, 0, event, 4)
+            && test_frequency_list_pred1(
+                   "flight:ip", "flight:ip", 0, "", 0, 0, event, 5)
+            && test_frequency_list_pred1(
+                   "product", "product", 0, "", 0, 0, event, 6)
+            && test_frequency_list_pred1(
+                   "product:ip", "product:ip", 0, "", 0, 0, event, 7),
+        "all types");
+    free_event(event);
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_bool);
@@ -270,7 +400,7 @@ int all_tests()
     mu_run_test(test_integer_list);
     mu_run_test(test_string_list);
     mu_run_test(test_segment);
-    // | frequencies_value
+    mu_run_test(test_frequency);
     return 0;
 }
 
