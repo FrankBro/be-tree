@@ -181,7 +181,7 @@ const struct pred* make_simple_pred_str_sl(
 void fill_pred(struct sub* sub, const struct ast_node* expr);
 struct sub* make_empty_sub(betree_sub_t id);
 const struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* expr);
-const struct event* make_event();
+struct event* make_event();
 const struct event* make_simple_event_i(struct config* config, const char* attr, int64_t value);
 const struct event* make_simple_event_s(struct config* config, const char* attr, const char* value);
 const struct event* make_simple_event_il(

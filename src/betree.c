@@ -1511,7 +1511,7 @@ const struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_no
     return sub;
 }
 
-const struct event* make_event()
+struct event* make_event()
 {
     struct event* event = calloc(1, sizeof(*event));
     if(event == NULL) {
