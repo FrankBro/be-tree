@@ -210,6 +210,9 @@ int test_real()
     struct events events = { .count = 0, .events = NULL };
     read_betree_events(config, &events);
 
+    uint64_t search_timings[MAX_EVENTS] = { 0 };
+    uint64_t sum = 0;
+
     for(size_t i = 0; i < events.count; i++) {
         clock_gettime(CLOCK_MONOTONIC_RAW, &gen_event_done);
 
@@ -224,13 +227,19 @@ int test_real()
             i,
             search_us,
             matched_subs->sub_count);
+        search_timings[i] = search_us;
+        sum += search_us;
         free_matched_subs(matched_subs);
         free_event((struct event*)event);
     }
 
+    double average = (double)sum / (double)MAX_EVENTS;
+    printf("For %d expressions, %d events, we have an average match time of %f us", MAX_EXPRS, MAX_EVENTS, average);
     // DEBUG
     // write_dot_file(config, cnode);
     // DEBUG
+
+
 
     free(events.events);
     free_cnode(cnode);
