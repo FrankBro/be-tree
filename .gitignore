@@ -21,3 +21,8 @@ betree.svg
 betree_defs
 betree_exprs
 betree_events
+
+betree_defs.1
+daily_boolean_log*
+output.txt
+read_disk_log

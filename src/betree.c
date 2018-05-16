@@ -11,23 +11,30 @@
 #include "betree.h"
 #include "utils.h"
 
-bool match_sub(struct config* config, const struct event* event, const struct sub* sub)
+bool match_sub(struct config* config, const struct event* event, const struct sub* sub, struct report* report)
 {
     if(sub == NULL) {
         return false;
     }
     bool result = match_node(config, event, sub->expr);
+    if(report != NULL) {
+        report->expressions_evaluated++;
+        if(result == true) {
+            report->expressions_matched++;
+        }
+    }
     return result;
 }
 
 void check_sub(struct config* config,
     const struct event* event,
     const struct lnode* lnode,
-    struct matched_subs* matched_subs)
+    struct matched_subs* matched_subs,
+    struct report* report)
 {
     for(size_t i = 0; i < lnode->sub_count; i++) {
         const struct sub* sub = lnode->subs[i];
-        if(match_sub(config, event, sub) == true) {
+        if(match_sub(config, event, sub, report) == true) {
             if(matched_subs->sub_count == 0) {
                 matched_subs->subs = calloc(1, sizeof(*matched_subs->subs));
                 if(matched_subs->subs == NULL) {
@@ -67,7 +74,8 @@ struct pnode* search_pdir(betree_var_t variable_id, const struct pdir* pdir)
 void search_cdir(struct config* config,
     const struct event* event,
     struct cdir* cdir,
-    struct matched_subs* matched_subs);
+    struct matched_subs* matched_subs,
+    struct report* report);
 
 bool event_contains_variable(const struct event* event, betree_var_t variable_id)
 {
@@ -83,9 +91,10 @@ bool event_contains_variable(const struct event* event, betree_var_t variable_id
 void match_be_tree(struct config* config,
     const struct event* event,
     const struct cnode* cnode,
-    struct matched_subs* matched_subs)
+    struct matched_subs* matched_subs,
+    struct report* report)
 {
-    check_sub(config, event, cnode->lnode, matched_subs);
+    check_sub(config, event, cnode->lnode, matched_subs, report);
     if(cnode->pdir != NULL) {
         for(size_t i = 0; i < cnode->pdir->pnode_count; i++) {
             struct pnode* pnode = cnode->pdir->pnodes[i];
@@ -97,7 +106,7 @@ void match_be_tree(struct config* config,
             }
             if(attr_domain->allow_undefined
                 || event_contains_variable(event, pnode->attr_var.var)) {
-                search_cdir(config, event, pnode->cdir, matched_subs);
+                search_cdir(config, event, pnode->cdir, matched_subs, report);
             }
         }
     }
@@ -234,13 +243,14 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
 void search_cdir(struct config* config,
     const struct event* event,
     struct cdir* cdir,
-    struct matched_subs* matched_subs)
+    struct matched_subs* matched_subs,
+    struct report* report)
 {
-    match_be_tree(config, event, cdir->cnode, matched_subs);
+    match_be_tree(config, event, cdir->cnode, matched_subs, report);
     if(is_event_enclosed(event, cdir->lchild))
-        search_cdir(config, event, cdir->lchild, matched_subs);
+        search_cdir(config, event, cdir->lchild, matched_subs, report);
     else if(is_event_enclosed(event, cdir->rchild))
-        search_cdir(config, event, cdir->rchild, matched_subs);
+        search_cdir(config, event, cdir->rchild, matched_subs, report);
 }
 
 bool is_used_cnode(betree_var_t variable_id, const struct cnode* cnode);
@@ -1965,7 +1975,8 @@ void betree_insert(struct config* config, betree_sub_t id, const char* expr, str
 void betree_search(struct config* config,
     const char* event_str,
     const struct cnode* cnode,
-    struct matched_subs* matched_subs)
+    struct matched_subs* matched_subs,
+    struct report* report)
 {
     struct event* event;
     if(event_parse(event_str, &event)) {
@@ -1977,7 +1988,7 @@ void betree_search(struct config* config,
         fprintf(stderr, "Failed to validate event: %s\n", event_str);
         abort();
     }
-    match_be_tree(config, event, cnode, matched_subs);
+    match_be_tree(config, event, cnode, matched_subs, report);
     free_event(event);
 }
 

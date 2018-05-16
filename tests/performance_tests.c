@@ -1,167 +1,175 @@
-#include <time.h> 
-#include <stdio.h> 
-#include <stdlib.h> 
-#include <string.h> 
-#include <inttypes.h>
 #include <float.h>
+#include <inttypes.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
 
-#include "ast.h" 
+#include "ast.h"
 #include "debug.h"
-#include "minunit.h" 
+#include "minunit.h"
 #include "utils.h"
- 
-int parse(const char *text, struct ast_node **node); 
- 
+
+int parse(const char* text, struct ast_node** node);
+
 #define COUNT 1000
- 
-int test_cdir_split() 
+
+int test_cdir_split()
 {
     struct config* config = make_default_config();
     add_attr_domain_i(config, "a", 0, COUNT, false);
 
-    const char* data[COUNT]; 
+    const char* data[COUNT];
 
-    for(size_t i = 0; i < COUNT; i++) { 
-        char* expr; 
-        asprintf(&expr, "a = %zu", i); 
-        data[i] = expr; 
-    } 
- 
-    struct timespec start, init_done, parse_done, insert_done, search_done; 
- 
+    for(size_t i = 0; i < COUNT; i++) {
+        char* expr;
+        asprintf(&expr, "a = %zu", i);
+        data[i] = expr;
+    }
+
+    struct timespec start, init_done, parse_done, insert_done, search_done;
+
     clock_gettime(CLOCK_MONOTONIC_RAW, &start);
- 
-    struct cnode* cnode = make_cnode(config, NULL); 
-    struct ast_node* node; 
-     
+
+    struct cnode* cnode = make_cnode(config, NULL);
+    struct ast_node* node;
+
     clock_gettime(CLOCK_MONOTONIC_RAW, &init_done);
 
     const struct sub* subs[COUNT];
- 
-    for(size_t i = 0; i < COUNT; i++) { 
-        if(parse(data[i], &node) != 0) { 
-            return 1; 
-        } 
-        const struct sub* sub = make_sub(config, i + 1, node); 
+
+    for(size_t i = 0; i < COUNT; i++) {
+        if(parse(data[i], &node) != 0) {
+            return 1;
+        }
+        const struct sub* sub = make_sub(config, i + 1, node);
         subs[i] = sub;
-    } 
- 
+    }
+
     clock_gettime(CLOCK_MONOTONIC_RAW, &parse_done);
- 
-    for(size_t i = 0; i < COUNT; i++) { 
-        insert_be_tree(config, subs[i], cnode, NULL); 
+
+    for(size_t i = 0; i < COUNT; i++) {
+        insert_be_tree(config, subs[i], cnode, NULL);
     }
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &insert_done);
 
-    const struct event* event = make_simple_event_i(config, "a", 0); 
-    struct matched_subs* matched_subs = make_matched_subs(); 
-    match_be_tree(config, event, cnode, matched_subs); 
- 
+    const struct event* event = make_simple_event_i(config, "a", 0);
+    struct matched_subs* matched_subs = make_matched_subs();
+    match_be_tree(config, event, cnode, matched_subs, NULL);
+
     clock_gettime(CLOCK_MONOTONIC_RAW, &search_done);
 
     mu_assert(matched_subs->sub_count == 1, "Found our sub");
 
-    uint64_t init_us = (init_done.tv_sec - start.tv_sec) * 1000000 + (init_done.tv_nsec - start.tv_nsec) / 1000;
-    uint64_t parse_us = (parse_done.tv_sec - init_done.tv_sec) * 1000000 + (parse_done.tv_nsec - init_done.tv_nsec) / 1000;
-    uint64_t insert_us = (insert_done.tv_sec - parse_done.tv_sec) * 1000000 + (insert_done.tv_nsec - parse_done.tv_nsec) / 1000;
-    uint64_t search_us = (search_done.tv_sec - insert_done.tv_sec) * 1000000 + (search_done.tv_nsec - insert_done.tv_nsec) / 1000;
+    uint64_t init_us
+        = (init_done.tv_sec - start.tv_sec) * 1000000 + (init_done.tv_nsec - start.tv_nsec) / 1000;
+    uint64_t parse_us = (parse_done.tv_sec - init_done.tv_sec) * 1000000
+        + (parse_done.tv_nsec - init_done.tv_nsec) / 1000;
+    uint64_t insert_us = (insert_done.tv_sec - parse_done.tv_sec) * 1000000
+        + (insert_done.tv_nsec - parse_done.tv_nsec) / 1000;
+    uint64_t search_us = (search_done.tv_sec - insert_done.tv_sec) * 1000000
+        + (search_done.tv_nsec - insert_done.tv_nsec) / 1000;
 
     printf("    Init took %" PRIu64 "\n", init_us);
     printf("    Parse took %" PRIu64 "\n", parse_us);
     printf("    Insert took %" PRIu64 "\n", insert_us);
     printf("    Search took %" PRIu64 "\n", search_us);
 
-    for(size_t i = 0; i < COUNT; i++) { 
-        free((char*)data[i]); 
-    } 
-    free_config(config); 
+    for(size_t i = 0; i < COUNT; i++) {
+        free((char*)data[i]);
+    }
+    free_config(config);
     free_matched_subs(matched_subs);
     free_event((struct event*)event);
     free_cnode(cnode);
-    return 0; 
-} 
+    return 0;
+}
 
 int test_pdir_split()
 {
     struct config* config = make_default_config();
 
-    const char* data[COUNT]; 
+    const char* data[COUNT];
 
-    for(size_t i = 0; i < COUNT; i++) { 
-        char* expr; 
-        asprintf(&expr, "a%zu = 0", i); 
-        data[i] = expr; 
+    for(size_t i = 0; i < COUNT; i++) {
+        char* expr;
+        asprintf(&expr, "a%zu = 0", i);
+        data[i] = expr;
 
         char* name;
         asprintf(&name, "a%zu", i);
         add_attr_domain_i(config, name, 0, 10, true);
         free(name);
-    } 
- 
-    struct timespec start, init_done, parse_done, insert_done, search_done; 
- 
+    }
+
+    struct timespec start, init_done, parse_done, insert_done, search_done;
+
     clock_gettime(CLOCK_MONOTONIC_RAW, &start);
- 
-    struct cnode* cnode = make_cnode(config, NULL); 
-    struct ast_node* node; 
-     
+
+    struct cnode* cnode = make_cnode(config, NULL);
+    struct ast_node* node;
+
     clock_gettime(CLOCK_MONOTONIC_RAW, &init_done);
 
     const struct sub* subs[COUNT];
- 
-    for(size_t i = 0; i < COUNT; i++) { 
-        if(parse(data[i], &node) != 0) { 
-            return 1; 
-        } 
-        const struct sub* sub = make_sub(config, i + 1, node); 
+
+    for(size_t i = 0; i < COUNT; i++) {
+        if(parse(data[i], &node) != 0) {
+            return 1;
+        }
+        const struct sub* sub = make_sub(config, i + 1, node);
         subs[i] = sub;
-    } 
- 
+    }
+
     clock_gettime(CLOCK_MONOTONIC_RAW, &parse_done);
- 
-    for(size_t i = 0; i < COUNT; i++) { 
-        insert_be_tree(config, subs[i], cnode, NULL); 
+
+    for(size_t i = 0; i < COUNT; i++) {
+        insert_be_tree(config, subs[i], cnode, NULL);
     }
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &insert_done);
 
-    const struct event* event = make_simple_event_i(config, "a0", 0); 
-    struct matched_subs* matched_subs = make_matched_subs(); 
-    match_be_tree(config, event, cnode, matched_subs); 
- 
+    const struct event* event = make_simple_event_i(config, "a0", 0);
+    struct matched_subs* matched_subs = make_matched_subs();
+    match_be_tree(config, event, cnode, matched_subs, NULL);
+
     clock_gettime(CLOCK_MONOTONIC_RAW, &search_done);
 
     mu_assert(matched_subs->sub_count == 1, "Found our sub");
 
-    uint64_t init_us = (init_done.tv_sec - start.tv_sec) * 1000000 + (init_done.tv_nsec - start.tv_nsec) / 1000;
-    uint64_t parse_us = (parse_done.tv_sec - init_done.tv_sec) * 1000000 + (parse_done.tv_nsec - init_done.tv_nsec) / 1000;
-    uint64_t insert_us = (insert_done.tv_sec - parse_done.tv_sec) * 1000000 + (insert_done.tv_nsec - parse_done.tv_nsec) / 1000;
-    uint64_t search_us = (search_done.tv_sec - insert_done.tv_sec) * 1000000 + (search_done.tv_nsec - insert_done.tv_nsec) / 1000;
+    uint64_t init_us
+        = (init_done.tv_sec - start.tv_sec) * 1000000 + (init_done.tv_nsec - start.tv_nsec) / 1000;
+    uint64_t parse_us = (parse_done.tv_sec - init_done.tv_sec) * 1000000
+        + (parse_done.tv_nsec - init_done.tv_nsec) / 1000;
+    uint64_t insert_us = (insert_done.tv_sec - parse_done.tv_sec) * 1000000
+        + (insert_done.tv_nsec - parse_done.tv_nsec) / 1000;
+    uint64_t search_us = (search_done.tv_sec - insert_done.tv_sec) * 1000000
+        + (search_done.tv_nsec - insert_done.tv_nsec) / 1000;
 
     printf("    Init took %" PRIu64 "\n", init_us);
     printf("    Parse took %" PRIu64 "\n", parse_us);
     printf("    Insert took %" PRIu64 "\n", insert_us);
     printf("    Search took %" PRIu64 "\n", search_us);
 
-    for(size_t i = 0; i < COUNT; i++) { 
-        free((char*)data[i]); 
-    } 
+    for(size_t i = 0; i < COUNT; i++) {
+        free((char*)data[i]);
+    }
     free_config(config);
     free_matched_subs(matched_subs);
     free_event((struct event*)event);
     free_cnode(cnode);
-    return 0; 
+    return 0;
 }
 
-int all_tests()  
-{ 
-    mu_run_test(test_cdir_split); 
+int all_tests()
+{
+    mu_run_test(test_cdir_split);
     printf("\n");
     mu_run_test(test_pdir_split);
     printf("\n");
- 
-    return 0; 
-} 
- 
-RUN_TESTS() 
+
+    return 0;
+}
+
+RUN_TESTS()

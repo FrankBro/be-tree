@@ -157,6 +157,11 @@ struct matched_subs {
     betree_sub_t* subs;
 };
 
+struct report {
+    size_t expressions_evaluated;
+    size_t expressions_matched;
+};
+
 struct matched_subs* make_matched_subs();
 void free_matched_subs(struct matched_subs* matched_subs);
 const struct pred* make_simple_pred_b(const char* attr, betree_var_t variable_id, bool bvalue);
@@ -195,14 +200,15 @@ void insert_be_tree(
 void match_be_tree(struct config* config,
     const struct event* event,
     const struct cnode* cnode,
-    struct matched_subs* matched_subs);
+    struct matched_subs* matched_subs, struct report* report);
 bool delete_be_tree(const struct config* config, struct sub* sub, struct cnode* cnode);
 
 void betree_insert(struct config* config, betree_sub_t id, const char* expr, struct cnode* cnode);
 void betree_search(struct config* config,
     const char* event,
     const struct cnode* cnode,
-    struct matched_subs* matched_subs);
+    struct matched_subs* matched_subs,
+    struct report* report);
 
 struct attr_var make_attr_var(const char* attr, struct config* config);
 struct attr_var copy_attr_var(struct attr_var attr_var);
