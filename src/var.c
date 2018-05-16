@@ -102,7 +102,8 @@ enum variable_state_e get_integer_list_var(const struct config* config,
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
     if(state == VARIABLE_DEFINED) {
-        betree_assert(value.value_type == VALUE_IL, "Var is not an integer list");
+        betree_assert(
+            is_empty_list(value) || value.value_type == VALUE_IL, "Var is not an integer list");
         *ret = value.ilvalue;
     }
     return state;
@@ -116,7 +117,8 @@ enum variable_state_e get_string_list_var(const struct config* config,
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
     if(state == VARIABLE_DEFINED) {
-        betree_assert(value.value_type == VALUE_SL, "Var is not an string list");
+        betree_assert(
+            is_empty_list(value) || value.value_type == VALUE_SL, "Var is not an string list");
         *ret = value.slvalue;
     }
     return state;
@@ -130,7 +132,8 @@ enum variable_state_e get_segments_var(const struct config* config,
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
     if(state == VARIABLE_DEFINED) {
-        betree_assert(value.value_type == VALUE_SEGMENTS, "Var is not a segments");
+        betree_assert(
+            is_empty_list(value) || value.value_type == VALUE_SEGMENTS, "Var is not a segments");
         *ret = value.segments_value;
     }
     return state;
@@ -151,7 +154,8 @@ enum variable_state_e get_frequency_var(const struct config* config,
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
     if(state == VARIABLE_DEFINED) {
-        betree_assert(value.value_type == VALUE_FREQUENCY, "Var is not a frequency");
+        betree_assert(
+            is_empty_list(value) || value.value_type == VALUE_FREQUENCY, "Var is not a frequency");
         *ret = value.frequency_value;
     }
     return state;
@@ -162,4 +166,12 @@ enum variable_state_e get_frequency_attr(
 {
     betree_var_t var = get_id_for_attr(config, "frequency_caps");
     return get_frequency_var(config, var, event, ret);
+}
+
+bool is_empty_list(struct value value)
+{
+    return (value.value_type == VALUE_IL || value.value_type == VALUE_SL
+               || value.value_type == VALUE_SEGMENTS || value.value_type == VALUE_FREQUENCY)
+        && value.ilvalue.count == 0 && value.slvalue.count == 0 && value.segments_value.size == 0
+        && value.frequency_value.size == 0;
 }
