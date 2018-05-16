@@ -338,19 +338,8 @@ int test_frequency()
         &event);
     mu_assert(event->pred_count == 3
             && test_frequency_list_pred1("single", "flight", 1, "ns", 2, 3, event, 0)
-            && test_frequency_list_pred2("two",
-                   "flight",
-                   1,
-                   "ns1",
-                   2,
-                   3,
-                   "flight",
-                   4,
-                   "ns2",
-                   5,
-                   6,
-                   event,
-                   1)
+            && test_frequency_list_pred2(
+                   "two", "flight", 1, "ns1", 2, 3, "flight", 4, "ns2", 5, 6, event, 1)
             && test_frequency_list_pred0("empty", event, 2),
         "all cases");
     free_event(event);
@@ -370,23 +359,39 @@ int test_frequency()
                 "\"product:ip\": [[\"product:ip\",0,\"\",0,0]]}",
         &event);
     mu_assert(event->pred_count == 8
-            && test_frequency_list_pred1(
-                   "advertiser", "advertiser", 0, "", 0, 0, event, 0)
-            && test_frequency_list_pred1(
-                   "advertiser:ip", "advertiser:ip", 0, "", 0, 0, event, 1)
-            && test_frequency_list_pred1(
-                   "campaign", "campaign", 0, "", 0, 0, event, 2)
-            && test_frequency_list_pred1(
-                   "campaign:ip", "campaign:ip", 0, "", 0, 0, event, 3)
-            && test_frequency_list_pred1(
-                   "flight", "flight", 0, "", 0, 0, event, 4)
-            && test_frequency_list_pred1(
-                   "flight:ip", "flight:ip", 0, "", 0, 0, event, 5)
-            && test_frequency_list_pred1(
-                   "product", "product", 0, "", 0, 0, event, 6)
-            && test_frequency_list_pred1(
-                   "product:ip", "product:ip", 0, "", 0, 0, event, 7),
+            && test_frequency_list_pred1("advertiser", "advertiser", 0, "", 0, 0, event, 0)
+            && test_frequency_list_pred1("advertiser:ip", "advertiser:ip", 0, "", 0, 0, event, 1)
+            && test_frequency_list_pred1("campaign", "campaign", 0, "", 0, 0, event, 2)
+            && test_frequency_list_pred1("campaign:ip", "campaign:ip", 0, "", 0, 0, event, 3)
+            && test_frequency_list_pred1("flight", "flight", 0, "", 0, 0, event, 4)
+            && test_frequency_list_pred1("flight:ip", "flight:ip", 0, "", 0, 0, event, 5)
+            && test_frequency_list_pred1("product", "product", 0, "", 0, 0, event, 6)
+            && test_frequency_list_pred1("product:ip", "product:ip", 0, "", 0, 0, event, 7),
         "all types");
+    free_event(event);
+    return 0;
+}
+
+int test_null()
+{
+    struct event* event;
+    event_parse("{\"single\": null}", &event);
+    mu_assert(event->pred_count == 0, "single null");
+    free_event(event);
+    event_parse("{\"first\": null, \"second\": 2, \"third\": 3}", &event);
+    mu_assert(event->pred_count == 2 && test_integer_pred("second", 2, event, 0)
+            && test_integer_pred("third", 3, event, 1),
+        "first");
+    free_event(event);
+    event_parse("{\"first\": 1, \"second\": null, \"third\": 3}", &event);
+    mu_assert(event->pred_count == 2 && test_integer_pred("first", 1, event, 0)
+            && test_integer_pred("third", 3, event, 1),
+        "second");
+    free_event(event);
+    event_parse("{\"first\": 1, \"second\": 2, \"third\": null}", &event);
+    mu_assert(event->pred_count == 2 && test_integer_pred("first", 1, event, 0)
+            && test_integer_pred("second", 2, event, 1),
+        "third");
     free_event(event);
     return 0;
 }
@@ -401,6 +406,7 @@ int all_tests()
     mu_run_test(test_string_list);
     mu_run_test(test_segment);
     mu_run_test(test_frequency);
+    mu_run_test(test_null);
     return 0;
 }
 
