@@ -2008,3 +2008,71 @@ void add_pred(struct pred* pred, struct event* event)
     event->preds[event->pred_count] = pred;
     event->pred_count++;
 }
+
+void fill_event(struct config* config, struct event* event)
+{
+    for(size_t i = 0; i < event->pred_count; i++) {
+        struct pred* pred = event->preds[i];
+        if(pred->attr_var.var == -1ULL) {
+            betree_var_t var = get_id_for_attr(config, pred->attr_var.attr);
+            pred->attr_var.var = var;
+        }
+        switch(pred->value.value_type) {
+            case VALUE_B:
+            case VALUE_I:
+            case VALUE_F:
+            case VALUE_IL:
+            case VALUE_SEGMENTS:
+                break;
+            case VALUE_S: {
+                if(pred->value.svalue.str == -1ULL) {
+                    betree_str_t str = get_id_for_string(config, pred->value.svalue.string);
+                    pred->value.svalue.str = str;
+                }
+                break;
+            }
+            case VALUE_SL: {
+                for(size_t j = 0; j < pred->value.slvalue.count; j++) {
+                    if(pred->value.slvalue.strings[j].str == -1ULL) {
+                        betree_str_t str
+                            = get_id_for_string(config, pred->value.slvalue.strings[j].string);
+                        pred->value.slvalue.strings[j].str = str;
+                    }
+                }
+                break;
+            }
+            case VALUE_FREQUENCY: {
+                for(size_t j = 0; j < pred->value.frequency_value.size; j++) {
+                    if(pred->value.frequency_value.content[j].namespace.str == -1ULL) {
+                        betree_str_t str = get_id_for_string(
+                            config, pred->value.frequency_value.content[j].namespace.string);
+                        pred->value.frequency_value.content[j].namespace.str = str;
+                    }
+                }
+                break;
+            }
+        }
+    }
+}
+
+bool validate_event(const struct config* config, const struct event* event)
+{
+    for(size_t i = 0; i < config->attr_domain_count; i++) {
+        const struct attr_domain* attr_domain = config->attr_domains[i];
+        if(attr_domain->allow_undefined == false) {
+            bool found = false;
+            for(size_t j = 0; j < event->pred_count; j++) {
+                const struct pred* pred = event->preds[j];
+                if(pred->attr_var.var == attr_domain->attr_var.var) {
+                    found = true;
+                    break;
+                }
+            }
+            if(!found) {
+                fprintf(stderr, "Missing attribute: %s", attr_domain->attr_var.attr);
+                return false;
+            }
+        }
+    }
+    return true;
+}

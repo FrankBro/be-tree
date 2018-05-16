@@ -206,3 +206,6 @@ void free_attr_var(struct attr_var attr_var);
 
 struct pred* make_pred(const char* attr, betree_var_t variable_id, struct value value);
 void add_pred(struct pred* pred, struct event* event);
+
+void fill_event(struct config* config, struct event* event);
+bool validate_event(const struct config* config, const struct event* event);
