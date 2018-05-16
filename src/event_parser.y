@@ -82,6 +82,10 @@
 %printer { fprintf(yyoutput, "%.2f", $$); } <float_value>
 %printer { fprintf(yyoutput, "%s", $$); } <string>
 %printer { fprintf(yyoutput, "%s", $$.string); } <string_value>
+%printer { fprintf(yyoutput, "%zu integers", $$.count); } <integer_list_value>
+%printer { fprintf(yyoutput, "%zu strings", $$.count); } <string_list_value>
+%printer { fprintf(yyoutput, "%zu segments", $$.size); } <segments_list_value>
+%printer { fprintf(yyoutput, "%zu caps", $$.size); } <frequencies_value>
 
 %%
 
