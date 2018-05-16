@@ -39,7 +39,6 @@
     struct string_list_value string_list_value;
     struct segments_list segments_list_value;
     struct segment segment_value;
-    enum frequency_type_e frequency_type;
     struct frequency_caps_list frequencies_value;
     struct frequency_cap frequency_value;
 
@@ -68,7 +67,6 @@
 %type<string_list_value> string_list_value string_list_loop
 %type<segments_list_value> segments_value segments_loop
 %type<segment_value> segment_value
-%type<frequency_type> frequency_type
 %type<frequencies_value> frequencies_value frequencies_loop
 %type<frequency_value> frequency_value;
 

@@ -45,7 +45,6 @@
     struct special_geo_value special_geo_value;
     struct ast_node *node;
     int token;
-    enum frequency_type_e frequency_type;
 }
 
 %token<token> TMINUS
@@ -77,7 +76,6 @@
 %type<set_left_value> set_left_value
 %type<set_right_value> set_right_value
 %type<list_value> list_value
-%type<frequency_type> frequency_type
 
 %type<integer_list_value> integer_list_value integer_list_loop
 %type<string_list_value> string_list_value string_list_loop
