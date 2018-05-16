@@ -1558,13 +1558,34 @@ int test_parenthesis()
     add_attr_domain_b(config, "b", false, true, false);
     add_attr_domain_b(config, "c", false, true, false);
 
-    struct cnode* cnode = make_cnode(config, NULL);
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+        betree_insert(config, 1, "a || (b && c)", cnode);
+        struct matched_subs* matched_subs = make_matched_subs();
+        betree_search(config, "{\"a\":true,\"b\":false,\"c\":false}", cnode, matched_subs);
+        mu_assert(matched_subs->sub_count == 1, "");
+        free_cnode(cnode);
+        free_matched_subs(matched_subs);
+    }
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+        betree_insert(config, 1, "(a || b) && c", cnode);
+        struct matched_subs* matched_subs = make_matched_subs();
+        betree_search(config, "{\"a\":true,\"b\":false,\"c\":false}", cnode, matched_subs);
+        mu_assert(matched_subs->sub_count == 0, "");
+        free_cnode(cnode);
+        free_matched_subs(matched_subs);
+    }
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+        betree_insert(config, 1, "a || (b && c)", cnode);
+        struct matched_subs* matched_subs = make_matched_subs();
+        betree_search(config, "{\"a\":false,\"b\":true,\"c\":true}", cnode, matched_subs);
+        mu_assert(matched_subs->sub_count == 1, "");
+        free_cnode(cnode);
+        free_matched_subs(matched_subs);
+    }
 
-    struct ast_node* node;
-    parse("a || (b && c)", &node);
-
-
-    free_cnode(cnode);
     free_config(config);
 
     return 0;
@@ -1596,7 +1617,7 @@ int all_tests()
     mu_run_test(test_string_set_reverse);
     mu_run_test(test_integer_list);
     mu_run_test(test_string_list);
-    // mu_run_test(test_parenthesis);
+    mu_run_test(test_parenthesis);
 
     return 0;
 }
