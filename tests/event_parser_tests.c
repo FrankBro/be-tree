@@ -70,7 +70,9 @@ bool test_integer_list_pred1(const char* attr, int64_t i1, const struct event* e
 {
     struct integer_list_value list = { .count = 0, .integers = NULL };
     add_integer_list_value(i1, &list);
-    return test_integer_list_pred(attr, list, event, index);
+    bool result = test_integer_list_pred(attr, list, event, index);
+    free(list.integers);
+    return result;
 }
 
 bool test_integer_list_pred2(
@@ -79,7 +81,9 @@ bool test_integer_list_pred2(
     struct integer_list_value list = { .count = 0, .integers = NULL };
     add_integer_list_value(i1, &list);
     add_integer_list_value(i2, &list);
-    return test_integer_list_pred(attr, list, event, index);
+    bool result = test_integer_list_pred(attr, list, event, index);
+    free(list.integers);
+    return result;
 }
 
 bool test_string_list_pred(
@@ -112,7 +116,9 @@ bool test_string_list_pred1(
     struct string_list_value list = { .count = 0, .strings = NULL };
     struct string_value sv1 = { .string = s1 };
     add_string_list_value(sv1, &list);
-    return test_string_list_pred(attr, list, event, index);
+    bool result = test_string_list_pred(attr, list, event, index);
+    free(list.strings);
+    return result;
 }
 
 bool test_string_list_pred2(
@@ -123,7 +129,9 @@ bool test_string_list_pred2(
     struct string_value sv2 = { .string = s2 };
     add_string_list_value(sv1, &list);
     add_string_list_value(sv2, &list);
-    return test_string_list_pred(attr, list, event, index);
+    bool result = test_string_list_pred(attr, list, event, index);
+    free(list.strings);
+    return result;
 }
 
 bool test_segment_list_pred(
@@ -158,7 +166,9 @@ bool test_segment_list_pred1(
     struct segments_list list = { .size = 0, .content = NULL };
     struct segment s1 = make_segment(id1, timestamp1);
     add_segment(s1, &list);
-    return test_segment_list_pred(attr, list, event, index);
+    bool result = test_segment_list_pred(attr, list, event, index);
+    free(list.content);
+    return result;
 }
 
 bool test_segment_list_pred2(const char* attr,
@@ -174,7 +184,9 @@ bool test_segment_list_pred2(const char* attr,
     struct segment s2 = make_segment(id2, timestamp2);
     add_segment(s1, &list);
     add_segment(s2, &list);
-    return test_segment_list_pred(attr, list, event, index);
+    bool result = test_segment_list_pred(attr, list, event, index);
+    free(list.content);
+    return result;
 }
 
 bool test_frequency_list_pred(
@@ -219,7 +231,9 @@ bool test_frequency_list_pred1(const char* attr,
     struct string_value ns1 = { .string = namespace1 };
     struct frequency_cap s1 = make_frequency_cap(type1, id1, ns1, timestamp1, value1);
     add_frequency(s1, &list);
-    return test_frequency_list_pred(attr, list, event, index);
+    bool result = test_frequency_list_pred(attr, list, event, index);
+    free(list.content);
+    return result;
 }
 
 bool test_frequency_list_pred2(const char* attr,
@@ -243,7 +257,9 @@ bool test_frequency_list_pred2(const char* attr,
     struct frequency_cap s2 = make_frequency_cap(type2, id2, ns2, timestamp2, value2);
     add_frequency(s1, &list);
     add_frequency(s2, &list);
-    return test_frequency_list_pred(attr, list, event, index);
+    bool result = test_frequency_list_pred(attr, list, event, index);
+    free(list.content);
+    return result;
 }
 
 int test_bool()
@@ -340,12 +356,6 @@ int test_frequency()
             && test_frequency_list_pred0("empty", event, 2),
         "all cases");
     free_event(event);
-    // event_parse("{\"test:test\": [[\"advertiser:ip\",0,\"\",0,0]]}", &event);
-    // event_parse("{\"advertiser\": [[\"advertiser\",0,\"\",0,0]]}", &event);
-    // mu_assert(event->pred_count == 1
-    //         && test_frequency_list_pred1(
-    //                "test:test", FREQUENCY_TYPE_ADVERTISER, 0, "", 0, 0, event, 0),
-    //     "colon");
     event_parse("{\"advertiser\": [[\"advertiser\",0,\"\",0,0]],"
                 "\"advertiser:ip\": [[\"advertiser:ip\",0,\"\",0,0]],"
                 "\"campaign\": [[\"campaign\",0,\"\",0,0]],"
