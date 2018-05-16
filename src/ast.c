@@ -105,11 +105,12 @@ struct ast_node* ast_special_expr_create()
 }
 
 struct ast_node* ast_special_frequency_create(const enum ast_special_frequency_e op,
-    enum frequency_type_e type,
+    const char* stype,
     struct string_value ns,
     int64_t value,
     size_t length)
 {
+    enum frequency_type_e type = get_type_from_string(stype);
     struct ast_node* node = ast_special_expr_create();
     struct ast_special_frequency frequency = { .op = op,
         .attr_var = make_attr_var("frequency_caps", NULL),

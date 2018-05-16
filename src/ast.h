@@ -285,7 +285,7 @@ struct ast_node* ast_bool_expr_binary_create(
     const enum ast_bool_e op, const struct ast_node* lhs, const struct ast_node* rhs);
 
 struct ast_node* ast_special_frequency_create(const enum ast_special_frequency_e op,
-    enum frequency_type_e type,
+    const char* type,
     struct string_value ns,
     int64_t value,
     size_t length);

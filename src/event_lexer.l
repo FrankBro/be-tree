@@ -41,16 +41,6 @@
 "true"              return TOKEN(EVENT_TRUE);
 "false"             return TOKEN(EVENT_FALSE);
 "null"              return TOKEN(EVENT_NULL);
-
-\"advertiser\"      return TOKEN(EVENT_ADVERTISER);
-\"advertiser:ip\"   return TOKEN(EVENT_ADVERTISERIP);
-\"campaign\"        return TOKEN(EVENT_CAMPAIGN);
-\"campaign:ip\"     return TOKEN(EVENT_CAMPAIGNIP);
-\"flight\"          return TOKEN(EVENT_FLIGHT);
-\"flight:ip\"       return TOKEN(EVENT_FLIGHTIP);
-\"product\"         return TOKEN(EVENT_PRODUCT);
-\"product:ip\"      return TOKEN(EVENT_PRODUCTIP);
-
 \"(\\.|[^"\\])*\"   SAVE_STRING; return EVENT_STRING;
 \'(\\.|[^'\\])*\'   SAVE_STRING; return EVENT_STRING;
 [0-9]+              SAVE_INTEGER; return EVENT_INTEGER;

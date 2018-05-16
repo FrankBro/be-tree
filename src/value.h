@@ -105,8 +105,10 @@ const char* string_list_value_to_string(struct string_list_value list);
 void add_segment(struct segment segment, struct segments_list* list);
 void add_frequency(struct frequency_cap frequency, struct frequency_caps_list* list);
 struct segment make_segment(int64_t id, int64_t timestamp);
-struct frequency_cap make_frequency_cap(enum frequency_type_e type,
+struct frequency_cap make_frequency_cap(const char* type,
     uint32_t id,
     struct string_value namespace,
     int64_t timestamp,
     uint32_t value);
+
+enum frequency_type_e get_type_from_string(const char* stype);

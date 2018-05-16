@@ -58,9 +58,6 @@
 %token<token> TGEOWITHINRADIUS 
 %token<token> TCONTAINS TSTARTSWITH TENDSWITH 
 
-%token<token> TADVERTISER TADVERTISERIP TCAMPAIGN TCAMPAIGNIP 
-%token<token> TFLIGHT TFLIGHTIP TPRODUCT TPRODUCTIP
-
 %token<string> TSTRING TIDENTIFIER
 %token<boolean_value> TTRUE TFALSE
 %token<integer_value> TINTEGER
@@ -189,18 +186,8 @@ special_expr        : s_frequency_expr                      { $$ = $1; }
                     | s_string_expr                         { $$ = $1; }
 ;
 
-frequency_type      : TADVERTISER                           { $$ = FREQUENCY_TYPE_ADVERTISER; }
-                    | TADVERTISERIP                         { $$ = FREQUENCY_TYPE_ADVERTISERIP; }
-                    | TCAMPAIGN                             { $$ = FREQUENCY_TYPE_CAMPAIGN; }
-                    | TCAMPAIGNIP                           { $$ = FREQUENCY_TYPE_CAMPAIGNIP; }
-                    | TFLIGHT                               { $$ = FREQUENCY_TYPE_FLIGHT; }
-                    | TFLIGHTIP                             { $$ = FREQUENCY_TYPE_FLIGHTIP; }
-                    | TPRODUCT                              { $$ = FREQUENCY_TYPE_PRODUCT; }
-                    | TPRODUCTIP                            { $$ = FREQUENCY_TYPE_PRODUCTIP; }
-;
-
-s_frequency_expr    : TWITHINFREQUENCYCAP TLPAREN frequency_type TCOMMA string TCOMMA integer TCOMMA integer TRPAREN
-                                                            { $$ = ast_special_frequency_create(AST_SPECIAL_WITHINFREQUENCYCAP, $3, $5, $7, $9); }
+s_frequency_expr    : TWITHINFREQUENCYCAP TLPAREN TSTRING TCOMMA string TCOMMA integer TCOMMA integer TRPAREN
+                                                            { $$ = ast_special_frequency_create(AST_SPECIAL_WITHINFREQUENCYCAP, $3, $5, $7, $9); free($3); }
 ;
 
 s_segment_expr      : TSEGMENTWITHIN TLPAREN integer TCOMMA integer TRPAREN

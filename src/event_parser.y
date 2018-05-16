@@ -56,9 +56,6 @@
 %token<token> EVENT_MINUS
 %token<token> EVENT_NULL
 
-%token<token> EVENT_ADVERTISER EVENT_ADVERTISERIP EVENT_CAMPAIGN EVENT_CAMPAIGNIP 
-%token<token> EVENT_FLIGHT EVENT_FLIGHTIP EVENT_PRODUCT EVENT_PRODUCTIP
-
 %token<boolean_value> EVENT_TRUE EVENT_FALSE
 %type<boolean_value> boolean
 %token<integer_value> EVENT_INTEGER 
@@ -154,16 +151,6 @@ segments_loop       : segment_value                         { $$.size = 0; $$.co
 segment_value       : EVENT_LSQUARE integer EVENT_COMMA integer EVENT_RSQUARE  
                                                             { $$ = make_segment($2, $4); }
 
-frequency_type      : EVENT_ADVERTISER                      { $$ = FREQUENCY_TYPE_ADVERTISER; }
-                    | EVENT_ADVERTISERIP                    { $$ = FREQUENCY_TYPE_ADVERTISERIP; }
-                    | EVENT_CAMPAIGN                        { $$ = FREQUENCY_TYPE_CAMPAIGN; }
-                    | EVENT_CAMPAIGNIP                      { $$ = FREQUENCY_TYPE_CAMPAIGNIP; }
-                    | EVENT_FLIGHT                          { $$ = FREQUENCY_TYPE_FLIGHT; }
-                    | EVENT_FLIGHTIP                        { $$ = FREQUENCY_TYPE_FLIGHTIP; }
-                    | EVENT_PRODUCT                         { $$ = FREQUENCY_TYPE_PRODUCT; }
-                    | EVENT_PRODUCTIP                       { $$ = FREQUENCY_TYPE_PRODUCTIP; }
-;
-
 frequencies_value   : EVENT_LSQUARE frequencies_loop EVENT_RSQUARE
                                                             { $$ = $2; }
                     | EVENT_LSQUARE EVENT_RSQUARE           { $$.size = 0; $$.content = NULL; }
@@ -174,8 +161,8 @@ frequencies_loop    : frequency_value                       { $$.size = 0; $$.co
                                                             { add_frequency($3, &$1); $$ = $1; }
 ;
 
-frequency_value     : EVENT_LSQUARE frequency_type EVENT_COMMA integer EVENT_COMMA string EVENT_COMMA integer EVENT_COMMA integer EVENT_RSQUARE
-                                                            { $$ = make_frequency_cap($2, $4, $6, $8, $10); }
+frequency_value     : EVENT_LSQUARE EVENT_STRING EVENT_COMMA integer EVENT_COMMA string EVENT_COMMA integer EVENT_COMMA integer EVENT_RSQUARE
+                                                            { $$ = make_frequency_cap($2, $4, $6, $8, $10); free($2); }
 
 %%
 

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "betree.h"
 #include "value.h"
@@ -120,12 +121,13 @@ struct segment make_segment(int64_t id, int64_t timestamp)
     return segment;
 }
 
-struct frequency_cap make_frequency_cap(enum frequency_type_e type,
+struct frequency_cap make_frequency_cap(const char* stype,
     uint32_t id,
     struct string_value namespace,
     int64_t timestamp,
     uint32_t value)
 {
+    enum frequency_type_e type = get_type_from_string(stype);
     struct frequency_cap frequency_cap = { .type = type,
         .id = id,
         .namespace = namespace,
@@ -133,4 +135,36 @@ struct frequency_cap make_frequency_cap(enum frequency_type_e type,
         .timestamp = timestamp,
         .value = value };
     return frequency_cap;
+}
+
+enum frequency_type_e get_type_from_string(const char* stype)
+{
+    if(strcmp(stype, "advertiser") == 0) {
+        return FREQUENCY_TYPE_ADVERTISER;
+    }
+    else if(strcmp(stype, "advertiser:ip") == 0) {
+        return FREQUENCY_TYPE_ADVERTISERIP;
+    }
+    else if(strcmp(stype, "campaign") == 0) {
+        return FREQUENCY_TYPE_CAMPAIGN;
+    }
+    else if(strcmp(stype, "campaign:ip") == 0) {
+        return FREQUENCY_TYPE_CAMPAIGNIP;
+    }
+    else if(strcmp(stype, "product") == 0) {
+        return FREQUENCY_TYPE_PRODUCT;
+    }
+    else if(strcmp(stype, "product:ip") == 0) {
+        return FREQUENCY_TYPE_PRODUCTIP;
+    }
+    else if(strcmp(stype, "flight") == 0) {
+        return FREQUENCY_TYPE_FLIGHT;
+    }
+    else if(strcmp(stype, "flight:ip") == 0) {
+        return FREQUENCY_TYPE_FLIGHTIP;
+    }
+    else {
+        fprintf(stderr, "Invalid frequency type");
+        abort();
+    }
 }
