@@ -199,6 +199,10 @@ void match_be_tree(struct config* config,
 bool delete_be_tree(const struct config* config, struct sub* sub, struct cnode* cnode);
 
 void betree_insert(struct config* config, betree_sub_t id, const char* expr, struct cnode* cnode);
+void betree_search(struct config* config,
+    const char* event,
+    const struct cnode* cnode,
+    struct matched_subs* matched_subs);
 
 struct attr_var make_attr_var(const char* attr, struct config* config);
 struct attr_var copy_attr_var(struct attr_var attr_var);

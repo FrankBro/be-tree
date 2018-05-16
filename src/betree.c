@@ -1949,6 +1949,7 @@ bool is_variable_allow_undefined(const struct config* config, const betree_var_t
 }
 
 int parse(const char* text, struct ast_node** node);
+int event_parse(const char* text, struct event** event);
 
 void betree_insert(struct config* config, betree_sub_t id, const char* expr, struct cnode* cnode)
 {
@@ -1959,6 +1960,25 @@ void betree_insert(struct config* config, betree_sub_t id, const char* expr, str
     }
     const struct sub* sub = make_sub(config, id, node);
     insert_be_tree(config, sub, cnode, NULL);
+}
+
+void betree_search(struct config* config,
+    const char* event_str,
+    const struct cnode* cnode,
+    struct matched_subs* matched_subs)
+{
+    struct event* event;
+    if(event_parse(event_str, &event)) {
+        fprintf(stderr, "Failed to parse event: %s\n", event_str);
+        abort();
+    }
+    fill_event(config, event);
+    if(validate_event(config, event) == false) {
+        fprintf(stderr, "Failed to validate event: %s\n", event_str);
+        abort();
+    }
+    match_be_tree(config, event, cnode, matched_subs);
+    free_event(event);
 }
 
 struct attr_var make_attr_var(const char* attr, struct config* config)
