@@ -33,10 +33,10 @@
             "command": "make clean",
             "problemMatcher": []
         },
-        {
-            "label": "test",
-            "type": "shell",
-            "command": "make test"
-        }
+        // {
+        //     "label": "test",
+        //     "type": "shell",
+        //     "command": "make test"
+        // }
     ]
 }
