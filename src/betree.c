@@ -2107,3 +2107,9 @@ bool validate_event(const struct config* config, const struct event* event)
     }
     return true;
 }
+
+struct report make_empty_report()
+{
+    struct report report = { .expressions_evaluated = 0, .expressions_matched = 0 };
+    return report;
+}

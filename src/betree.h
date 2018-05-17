@@ -219,3 +219,5 @@ void add_pred(struct pred* pred, struct event* event);
 
 void fill_event(struct config* config, struct event* event);
 bool validate_event(const struct config* config, const struct event* event);
+
+struct report make_empty_report();
