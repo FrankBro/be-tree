@@ -111,15 +111,32 @@ void match_be_tree(struct config* config,
     }
 }
 
-bool is_event_enclosed(const struct event* event, const struct cdir* cdir)
+bool is_event_enclosed(const struct config* config, const struct event* event, const struct cdir* cdir)
 {
     if(cdir == NULL) {
         return false;
     }
     for(size_t i = 0; i < event->pred_count; i++) {
-        betree_var_t variable_id = event->preds[i]->attr_var.var;
+        const struct pred* pred = event->preds[i];
+        betree_var_t variable_id = pred->attr_var.var;
         if(variable_id == cdir->attr_var.var) {
-            return true;
+            const struct attr_domain* attr_domain = get_attr_domain(config, variable_id);
+            betree_assert(attr_domain != NULL, "Can't find attr domain");
+            betree_assert(attr_domain->bound.value_type == pred->value.value_type, "Attr domain and event value type is different");
+            switch(attr_domain->bound.value_type) {
+                case VALUE_B:
+                    return attr_domain->bound.bmin <= pred->value.bvalue && attr_domain->bound.bmax >= pred->value.bvalue;
+                case VALUE_I:
+                    return attr_domain->bound.imin <= pred->value.ivalue && attr_domain->bound.imax >= pred->value.ivalue;
+                case VALUE_F:
+                    return attr_domain->bound.fmin <= pred->value.fvalue && attr_domain->bound.fmax >= pred->value.fvalue;
+                case VALUE_S:
+                case VALUE_IL:
+                case VALUE_SL:
+                case VALUE_SEGMENTS:
+                case VALUE_FREQUENCY:
+                    return true;
+            }
         }
     }
     return false;
@@ -246,9 +263,9 @@ void search_cdir(struct config* config,
     struct report* report)
 {
     match_be_tree(config, event, cdir->cnode, matched_subs, report);
-    if(is_event_enclosed(event, cdir->lchild))
+    if(is_event_enclosed(config, event, cdir->lchild))
         search_cdir(config, event, cdir->lchild, matched_subs, report);
-    else if(is_event_enclosed(event, cdir->rchild))
+    else if(is_event_enclosed(config, event, cdir->rchild))
         search_cdir(config, event, cdir->rchild, matched_subs, report);
 }
 
