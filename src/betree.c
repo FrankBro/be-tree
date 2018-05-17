@@ -100,8 +100,7 @@ void match_be_tree(struct config* config,
             struct pnode* pnode = cnode->pdir->pnodes[i];
             const struct attr_domain* attr_domain = get_attr_domain(config, pnode->attr_var.var);
             if(attr_domain == NULL) {
-                const char* attr = get_attr_for_id(config, pnode->attr_var.var);
-                fprintf(stderr, "Could not find attr_domain for attr '%s'", attr);
+                fprintf(stderr, "Could not find attr_domain for attr '%s'", pnode->attr_var.attr);
                 abort();
             }
             if(attr_domain->allow_undefined
