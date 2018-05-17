@@ -49,7 +49,8 @@ CALLGRIND=valgrind --tool=callgrind
 all: build/betree.a tool test
 
 dot:
-	dot -Tpng betree.dot -o betree.png
+	# dot -Tpng betree.dot -o betree.png
+	dot -Tsvg betree.dot -o betree.svg
 
 ################################################################################
 # Binaries
