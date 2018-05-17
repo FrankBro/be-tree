@@ -129,6 +129,7 @@ clean:
 valgrind:
 	$(VALGRIND) build/tests/betree_tests
 	$(VALGRIND) build/tests/parser_tests
+	$(VALGRIND) build/tests/event_parser_tests
 	#$(VALGRIND) build/tests/performance_tests
 	#$(VALGRIND) build/tools/gen_expr
 
