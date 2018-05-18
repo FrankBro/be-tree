@@ -2,6 +2,7 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 enum value_e {
     VALUE_B,
@@ -112,3 +113,4 @@ struct frequency_cap make_frequency_cap(const char* type,
     uint32_t value);
 
 enum frequency_type_e get_type_from_string(const char* stype);
+
