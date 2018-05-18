@@ -17,6 +17,7 @@ output.be
 betree.dot
 betree.png
 betree.svg
+compile_commands.json
 
 betree_defs
 betree_exprs
@@ -26,3 +27,4 @@ betree_defs.1
 daily_boolean_log*
 output.txt
 read_disk_log
+
