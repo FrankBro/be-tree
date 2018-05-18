@@ -7,6 +7,7 @@
  * the mean, the standard deviation, generating random numbers etc. 
  * However, these features are not the core of the standard C library.
  */
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -140,7 +141,7 @@ void write_expr(FILE* f, const struct ast_node* node)
                     switch_default_error("Invalid numeric compare operation");
                 }
             }
-            fprintf(f, "%llu ", node->numeric_compare_expr.value.integer_value);
+            fprintf(f, "%" PRIu64 " ", node->numeric_compare_expr.value.integer_value);
             break;
         }
         case AST_TYPE_EQUALITY_EXPR : {
@@ -158,7 +159,7 @@ void write_expr(FILE* f, const struct ast_node* node)
                     switch_default_error("Invalid equality operation");
                 }
             }
-            fprintf(f, "%llu ", node->equality_expr.value.integer_value);
+            fprintf(f, "%" PRIu64 " ", node->equality_expr.value.integer_value);
             break;
         }
         case(AST_TYPE_BOOL_EXPR): {

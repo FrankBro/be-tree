@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <float.h>
+#include <inttypes.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -136,6 +137,9 @@ bool is_event_enclosed(const struct config* config, const struct event* event, c
                 case VALUE_SEGMENTS:
                 case VALUE_FREQUENCY:
                     return true;
+                default:
+                    switch_default_error("Invalid value type");
+                    return false;
             }
         }
     }
@@ -159,7 +163,7 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
                 }
             }
             if(attr_domain == NULL) {
-                fprintf(stderr, "cannot find variable_id %llu in attr_domains", variable_id);
+                fprintf(stderr, "cannot find variable_id %" PRIu64 " in attr_domains", variable_id);
                 abort();
             }
             struct value_bound bound;
@@ -503,7 +507,7 @@ void move(const struct sub* sub, struct lnode* origin, struct lnode* destination
 {
     bool isFound = remove_sub(sub, origin);
     if(!isFound) {
-        fprintf(stderr, "Could not find sub %llu", sub->id);
+        fprintf(stderr, "Could not find sub %" PRIu64, sub->id);
         abort();
     }
     if(destination->sub_count == 0) {
@@ -604,7 +608,7 @@ struct pnode* create_pdir(
         }
     }
     if(!found) {
-        fprintf(stderr, "No domain definition for attr %llu in config", variable_id);
+        fprintf(stderr, "No domain definition for attr %" PRIu64 " in config", variable_id);
         abort();
     }
     pnode->cdir = create_cdir_with_pnode_parent(config, pnode, bound);
@@ -1455,6 +1459,9 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
                 case AST_BOOL_VARIABLE:
                     attr_var = expr->bool_expr.variable;
                     break;
+                default:
+                    switch_default_error("Invalid bool op");
+                    break;
             }
             break;
         }
@@ -1821,6 +1828,9 @@ void adjust_attr_domains(struct config* config,
                     adjust_attr_domains(config, node->bool_expr.binary.lhs, bound, allow_undefined);
                     adjust_attr_domains(config, node->bool_expr.binary.rhs, bound, allow_undefined);
                     return;
+                default:
+                    switch_default_error("Invalid bool op");
+                    return;
             }
             break;
         }
@@ -1886,7 +1896,7 @@ void event_to_string(const struct event* event, char* buffer)
         const char* attr = pred->attr_var.attr;
         switch(pred->value.value_type) {
             case(VALUE_I): {
-                length += sprintf(buffer + length, "%s = %llu", attr, pred->value.ivalue);
+                length += sprintf(buffer + length, "%s = %" PRIu64, attr, pred->value.ivalue);
                 break;
             }
             case(VALUE_F): {
@@ -1969,7 +1979,7 @@ bool is_variable_allow_undefined(const struct config* config, const betree_var_t
             return attr_domain->allow_undefined;
         }
     }
-    fprintf(stderr, "Missing attr domain for variable id %llu", variable_id);
+    fprintf(stderr, "Missing attr domain for variable id %" PRIu64, variable_id);
     abort();
     return false;
 }
@@ -1981,7 +1991,7 @@ void betree_insert(struct config* config, betree_sub_t id, const char* expr, str
 {
     struct ast_node* node;
     if(parse(expr, &node) != 0) {
-        fprintf(stderr, "Failed to parse id %llu: %s\n", id, expr);
+        fprintf(stderr, "Failed to parse id %" PRIu64 ": %s\n", id, expr);
         abort();
     }
     const struct sub* sub = make_sub(config, id, node);
@@ -2098,6 +2108,9 @@ void fill_event(struct config* config, struct event* event)
                 }
                 break;
             }
+            default:
+                switch_default_error("Invalid value type");
+                break;
         }
     }
 }

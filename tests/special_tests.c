@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -30,7 +31,7 @@ frequency(
     }
     int64_t usec = 1000 * 1000;
     struct string_value type_value = frequency_type_to_string(config, type);
-    asprintf(&expr, "%swithin_frequency_cap(\"%s\", \"%s\", %lld, %lld)", pre, type_value.string, ns, value, length);
+    asprintf(&expr, "%swithin_frequency_cap(\"%s\", \"%s\", %" PRId64 ", %" PRId64 ")", pre, type_value.string, ns, value, length);
     (void)parse(expr, &node);
     assign_str_id(config, node);
     struct event* event = (struct event*)make_event();
@@ -220,7 +221,7 @@ segment(bool has_not, enum segment_function_type func_type,
             break;
     }
     int64_t usec = 1000 * 1000;
-    asprintf(&expr, "%s%s(%s%lld, %lld)", pre, func, var, id, seconds);
+    asprintf(&expr, "%s%s(%s%" PRId64 ", %" PRId64 ")", pre, func, var, id, seconds);
     (void)parse(expr, &node);
     struct event* event = (struct event*)make_event();
     event->pred_count = 4;

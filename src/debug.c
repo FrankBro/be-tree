@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -21,7 +22,7 @@ void print_lnode(const struct lnode* lnode, uint64_t level)
     print_dashs(level);
     printf(" lnode (%zu) [", lnode->max);
     for(size_t i = 0; i < lnode->sub_count; i++) {
-        printf("%llu", lnode->subs[i]->id);
+        printf("%" PRIu64, lnode->subs[i]->id);
         if(i != lnode->sub_count - 1) {
             printf(", ");
         }
@@ -39,7 +40,7 @@ void print_cdir(const struct config* config, const struct cdir* cdir, uint64_t l
     print_dashs(level);
     switch(cdir->bound.value_type) {
         case(VALUE_I): {
-            printf(" cdir [%llu, %llu]", cdir->bound.imin, cdir->bound.imax);
+            printf(" cdir [%" PRIu64 ", %" PRIu64 "]", cdir->bound.imin, cdir->bound.imax);
             break;
         }
         case(VALUE_F): {
@@ -209,7 +210,7 @@ const char* get_path_cdir(const struct config* config, const struct cdir* cdir, 
     char* name;
     switch(cdir->bound.value_type) {
         case(VALUE_I): {
-            asprintf(&name, "%s_%llu_%llu", parent_path, cdir->bound.imin, cdir->bound.imax);
+            asprintf(&name, "%s_%" PRIu64 "_%" PRIu64, parent_path, cdir->bound.imin, cdir->bound.imax);
             break;
         }
         case(VALUE_F): {
@@ -329,7 +330,7 @@ void write_dot_file_lnode_names(
             if(i != 0) {
                 fprintf(f, ", ");
             }
-            fprintf(f, "S<sub>%llu</sub>", lnode->subs[i]->id);
+            fprintf(f, "S<sub>%" PRIu64 "</sub>", lnode->subs[i]->id);
         }
         fprintf(f, "\\}>, color=lightblue1, fillcolor=lightblue1, style=filled, shape=record]\n");
     }
@@ -360,14 +361,14 @@ void write_dot_file_cdir_td(FILE* f,
     if(current_depth == 0) {
         print_spaces(f, level);
         if(cdir == NULL) {
-            fprintf(f, "<td colspan=\"%llu\"></td>\n", colspan);
+            fprintf(f, "<td colspan=\"%" PRIu64 "\"></td>\n", colspan);
         }
         else {
             const char* name = get_name_cdir(config, cdir);
             switch(cdir->bound.value_type) {
                 case(VALUE_I): {
                     fprintf(f,
-                        "<td colspan=\"%llu\" port=\"%s\">[%llu, %llu]</td>\n",
+                        "<td colspan=\"%" PRIu64 "\" port=\"%s\">[%" PRIu64 ", %" PRIu64 "]</td>\n",
                         colspan,
                         name,
                         cdir->bound.imin,
@@ -376,7 +377,7 @@ void write_dot_file_cdir_td(FILE* f,
                 }
                 case(VALUE_F): {
                     fprintf(f,
-                        "<td colspan=\"%llu\" port=\"%s\">[%.0f, %.0f]</td>\n",
+                        "<td colspan=\"%" PRIu64 "\" port=\"%s\">[%.0f, %.0f]</td>\n",
                         colspan,
                         name,
                         cdir->bound.fmin,
@@ -387,7 +388,7 @@ void write_dot_file_cdir_td(FILE* f,
                     const char* min = cdir->bound.bmin ? "true" : "false";
                     const char* max = cdir->bound.bmax ? "true" : "false";
                     fprintf(f,
-                        "<td colspan=\"%llu\" port=\"%s\">[%s, %s]</td>\n",
+                        "<td colspan=\"%" PRIu64 "\" port=\"%s\">[%s, %s]</td>\n",
                         colspan,
                         name,
                         min,

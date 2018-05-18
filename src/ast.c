@@ -1295,6 +1295,9 @@ void assign_str_id(struct config* config, struct ast_node* node)
                 case AST_SPECIAL_STRING: {
                     return;
                 }
+                default:
+                    switch_default_error("Invalid special expr type");
+                    return;
             }
             return;
         }

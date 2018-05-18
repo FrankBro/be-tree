@@ -88,6 +88,7 @@ src/event_lexer.c: src/event_parser.c
 	$(LEX) --header-file=src/event_lexer.h -o $@ src/event_lexer.l
 
 src/event_parser.c: src/event_parser.y
+	mkdir -p build/bison
 	$(YACC) $(YFLAGS) -o $@ $^
 
 ################################################################################

@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,7 +34,7 @@ const char* integer_list_value_to_string(struct integer_list_value list)
         if(i != 0) {
             asprintf(&string, ", ");
         }
-        asprintf(&string, "%llu", list.integers[i]);
+        asprintf(&string, "%" PRIu64, list.integers[i]);
     }
     return string;
 }
