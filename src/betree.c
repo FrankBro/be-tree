@@ -1997,6 +1997,8 @@ void betree_insert(struct config* config, betree_sub_t id, const char* expr, str
         fprintf(stderr, "Failed to parse id %" PRIu64 ": %s\n", id, expr);
         abort();
     }
+    assign_variable_id(config, node);
+    assign_str_id(config, node);
     const struct sub* sub = make_sub(config, id, node);
     insert_be_tree(config, sub, cnode, NULL);
 }
