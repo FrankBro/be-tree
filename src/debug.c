@@ -485,8 +485,8 @@ size_t depth_of_cdir(const struct cdir* cdir)
     }
     size_t left = depth_of_cdir(cdir->lchild);
     size_t right = depth_of_cdir(cdir->rchild);
-    size_t ret = max(left, right);
-    return max(ret, current);
+    size_t ret = smax(left, right);
+    return smax(ret, current);
 }
 
 void write_dot_file_cdir_names(

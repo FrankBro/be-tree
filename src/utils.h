@@ -3,20 +3,14 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
-#define max(a, b)               \
-    ({                          \
-        __typeof__(a) _a = (a); \
-        __typeof__(b) _b = (b); \
-        _a > _b ? _a : _b;      \
-    })
-
-#define min(a, b)               \
-    ({                          \
-        __typeof__(a) _a = (a); \
-        __typeof__(b) _b = (b); \
-        _a < _b ? _a : _b;      \
-    })
+int64_t d64min(int64_t a, int64_t b);
+int64_t d64max(int64_t a, int64_t b);
+uint64_t u64min(uint64_t a, uint64_t b);
+uint64_t u64max(uint64_t a, uint64_t b);
+size_t smin(size_t a, size_t b);
+size_t smax(size_t a, size_t b);
 
 int64_t random_in_range(int64_t min, int64_t max);
 bool random_bool();

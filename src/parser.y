@@ -105,7 +105,7 @@ float               : TFLOAT                                { $$ = $1; }
                     | TMINUS TFLOAT                         { $$ = - $2; }
 ;
 
-string              : TSTRING                               { $$.string = strdup($1); $$.str = -1; free($1); }
+string              : TSTRING                               { $$.string = strdup($1); $$.str = -1ULL; free($1); }
 
 integer_list_value  : TLPAREN integer_list_loop TRPAREN     { $$ = $2; }
 

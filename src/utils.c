@@ -8,6 +8,36 @@
 #include <stdlib.h>
 #include <string.h>
 
+int64_t d64min(int64_t a, int64_t b)
+{
+    return a < b ? a : b;
+}
+
+int64_t d64max(int64_t a, int64_t b)
+{
+    return a > b ? a : b;
+}
+
+uint64_t u64min(uint64_t a, uint64_t b)
+{
+    return a < b ? a : b;
+}
+
+uint64_t u64max(uint64_t a, uint64_t b)
+{
+    return a > b ? a : b;
+}
+
+size_t smin(size_t a, size_t b)
+{
+    return a < b ? a : b;
+}
+
+size_t smax(size_t a, size_t b)
+{
+    return a > b ? a : b;
+}
+
 int64_t random_in_range(int64_t min, int64_t max)
 {
     return rand() % (max + 1 - min) + min;

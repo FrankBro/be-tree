@@ -1009,8 +1009,8 @@ void get_variable_bound(
                 case AST_EQUALITY_EQ: {
                     switch(node->equality_expr.value.value_type) {
                         case AST_EQUALITY_VALUE_INTEGER: {
-                            bound->imin = min(bound->imin, node->equality_expr.value.integer_value);
-                            bound->imax = max(bound->imax, node->equality_expr.value.integer_value);
+                            bound->imin = d64min(bound->imin, node->equality_expr.value.integer_value);
+                            bound->imax = d64max(bound->imax, node->equality_expr.value.integer_value);
                             return;
                         }
                         case AST_EQUALITY_VALUE_FLOAT: {
@@ -1071,7 +1071,7 @@ void get_variable_bound(
                     switch(node->numeric_compare_expr.value.value_type) {
                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
                             bound->imin = domain->bound.imin;
-                            bound->imax = max(
+                            bound->imax = d64max(
                                 bound->imax, node->numeric_compare_expr.value.integer_value - 1);
                             return;
                         }
@@ -1092,7 +1092,7 @@ void get_variable_bound(
                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
                             bound->imin = domain->bound.imin;
                             bound->imax
-                                = max(bound->imax, node->numeric_compare_expr.value.integer_value);
+                                = d64max(bound->imax, node->numeric_compare_expr.value.integer_value);
                             return;
                         }
                         case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
@@ -1110,7 +1110,7 @@ void get_variable_bound(
                 case AST_NUMERIC_COMPARE_GT: {
                     switch(node->numeric_compare_expr.value.value_type) {
                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-                            bound->imin = min(
+                            bound->imin = d64min(
                                 bound->imin, node->numeric_compare_expr.value.integer_value + 1);
                             bound->imax = domain->bound.imax;
                             return;
@@ -1131,7 +1131,7 @@ void get_variable_bound(
                     switch(node->numeric_compare_expr.value.value_type) {
                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
                             bound->imin
-                                = min(bound->imin, node->numeric_compare_expr.value.integer_value);
+                                = d64min(bound->imin, node->numeric_compare_expr.value.integer_value);
                             bound->imax = domain->bound.imax;
                             return;
                         }

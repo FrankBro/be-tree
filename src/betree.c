@@ -403,7 +403,7 @@ void insert_be_tree(
     bool foundPartition = false;
     struct pnode* max_pnode = NULL;
     if(cnode->pdir != NULL) {
-        float max_score = -1;
+        float max_score = -1.;
         for(size_t i = 0; i < sub->attr_var_count; i++) {
             betree_var_t variable_id = sub->attr_vars[i].var;
             if(!is_used_cnode(variable_id, cnode)) {
@@ -758,7 +758,7 @@ void update_cluster_capacity(const struct config* config, struct lnode* lnode)
     }
     // TODO: Based on equation 9, surely wrong
     size_t count = lnode->sub_count;
-    size_t max = max(config->lnode_max_cap,
+    size_t max = smax(config->lnode_max_cap,
         ceil((double)count / (double)config->lnode_max_cap) * config->lnode_max_cap);
     lnode->max = max;
 }
@@ -2023,7 +2023,7 @@ struct attr_var make_attr_var(const char* attr, struct config* config)
     struct attr_var attr_var;
     attr_var.attr = attr == NULL ? NULL : strdup(attr);
     if(config == NULL) {
-        attr_var.var = -1;
+        attr_var.var = -1ULL;
     }
     else {
         attr_var.var = get_id_for_attr(config, attr);
