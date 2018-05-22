@@ -12,6 +12,7 @@ src/event_parser.h
 src/parser.output
 src/event_parser.output
 .DS_Store
+._.DS_Store
 callgrind.out.*
 output.be
 betree.dot
