@@ -972,6 +972,9 @@ struct value_bounds split_value_bound(struct value_bound bound)
 
 void space_clustering(const struct config* config, struct cdir* cdir)
 {
+    if(cdir == NULL || cdir->cnode == NULL) {
+        return;
+    }
     struct lnode* lnode = cdir->cnode->lnode;
     if(!is_overflowed(lnode)) {
         return;
