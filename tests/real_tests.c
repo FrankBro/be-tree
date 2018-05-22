@@ -243,7 +243,7 @@ int test_real()
     (void)search_timings;
 
     double average = (double)sum / (double)MAX_EVENTS;
-    printf("For %zu expressions, %zu events, we have an average match time of %f us",
+    printf("For %zu expressions, %zu events, we have an average match time of %f us\n",
         expr_count,
         event_count,
         average);
