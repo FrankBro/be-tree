@@ -1363,6 +1363,262 @@ void assign_str_id(struct config* config, struct ast_node* node)
     }
 }
 
+bool eq_numeric_compare_value(struct numeric_compare_value a, struct numeric_compare_value b)
+{
+    if(a.value_type != b.value_type) {
+        return false;
+    }
+    switch(a.value_type) {
+        case AST_NUMERIC_COMPARE_VALUE_INTEGER:
+            return a.integer_value == b.integer_value;
+        case AST_NUMERIC_COMPARE_VALUE_FLOAT:
+            return feq(a.float_value, b.float_value);
+        default:
+            switch_default_error("Invalid numeric compare value type");
+            return false;
+    }
+}
+
+bool eq_equality_value(struct equality_value a, struct equality_value b)
+{
+    if(a.value_type != b.value_type) {
+        return false;
+    }
+    switch(a.value_type) {
+        case AST_EQUALITY_VALUE_INTEGER:
+            return a.integer_value == b.integer_value;
+        case AST_EQUALITY_VALUE_FLOAT:
+            return feq(a.float_value, b.float_value);
+        case AST_EQUALITY_VALUE_STRING:
+            return a.string_value.str == b.string_value.str;
+        default:
+            switch_default_error("Invalid equality value type");
+            return false;
+    }
+}
+
+bool eq_bool_expr(struct ast_bool_expr a, struct ast_bool_expr b)
+{
+    if(a.op != b.op) {
+        return false;
+    }
+    switch(a.op) {
+        case AST_BOOL_OR:
+        case AST_BOOL_AND:
+            return eq_expr(a.binary.lhs, b.binary.lhs) && eq_expr(a.binary.rhs, b.binary.rhs);
+        case AST_BOOL_NOT:
+            return eq_expr(a.unary.expr, b.unary.expr);
+        case AST_BOOL_VARIABLE:
+            return a.variable.var == b.variable.var;
+        default:
+            switch_default_error("Invalid bool expr op");
+            return false;
+    }
+}
+
+bool eq_set_left_value(struct set_left_value a, struct set_left_value b)
+{
+    if(a.value_type != b.value_type) {
+        return false;
+    }
+    switch(a.value_type) {
+        case AST_SET_LEFT_VALUE_INTEGER:
+            return a.integer_value == b.integer_value;
+        case AST_SET_LEFT_VALUE_STRING:
+            return a.string_value.str == b.string_value.str;
+        case AST_SET_LEFT_VALUE_VARIABLE:
+            return a.variable_value.var == b.variable_value.var;
+        default:
+            switch_default_error("Invalid left value type");
+            return false;
+    }
+}
+
+bool eq_integer_list(struct integer_list_value a, struct integer_list_value b)
+{
+    if(a.count != b.count) {
+        return false;
+    }
+    for(size_t i = 0; i < a.count; i++) {
+        if(a.integers[i] != b.integers[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool eq_string_list(struct string_list_value a, struct string_list_value b)
+{
+    if(a.count != b.count) {
+        return false;
+    }
+    for(size_t i = 0; i < a.count; i++) {
+        if(a.strings[i].str != b.strings[i].str) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool eq_set_right_value(struct set_right_value a, struct set_right_value b)
+{
+    if(a.value_type != b.value_type) {
+        return false;
+    }
+    switch(a.value_type) {
+        case AST_SET_RIGHT_VALUE_INTEGER_LIST:
+            return eq_integer_list(a.integer_list_value, b.integer_list_value);
+        case AST_SET_RIGHT_VALUE_STRING_LIST:
+            return eq_string_list(a.string_list_value, b.string_list_value);
+        case AST_SET_RIGHT_VALUE_VARIABLE:
+            return a.variable_value.var == b.variable_value.var;
+        default:
+            switch_default_error("Invalid right value type");
+            return false;
+    }
+}
+
+bool eq_set_expr(struct ast_set_expr a, struct ast_set_expr b)
+{
+    if(a.op != b.op) {
+        return false;
+    }
+    return eq_set_left_value(a.left_value, b.left_value) && eq_set_right_value(a.right_value, b.right_value);
+}
+
+bool eq_list_value(struct list_value a, struct list_value b)
+{
+    if(a.value_type != b.value_type) {
+        return false;
+    }
+    switch(a.value_type) {
+        case AST_LIST_VALUE_INTEGER_LIST:
+            return eq_integer_list(a.integer_list_value, b.integer_list_value);
+        case AST_LIST_VALUE_STRING_LIST:
+            return eq_string_list(a.string_list_value, b.string_list_value);
+        default:
+            switch_default_error("Invalid list value type");
+            return false;
+    }
+}
+
+bool eq_list_expr(struct ast_list_expr a, struct ast_list_expr b)
+{
+    if(a.op != b.op) {
+        return false;
+    }
+    return a.attr_var.var == b.attr_var.var && eq_list_value(a.value, b.value);
+}
+
+bool eq_geo_value(struct special_geo_value a, struct special_geo_value b)
+{
+    if(a.value_type != b.value_type) {
+        return false;
+    }
+    switch(a.value_type) {
+        case AST_SPECIAL_GEO_VALUE_INTEGER:
+            return a.integer_value == b.integer_value;
+        case AST_SPECIAL_GEO_VALUE_FLOAT:
+            return feq(a.float_value, b.float_value);
+        default:
+            switch_default_error("Invalid geo value type");
+            return false;
+    }
+}
+
+bool eq_special_expr(struct ast_special_expr a, struct ast_special_expr b)
+{
+    if(a.type != b.type) {
+        return false;
+    }
+    switch(a.type) {
+        case AST_SPECIAL_FREQUENCY:
+            return
+                a.frequency.attr_var.var == b.frequency.attr_var.var &&
+                a.frequency.length == b.frequency.length &&
+                a.frequency.ns.str == b.frequency.ns.str &&
+                a.frequency.op == b.frequency.op &&
+                a.frequency.type == b.frequency.type &&
+                a.frequency.value == b.frequency.value;
+        case AST_SPECIAL_SEGMENT:
+            return
+                a.segment.attr_var.var == b.segment.attr_var.var &&
+                a.segment.has_variable == b.segment.has_variable &&
+                a.segment.op == b.segment.op &&
+                a.segment.seconds == b.segment.seconds &&
+                a.segment.segment_id == b.segment.segment_id;
+        case AST_SPECIAL_GEO:
+            return
+                a.geo.has_radius == b.geo.has_radius &&
+                eq_geo_value(a.geo.latitude, b.geo.latitude) &&
+                eq_geo_value(a.geo.longitude, b.geo.longitude) &&
+                a.geo.op == b.geo.op &&
+                eq_geo_value(a.geo.radius, b.geo.radius);
+        case AST_SPECIAL_STRING:
+            return
+                a.string.attr_var.var == b.string.attr_var.var &&
+                a.string.op == b.string.op &&
+                strcmp(a.string.pattern, b.string.pattern) == 0;
+        default:
+            switch_default_error("Invalid special expr type");
+            return false;
+    }
+}
+
+bool eq_expr(const struct ast_node* a, const struct ast_node* b)
+{
+    if(a == NULL || b == NULL) {
+        return false;
+    }
+    if(a->type != b->type) {
+        return false;
+    }
+    switch(a->type) {
+        case AST_TYPE_NUMERIC_COMPARE_EXPR: {
+            return
+                a->numeric_compare_expr.attr_var.var == b->numeric_compare_expr.attr_var.var &&
+                a->numeric_compare_expr.op == b->numeric_compare_expr.op &&
+                eq_numeric_compare_value(a->numeric_compare_expr.value, b->numeric_compare_expr.value);
+        }
+        case AST_TYPE_EQUALITY_EXPR: {
+            return
+                a->equality_expr.attr_var.var == b->equality_expr.attr_var.var &&
+                a->equality_expr.op == b->equality_expr.op &&
+                eq_equality_value(a->equality_expr.value, b->equality_expr.value);
+        }
+        case AST_TYPE_BOOL_EXPR: {
+            return eq_bool_expr(a->bool_expr, b->bool_expr);
+        }
+        case AST_TYPE_SET_EXPR: {
+            return eq_set_expr(a->set_expr, b->set_expr);
+        }
+        case AST_TYPE_LIST_EXPR: {
+            return eq_list_expr(a->list_expr, b->list_expr);
+        }
+        case AST_TYPE_SPECIAL_EXPR: {
+            return eq_special_expr(a->special_expr, b->special_expr);
+        }
+        default:
+            switch_default_error("Invalid node type");
+            return false;
+    }
+}
+
+void assign_pred_id(struct config* config, struct ast_node* node)
+{
+    switch(node->type) {
+        case AST_TYPE_NUMERIC_COMPARE_EXPR:
+        case AST_TYPE_EQUALITY_EXPR:
+        case AST_TYPE_BOOL_EXPR:
+        case AST_TYPE_SET_EXPR:
+        case AST_TYPE_LIST_EXPR:
+        case AST_TYPE_SPECIAL_EXPR:
+        default:
+            switch_default_error("Invalid node type");
+            return;
+    }
+}
+
 // const char* ast_to_string(const struct ast_node* node)
 // {
 //     char* expr;
