@@ -118,7 +118,6 @@ int test_numeric_compare_wrong()
     struct config* config = make_default_config();
     add_attr_domain_i(config, "i", 0, 10, false);
     add_attr_domain_i(config, "i2", 0, 10, false);
-    add_attr_domain_f(config, "f", 0., 10., false);
 
     {
         struct ast_node* a = parse_and_assign("i > 12345", config);
@@ -230,7 +229,6 @@ int test_equality_wrong()
     struct config* config = make_default_config();
     add_attr_domain_i(config, "i", 0, 10, false);
     add_attr_domain_i(config, "i2", 0, 10, false);
-    add_attr_domain_f(config, "f", 0., 10., false);
 
     {
         struct ast_node* a = parse_and_assign("i = 12345", config);
@@ -315,7 +313,6 @@ int test_set_var_wrong()
     struct config* config = make_default_config();
     add_attr_domain_i(config, "i", 0, 10, false);
     add_attr_domain_i(config, "i2", 0, 10, false);
-    add_attr_domain_s(config, "s", false);
 
     {
         struct ast_node* a = parse_and_assign("i in (1, 2)", config);
@@ -349,6 +346,90 @@ int test_set_var_wrong()
     return 0;
 }
 
+int test_set_list_integer()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_il(config, "il", false);
+
+    {
+        struct ast_node* a = parse_and_assign("1 in il", config);
+        struct ast_node* b = parse_and_assign("1 in il", config);
+        mu_assert(eq_expr(a, b), "integer in var");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("1 not in il", config);
+        struct ast_node* b = parse_and_assign("1 not in il", config);
+        mu_assert(eq_expr(a, b), "integer not in var");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+
+    return 0;
+}
+
+int test_set_list_string()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_sl(config, "sl", false);
+
+    {
+        struct ast_node* a = parse_and_assign("\"1\" in sl", config);
+        struct ast_node* b = parse_and_assign("\"1\" in sl", config);
+        mu_assert(eq_expr(a, b), "string in var");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("\"1\" not in sl", config);
+        struct ast_node* b = parse_and_assign("\"1\" not in sl", config);
+        mu_assert(eq_expr(a, b), "string not in var");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+
+    return 0;
+}
+
+int test_set_list_wrong()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_il(config, "il", false);
+    add_attr_domain_il(config, "il2", false);
+
+    {
+        struct ast_node* a = parse_and_assign("1 in il", config);
+        struct ast_node* b = parse_and_assign("\"1\" in il", config);
+        mu_assert(!eq_expr(a, b), "wrong value type");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("1 in il", config);
+        struct ast_node* b = parse_and_assign("1 not in il", config);
+        mu_assert(!eq_expr(a, b), "wrong op");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("1 in il", config);
+        struct ast_node* b = parse_and_assign("1 in il2", config);
+        mu_assert(!eq_expr(a, b), "wrong var");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("1 in il", config);
+        struct ast_node* b = parse_and_assign("2 in il", config);
+        mu_assert(!eq_expr(a, b), "wrong value");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+
+    return 0;
+}
+
 int all_tests() 
 {
     mu_run_test(test_numeric_compare_integer);
@@ -360,7 +441,10 @@ int all_tests()
     mu_run_test(test_equality_wrong);
     mu_run_test(test_set_var_integer);
     mu_run_test(test_set_var_string);
-    //mu_run_test(test_set_var_wrong);
+    mu_run_test(test_set_var_wrong);
+    mu_run_test(test_set_list_integer);
+    mu_run_test(test_set_list_string);
+    mu_run_test(test_set_list_wrong);
     /*
     mu_run_test(test_list);
     mu_run_test(test_special);
