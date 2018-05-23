@@ -430,6 +430,104 @@ int test_set_list_wrong()
     return 0;
 }
 
+int test_list_integer()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_i(config, "i", 0, 10, false);
+
+    {
+        struct ast_node* a = parse_and_assign("i one of (1, 2)", config);
+        struct ast_node* b = parse_and_assign("i one of (1, 2)", config);
+        mu_assert(eq_expr(a, b), "integer one of");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("i none of (1, 2)", config);
+        struct ast_node* b = parse_and_assign("i none of (1, 2)", config);
+        mu_assert(eq_expr(a, b), "integer none of");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("i all of (1, 2)", config);
+        struct ast_node* b = parse_and_assign("i all of (1, 2)", config);
+        mu_assert(eq_expr(a, b), "integer all of");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+
+    return 0;
+}
+
+int test_list_string()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_s(config, "s", false);
+
+    {
+        struct ast_node* a = parse_and_assign("s one of (\"1\", \"2\")", config);
+        struct ast_node* b = parse_and_assign("s one of (\"1\", \"2\")", config);
+        mu_assert(eq_expr(a, b), "string one of");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("s none of (\"1\", \"2\")", config);
+        struct ast_node* b = parse_and_assign("s none of (\"1\", \"2\")", config);
+        mu_assert(eq_expr(a, b), "string none of");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("s all of (\"1\", \"2\")", config);
+        struct ast_node* b = parse_and_assign("s all of (\"1\", \"2\")", config);
+        mu_assert(eq_expr(a, b), "string all of");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+
+    return 0;
+}
+
+int test_list_wrong()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_i(config, "i", 0, 10, false);
+    add_attr_domain_i(config, "i2", 0, 10, false);
+
+    {
+        struct ast_node* a = parse_and_assign("i one of (1, 2)", config);
+        struct ast_node* b = parse_and_assign("i one of (\"1\", \"2\")", config);
+        mu_assert(!eq_expr(a, b), "wrong value type");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("i one of (1, 2)", config);
+        struct ast_node* b = parse_and_assign("i none of (1, 2)", config);
+        mu_assert(!eq_expr(a, b), "wrong op");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("i one of (1, 2)", config);
+        struct ast_node* b = parse_and_assign("i2 one of (1, 2)", config);
+        mu_assert(!eq_expr(a, b), "wrong var");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("i one of (1, 2)", config);
+        struct ast_node* b = parse_and_assign("i one of (1, 3)", config);
+        mu_assert(!eq_expr(a, b), "wrong value");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+
+    return 0;
+}
+
 int all_tests() 
 {
     mu_run_test(test_numeric_compare_integer);
@@ -445,6 +543,9 @@ int all_tests()
     mu_run_test(test_set_list_integer);
     mu_run_test(test_set_list_string);
     mu_run_test(test_set_list_wrong);
+    mu_run_test(test_list_integer);
+    mu_run_test(test_list_string);
+    mu_run_test(test_list_wrong);
     /*
     mu_run_test(test_list);
     mu_run_test(test_special);
