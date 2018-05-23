@@ -12,24 +12,11 @@
 
 int parse(const char *text, struct ast_node **node);
 
-/*
-void add_attr_domain_i(struct config* config, const char* attr, int64_t min, int64_t max, bool allow_undefined);
-void add_attr_domain_f(struct config* config, const char* attr, double min, double max, bool allow_undefined);
-void add_attr_domain_b(struct config* config, const char* attr, bool min, bool max, bool allow_undefined);
-void add_attr_domain_s(struct config* config, const char* attr, bool allow_undefined);
-void add_attr_domain_il(struct config* config, const char* attr, bool allow_undefined);
-void add_attr_domain_sl(struct config* config, const char* attr, bool allow_undefined);
-void add_attr_domain_segments(struct config* config, const char* attr, bool allow_undefined);
-void add_attr_domain_frequency(struct config* config, const char* attr, bool allow_undefined);
-*/
-
 void assign_expr(struct config* config, struct ast_node* node)
 {
     assign_variable_id(config, node);
     assign_str_id(config, node);
 }
-
-
 
 struct ast_node* parse_and_assign(const char* expr, struct config* config)
 {
@@ -730,6 +717,103 @@ int test_special_string()
     return 0;
 }
 
+int test_bool()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_b(config, "b", false, true, false);
+    add_attr_domain_i(config, "i", 0, 10, false);
+
+    {
+        struct ast_node* a = parse_and_assign("b", config);
+        struct ast_node* b = parse_and_assign("b", config);
+        mu_assert(eq_expr(a, b), "var");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("not b", config);
+        struct ast_node* b = parse_and_assign("not b", config);
+        mu_assert(eq_expr(a, b), "simple not");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("b and b", config);
+        struct ast_node* b = parse_and_assign("b and b", config);
+        mu_assert(eq_expr(a, b), "simple and");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("b or b", config);
+        struct ast_node* b = parse_and_assign("b or b", config);
+        mu_assert(eq_expr(a, b), "simple or");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("not (i = 0)", config);
+        struct ast_node* b = parse_and_assign("not (i = 0)", config);
+        mu_assert(eq_expr(a, b), "complex unary");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("(i = 0) and (i = 0)", config);
+        struct ast_node* b = parse_and_assign("(i = 0) and (i = 0)", config);
+        mu_assert(eq_expr(a, b), "complex binary");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+
+    return 0;
+}
+
+int test_bool_wrong()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_b(config, "b", false, true, false);
+    add_attr_domain_b(config, "b2", false, true, false);
+    add_attr_domain_i(config, "i", 0, 10, false);
+
+    {
+        struct ast_node* a = parse_and_assign("b", config);
+        struct ast_node* b = parse_and_assign("b2", config);
+        mu_assert(!eq_expr(a, b), "wrong var");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("not b", config);
+        struct ast_node* b = parse_and_assign("not b2", config);
+        mu_assert(!eq_expr(a, b), "wrong var not");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("b and b", config);
+        struct ast_node* b = parse_and_assign("b or b", config);
+        mu_assert(!eq_expr(a, b), "wrong operator");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("not (i = 0)", config);
+        struct ast_node* b = parse_and_assign("not b", config);
+        mu_assert(!eq_expr(a, b), "complex unary");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("(i = 0) and (i = 0)", config);
+        struct ast_node* b = parse_and_assign("(i = 0) and b", config);
+        mu_assert(!eq_expr(a, b), "complex binary");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+
+    return 0;
+}
 
 int all_tests() 
 {
@@ -753,6 +837,8 @@ int all_tests()
     mu_run_test(test_special_segment);
     mu_run_test(test_special_geo);
     mu_run_test(test_special_string);
+    mu_run_test(test_bool);
+    mu_run_test(test_bool_wrong);
 
     return 0;
 }
