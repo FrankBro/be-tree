@@ -528,6 +528,209 @@ int test_list_wrong()
     return 0;
 }
 
+int test_special_frequency()
+{
+    struct config* config = make_default_config();
+
+    {
+        struct ast_node* a = parse_and_assign("within_frequency_cap(\"flight\", \"namespace\", 1, 2)", config);
+        struct ast_node* b = parse_and_assign("within_frequency_cap(\"flight\", \"namespace\", 1, 2)", config);
+        mu_assert(eq_expr(a, b), "within_frequency_cap");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("within_frequency_cap(\"flight\", \"namespace\", 1, 2)", config);
+        struct ast_node* b = parse_and_assign("within_frequency_cap(\"product\", \"namespace\", 1, 2)", config);
+        mu_assert(!eq_expr(a, b), "wrong type");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("within_frequency_cap(\"flight\", \"namespace\", 1, 2)", config);
+        struct ast_node* b = parse_and_assign("within_frequency_cap(\"flight\", \"wrong\", 1, 2)", config);
+        mu_assert(!eq_expr(a, b), "wrong namespace");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("within_frequency_cap(\"flight\", \"namespace\", 1, 2)", config);
+        struct ast_node* b = parse_and_assign("within_frequency_cap(\"flight\", \"namespace\", 2, 2)", config);
+        mu_assert(!eq_expr(a, b), "wrong value");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("within_frequency_cap(\"flight\", \"namespace\", 1, 2)", config);
+        struct ast_node* b = parse_and_assign("within_frequency_cap(\"flight\", \"namespace\", 1, 3)", config);
+        mu_assert(!eq_expr(a, b), "wrong length");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+
+    return 0;
+}
+
+int test_special_segment()
+{
+    struct config* config = make_default_config();
+
+    {
+        struct ast_node* a = parse_and_assign("segment_within(1, 2)", config);
+        struct ast_node* b = parse_and_assign("segment_within(1, 2)", config);
+        mu_assert(eq_expr(a, b), "segment_within");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("segment_within(segment, 1, 2)", config);
+        struct ast_node* b = parse_and_assign("segment_within(segment, 1, 2)", config);
+        mu_assert(eq_expr(a, b), "segment_within with segment");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("segment_before(1, 2)", config);
+        struct ast_node* b = parse_and_assign("segment_before(1, 2)", config);
+        mu_assert(eq_expr(a, b), "segment_before");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("segment_before(segment, 1, 2)", config);
+        struct ast_node* b = parse_and_assign("segment_before(segment, 1, 2)", config);
+        mu_assert(eq_expr(a, b), "segment_before with segment");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("segment_within(1, 2)", config);
+        struct ast_node* b = parse_and_assign("segment_within(2, 2)", config);
+        mu_assert(!eq_expr(a, b), "wrong id");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("segment_within(1, 2)", config);
+        struct ast_node* b = parse_and_assign("segment_within(1, 3)", config);
+        mu_assert(!eq_expr(a, b), "wrong seconds");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("segment_within(1, 2)", config);
+        struct ast_node* b = parse_and_assign("segment_before(1, 2)", config);
+        mu_assert(!eq_expr(a, b), "wrong op");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("segment_within(1, 2)", config);
+        struct ast_node* b = parse_and_assign("segment_within(segment, 1, 2)", config);
+        mu_assert(!eq_expr(a, b), "extra var");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+
+    return 0;
+}
+
+int test_special_geo()
+{
+    struct config* config = make_default_config();
+
+    {
+        struct ast_node* a = parse_and_assign("geo_within_radius(1, 2, 3)", config);
+        struct ast_node* b = parse_and_assign("geo_within_radius(1, 2, 3)", config);
+        mu_assert(eq_expr(a, b), "geo integer");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("geo_within_radius(1., 2., 3.)", config);
+        struct ast_node* b = parse_and_assign("geo_within_radius(1., 2., 3.)", config);
+        mu_assert(eq_expr(a, b), "geo float");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("geo_within_radius(1, 2, 3)", config);
+        struct ast_node* b = parse_and_assign("geo_within_radius(2, 2, 3)", config);
+        mu_assert(!eq_expr(a, b), "wrong latitude");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("geo_within_radius(1, 2, 3)", config);
+        struct ast_node* b = parse_and_assign("geo_within_radius(1, 3, 3)", config);
+        mu_assert(!eq_expr(a, b), "wrong longitude");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("geo_within_radius(1, 2, 3)", config);
+        struct ast_node* b = parse_and_assign("geo_within_radius(1, 2, 4)", config);
+        mu_assert(!eq_expr(a, b), "wrong radius");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+
+    return 0;
+}
+
+int test_special_string()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_s(config, "s", false);
+    add_attr_domain_s(config, "s2", false);
+
+    {
+        struct ast_node* a = parse_and_assign("contains(s, \"abc\")", config);
+        struct ast_node* b = parse_and_assign("contains(s, \"abc\")", config);
+        mu_assert(eq_expr(a, b), "contains");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("starts_with(s, \"abc\")", config);
+        struct ast_node* b = parse_and_assign("starts_with(s, \"abc\")", config);
+        mu_assert(eq_expr(a, b), "starts_with");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("ends_with(s, \"abc\")", config);
+        struct ast_node* b = parse_and_assign("ends_with(s, \"abc\")", config);
+        mu_assert(eq_expr(a, b), "ends_with");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("contains(s, \"abc\")", config);
+        struct ast_node* b = parse_and_assign("starts_with(s, \"abc\")", config);
+        mu_assert(!eq_expr(a, b), "wrong op");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("contains(s, \"abc\")", config);
+        struct ast_node* b = parse_and_assign("contains(s2, \"abc\")", config);
+        mu_assert(!eq_expr(a, b), "wrong var");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("contains(s, \"abc\")", config);
+        struct ast_node* b = parse_and_assign("contains(s, \"abcd\")", config);
+        mu_assert(!eq_expr(a, b), "wrong pattern");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+
+    return 0;
+}
+
+
 int all_tests() 
 {
     mu_run_test(test_numeric_compare_integer);
@@ -546,10 +749,10 @@ int all_tests()
     mu_run_test(test_list_integer);
     mu_run_test(test_list_string);
     mu_run_test(test_list_wrong);
-    /*
-    mu_run_test(test_list);
-    mu_run_test(test_special);
-    */
+    mu_run_test(test_special_frequency);
+    mu_run_test(test_special_segment);
+    mu_run_test(test_special_geo);
+    mu_run_test(test_special_string);
 
     return 0;
 }
