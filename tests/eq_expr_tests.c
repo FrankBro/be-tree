@@ -192,8 +192,6 @@ int test_equality_string()
     {
         struct ast_node* a = parse_and_assign("s = \"12345\"", config);
         struct ast_node* b = parse_and_assign("s = \"12345\"", config);
-        assign_expr(config, a);
-        assign_expr(config, b);
         mu_assert(eq_expr(a, b), "string eq");
         free_ast_node(a);
         free_ast_node(b);
@@ -201,8 +199,6 @@ int test_equality_string()
     {
         struct ast_node* a = parse_and_assign("s <> \"12345\"", config);
         struct ast_node* b = parse_and_assign("s <> \"12345\"", config);
-        assign_expr(config, a);
-        assign_expr(config, b);
         mu_assert(eq_expr(a, b), "string ne");
         free_ast_node(a);
         free_ast_node(b);
