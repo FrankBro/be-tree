@@ -416,25 +416,25 @@ int test_set_list_wrong()
 int test_list_integer()
 {
     struct config* config = make_default_config();
-    add_attr_domain_i(config, "i", 0, 10, false);
+    add_attr_domain_il(config, "il", false);
 
     {
-        struct ast_node* a = parse_and_assign("i one of (1, 2)", config);
-        struct ast_node* b = parse_and_assign("i one of (1, 2)", config);
+        struct ast_node* a = parse_and_assign("il one of (1, 2)", config);
+        struct ast_node* b = parse_and_assign("il one of (1, 2)", config);
         mu_assert(eq_expr(a, b), "integer one of");
         free_ast_node(a);
         free_ast_node(b);
     }
     {
-        struct ast_node* a = parse_and_assign("i none of (1, 2)", config);
-        struct ast_node* b = parse_and_assign("i none of (1, 2)", config);
+        struct ast_node* a = parse_and_assign("il none of (1, 2)", config);
+        struct ast_node* b = parse_and_assign("il none of (1, 2)", config);
         mu_assert(eq_expr(a, b), "integer none of");
         free_ast_node(a);
         free_ast_node(b);
     }
     {
-        struct ast_node* a = parse_and_assign("i all of (1, 2)", config);
-        struct ast_node* b = parse_and_assign("i all of (1, 2)", config);
+        struct ast_node* a = parse_and_assign("il all of (1, 2)", config);
+        struct ast_node* b = parse_and_assign("il all of (1, 2)", config);
         mu_assert(eq_expr(a, b), "integer all of");
         free_ast_node(a);
         free_ast_node(b);
@@ -446,25 +446,25 @@ int test_list_integer()
 int test_list_string()
 {
     struct config* config = make_default_config();
-    add_attr_domain_s(config, "s", false);
+    add_attr_domain_sl(config, "sl", false);
 
     {
-        struct ast_node* a = parse_and_assign("s one of (\"1\", \"2\")", config);
-        struct ast_node* b = parse_and_assign("s one of (\"1\", \"2\")", config);
+        struct ast_node* a = parse_and_assign("sl one of (\"1\", \"2\")", config);
+        struct ast_node* b = parse_and_assign("sl one of (\"1\", \"2\")", config);
         mu_assert(eq_expr(a, b), "string one of");
         free_ast_node(a);
         free_ast_node(b);
     }
     {
-        struct ast_node* a = parse_and_assign("s none of (\"1\", \"2\")", config);
-        struct ast_node* b = parse_and_assign("s none of (\"1\", \"2\")", config);
+        struct ast_node* a = parse_and_assign("sl none of (\"1\", \"2\")", config);
+        struct ast_node* b = parse_and_assign("sl none of (\"1\", \"2\")", config);
         mu_assert(eq_expr(a, b), "string none of");
         free_ast_node(a);
         free_ast_node(b);
     }
     {
-        struct ast_node* a = parse_and_assign("s all of (\"1\", \"2\")", config);
-        struct ast_node* b = parse_and_assign("s all of (\"1\", \"2\")", config);
+        struct ast_node* a = parse_and_assign("sl all of (\"1\", \"2\")", config);
+        struct ast_node* b = parse_and_assign("sl all of (\"1\", \"2\")", config);
         mu_assert(eq_expr(a, b), "string all of");
         free_ast_node(a);
         free_ast_node(b);
@@ -476,33 +476,33 @@ int test_list_string()
 int test_list_wrong()
 {
     struct config* config = make_default_config();
-    add_attr_domain_i(config, "i", 0, 10, false);
-    add_attr_domain_i(config, "i2", 0, 10, false);
+    add_attr_domain_il(config, "i", false);
+    add_attr_domain_il(config, "i2", false);
 
     {
-        struct ast_node* a = parse_and_assign("i one of (1, 2)", config);
-        struct ast_node* b = parse_and_assign("i one of (\"1\", \"2\")", config);
+        struct ast_node* a = parse_and_assign("il one of (1, 2)", config);
+        struct ast_node* b = parse_and_assign("il one of (\"1\", \"2\")", config);
         mu_assert(!eq_expr(a, b), "wrong value type");
         free_ast_node(a);
         free_ast_node(b);
     }
     {
-        struct ast_node* a = parse_and_assign("i one of (1, 2)", config);
-        struct ast_node* b = parse_and_assign("i none of (1, 2)", config);
+        struct ast_node* a = parse_and_assign("il one of (1, 2)", config);
+        struct ast_node* b = parse_and_assign("il none of (1, 2)", config);
         mu_assert(!eq_expr(a, b), "wrong op");
         free_ast_node(a);
         free_ast_node(b);
     }
     {
-        struct ast_node* a = parse_and_assign("i one of (1, 2)", config);
-        struct ast_node* b = parse_and_assign("i2 one of (1, 2)", config);
+        struct ast_node* a = parse_and_assign("il one of (1, 2)", config);
+        struct ast_node* b = parse_and_assign("il2 one of (1, 2)", config);
         mu_assert(!eq_expr(a, b), "wrong var");
         free_ast_node(a);
         free_ast_node(b);
     }
     {
-        struct ast_node* a = parse_and_assign("i one of (1, 2)", config);
-        struct ast_node* b = parse_and_assign("i one of (1, 3)", config);
+        struct ast_node* a = parse_and_assign("il one of (1, 2)", config);
+        struct ast_node* b = parse_and_assign("il one of (1, 3)", config);
         mu_assert(!eq_expr(a, b), "wrong value");
         free_ast_node(a);
         free_ast_node(b);
