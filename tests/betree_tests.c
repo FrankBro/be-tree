@@ -342,7 +342,7 @@ int test_insert_first_split()
     return 0;
 }
 
-struct ast_node* _AND(const struct ast_node* lhs, const struct ast_node* rhs)
+struct ast_node* _AND(struct ast_node* lhs, struct ast_node* rhs)
 {
     return ast_bool_expr_binary_create(AST_BOOL_AND, lhs, rhs);
 }
