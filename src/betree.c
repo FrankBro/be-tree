@@ -39,7 +39,7 @@ void check_sub(struct config* config,
             if(matched_subs->sub_count == 0) {
                 matched_subs->subs = calloc(1, sizeof(*matched_subs->subs));
                 if(matched_subs->subs == NULL) {
-                    fprintf(stderr, "%s calloc failed", __func__);
+                    fprintf(stderr, "%s calloc failed\n", __func__);
                     abort();
                 }
             }
@@ -47,7 +47,7 @@ void check_sub(struct config* config,
                 betree_sub_t* subs = realloc(matched_subs->subs,
                     sizeof(*matched_subs->subs) * (matched_subs->sub_count + 1));
                 if(subs == NULL) {
-                    fprintf(stderr, "%s realloc failed", __func__);
+                    fprintf(stderr, "%s realloc failed\n", __func__);
                     abort();
                 }
                 matched_subs->subs = subs;
@@ -101,7 +101,7 @@ void match_be_tree(struct config* config,
             struct pnode* pnode = cnode->pdir->pnodes[i];
             const struct attr_domain* attr_domain = get_attr_domain(config, pnode->attr_var.var);
             if(attr_domain == NULL) {
-                fprintf(stderr, "Could not find attr_domain for attr '%s'", pnode->attr_var.attr);
+                fprintf(stderr, "Could not find attr_domain for attr '%s'\n", pnode->attr_var.attr);
                 abort();
             }
             if(attr_domain->allow_undefined
@@ -163,7 +163,7 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
                 }
             }
             if(attr_domain == NULL) {
-                fprintf(stderr, "cannot find variable_id %" PRIu64 " in attr_domains", variable_id);
+                fprintf(stderr, "cannot find variable_id %" PRIu64 " in attr_domains\n", variable_id);
                 abort();
             }
             struct value_bound bound;
@@ -185,29 +185,29 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
                     break;
                 }
                 case(VALUE_S): {
-                    fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
+                    fprintf(stderr, "%s a string value cdir should never happen for now\n", __func__);
                     abort();
                 }
                 case(VALUE_IL): {
                     fprintf(stderr,
-                        "%s a integer list value cdir should never happen for now",
+                        "%s a integer list value cdir should never happen for now\n",
                         __func__);
                     abort();
                 }
                 case(VALUE_SL): {
                     fprintf(stderr,
-                        "%s a string list value cdir should never happen for now",
+                        "%s a string list value cdir should never happen for now\n",
                         __func__);
                     abort();
                 }
                 case(VALUE_SEGMENTS): {
                     fprintf(
-                        stderr, "%s a segments value cdir should never happen for now", __func__);
+                        stderr, "%s a segments value cdir should never happen for now\n", __func__);
                     abort();
                 }
                 case(VALUE_FREQUENCY): {
                     fprintf(
-                        stderr, "%s a frequency value cdir should never happen for now", __func__);
+                        stderr, "%s a frequency value cdir should never happen for now\n", __func__);
                     abort();
                 }
                 default: {
@@ -226,29 +226,29 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
                     return cdir->bound.bmin <= bound.bmin && cdir->bound.bmax >= bound.bmax;
                 }
                 case(VALUE_S): {
-                    fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
+                    fprintf(stderr, "%s a string value cdir should never happen for now\n", __func__);
                     abort();
                 }
                 case(VALUE_IL): {
                     fprintf(stderr,
-                        "%s a integer list value cdir should never happen for now",
+                        "%s a integer list value cdir should never happen for now\n",
                         __func__);
                     abort();
                 }
                 case(VALUE_SL): {
                     fprintf(stderr,
-                        "%s a string list value cdir should never happen for now",
+                        "%s a string list value cdir should never happen for now\n",
                         __func__);
                     abort();
                 }
                 case(VALUE_SEGMENTS): {
                     fprintf(
-                        stderr, "%s a segments value cdir should never happen for now", __func__);
+                        stderr, "%s a segments value cdir should never happen for now\n", __func__);
                     abort();
                 }
                 case(VALUE_FREQUENCY): {
                     fprintf(
-                        stderr, "%s a frequency value cdir should never happen for now", __func__);
+                        stderr, "%s a frequency value cdir should never happen for now\n", __func__);
                     abort();
                 }
                 default: {
@@ -332,14 +332,14 @@ void insert_sub(const struct sub* sub, struct lnode* lnode)
     if(lnode->sub_count == 0) {
         lnode->subs = calloc(1, sizeof(*lnode->subs));
         if(lnode->subs == NULL) {
-            fprintf(stderr, "%s calloc failed", __func__);
+            fprintf(stderr, "%s calloc failed\n", __func__);
             abort();
         }
     }
     else {
         struct sub** subs = realloc(lnode->subs, sizeof(*subs) * (lnode->sub_count + 1));
         if(sub == NULL) {
-            fprintf(stderr, "%s realloc failed", __func__);
+            fprintf(stderr, "%s realloc failed\n", __func__);
             abort();
         }
         lnode->subs = subs;
@@ -385,7 +385,7 @@ void update_partition_score(const struct config* config, struct pnode* pnode)
     const struct attr_domain* attr_domain = get_attr_domain(config, pnode->attr_var.var);
     if(attr_domain == NULL) {
         const char* attr = get_attr_for_id(config, pnode->attr_var.var);
-        fprintf(stderr, "Could not find attr_domain for attr '%s'", attr);
+        fprintf(stderr, "Could not find attr_domain for attr '%s'\n", attr);
         abort();
     }
     uint64_t loss = attr_domain->allow_undefined ? 1.0 : 0.0;
@@ -397,7 +397,7 @@ void insert_be_tree(
     const struct config* config, const struct sub* sub, struct cnode* cnode, struct cdir* cdir)
 {
     if(config == NULL) {
-        fprintf(stderr, "Config is NULL, required to insert in the be tree");
+        fprintf(stderr, "Config is NULL, required to insert in the be tree\n");
         abort();
     }
     bool foundPartition = false;
@@ -492,7 +492,7 @@ bool remove_sub(const struct sub* sub, struct lnode* lnode)
             else {
                 struct sub** subs = realloc(lnode->subs, sizeof(*lnode->subs) * lnode->sub_count);
                 if(subs == NULL) {
-                    fprintf(stderr, "%s realloc failed", __func__);
+                    fprintf(stderr, "%s realloc failed\n", __func__);
                     abort();
                 }
                 lnode->subs = subs;
@@ -507,13 +507,13 @@ void move(const struct sub* sub, struct lnode* origin, struct lnode* destination
 {
     bool isFound = remove_sub(sub, origin);
     if(!isFound) {
-        fprintf(stderr, "Could not find sub %" PRIu64, sub->id);
+        fprintf(stderr, "Could not find sub %\n" PRIu64, sub->id);
         abort();
     }
     if(destination->sub_count == 0) {
         destination->subs = calloc(1, sizeof(*destination->subs));
         if(destination->subs == NULL) {
-            fprintf(stderr, "%s calloc failed", __func__);
+            fprintf(stderr, "%s calloc failed\n", __func__);
             abort();
         }
     }
@@ -521,7 +521,7 @@ void move(const struct sub* sub, struct lnode* origin, struct lnode* destination
         struct sub** subs
             = realloc(destination->subs, sizeof(*destination->subs) * (destination->sub_count + 1));
         if(subs == NULL) {
-            fprintf(stderr, "%s realloc failed", __func__);
+            fprintf(stderr, "%s realloc failed\n", __func__);
             abort();
         }
         destination->subs = subs;
@@ -537,7 +537,7 @@ struct cdir* create_cdir(const struct config* config,
 {
     struct cdir* cdir = calloc(1, sizeof(*cdir));
     if(cdir == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
+        fprintf(stderr, "%s calloc failed\n", __func__);
         abort();
     }
     cdir->attr_var.attr = strdup(attr);
@@ -571,14 +571,14 @@ struct pnode* create_pdir(
     const struct config* config, const char* attr, betree_var_t variable_id, struct cnode* cnode)
 {
     if(cnode == NULL) {
-        fprintf(stderr, "cnode is NULL, cannot create a pdir and pnode");
+        fprintf(stderr, "cnode is NULL, cannot create a pdir and pnode\n");
         abort();
     }
     struct pdir* pdir = cnode->pdir;
     if(cnode->pdir == NULL) {
         pdir = calloc(1, sizeof(*pdir));
         if(pdir == NULL) {
-            fprintf(stderr, "%s pdir calloc failed", __func__);
+            fprintf(stderr, "%s pdir calloc failed\n", __func__);
             abort();
         }
         pdir->parent = cnode;
@@ -589,7 +589,7 @@ struct pnode* create_pdir(
 
     struct pnode* pnode = calloc(1, sizeof(*pnode));
     if(pnode == NULL) {
-        fprintf(stderr, "%s pnode calloc failed", __func__);
+        fprintf(stderr, "%s pnode calloc failed\n", __func__);
         abort();
     }
     pnode->cdir = NULL;
@@ -608,7 +608,7 @@ struct pnode* create_pdir(
         }
     }
     if(!found) {
-        fprintf(stderr, "No domain definition for attr %" PRIu64 " in config", variable_id);
+        fprintf(stderr, "No domain definition for attr %" PRIu64 " in config\n", variable_id);
         abort();
     }
     pnode->cdir = create_cdir_with_pnode_parent(config, pnode, bound);
@@ -616,14 +616,14 @@ struct pnode* create_pdir(
     if(pdir->pnode_count == 0) {
         pdir->pnodes = calloc(1, sizeof(*pdir->pnodes));
         if(pdir->pnodes == NULL) {
-            fprintf(stderr, "%s pnodes calloc failed", __func__);
+            fprintf(stderr, "%s pnodes calloc failed\n", __func__);
             abort();
         }
     }
     else {
         struct pnode** pnodes = realloc(pdir->pnodes, sizeof(*pnodes) * (pdir->pnode_count + 1));
         if(pnodes == NULL) {
-            fprintf(stderr, "%s realloc failed", __func__);
+            fprintf(stderr, "%s realloc failed\n", __func__);
             abort();
         }
         pdir->pnodes = pnodes;
@@ -642,7 +642,7 @@ size_t count_attr_in_lnode(betree_var_t variable_id, const struct lnode* lnode)
     for(size_t i = 0; i < lnode->sub_count; i++) {
         const struct sub* sub = lnode->subs[i];
         if(sub == NULL) {
-            fprintf(stderr, "%s, sub is NULL", __func__);
+            fprintf(stderr, "%s, sub is NULL\n", __func__);
             continue;
         }
         for(size_t j = 0; j < sub->attr_var_count; j++) {
@@ -817,23 +817,23 @@ bool is_atomic(const struct cdir* cdir)
             return cdir->bound.bmin == cdir->bound.bmax;
         }
         case(VALUE_S): {
-            fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
+            fprintf(stderr, "%s a string value cdir should never happen for now\n", __func__);
             abort();
         }
         case(VALUE_IL): {
-            fprintf(stderr, "%s a integer list value cdir should never happen for now", __func__);
+            fprintf(stderr, "%s a integer list value cdir should never happen for now\n", __func__);
             abort();
         }
         case(VALUE_SL): {
-            fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
+            fprintf(stderr, "%s a string list value cdir should never happen for now\n", __func__);
             abort();
         }
         case(VALUE_SEGMENTS): {
-            fprintf(stderr, "%s a segments value cdir should never happen for now", __func__);
+            fprintf(stderr, "%s a segments value cdir should never happen for now\n", __func__);
             abort();
         }
         case(VALUE_FREQUENCY): {
-            fprintf(stderr, "%s a frequency value cdir should never happen for now", __func__);
+            fprintf(stderr, "%s a frequency value cdir should never happen for now\n", __func__);
             abort();
         }
         default: {
@@ -847,7 +847,7 @@ struct lnode* make_lnode(const struct config* config, struct cnode* parent)
 {
     struct lnode* lnode = calloc(1, sizeof(*lnode));
     if(lnode == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
+        fprintf(stderr, "%s calloc failed\n", __func__);
         abort();
     }
     lnode->parent = parent;
@@ -861,7 +861,7 @@ struct cnode* make_cnode(const struct config* config, struct cdir* parent)
 {
     struct cnode* cnode = calloc(1, sizeof(*cnode));
     if(cnode == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
+        fprintf(stderr, "%s calloc failed\n", __func__);
         abort();
     }
     cnode->parent = parent;
@@ -899,7 +899,7 @@ struct value_bounds split_value_bound(struct value_bound bound)
                 rbound.imin = end;
             }
             else {
-                fprintf(stderr, "%s trying to split an unsplitable bound", __func__);
+                fprintf(stderr, "%s trying to split an unsplitable bound\n", __func__);
                 abort();
             }
             break;
@@ -923,7 +923,7 @@ struct value_bounds split_value_bound(struct value_bound bound)
                 rbound.fmin = end;
             }
             else {
-                fprintf(stderr, "%s trying to split an unsplitable bound", __func__);
+                fprintf(stderr, "%s trying to split an unsplitable bound\n", __func__);
                 abort();
             }
             break;
@@ -937,29 +937,29 @@ struct value_bounds split_value_bound(struct value_bound bound)
                 rbound.bmin = end;
             }
             else {
-                fprintf(stderr, "%s trying to split an unsplitable bound", __func__);
+                fprintf(stderr, "%s trying to split an unsplitable bound\n", __func__);
                 abort();
             }
             break;
         }
         case(VALUE_S): {
-            fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
+            fprintf(stderr, "%s a string value cdir should never happen for now\n", __func__);
             abort();
         }
         case(VALUE_IL): {
-            fprintf(stderr, "%s a integer list value cdir should never happen for now", __func__);
+            fprintf(stderr, "%s a integer list value cdir should never happen for now\n", __func__);
             abort();
         }
         case(VALUE_SL): {
-            fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
+            fprintf(stderr, "%s a string list value cdir should never happen for now\n", __func__);
             abort();
         }
         case(VALUE_SEGMENTS): {
-            fprintf(stderr, "%s a segment value cdir should never happen for now", __func__);
+            fprintf(stderr, "%s a segment value cdir should never happen for now\n", __func__);
             abort();
         }
         case(VALUE_FREQUENCY): {
-            fprintf(stderr, "%s a frequency value cdir should never happen for now", __func__);
+            fprintf(stderr, "%s a frequency value cdir should never happen for now\n", __func__);
             abort();
         }
         default: {
@@ -1189,7 +1189,7 @@ void try_remove_pnode_from_parent(const struct pnode* pnode)
             else {
                 struct pnode** pnodes = realloc(pdir->pnodes, sizeof(*pnodes) * pdir->pnode_count);
                 if(pnodes == NULL) {
-                    fprintf(stderr, "%s realloc failed", __func__);
+                    fprintf(stderr, "%s realloc failed\n", __func__);
                     abort();
                 }
                 pdir->pnodes = pnodes;
@@ -1314,7 +1314,7 @@ struct matched_subs* make_matched_subs()
 {
     struct matched_subs* matched_subs = calloc(1, sizeof(*matched_subs));
     if(matched_subs == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
+        fprintf(stderr, "%s calloc failed\n", __func__);
         abort();
     }
     matched_subs->sub_count = 0;
@@ -1332,7 +1332,7 @@ struct pred* make_pred(const char* attr, betree_var_t variable_id, struct value 
 {
     struct pred* pred = calloc(1, sizeof(*pred));
     if(pred == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
+        fprintf(stderr, "%s calloc failed\n", __func__);
         abort();
     }
     pred->attr_var.attr = strdup(attr);
@@ -1507,7 +1507,7 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
         if(sub->attr_var_count == 0) {
             sub->attr_vars = calloc(1, sizeof(*sub->attr_vars));
             if(sub->attr_vars == NULL) {
-                fprintf(stderr, "%s calloc failed", __func__);
+                fprintf(stderr, "%s calloc failed\n", __func__);
                 abort();
             }
         }
@@ -1515,7 +1515,7 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
             struct attr_var* attr_vars
                 = realloc(sub->attr_vars, sizeof(*sub->attr_vars) * (sub->attr_var_count + 1));
             if(sub == NULL) {
-                fprintf(stderr, "%s realloc failed", __func__);
+                fprintf(stderr, "%s realloc failed\n", __func__);
                 abort();
             }
             sub->attr_vars = attr_vars;
@@ -1529,7 +1529,7 @@ struct sub* make_empty_sub(betree_sub_t id)
 {
     struct sub* sub = calloc(1, sizeof(*sub));
     if(sub == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
+        fprintf(stderr, "%s calloc failed\n", __func__);
         abort();
     }
     sub->id = id;
@@ -1551,7 +1551,7 @@ struct event* make_event()
 {
     struct event* event = calloc(1, sizeof(*event));
     if(event == NULL) {
-        fprintf(stderr, "%s event calloc failed", __func__);
+        fprintf(stderr, "%s event calloc failed\n", __func__);
         abort();
     }
     event->pred_count = 0;
@@ -1565,7 +1565,7 @@ const struct event* make_simple_event_i(struct config* config, const char* attr,
     event->pred_count = 1;
     event->preds = calloc(1, sizeof(*event->preds));
     if(event->preds == NULL) {
-        fprintf(stderr, "%s preds calloc failed", __func__);
+        fprintf(stderr, "%s preds calloc failed\n", __func__);
         abort();
     }
     event->preds[0] = (struct pred*)make_simple_pred_str_i(config, attr, value);
@@ -1578,7 +1578,7 @@ const struct event* make_simple_event_s(struct config* config, const char* attr,
     event->pred_count = 1;
     event->preds = calloc(1, sizeof(*event->preds));
     if(event->preds == NULL) {
-        fprintf(stderr, "%s preds calloc failed", __func__);
+        fprintf(stderr, "%s preds calloc failed\n", __func__);
         abort();
     }
     event->preds[0] = (struct pred*)make_simple_pred_str_s(config, attr, value);
@@ -1592,7 +1592,7 @@ const struct event* make_simple_event_il(
     event->pred_count = 1;
     event->preds = calloc(1, sizeof(*event->preds));
     if(event->preds == NULL) {
-        fprintf(stderr, "%s preds calloc failed", __func__);
+        fprintf(stderr, "%s preds calloc failed\n", __func__);
         abort();
     }
     event->preds[0] = (struct pred*)make_simple_pred_str_il(config, attr, value);
@@ -1606,7 +1606,7 @@ const struct event* make_simple_event_sl(
     event->pred_count = 1;
     event->preds = calloc(1, sizeof(*event->preds));
     if(event->preds == NULL) {
-        fprintf(stderr, "%s preds calloc failed", __func__);
+        fprintf(stderr, "%s preds calloc failed\n", __func__);
         abort();
     }
     event->preds[0] = (struct pred*)make_simple_pred_str_sl(config, attr, value);
@@ -1636,7 +1636,7 @@ betree_var_t get_id_for_attr(struct config* config, const char* attr)
     if(config->attr_to_id_count == 0) {
         config->attr_to_ids = calloc(1, sizeof(*config->attr_to_ids));
         if(config->attr_to_ids == NULL) {
-            fprintf(stderr, "%s calloc failed", __func__);
+            fprintf(stderr, "%s calloc failed\n", __func__);
             abort();
         }
     }
@@ -1644,7 +1644,7 @@ betree_var_t get_id_for_attr(struct config* config, const char* attr)
         char** attr_to_ids
             = realloc(config->attr_to_ids, sizeof(*attr_to_ids) * (config->attr_to_id_count + 1));
         if(attr_to_ids == NULL) {
-            fprintf(stderr, "%s realloc failed", __func__);
+            fprintf(stderr, "%s realloc failed\n", __func__);
             abort();
         }
         config->attr_to_ids = attr_to_ids;
@@ -1658,7 +1658,7 @@ struct config* make_config(uint64_t lnode_max_cap, uint64_t partition_min_size)
 {
     struct config* config = calloc(1, sizeof(*config));
     if(config == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
+        fprintf(stderr, "%s calloc failed\n", __func__);
         abort();
     }
     config->attr_domain_count = 0;
@@ -1712,7 +1712,7 @@ struct attr_domain* make_attr_domain(
 {
     struct attr_domain* attr_domain = calloc(1, sizeof(*attr_domain));
     if(attr_domain == NULL) {
-        fprintf(stderr, "%s calloc faild", __func__);
+        fprintf(stderr, "%s calloc faild\n", __func__);
         abort();
     }
     attr_domain->attr_var.attr = strdup(attr);
@@ -1730,7 +1730,7 @@ void add_attr_domain(
     if(config->attr_domain_count == 0) {
         config->attr_domains = calloc(1, sizeof(*config->attr_domains));
         if(config->attr_domains == NULL) {
-            fprintf(stderr, "%s calloc failed", __func__);
+            fprintf(stderr, "%s calloc failed\n", __func__);
             abort();
         }
     }
@@ -1738,7 +1738,7 @@ void add_attr_domain(
         struct attr_domain** attr_domains = realloc(
             config->attr_domains, sizeof(*attr_domains) * (config->attr_domain_count + 1));
         if(attr_domains == NULL) {
-            fprintf(stderr, "%s realloc failed", __func__);
+            fprintf(stderr, "%s realloc failed\n", __func__);
             abort();
         }
         config->attr_domains = attr_domains;
@@ -1806,7 +1806,7 @@ void adjust_attr_domains(struct config* config,
     const char* name;
     switch(node->type) {
         case(AST_TYPE_SPECIAL_EXPR): {
-            fprintf(stderr, "TODO");
+            fprintf(stderr, "TODO\n");
             abort();
             return;
         }
@@ -1923,7 +1923,7 @@ void event_to_string(const struct event* event, char* buffer)
             }
             case(VALUE_SEGMENTS):
             case(VALUE_FREQUENCY): {
-                fprintf(stderr, "TODO");
+                fprintf(stderr, "TODO\n");
                 abort();
                 break;
             }
@@ -1956,7 +1956,7 @@ betree_str_t get_id_for_string(struct config* config, const char* string)
     if(config->string_value_count == 0) {
         config->string_values = calloc(1, sizeof(*config->string_values));
         if(config->string_values == NULL) {
-            fprintf(stderr, "%s calloc failed", __func__);
+            fprintf(stderr, "%s calloc failed\n", __func__);
             abort();
         }
     }
@@ -1964,7 +1964,7 @@ betree_str_t get_id_for_string(struct config* config, const char* string)
         char** string_values = realloc(
             config->string_values, sizeof(*string_values) * (config->string_value_count + 1));
         if(string_values == NULL) {
-            fprintf(stderr, "%s realloc failed", __func__);
+            fprintf(stderr, "%s realloc failed\n", __func__);
             abort();
         }
         config->string_values = string_values;
@@ -1982,7 +1982,7 @@ bool is_variable_allow_undefined(const struct config* config, const betree_var_t
             return attr_domain->allow_undefined;
         }
     }
-    fprintf(stderr, "Missing attr domain for variable id %" PRIu64, variable_id);
+    fprintf(stderr, "Missing attr domain for variable id %\n" PRIu64, variable_id);
     abort();
     return false;
 }
@@ -2074,14 +2074,14 @@ void add_pred(struct pred* pred, struct event* event)
     if(event->pred_count == 0) {
         event->preds = calloc(1, sizeof(*event->preds));
         if(event->preds == NULL) {
-            fprintf(stderr, "%s calloc failed", __func__);
+            fprintf(stderr, "%s calloc failed\n", __func__);
             abort();
         }
     }
     else {
         struct pred** preds = realloc(event->preds, sizeof(*preds) * (event->pred_count + 1));
         if(preds == NULL) {
-            fprintf(stderr, "%s realloc failed", __func__);
+            fprintf(stderr, "%s realloc failed\n", __func__);
             abort();
         }
         event->preds = preds;
@@ -2153,7 +2153,7 @@ bool validate_event(const struct config* config, const struct event* event)
                 }
             }
             if(!found) {
-                fprintf(stderr, "Missing attribute: %s", attr_domain->attr_var.attr);
+                fprintf(stderr, "Missing attribute: %s\n", attr_domain->attr_var.attr);
                 return false;
             }
         }
