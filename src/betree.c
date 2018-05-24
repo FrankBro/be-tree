@@ -507,7 +507,7 @@ void move(const struct sub* sub, struct lnode* origin, struct lnode* destination
 {
     bool isFound = remove_sub(sub, origin);
     if(!isFound) {
-        fprintf(stderr, "Could not find sub %\n" PRIu64, sub->id);
+        fprintf(stderr, "Could not find sub %" PRIu64 "\n", sub->id);
         abort();
     }
     if(destination->sub_count == 0) {
@@ -1982,7 +1982,7 @@ bool is_variable_allow_undefined(const struct config* config, const betree_var_t
             return attr_domain->allow_undefined;
         }
     }
-    fprintf(stderr, "Missing attr domain for variable id %\n" PRIu64, variable_id);
+    fprintf(stderr, "Missing attr domain for variable id %" PRIu64 "\n", variable_id);
     abort();
     return false;
 }
@@ -2163,6 +2163,6 @@ bool validate_event(const struct config* config, const struct event* event)
 
 struct report make_empty_report()
 {
-    struct report report = { .expressions_evaluated = 0, .expressions_matched = 0, .expressions_memoized = 0 };
+    struct report report = { .expressions_evaluated = 0, .expressions_matched = 0, .expressions_memoized = 0, .sub_expressions_memoized = 0 };
     return report;
 }
