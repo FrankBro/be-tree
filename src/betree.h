@@ -166,6 +166,7 @@ struct report {
     size_t expressions_evaluated;
     size_t expressions_matched;
     size_t expressions_memoized;
+    size_t sub_expressions_memoized;
 };
 
 struct matched_subs* make_matched_subs();

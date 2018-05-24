@@ -889,28 +889,30 @@ bool match_equality_expr(const struct config* config,
     }
 }
 
+static bool match_node_inner(struct config* config, const struct event* event, const struct ast_node* node, const struct memoize* memoize, struct report* report, bool is_top_level);
+
 bool match_bool_expr(
     struct config* config, const struct event* event, const struct ast_bool_expr bool_expr, const struct memoize* memoize)
 {
     switch(bool_expr.op) {
         case AST_BOOL_AND: {
-            bool lhs = match_node(config, event, bool_expr.binary.lhs, memoize, NULL);
+            bool lhs = match_node_inner(config, event, bool_expr.binary.lhs, memoize, NULL, false);
             if(lhs == false) {
                 return false;
             }
-            bool rhs = match_node(config, event, bool_expr.binary.rhs, memoize, NULL);
+            bool rhs = match_node_inner(config, event, bool_expr.binary.rhs, memoize, NULL, false);
             return rhs;
         }
         case AST_BOOL_OR: {
-            bool lhs = match_node(config, event, bool_expr.binary.lhs, memoize, NULL);
+            bool lhs = match_node_inner(config, event, bool_expr.binary.lhs, memoize, NULL, false);
             if(lhs == true) {
                 return true;
             }
-            bool rhs = match_node(config, event, bool_expr.binary.rhs, memoize, NULL);
+            bool rhs = match_node_inner(config, event, bool_expr.binary.rhs, memoize, NULL, false);
             return rhs;
         }
         case AST_BOOL_NOT: {
-            bool result = match_node(config, event, bool_expr.unary.expr, memoize, NULL);
+            bool result = match_node_inner(config, event, bool_expr.unary.expr, memoize, NULL, false);
             return !result;
         }
         case AST_BOOL_VARIABLE: {
@@ -930,23 +932,26 @@ bool match_bool_expr(
     }
 }
 
-void report_memoized(struct report* report)
+void report_memoized(struct report* report, bool is_top_level)
 {
     if(report != NULL) {
-        report->expressions_memoized++;
+        if(is_top_level) {
+            report->expressions_memoized++;
+        }
+        report->sub_expressions_memoized++;
     }
 }
 
-bool match_node(struct config* config, const struct event* event, const struct ast_node* node, const struct memoize* memoize, struct report* report)
+static bool match_node_inner(struct config* config, const struct event* event, const struct ast_node* node, const struct memoize* memoize, struct report* report, bool is_top_level)
 {
     // TODO allow undefined handling?
     if(memoize != NULL) {
         if(test_bit(memoize->pass, node->id)) {
-            report_memoized(report);
+            report_memoized(report, is_top_level);
             return true;
         }
         if(test_bit(memoize->fail, node->id)) {
-            report_memoized(report);
+            report_memoized(report, is_top_level);
             return false;
         }
     }
@@ -990,6 +995,11 @@ bool match_node(struct config* config, const struct event* event, const struct a
         }
     }
     return result;
+}
+
+bool match_node(struct config* config, const struct event* event, const struct ast_node* node, const struct memoize* memoize, struct report* report)
+{
+    return match_node_inner(config, event, node, memoize, report, true);
 }
 
 void get_variable_bound(
