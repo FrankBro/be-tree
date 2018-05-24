@@ -116,7 +116,7 @@ $(TOOL_OBJECTS): %: %.c build/tools
 
 .PHONY: test
 test: $(TEST_OBJECTS) build/tests/betree_tests
-	@sh ./tests/runtests.sh
+	@bash ./tests/runtests.sh
 
 build/tests:
 	mkdir -p build/tests
