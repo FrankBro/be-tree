@@ -189,7 +189,7 @@ int test_list_string()
 
 int test_special_frequency()
 {
-    struct config* config = make_default_config();
+    //struct config* config = make_default_config();
 
     // "within_frequency_cap(\"flight\", \"namespace\", 1, 2)"
 
@@ -198,7 +198,7 @@ int test_special_frequency()
 
 int test_special_segment()
 {
-    struct config* config = make_default_config();
+    //struct config* config = make_default_config();
 
     // "segment_within(1, 2)"
     // "segment_within(segment, 1, 2)"
@@ -210,7 +210,7 @@ int test_special_segment()
 
 int test_special_geo()
 {
-    struct config* config = make_default_config();
+    //struct config* config = make_default_config();
 
     // "geo_within_radius(1, 2, 3)"
     // "geo_within_radius(1., 2., 3.)"
@@ -220,9 +220,9 @@ int test_special_geo()
 
 int test_special_string()
 {
-    struct config* config = make_default_config();
-    add_attr_domain_s(config, "s", false);
-    add_attr_domain_s(config, "s2", false);
+    //struct config* config = make_default_config();
+    //add_attr_domain_s(config, "s", false);
+    //add_attr_domain_s(config, "s2", false);
 
     // "contains(s, \"abc\")"
     // "starts_with(s, \"abc\")"
