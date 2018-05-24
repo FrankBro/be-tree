@@ -161,11 +161,12 @@ int test_set_list_string()
 int test_list_integer()
 {
     struct config* config = make_default_config();
-    add_attr_domain_i(config, "i", 0, 10, false);
+    add_attr_domain_il(config, "il", false);
 
-    // "i one of (1, 2)"
-    // "i none of (1, 2)"
-    // "i all of (1, 2)"
+    mu_assert(test_same("il one of (1, 2)", "{\"il\": [1, 2]}", config), "integer list one of");
+    mu_assert(test_same("il none of (1, 2)", "{\"il\": [3, 4]}", config), "integer list none of");
+    mu_assert(test_same("il all of (1, 2)", "{\"il\": [1, 2]}", config), "integer list all of");
+    mu_assert(test_diff("il one of (1, 2)", "il one of (1, 3)", "{\"il\": [1, 2]}", config), "integer list diff");
 
     return 0;
 }
@@ -173,11 +174,15 @@ int test_list_integer()
 int test_list_string()
 {
     struct config* config = make_default_config();
-    add_attr_domain_s(config, "s", false);
+    add_attr_domain_sl(config, "sl", false);
 
     // "s one of (\"1\", \"2\")"
     // "s none of (\"1\", \"2\")"
     // "s all of (\"1\", \"2\")"
+    mu_assert(test_same("sl one of (\"1\", \"2\")", "{\"sl\": [\"1\", \"2\"]}", config), "string list one of");
+    mu_assert(test_same("sl none of (\"1\", \"2\")", "{\"sl\": [\"3\", \"4\"]}", config), "string list none of");
+    mu_assert(test_same("sl all of (\"1\", \"2\")", "{\"sl\": [\"1\", \"2\"]}", config), "string list all of");
+    mu_assert(test_diff("sl one of (\"1\", \"2\")", "sl one of (\"1\", \"3\")", "{\"sl\": [\"1\", \"2\"]}", config), "string list diff");
 
     return 0;
 }
