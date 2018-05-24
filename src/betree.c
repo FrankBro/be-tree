@@ -12,12 +12,12 @@
 #include "betree.h"
 #include "utils.h"
 
-bool match_sub(struct config* config, const struct event* event, const struct sub* sub, struct report* report)
+bool match_sub(struct config* config, const struct event* event, const struct sub* sub, struct report* report, const struct memoize* memoize)
 {
     if(sub == NULL) {
         return false;
     }
-    bool result = match_node(config, event, sub->expr);
+    bool result = match_node(config, event, sub->expr, memoize, report);
     if(report != NULL) {
         report->expressions_evaluated++;
         if(result == true) {
@@ -31,11 +31,11 @@ void check_sub(struct config* config,
     const struct event* event,
     const struct lnode* lnode,
     struct matched_subs* matched_subs,
-    struct report* report)
+    struct report* report, const struct memoize* memoize)
 {
     for(size_t i = 0; i < lnode->sub_count; i++) {
         const struct sub* sub = lnode->subs[i];
-        if(match_sub(config, event, sub, report) == true) {
+        if(match_sub(config, event, sub, report, memoize) == true) {
             if(matched_subs->sub_count == 0) {
                 matched_subs->subs = calloc(1, sizeof(*matched_subs->subs));
                 if(matched_subs->subs == NULL) {
@@ -76,7 +76,7 @@ void search_cdir(struct config* config,
     const struct event* event,
     struct cdir* cdir,
     struct matched_subs* matched_subs,
-    struct report* report);
+    struct report* report, const struct memoize* memoize);
 
 bool event_contains_variable(const struct event* event, betree_var_t variable_id)
 {
@@ -93,9 +93,9 @@ void match_be_tree(struct config* config,
     const struct event* event,
     const struct cnode* cnode,
     struct matched_subs* matched_subs,
-    struct report* report)
+    struct report* report, const struct memoize* memoize)
 {
-    check_sub(config, event, cnode->lnode, matched_subs, report);
+    check_sub(config, event, cnode->lnode, matched_subs, report, memoize);
     if(cnode->pdir != NULL) {
         for(size_t i = 0; i < cnode->pdir->pnode_count; i++) {
             struct pnode* pnode = cnode->pdir->pnodes[i];
@@ -106,7 +106,7 @@ void match_be_tree(struct config* config,
             }
             if(attr_domain->allow_undefined
                 || event_contains_variable(event, pnode->attr_var.var)) {
-                search_cdir(config, event, pnode->cdir, matched_subs, report);
+                search_cdir(config, event, pnode->cdir, matched_subs, report, memoize);
             }
         }
     }
@@ -264,13 +264,13 @@ void search_cdir(struct config* config,
     const struct event* event,
     struct cdir* cdir,
     struct matched_subs* matched_subs,
-    struct report* report)
+    struct report* report, const struct memoize* memoize)
 {
-    match_be_tree(config, event, cdir->cnode, matched_subs, report);
+    match_be_tree(config, event, cdir->cnode, matched_subs, report, memoize);
     if(is_event_enclosed(config, event, cdir->lchild))
-        search_cdir(config, event, cdir->lchild, matched_subs, report);
+        search_cdir(config, event, cdir->lchild, matched_subs, report, memoize);
     else if(is_event_enclosed(config, event, cdir->rchild))
-        search_cdir(config, event, cdir->rchild, matched_subs, report);
+        search_cdir(config, event, cdir->rchild, matched_subs, report, memoize);
 }
 
 bool is_used_cnode(betree_var_t variable_id, const struct cnode* cnode);
@@ -1999,8 +1999,25 @@ void betree_insert(struct config* config, betree_sub_t id, const char* expr, str
     }
     assign_variable_id(config, node);
     assign_str_id(config, node);
+    assign_pred_id(config, node);
     const struct sub* sub = make_sub(config, id, node);
     insert_be_tree(config, sub, cnode, NULL);
+}
+
+struct memoize make_memoize(size_t pred_count)
+{
+    size_t count = pred_count / 64 + 1;
+    struct memoize memoize = {
+        .pass = calloc(count, sizeof(*memoize.pass)),
+        .fail = calloc(count, sizeof(*memoize.fail)),
+    };
+    return memoize;
+}
+
+void free_memoize(struct memoize memoize)
+{
+    free(memoize.pass);
+    free(memoize.fail);
 }
 
 void betree_search(struct config* config,
@@ -2019,8 +2036,10 @@ void betree_search(struct config* config,
         fprintf(stderr, "Failed to validate event: %s\n", event_str);
         abort();
     }
-    match_be_tree(config, event, cnode, matched_subs, report);
+    struct memoize memoize = make_memoize(config->pred_count);
+    match_be_tree(config, event, cnode, matched_subs, report, &memoize);
     free_event(event);
+    free_memoize(memoize);
 }
 
 struct attr_var make_attr_var(const char* attr, struct config* config)
@@ -2144,6 +2163,6 @@ bool validate_event(const struct config* config, const struct event* event)
 
 struct report make_empty_report()
 {
-    struct report report = { .expressions_evaluated = 0, .expressions_matched = 0 };
+    struct report report = { .expressions_evaluated = 0, .expressions_matched = 0, .expressions_memoized = 0 };
     return report;
 }

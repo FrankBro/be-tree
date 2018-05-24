@@ -56,7 +56,7 @@ int test_cdir_split()
 
     const struct event* event = make_simple_event_i(config, "a", 0);
     struct matched_subs* matched_subs = make_matched_subs();
-    match_be_tree(config, event, cnode, matched_subs, NULL);
+    match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &search_done);
 
@@ -132,7 +132,7 @@ int test_pdir_split()
 
     const struct event* event = make_simple_event_i(config, "a0", 0);
     struct matched_subs* matched_subs = make_matched_subs();
-    match_be_tree(config, event, cnode, matched_subs, NULL);
+    match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &search_done);
 

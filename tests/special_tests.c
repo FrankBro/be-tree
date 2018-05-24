@@ -40,7 +40,7 @@ frequency(
     event->preds[0] = (struct pred*)make_simple_pred_i("now", 0, now);
     struct string_value cap_ns_value = { .string = strdup(cap_ns), .str = get_id_for_string(config, cap_ns) };
     event->preds[1] = (struct pred*)make_simple_pred_frequency(1, cap_type, cap_id, cap_ns_value, timestamp_defined, timestamp * usec, cap_value);
-    bool result = match_node(config, event, node);
+    bool result = match_node(config, event, node, NULL, NULL);
     free_config(config);
     free_ast_node(node);
     free_event((struct event*)event);
@@ -230,7 +230,7 @@ segment(bool has_not, enum segment_function_type func_type,
     event->preds[1] = (struct pred*)make_simple_pred_segment("seg_a", 1, 1, 30 * usec);
     event->preds[2] = (struct pred*)make_simple_pred_segment("seg_b", 2, 1, 10 * usec);
     event->preds[3] = (struct pred*)make_simple_pred_segment("segments_with_timestamp", 3, segment_id, segment_seconds * usec);
-    bool result = match_node(config, event, node);
+    bool result = match_node(config, event, node, NULL, NULL);
     free_config(config);
     free_ast_node(node);
     free_event((struct event*)event);
@@ -298,7 +298,7 @@ static bool geo(bool has_not, const char* latitude, const char* longitude, const
     event->preds = calloc(2, sizeof(*event->preds));
     event->preds[0] = (struct pred*)make_simple_pred_f("latitude", 0, latitude_value);
     event->preds[1] = (struct pred*)make_simple_pred_f("longitude", 1, longitude_value);
-    bool result = match_node(config, event, node);
+    bool result = match_node(config, event, node, NULL, NULL);
     free_config(config);
     free_ast_node(node);
     free_event((struct event*)event);
@@ -336,7 +336,7 @@ static bool contains(bool has_not, const char* attr, bool allow_undefined, const
     parse(expr, &node);
     const char* event_attr = allow_undefined ? "a" : attr;
     const struct event* event = make_simple_event_s(config, event_attr, value);
-    bool result = match_node(config, event, node);
+    bool result = match_node(config, event, node, NULL, NULL);
     free_config(config);
     free_ast_node(node);
     free_event((struct event*)event);
@@ -384,7 +384,7 @@ static bool starts_with(bool has_not, const char* attr, bool allow_undefined, co
     parse(expr, &node);
     const char* event_attr = allow_undefined ? "a" : attr;
     const struct event* event = make_simple_event_s(config, event_attr, value);
-    bool result = match_node(config, event, node);
+    bool result = match_node(config, event, node, NULL, NULL);
     free_config(config);
     free_ast_node(node);
     free_event((struct event*)event);
@@ -427,7 +427,7 @@ static bool ends_with(bool has_not, const char* attr, bool allow_undefined, cons
     parse(expr, &node);
     const char* event_attr = allow_undefined ? "a" : attr;
     const struct event* event = make_simple_event_s(config, event_attr, value);
-    bool result = match_node(config, event, node);
+    bool result = match_node(config, event, node, NULL, NULL);
     free_config(config);
     free_ast_node(node);
     free_event((struct event*)event);

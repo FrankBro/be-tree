@@ -7,6 +7,8 @@
 
 #include "ast.h"
 #include "betree.h"
+#include "memoize.h"
+#include "printer.h"
 #include "special.h"
 #include "utils.h"
 #include "value.h"
@@ -889,27 +891,27 @@ bool match_equality_expr(const struct config* config,
 }
 
 bool match_bool_expr(
-    struct config* config, const struct event* event, const struct ast_bool_expr bool_expr)
+    struct config* config, const struct event* event, const struct ast_bool_expr bool_expr, const struct memoize* memoize)
 {
     switch(bool_expr.op) {
         case AST_BOOL_AND: {
-            bool lhs = match_node(config, event, bool_expr.binary.lhs);
+            bool lhs = match_node(config, event, bool_expr.binary.lhs, memoize, NULL);
             if(lhs == false) {
                 return false;
             }
-            bool rhs = match_node(config, event, bool_expr.binary.rhs);
+            bool rhs = match_node(config, event, bool_expr.binary.rhs, memoize, NULL);
             return rhs;
         }
         case AST_BOOL_OR: {
-            bool lhs = match_node(config, event, bool_expr.binary.lhs);
+            bool lhs = match_node(config, event, bool_expr.binary.lhs, memoize, NULL);
             if(lhs == true) {
                 return true;
             }
-            bool rhs = match_node(config, event, bool_expr.binary.rhs);
+            bool rhs = match_node(config, event, bool_expr.binary.rhs, memoize, NULL);
             return rhs;
         }
         case AST_BOOL_NOT: {
-            bool result = match_node(config, event, bool_expr.unary.expr);
+            bool result = match_node(config, event, bool_expr.unary.expr, memoize, NULL);
             return !result;
         }
         case AST_BOOL_VARIABLE: {
@@ -929,33 +931,66 @@ bool match_bool_expr(
     }
 }
 
-bool match_node(struct config* config, const struct event* event, const struct ast_node* node)
+void report_memoized(struct report* report)
+{
+    if(report != NULL) {
+        report->expressions_memoized++;
+    }
+}
+
+bool match_node(struct config* config, const struct event* event, const struct ast_node* node, const struct memoize* memoize, struct report* report)
 {
     // TODO allow undefined handling?
+    if(memoize != NULL) {
+        if(test_bit(memoize->pass, node->id)) {
+            report_memoized(report);
+            return true;
+        }
+        if(test_bit(memoize->fail, node->id)) {
+            report_memoized(report);
+            return false;
+        }
+    }
+    bool result;
     switch(node->type) {
         case AST_TYPE_SPECIAL_EXPR: {
-            return match_special_expr(config, event, node->special_expr);
+            result = match_special_expr(config, event, node->special_expr);
+            break;
         }
         case AST_TYPE_BOOL_EXPR: {
-            return match_bool_expr(config, event, node->bool_expr);
+            result = match_bool_expr(config, event, node->bool_expr, memoize);
+            break;
         }
         case AST_TYPE_LIST_EXPR: {
-            return match_list_expr(config, event, node->list_expr);
+            result = match_list_expr(config, event, node->list_expr);
+            break;
         }
         case AST_TYPE_SET_EXPR: {
-            return match_set_expr(config, event, node->set_expr);
+            result = match_set_expr(config, event, node->set_expr);
+            break;
         }
         case AST_TYPE_NUMERIC_COMPARE_EXPR: {
-            return match_numeric_compare_expr(config, event, node->numeric_compare_expr);
+            result = match_numeric_compare_expr(config, event, node->numeric_compare_expr);
+            break;
         }
         case AST_TYPE_EQUALITY_EXPR: {
-            return match_equality_expr(config, event, node->equality_expr);
+            result = match_equality_expr(config, event, node->equality_expr);
+            break;
         }
         default: {
             switch_default_error("Invalid expr type");
             return false;
         }
     }
+    if(memoize != NULL) {
+        if(result) {
+            set_bit(memoize->pass, node->id);
+        }
+        else {
+            set_bit(memoize->fail, node->id);
+        }
+    }
+    return result;
 }
 
 void get_variable_bound(
@@ -1604,19 +1639,53 @@ bool eq_expr(const struct ast_node* a, const struct ast_node* b)
     }
 }
 
+void add_predicate(struct config* config, struct ast_node* node)
+{
+    if(config->pred_count == 0) {
+        config->preds = calloc(1, sizeof(*config->preds));
+        if(config->preds == NULL) {
+            fprintf(stderr, "%s calloc failed", __func__);
+            abort();
+        }
+    }
+    else {
+        struct ast_node** preds = realloc(
+            config->preds, sizeof(*preds) * (config->pred_count + 1));
+        if(preds == NULL) {
+            fprintf(stderr, "%s realloc failed", __func__);
+            abort();
+        }
+        config->preds = preds;
+    }
+    config->preds[config->pred_count] = node;
+    config->pred_count++;
+}
+
+betree_pred_t find_or_add_predicate(struct config* config, struct ast_node* node)
+{
+    for(size_t i = 0; i < config->pred_count; i++) {
+        struct ast_node* predicate = config->preds[i];
+        if(eq_expr(node, predicate)) {
+            return i;
+        }
+    }
+    add_predicate(config, node);
+    return config->pred_count - 1;
+}
+
 void assign_pred_id(struct config* config, struct ast_node* node)
 {
-    switch(node->type) {
-        case AST_TYPE_NUMERIC_COMPARE_EXPR:
-        case AST_TYPE_EQUALITY_EXPR:
-        case AST_TYPE_BOOL_EXPR:
-        case AST_TYPE_SET_EXPR:
-        case AST_TYPE_LIST_EXPR:
-        case AST_TYPE_SPECIAL_EXPR:
-        default:
-            switch_default_error("Invalid node type");
-            return;
+    if(node->type == AST_TYPE_BOOL_EXPR) {
+        if(node->bool_expr.op == AST_BOOL_NOT) {
+            assign_pred_id(config, node->bool_expr.unary.expr);
+        }
+        else if(node->bool_expr.op == AST_BOOL_OR || node->bool_expr.op == AST_BOOL_AND) {
+            assign_pred_id(config, node->bool_expr.binary.lhs);
+            assign_pred_id(config, node->bool_expr.binary.rhs);
+        }
     }
+    betree_pred_t id = find_or_add_predicate(config, node);
+    node->id = id;
 }
 
 // const char* ast_to_string(const struct ast_node* node)

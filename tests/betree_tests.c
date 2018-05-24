@@ -264,12 +264,12 @@ int test_match_single_cnode()
     struct matched_subs* matched_subs = make_matched_subs();
     {
         initialize_matched_subs(matched_subs);
-        match_be_tree(config, goodEvent, cnode, matched_subs, NULL);
+        match_be_tree(config, goodEvent, cnode, matched_subs, NULL, NULL);
         mu_assert(matched_subs->sub_count == 1 && matched_subs->subs[0] == sub_id, "goodEvent");
     }
     {
         initialize_matched_subs(matched_subs);
-        match_be_tree(config, wrongValueEvent, cnode, matched_subs, NULL);
+        match_be_tree(config, wrongValueEvent, cnode, matched_subs, NULL, NULL);
         mu_assert(matched_subs->sub_count == 0, "wrongValueEvent");
     }
     {
@@ -602,7 +602,7 @@ int test_match_deeper()
 
     struct matched_subs* matched_subs = make_matched_subs();
     initialize_matched_subs(matched_subs);
-    match_be_tree(config, event, cnode, matched_subs, NULL);
+    match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
     mu_assert(matched_subs->sub_count == 1 && matched_subs->subs[0] == 4, "goodEvent");
 
     free_event((struct event*)event);
@@ -626,7 +626,7 @@ int test_large_cdir_split()
 
     const struct event* event = make_simple_event_i(config, "a", 0);
     struct matched_subs* matched_subs = make_matched_subs();
-    match_be_tree(config, event, cnode, matched_subs, NULL);
+    match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
     mu_assert(matched_subs->sub_count == 1, "matched one");
 
@@ -716,7 +716,7 @@ int test_allow_undefined()
     }
 
     struct matched_subs* matched_subs = make_matched_subs();
-    match_be_tree(config, event, cnode, matched_subs, NULL);
+    match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
     mu_assert(cnode->lnode->sub_count == 1 && cnode->pdir != NULL && cnode->pdir->pnode_count == 1
             && cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3,
@@ -745,7 +745,7 @@ int test_allow_undefined()
     }
 
     matched_subs = make_matched_subs();
-    match_be_tree(config, event, cnode, matched_subs, NULL);
+    match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
     mu_assert(cnode->lnode->sub_count == 1 && cnode->pdir != NULL && cnode->pdir->pnode_count == 1
             && cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3,
@@ -828,7 +828,7 @@ int test_string()
 
     const struct event* event = make_simple_event_s(config, "a", "a");
     struct matched_subs* matched_subs = make_matched_subs();
-    match_be_tree(config, event, cnode, matched_subs, NULL);
+    match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
     mu_assert(matched_subs->sub_count == 1, "found our sub");
 
@@ -947,7 +947,7 @@ int test_integer_set()
 
         const struct event* event = make_simple_event_i(config, "a", 0);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
@@ -972,7 +972,7 @@ int test_integer_set()
 
         const struct event* event = make_simple_event_i(config, "a", 0);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "did not find our sub");
 
@@ -1006,7 +1006,7 @@ int test_integer_set_reverse()
         insert_be_tree(config, sub, cnode, NULL);
 
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
@@ -1021,7 +1021,7 @@ int test_integer_set_reverse()
         insert_be_tree(config, sub, cnode, NULL);
 
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "did not find our sub");
 
@@ -1055,7 +1055,7 @@ int test_string_set()
 
         const struct event* event = make_simple_event_s(config, "a", "a");
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
@@ -1080,7 +1080,7 @@ int test_string_set()
 
         const struct event* event = make_simple_event_s(config, "a", "a");
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "did not find our sub");
 
@@ -1115,7 +1115,7 @@ int test_string_set_reverse()
         insert_be_tree(config, sub, cnode, NULL);
 
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
@@ -1131,7 +1131,7 @@ int test_string_set_reverse()
         insert_be_tree(config, sub, cnode, NULL);
 
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "did not find our sub");
 
@@ -1173,7 +1173,7 @@ int test_integer_list()
 
         const struct event* event = make_simple_event_il(config, "a", event_integer_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
@@ -1205,7 +1205,7 @@ int test_integer_list()
 
         const struct event* event = make_simple_event_il(config, "a", event_integer_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "found no sub");
 
@@ -1237,7 +1237,7 @@ int test_integer_list()
 
         const struct event* event = make_simple_event_il(config, "a", event_integer_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
@@ -1269,7 +1269,7 @@ int test_integer_list()
 
         const struct event* event = make_simple_event_il(config, "a", event_integer_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "found no sub");
 
@@ -1301,7 +1301,7 @@ int test_integer_list()
 
         const struct event* event = make_simple_event_il(config, "a", event_integer_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
@@ -1333,7 +1333,7 @@ int test_integer_list()
 
         const struct event* event = make_simple_event_il(config, "a", event_integer_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "found no sub");
 
@@ -1375,7 +1375,7 @@ int test_string_list()
 
         const struct event* event = make_simple_event_sl(config, "a", event_string_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
@@ -1407,7 +1407,7 @@ int test_string_list()
 
         const struct event* event = make_simple_event_sl(config, "a", event_string_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "found no sub");
 
@@ -1439,7 +1439,7 @@ int test_string_list()
 
         const struct event* event = make_simple_event_sl(config, "a", event_string_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
@@ -1471,7 +1471,7 @@ int test_string_list()
 
         const struct event* event = make_simple_event_sl(config, "a", event_string_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "found no sub");
 
@@ -1503,7 +1503,7 @@ int test_string_list()
 
         const struct event* event = make_simple_event_sl(config, "a", event_string_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
@@ -1535,7 +1535,7 @@ int test_string_list()
 
         const struct event* event = make_simple_event_sl(config, "a", event_string_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL);
+        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "found no sub");
 

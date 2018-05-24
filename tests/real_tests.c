@@ -224,7 +224,7 @@ int test_real()
         struct event* event = events.events[i];
         struct matched_subs* matched_subs = make_matched_subs();
         struct report report = { .expressions_evaluated = 0, .expressions_matched = 0 };
-        match_be_tree(config, event, cnode, matched_subs, &report);
+        match_be_tree(config, event, cnode, matched_subs, &report, NULL);
 
         clock_gettime(CLOCK_MONOTONIC_RAW, &search_done);
         uint64_t search_us = (search_done.tv_sec - gen_event_done.tv_sec) * 1000000

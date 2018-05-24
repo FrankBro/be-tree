@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include "betree.h"
+#include "memoize.h"
 
 // Numeric comparison (<, <=, >, >=)
 // Work on integer and float
@@ -260,6 +261,7 @@ enum ast_node_type_e {
 };
 
 struct ast_node {
+    betree_pred_t id;
     enum ast_node_type_e type;
     union {
         struct ast_numeric_compare_expr numeric_compare_expr;
@@ -302,13 +304,14 @@ struct ast_node* ast_special_string_create(
     enum ast_special_string_e op, const char* name, const char* pattern);
 void free_ast_node(struct ast_node* node);
 
-bool match_node(struct config* config, const struct event* event, const struct ast_node* node);
+bool match_node(struct config* config, const struct event* event, const struct ast_node* node, const struct memoize* memoize, struct report* report);
 
 void get_variable_bound(
     const struct attr_domain* domain, const struct ast_node* node, struct value_bound* bound);
 
 void assign_variable_id(struct config* config, struct ast_node* node);
 void assign_str_id(struct config* config, struct ast_node* node);
+void assign_pred_id(struct config* config, struct ast_node* node);
 
 // const char* ast_to_string(const struct ast_node* node);
 struct string_value frequency_type_to_string(struct config* config, enum frequency_type_e type);

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "memoize.h"
 #include "value.h"
 
 typedef uint64_t betree_var_t;
@@ -93,6 +94,8 @@ struct attr_domain {
     bool allow_undefined;
 };
 
+struct ast_node;
+
 struct config {
     uint64_t lnode_max_cap;
     uint64_t partition_min_size;
@@ -103,6 +106,8 @@ struct config {
     char** attr_to_ids;
     size_t string_value_count;
     char** string_values;
+    betree_pred_t pred_count;
+    struct ast_node** preds;
 };
 
 struct config* make_config(uint64_t lnode_max_cap, uint64_t partition_min_size);
@@ -160,6 +165,7 @@ struct matched_subs {
 struct report {
     size_t expressions_evaluated;
     size_t expressions_matched;
+    size_t expressions_memoized;
 };
 
 struct matched_subs* make_matched_subs();
@@ -200,7 +206,7 @@ void insert_be_tree(
 void match_be_tree(struct config* config,
     const struct event* event,
     const struct cnode* cnode,
-    struct matched_subs* matched_subs, struct report* report);
+    struct matched_subs* matched_subs, struct report* report, const struct memoize* memoize);
 bool delete_be_tree(const struct config* config, struct sub* sub, struct cnode* cnode);
 
 void betree_insert(struct config* config, betree_sub_t id, const char* expr, struct cnode* cnode);
