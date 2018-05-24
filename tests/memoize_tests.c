@@ -115,8 +115,9 @@ int test_set_var_integer()
     struct config* config = make_default_config();
     add_attr_domain_i(config, "i", 0, 10, false);
 
-    // "i in (1,2)"
-    // "i not in (1,2)"
+    mu_assert(test_same("i in (1,2)", "{\"i\": 1}", config), "integer set var in");
+    mu_assert(test_same("i not in (1,2)", "{\"i\": 3}", config), "integer set var not in");
+    mu_assert(test_diff("i in (1, 3)", "i in (1, 2)", "{\"i\": 1}", config), "integer set var diff");
 
     return 0;
 }
@@ -126,8 +127,9 @@ int test_set_var_string()
     struct config* config = make_default_config();
     add_attr_domain_s(config, "s", false);
 
-    // "s in (\"1\",\"2\")"
-    // "s not in (\"1\",\"2\")"
+    mu_assert(test_same("s in (\"1\",\"2\")", "{\"s\": \"1\"}", config), "string set var in");
+    mu_assert(test_same("s not in (\"1\",\"2\")", "{\"s\": \"3\"}", config), "string set var not in");
+    mu_assert(test_diff("s in (\"1\",\"3\")", "s in (\"1\",\"2\")", "{\"s\": \"1\"}", config), "string set var diff");
 
     return 0;
 }
@@ -137,8 +139,9 @@ int test_set_list_integer()
     struct config* config = make_default_config();
     add_attr_domain_il(config, "il", false);
 
-    // "1 in il"
-    // "1 not in il"
+    mu_assert(test_same("1 in il", "{\"il\": [1, 2]}", config), "integer set list in");
+    mu_assert(test_same("1 not in il", "{\"il\": [2, 3]}", config), "integer set list not in");
+    mu_assert(test_diff("1 in il", "2 in il", "{\"il\": [1, 2]}", config), "integer set list diff");
 
     return 0;
 }
@@ -148,8 +151,9 @@ int test_set_list_string()
     struct config* config = make_default_config();
     add_attr_domain_sl(config, "sl", false);
 
-    // "\"1\" in sl"
-    // "\"1\" not in sl"
+    mu_assert(test_same("\"1\" in sl", "{\"sl\": [\"1\", \"2\"]}", config), "string set list in");
+    mu_assert(test_same("\"1\" not in sl", "{\"sl\": [\"2\", \"3\"]}", config), "string set list not in");
+    mu_assert(test_diff("\"1\" in sl", "\"2\" in sl", "{\"sl\": [\"1\", \"2\"]}", config), "string set list diff");
 
     return 0;
 }
