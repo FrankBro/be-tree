@@ -23,7 +23,7 @@ struct ast_node* ast_node_create()
 }
 
 struct ast_node* ast_numeric_compare_expr_create(
-    const enum ast_numeric_compare_e op, const char* name, struct numeric_compare_value value)
+    enum ast_numeric_compare_e op, const char* name, struct numeric_compare_value value)
 {
     struct ast_node* node = ast_node_create();
     node->type = AST_TYPE_NUMERIC_COMPARE_EXPR;
@@ -34,7 +34,7 @@ struct ast_node* ast_numeric_compare_expr_create(
 }
 
 struct ast_node* ast_equality_expr_create(
-    const enum ast_equality_e op, const char* name, struct equality_value value)
+    enum ast_equality_e op, const char* name, struct equality_value value)
 {
     struct ast_node* node = ast_node_create();
     node->type = AST_TYPE_EQUALITY_EXPR;
@@ -59,7 +59,7 @@ struct ast_node* ast_bool_expr_variable_create(const char* name)
     return node;
 }
 
-struct ast_node* ast_bool_expr_unary_create(const struct ast_node* expr)
+struct ast_node* ast_bool_expr_unary_create(struct ast_node* expr)
 {
     struct ast_node* node = ast_bool_expr_create(AST_BOOL_NOT);
     node->bool_expr.unary.expr = expr;
@@ -67,7 +67,7 @@ struct ast_node* ast_bool_expr_unary_create(const struct ast_node* expr)
 }
 
 struct ast_node* ast_bool_expr_binary_create(
-    const enum ast_bool_e op, const struct ast_node* lhs, const struct ast_node* rhs)
+    enum ast_bool_e op, struct ast_node* lhs, struct ast_node* rhs)
 {
     struct ast_node* node = ast_bool_expr_create(op);
     node->bool_expr.binary.lhs = lhs;
@@ -76,7 +76,7 @@ struct ast_node* ast_bool_expr_binary_create(
 }
 
 struct ast_node* ast_set_expr_create(
-    const enum ast_set_e op, struct set_left_value left_value, struct set_right_value right_value)
+    enum ast_set_e op, struct set_left_value left_value, struct set_right_value right_value)
 {
     struct ast_node* node = ast_node_create();
     node->type = AST_TYPE_SET_EXPR;
@@ -87,7 +87,7 @@ struct ast_node* ast_set_expr_create(
 }
 
 struct ast_node* ast_list_expr_create(
-    const enum ast_list_e op, const char* name, struct list_value list_value)
+    enum ast_list_e op, const char* name, struct list_value list_value)
 {
     struct ast_node* node = ast_node_create();
     node->type = AST_TYPE_LIST_EXPR;
@@ -272,12 +272,12 @@ void free_ast_node(struct ast_node* node)
         case AST_TYPE_BOOL_EXPR:
             switch(node->bool_expr.op) {
                 case AST_BOOL_NOT:
-                    free_ast_node((struct ast_node*)node->bool_expr.unary.expr);
+                    free_ast_node(node->bool_expr.unary.expr);
                     break;
                 case AST_BOOL_OR:
                 case AST_BOOL_AND:
-                    free_ast_node((struct ast_node*)node->bool_expr.binary.lhs);
-                    free_ast_node((struct ast_node*)node->bool_expr.binary.rhs);
+                    free_ast_node(node->bool_expr.binary.lhs);
+                    free_ast_node(node->bool_expr.binary.rhs);
                     break;
                 case AST_BOOL_VARIABLE:
                     free_attr_var(node->bool_expr.variable);
@@ -1207,13 +1207,13 @@ void assign_variable_id(struct config* config, struct ast_node* node)
         case(AST_TYPE_BOOL_EXPR): {
             switch(node->bool_expr.op) {
                 case AST_BOOL_NOT: {
-                    assign_variable_id(config, (struct ast_node*)node->bool_expr.unary.expr);
+                    assign_variable_id(config, node->bool_expr.unary.expr);
                     return;
                 }
                 case AST_BOOL_OR:
                 case AST_BOOL_AND: {
-                    assign_variable_id(config, (struct ast_node*)node->bool_expr.binary.lhs);
-                    assign_variable_id(config, (struct ast_node*)node->bool_expr.binary.rhs);
+                    assign_variable_id(config, node->bool_expr.binary.lhs);
+                    assign_variable_id(config, node->bool_expr.binary.rhs);
                     return;
                 }
                 case AST_BOOL_VARIABLE: {
@@ -1315,13 +1315,13 @@ void assign_str_id(struct config* config, struct ast_node* node)
         case(AST_TYPE_BOOL_EXPR): {
             switch(node->bool_expr.op) {
                 case AST_BOOL_NOT: {
-                    assign_str_id(config, (struct ast_node*)node->bool_expr.unary.expr);
+                    assign_str_id(config, node->bool_expr.unary.expr);
                     return;
                 }
                 case AST_BOOL_OR:
                 case AST_BOOL_AND: {
-                    assign_str_id(config, (struct ast_node*)node->bool_expr.binary.lhs);
-                    assign_str_id(config, (struct ast_node*)node->bool_expr.binary.rhs);
+                    assign_str_id(config, node->bool_expr.binary.lhs);
+                    assign_str_id(config, node->bool_expr.binary.rhs);
                     return;
                 }
                 case AST_BOOL_VARIABLE: {

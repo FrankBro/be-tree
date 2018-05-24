@@ -89,11 +89,11 @@ const struct ast_node* generate_expr(size_t complexity, size_t attr_min, size_t 
 {
     struct ast_node* last_combi_node;
     for(size_t j = 0; j < complexity; j++) {
-        const struct ast_node* bin_node = make_binary_expr(attr_min, attr_max, value_min, value_max);
+        struct ast_node* bin_node = (struct ast_node*)make_binary_expr(attr_min, attr_max, value_min, value_max);
 
         enum ast_bool_e boolop = random_in_range(0, 1);
         if(j == 0) {
-            const struct ast_node* another_bin_node = make_binary_expr(attr_min, attr_max, value_min, value_max);
+            struct ast_node* another_bin_node = (struct ast_node*)make_binary_expr(attr_min, attr_max, value_min, value_max);
             last_combi_node = ast_bool_expr_binary_create(boolop, bin_node, another_bin_node);
         }
         else {

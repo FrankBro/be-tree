@@ -77,12 +77,12 @@ enum ast_bool_e {
 struct ast_node;
 
 struct ast_bool_binary {
-    const struct ast_node* lhs;
-    const struct ast_node* rhs;
+    struct ast_node* lhs;
+    struct ast_node* rhs;
 };
 
 struct ast_bool_unary {
-    const struct ast_node* expr;
+    struct ast_node* expr;
 };
 
 struct ast_bool_expr {
@@ -272,34 +272,34 @@ struct ast_node {
 };
 
 struct ast_node* ast_numeric_compare_expr_create(
-    const enum ast_numeric_compare_e op, const char* name, struct numeric_compare_value value);
+    enum ast_numeric_compare_e op, const char* name, struct numeric_compare_value value);
 struct ast_node* ast_equality_expr_create(
-    const enum ast_equality_e op, const char* name, struct equality_value value);
+    enum ast_equality_e op, const char* name, struct equality_value value);
 struct ast_node* ast_set_expr_create(
-    const enum ast_set_e op, struct set_left_value left_value, struct set_right_value right_value);
+    enum ast_set_e op, struct set_left_value left_value, struct set_right_value right_value);
 struct ast_node* ast_list_expr_create(
-    const enum ast_list_e op, const char* name, struct list_value list_value);
+    enum ast_list_e op, const char* name, struct list_value list_value);
 struct ast_node* ast_bool_expr_variable_create(const char* name);
-struct ast_node* ast_bool_expr_unary_create(const struct ast_node* expr);
+struct ast_node* ast_bool_expr_unary_create(struct ast_node* expr);
 struct ast_node* ast_bool_expr_binary_create(
-    const enum ast_bool_e op, const struct ast_node* lhs, const struct ast_node* rhs);
+    enum ast_bool_e op, struct ast_node* lhs, struct ast_node* rhs);
 
-struct ast_node* ast_special_frequency_create(const enum ast_special_frequency_e op,
+struct ast_node* ast_special_frequency_create(enum ast_special_frequency_e op,
     const char* type,
     struct string_value ns,
     int64_t value,
     size_t length);
-struct ast_node* ast_special_segment_create(const enum ast_special_segment_e op,
+struct ast_node* ast_special_segment_create(enum ast_special_segment_e op,
     const char* name,
     betree_seg_t segment_id,
     int64_t seconds);
-struct ast_node* ast_special_geo_create(const enum ast_special_geo_e op,
+struct ast_node* ast_special_geo_create(enum ast_special_geo_e op,
     struct special_geo_value latitude,
     struct special_geo_value longitude,
     bool has_radius,
     struct special_geo_value radius);
 struct ast_node* ast_special_string_create(
-    const enum ast_special_string_e op, const char* name, const char* pattern);
+    enum ast_special_string_e op, const char* name, const char* pattern);
 void free_ast_node(struct ast_node* node);
 
 bool match_node(struct config* config, const struct event* event, const struct ast_node* node);
