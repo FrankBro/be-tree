@@ -8,7 +8,6 @@
 #include "ast.h"
 #include "betree.h"
 #include "memoize.h"
-#include "printer.h"
 #include "special.h"
 #include "utils.h"
 #include "value.h"
