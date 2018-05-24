@@ -234,15 +234,16 @@ int test_special_string()
 int test_bool()
 {
     struct config* config = make_default_config();
-    add_attr_domain_b(config, "b", false, true, false);
-    add_attr_domain_i(config, "i", 0, 10, false);
+    add_attr_domain_b(config, "b", false, true, true);
+    add_attr_domain_i(config, "i", 0, 10, true);
 
-    // "b"
-    // "not b"
-    // "b and b"
-    // "b or b"
-    // "not (i = 0)"
-    // "(i = 0) and (i = 0)"
+    mu_assert(test_same("b", "{\"b\": true}", config), "bool var");
+    mu_assert(test_same("not b", "{\"b\": false}", config), "bool not");
+    mu_assert(test_same("b and b", "{\"b\": true}", config), "bool and");
+    mu_assert(test_same("b or b", "{\"b\": true}", config), "bool or");
+    mu_assert(test_same("not (i = 0)", "{\"i\": 1}", config), "bool not complex");
+    mu_assert(test_same("(i = 0) and (i = 0)", "{\"i\": 0}", config), "bool and complex");
+    mu_assert(test_diff("(i = 0) or (i = 1)", "(i = 0) or (i = 2)", "{\"i\": 0}", config), "bool diff");
 
     return 0;
 }
