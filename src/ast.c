@@ -8,6 +8,7 @@
 #include "ast.h"
 #include "betree.h"
 #include "memoize.h"
+#include "printer.h"
 #include "special.h"
 #include "utils.h"
 #include "value.h"
@@ -892,27 +893,27 @@ bool match_equality_expr(const struct config* config,
 static bool match_node_inner(struct config* config, const struct event* event, const struct ast_node* node, const struct memoize* memoize, struct report* report, bool is_top_level);
 
 bool match_bool_expr(
-    struct config* config, const struct event* event, const struct ast_bool_expr bool_expr, const struct memoize* memoize)
+    struct config* config, const struct event* event, const struct ast_bool_expr bool_expr, const struct memoize* memoize, struct report* report)
 {
     switch(bool_expr.op) {
         case AST_BOOL_AND: {
-            bool lhs = match_node_inner(config, event, bool_expr.binary.lhs, memoize, NULL, false);
+            bool lhs = match_node_inner(config, event, bool_expr.binary.lhs, memoize, report, false);
             if(lhs == false) {
                 return false;
             }
-            bool rhs = match_node_inner(config, event, bool_expr.binary.rhs, memoize, NULL, false);
+            bool rhs = match_node_inner(config, event, bool_expr.binary.rhs, memoize, report, false);
             return rhs;
         }
         case AST_BOOL_OR: {
-            bool lhs = match_node_inner(config, event, bool_expr.binary.lhs, memoize, NULL, false);
+            bool lhs = match_node_inner(config, event, bool_expr.binary.lhs, memoize, report, false);
             if(lhs == true) {
                 return true;
             }
-            bool rhs = match_node_inner(config, event, bool_expr.binary.rhs, memoize, NULL, false);
+            bool rhs = match_node_inner(config, event, bool_expr.binary.rhs, memoize, report, false);
             return rhs;
         }
         case AST_BOOL_NOT: {
-            bool result = match_node_inner(config, event, bool_expr.unary.expr, memoize, NULL, false);
+            bool result = match_node_inner(config, event, bool_expr.unary.expr, memoize, report, false);
             return !result;
         }
         case AST_BOOL_VARIABLE: {
@@ -942,9 +943,31 @@ void report_memoized(struct report* report, bool is_top_level)
     }
 }
 
+bool MATCH_NODE_DEBUG = false;
+
 static bool match_node_inner(struct config* config, const struct event* event, const struct ast_node* node, const struct memoize* memoize, struct report* report, bool is_top_level)
 {
     // TODO allow undefined handling?
+    if(MATCH_NODE_DEBUG) {
+        const char* memoize_status;
+        if(memoize != NULL) {
+            if(test_bit(memoize->pass, node->id)) {
+                memoize_status = "PASS";
+            }
+            else if(test_bit(memoize->fail, node->id)) {
+                memoize_status = "FAIL";
+            }
+            else {
+                memoize_status = "NOPE";
+            }
+        }
+        else {
+            memoize_status = "NOPE";
+        }
+        const char* expr = ast_to_string(node);
+        printf("DEBUG: Pred: %lu, Memoize: %s, %s\n", node->id, memoize_status, expr);
+        free((char*)expr);
+    }
     if(memoize != NULL) {
         if(test_bit(memoize->pass, node->id)) {
             report_memoized(report, is_top_level);
@@ -962,7 +985,7 @@ static bool match_node_inner(struct config* config, const struct event* event, c
             break;
         }
         case AST_TYPE_BOOL_EXPR: {
-            result = match_bool_expr(config, event, node->bool_expr, memoize);
+            result = match_bool_expr(config, event, node->bool_expr, memoize, report);
             break;
         }
         case AST_TYPE_LIST_EXPR: {
@@ -1697,273 +1720,3 @@ void assign_pred_id(struct config* config, struct ast_node* node)
     node->id = id;
 }
 
-// const char* ast_to_string(const struct ast_node* node)
-// {
-//     char* expr;
-//     switch(node->type) {
-//         case(AST_TYPE_SPECIAL_EXPR): {
-//             invalid_expr("TODO");
-//             return NULL;
-//         }
-//         case(AST_TYPE_COMBI_EXPR): {
-//             const char* a = ast_to_string(node->combi_expr.lhs);
-//             const char* b = ast_to_string(node->combi_expr.rhs);
-//             switch(node->combi_expr.op) {
-//                 case AST_COMBI_AND: {
-//                     asprintf(&expr, "%s && %s", a, b);
-//                     break;
-//                 }
-//                 case AST_COMBI_OR: {
-//                     asprintf(&expr, "%s || %s", a, b);
-//                     break;
-//                 }
-//                 default: {
-//                     switch_default_error("Invalid combi operation");
-//                 }
-//             }
-//             free((char*)a);
-//             free((char*)b);
-//             return expr;
-//         }
-//         case(AST_TYPE_BOOL_EXPR): {
-//             switch(node->bool_expr.op) {
-//                 case AST_BOOL_VARIABLE: {
-//                     asprintf(&expr, "%s", node->bool_expr.name);
-//                     return expr;
-//                 }
-//                 case AST_BOOL_NOT: {
-//                     asprintf(&expr, "not %s", node->bool_expr.name);
-//                     return expr;
-//                 }
-//                 default: {
-//                     switch_default_error("Invalid bool operation");
-//                     return NULL;
-//                 }
-//             }
-//         }
-//         case(AST_TYPE_SET_EXPR): {
-//             switch(node->set_expr.left_value.value_type) {
-//                 case AST_SET_LEFT_VALUE_INTEGER: {
-//                     asprintf(&expr, "%lld ", node->set_expr.left_value.integer_value);
-//                     break;
-//                 }
-//                 case AST_SET_LEFT_VALUE_STRING: {
-//                     asprintf(&expr, "\"%s\" ", node->set_expr.left_value.string_value.string);
-//                     break;
-//                 }
-//                 case AST_SET_LEFT_VALUE_VARIABLE: {
-//                     asprintf(&expr, "%s ", node->set_expr.left_value.variable_value.name);
-//                     break;
-//                 }
-//                 default: {
-//                     switch_default_error("Invalid set left value type");
-//                 }
-//             }
-//             switch(node->set_expr.op) {
-//                 case AST_SET_NOT_IN: {
-//                     asprintf(&expr, "not in ");
-//                     break;
-//                 }
-//                 case AST_SET_IN: {
-//                     asprintf(&expr, "in ");
-//                     break;
-//                 }
-//                 default: {
-//                     switch_default_error("Invalid set operation");
-//                 }
-//             }
-//             switch(node->set_expr.right_value.value_type) {
-//                 case AST_SET_RIGHT_VALUE_INTEGER_LIST: {
-//                     const char* list =
-//                     integer_list_value_to_string(node->set_expr.right_value.integer_list_value);
-//                     asprintf(&expr, "(%s) ", list);
-//                     free((char*)list);
-//                     break;
-//                 }
-//                 case AST_SET_RIGHT_VALUE_STRING_LIST: {
-//                     const char* list =
-//                     string_list_value_to_string(node->set_expr.right_value.string_list_value);
-//                     asprintf(&expr, "(%s) ", list);
-//                     free((char*)list);
-//                     break;
-//                 }
-//                 case AST_SET_RIGHT_VALUE_VARIABLE: {
-//                     asprintf(&expr, "%s ", node->set_expr.right_value.variable_value.name);
-//                     break;
-//                 }
-//                 default: {
-//                     switch_default_error("Invalid set right value type");
-//                 }
-//             }
-//             return expr;
-//         }
-//         case(AST_TYPE_LIST_EXPR): {
-//             char* list;
-//             switch(node->list_expr.value.value_type) {
-//                 case AST_LIST_VALUE_INTEGER_LIST: {
-//                     const char* inner =
-//                     integer_list_value_to_string(node->list_expr.value.integer_list_value);
-//                     asprintf(&list, "(%s) ", inner);
-//                     free((char*)inner);
-//                     break;
-//                 }
-//                 case AST_LIST_VALUE_STRING_LIST: {
-//                     const char* inner =
-//                     string_list_value_to_string(node->list_expr.value.string_list_value);
-//                     asprintf(&list, "(%s) ", inner);
-//                     free((char*)inner);
-//                     break;
-//                 }
-//                 default: {
-//                     switch_default_error("Invalid list value type");
-//                 }
-//             }
-//             char* op;
-//             switch(node->list_expr.op) {
-//                 case AST_LIST_ONE_OF: {
-//                     asprintf(&op, "one of ");
-//                     break;
-//                 }
-//                 case AST_LIST_NONE_OF: {
-//                     asprintf(&op, "none of ");
-//                     break;
-//                 }
-//                 case AST_LIST_ALL_OF: {
-//                     asprintf(&op, "all of ");
-//                     break;
-//                 }
-//                 default: {
-//                     switch_default_error("Invalid list operation");
-//                 }
-//             }
-//             asprintf(&expr, "%s %s %s", node->list_expr.name, op, list);
-//             free(list);
-//             free(op);
-//             return expr;
-//         }
-//         case(AST_TYPE_EQUALITY_EXPR): {
-//             switch(node->equality_expr.op) {
-//                 case AST_EQUALITY_EQ: {
-//                     switch(node->equality_expr.value.value_type) {
-//                         case AST_EQUALITY_VALUE_INTEGER: {
-//                             asprintf(&expr, "%s = %lld", node->equality_expr.name,
-//                             node->equality_expr.value.integer_value); return expr;
-//                         }
-//                         case AST_EQUALITY_VALUE_FLOAT: {
-//                             asprintf(&expr, "%s = %.2f", node->equality_expr.name,
-//                             node->equality_expr.value.float_value); return expr;
-//                         }
-//                         case AST_EQUALITY_VALUE_STRING: {
-//                             asprintf(&expr, "%s = \"%s\"", node->equality_expr.name,
-//                             node->equality_expr.value.string_value.string); return expr;
-//                         }
-//                         default: {
-//                             switch_default_error("Invalid equality value type");
-//                             return NULL;
-//                         }
-//                     }
-//                 }
-//                 case AST_EQUALITY_NE: {
-//                     switch(node->equality_expr.value.value_type) {
-//                         case AST_EQUALITY_VALUE_INTEGER: {
-//                             asprintf(&expr, "%s <> %lld", node->equality_expr.name,
-//                             node->equality_expr.value.integer_value); return expr;
-//                         }
-//                         case AST_EQUALITY_VALUE_FLOAT: {
-//                             asprintf(&expr, "%s <> %.2f", node->equality_expr.name,
-//                             node->equality_expr.value.float_value); return expr;
-//                         }
-//                         case AST_EQUALITY_VALUE_STRING: {
-//                             asprintf(&expr, "%s <> \"%s\"", node->equality_expr.name,
-//                             node->equality_expr.value.string_value.string); return expr;
-//                         }
-//                         default: {
-//                             switch_default_error("Invalid equality value type");
-//                             return NULL;
-//                         }
-//                     }
-//                 }
-//                 default: {
-//                     switch_default_error("Invalid equality operation");
-//                     return NULL;
-//                 }
-//             }
-//         }
-//         case(AST_TYPE_NUMERIC_COMPARE_EXPR): {
-//             switch(node->numeric_compare_expr.op) {
-//                 case AST_NUMERIC_COMPARE_LT: {
-//                     switch(node->numeric_compare_expr.value.value_type) {
-//                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-//                             asprintf(&expr, "%s < %lld", node->numeric_compare_expr.name,
-//                             node->numeric_compare_expr.value.integer_value); return expr;
-//                         }
-//                         case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-//                             asprintf(&expr, "%s < %.2f", node->numeric_compare_expr.name,
-//                             node->numeric_compare_expr.value.float_value); return expr;
-//                         }
-//                         default: {
-//                             switch_default_error("Invalid numeric compare value type");
-//                             return NULL;
-//                         }
-//                     }
-//                 }
-//                 case AST_NUMERIC_COMPARE_LE: {
-//                     switch(node->numeric_compare_expr.value.value_type) {
-//                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-//                             asprintf(&expr, "%s <= %lld", node->numeric_compare_expr.name,
-//                             node->numeric_compare_expr.value.integer_value); return expr;
-//                         }
-//                         case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-//                             asprintf(&expr, "%s <= %.2f", node->numeric_compare_expr.name,
-//                             node->numeric_compare_expr.value.float_value); return expr;
-//                         }
-//                         default: {
-//                             switch_default_error("Invalid numeric compare value type");
-//                             return NULL;
-//                         }
-//                     }
-//                 }
-//                 case AST_NUMERIC_COMPARE_GT: {
-//                     switch(node->numeric_compare_expr.value.value_type) {
-//                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-//                             asprintf(&expr, "%s > %lld", node->numeric_compare_expr.name,
-//                             node->numeric_compare_expr.value.integer_value); return expr;
-//                         }
-//                         case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-//                             asprintf(&expr, "%s > %.2f", node->numeric_compare_expr.name,
-//                             node->numeric_compare_expr.value.float_value); return expr;
-//                         }
-//                         default: {
-//                             switch_default_error("Invalid numeric compare value type");
-//                             return NULL;
-//                         }
-//                     }
-//                 }
-//                 case AST_NUMERIC_COMPARE_GE: {
-//                     switch(node->numeric_compare_expr.value.value_type) {
-//                         case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-//                             asprintf(&expr, "%s >= %lld", node->numeric_compare_expr.name,
-//                             node->numeric_compare_expr.value.integer_value); return expr;
-//                         }
-//                         case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-//                             asprintf(&expr, "%s >= %.2f", node->numeric_compare_expr.name,
-//                             node->numeric_compare_expr.value.float_value); return expr;
-//                         }
-//                         default: {
-//                             switch_default_error("Invalid numeric compare value type");
-//                             return NULL;
-//                         }
-//                     }
-//                 }
-//                 default: {
-//                     switch_default_error("Invalid numeric compare operation");
-//                     return NULL;
-//                 }
-//             }
-//         }
-//         default: {
-//             switch_default_error("Invalid expr type");
-//             return NULL;
-//         }
-//     }
-// }

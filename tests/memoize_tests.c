@@ -45,6 +45,16 @@ bool test_diff(const char* expr_a, const char* expr_b, const char* event, struct
       report.expressions_memoized == 0;
 }
 
+bool test_same_sub(const char* expr_a, const char* expr_b, const char* event, size_t memoized, struct config* config)
+{
+    struct report report = test(expr_a, expr_b, event, config);
+    return
+      report.expressions_evaluated == 2 &&
+      report.expressions_matched == 2 &&
+      report.expressions_memoized == 0 &&
+      report.sub_expressions_memoized == memoized;
+}
+
 int test_numeric_compare_integer()
 {
     struct config* config = make_default_config();
@@ -176,9 +186,6 @@ int test_list_string()
     struct config* config = make_default_config();
     add_attr_domain_sl(config, "sl", false);
 
-    // "s one of (\"1\", \"2\")"
-    // "s none of (\"1\", \"2\")"
-    // "s all of (\"1\", \"2\")"
     mu_assert(test_same("sl one of (\"1\", \"2\")", "{\"sl\": [\"1\", \"2\"]}", config), "string list one of");
     mu_assert(test_same("sl none of (\"1\", \"2\")", "{\"sl\": [\"3\", \"4\"]}", config), "string list none of");
     mu_assert(test_same("sl all of (\"1\", \"2\")", "{\"sl\": [\"1\", \"2\"]}", config), "string list all of");
@@ -248,6 +255,26 @@ int test_bool()
     return 0;
 }
 
+extern bool MATCH_NODE_DEBUG;
+
+int test_sub()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_i(config, "i", 0, 10, true);
+    add_attr_domain_b(config, "b", false, true, true);
+    add_attr_domain_il(config, "il", true);
+    add_attr_domain_sl(config, "sl", true);
+
+    mu_assert(test_same_sub("(i = 0) or (i = 1)", "(i = 0) or (i = 2)", "{\"i\": 0}", 1, config), "");
+    mu_assert(test_same_sub(
+        "((((not b) or (i = 6 and (\"s2\" in sl)))) and (il one of (2, 3)))",
+        "((((not b) or (i = 6 and (\"s2\" in sl)))) and (il one of (2, 4)))",
+        "{\"b\": false, \"i\": 6, \"sl\": [\"s1\",\"s2\"], \"il\": [1, 2]}",
+        1, config), "whole left side of and");
+
+    return 0;
+}
+
 int all_tests() 
 {
     mu_run_test(test_numeric_compare_integer);
@@ -266,6 +293,7 @@ int all_tests()
     mu_run_test(test_special_geo);
     mu_run_test(test_special_string);
     mu_run_test(test_bool);
+    mu_run_test(test_sub);
 
     return 0;
 }
