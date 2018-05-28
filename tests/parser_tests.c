@@ -65,27 +65,43 @@ int test_paren()
     return 0;
 }
 
-// int test_precedence()
-// {
-//     struct ast_node* node = NULL;
-//     parse("(a = 0 || b = 0 && c = 0 || d = 0", &node);
-// }
+int test_precedence()
+{
+    struct ast_node* a = NULL;
+    struct ast_node* b = NULL;
 
-// int test_to_string()
-// {
-//     struct ast_node* node = NULL;
+    parse("x and y and z", &a);
+    parse("(x and y) and z", &b);
+    mu_assert(eq_expr(a, b), "'and' is left-associative");
+    free_ast_node(a);
+    free_ast_node(b);
 
-//     {
-//         const char* expr = "a = 0 && b <> 0 && c > 0 || d >= 0 || e < 0 && f <= 0";
-//         parse(expr, &node);
-//         const char* to_string = ast_to_string(node);
-//         mu_assert(strcasecmp(expr, to_string) == 0, "");
-//         free_ast_node(node);
-//         free((char*)to_string);
-//     }
+    parse("x or y or z", &a);
+    parse("(x or y) or z", &b);
+    mu_assert(eq_expr(a, b), "'or' is left-associative");
+    free_ast_node(a);
+    free_ast_node(b);
 
-//     return 0;
-// }
+    parse("x or y and z", &a);
+    parse("x or (y and z)", &b);
+    mu_assert(eq_expr(a, b), "'and' has higher precedence than 'or'");
+    free_ast_node(a);
+    free_ast_node(b);
+
+    parse("(x or y) and z", &a);
+    parse("x or y and z", &b);
+    mu_assert(!eq_expr(a, b), "parentheses can be used to force higher precedence");
+    free_ast_node(a);
+    free_ast_node(b);
+
+    parse("not x or y and z", &a);
+    parse("(not x) or y and z", &b);
+    mu_assert(eq_expr(a, b), "'not' has the highest precedence");
+    free_ast_node(a);
+    free_ast_node(b);
+
+    return 0;
+}
 
 int test_float()
 {
@@ -425,8 +441,7 @@ int all_tests()
     mu_run_test(test_all_numeric_compare);
     mu_run_test(test_all_equality);
     mu_run_test(test_paren);
-    // mu_run_test(test_precedence);
-    // mu_run_test(test_to_string);
+    mu_run_test(test_precedence);
     mu_run_test(test_float);
     mu_run_test(test_bool);
     mu_run_test(test_string);

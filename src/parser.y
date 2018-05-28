@@ -82,8 +82,9 @@
 %type<special_geo_value> s_geo_expr_value
 
 %left TCEQ TCNE TCGT TCGE TCLT TCLE
-%left TAND TOR
-%left TNOT
+%left TOR
+%left TAND 
+%precedence TNOT
 
 %start program
 
