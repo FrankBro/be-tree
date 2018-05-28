@@ -304,7 +304,7 @@ struct ast_node* ast_special_string_create(
     enum ast_special_string_e op, const char* name, const char* pattern);
 void free_ast_node(struct ast_node* node);
 
-bool match_node(struct config* config, const struct event* event, const struct ast_node* node, const struct memoize* memoize, struct report* report);
+bool match_node(struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report);
 
 void get_variable_bound(
     const struct attr_domain* domain, const struct ast_node* node, struct value_bound* bound);

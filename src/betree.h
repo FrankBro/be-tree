@@ -207,10 +207,15 @@ void insert_be_tree(
 void match_be_tree(struct config* config,
     const struct event* event,
     const struct cnode* cnode,
-    struct matched_subs* matched_subs, struct report* report, const struct memoize* memoize);
+    struct matched_subs* matched_subs, struct report* report, struct memoize* memoize);
 bool delete_be_tree(const struct config* config, struct sub* sub, struct cnode* cnode);
 
 void betree_insert(struct config* config, betree_sub_t id, const char* expr, struct cnode* cnode);
+void betree_search_with_event(struct config* config,
+    struct event* event,
+    const struct cnode* cnode,
+    struct matched_subs* matched_subs,
+    struct report* report);
 void betree_search(struct config* config,
     const char* event,
     const struct cnode* cnode,

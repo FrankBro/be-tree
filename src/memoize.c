@@ -16,3 +16,4 @@ int test_bit(uint64_t A[], uint64_t k)
 {
     return ((A[k / 64] & (1 << (k % 64))) != 0);
 }
+

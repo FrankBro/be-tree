@@ -79,7 +79,7 @@ const char* set_left_value_to_string(struct set_left_value value)
             asprintf(&expr, "%ld", value.integer_value);
             break;
         case AST_SET_LEFT_VALUE_STRING:
-            asprintf(&expr, "\"%s\"", value.string_value);
+            asprintf(&expr, "\"%s\"", value.string_value.string);
             break;
         case AST_SET_LEFT_VALUE_VARIABLE:
             asprintf(&expr, "%s", value.variable_value.attr);
@@ -110,6 +110,9 @@ const char* set_right_value_to_string(struct set_right_value value)
             free((char*)list);
             break;
         }
+        default:
+            switch_default_error("Invalid set right value type");
+            break;
     }
     return expr;
 }

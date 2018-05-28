@@ -890,10 +890,10 @@ bool match_equality_expr(const struct config* config,
     }
 }
 
-static bool match_node_inner(struct config* config, const struct event* event, const struct ast_node* node, const struct memoize* memoize, struct report* report, bool is_top_level);
+static bool match_node_inner(struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report, bool is_top_level);
 
 bool match_bool_expr(
-    struct config* config, const struct event* event, const struct ast_bool_expr bool_expr, const struct memoize* memoize, struct report* report)
+    struct config* config, const struct event* event, const struct ast_bool_expr bool_expr, struct memoize* memoize, struct report* report)
 {
     switch(bool_expr.op) {
         case AST_BOOL_AND: {
@@ -945,11 +945,28 @@ void report_memoized(struct report* report, bool is_top_level)
 
 bool MATCH_NODE_DEBUG = false;
 
-static bool match_node_inner(struct config* config, const struct event* event, const struct ast_node* node, const struct memoize* memoize, struct report* report, bool is_top_level)
+void print_memoize(const struct memoize* memoize, size_t pred_count)
+{
+    printf("DEBUG: Pass ");
+    for(size_t i = 0; i < pred_count; i++) {
+        bool result = test_bit(memoize->pass, i);
+        printf("%d", result);
+    }
+    printf("\n");
+    printf("DEBUG: Fail ");
+    for(size_t i = 0; i < pred_count; i++) {
+        bool result = test_bit(memoize->fail, i);
+        printf("%d", result);
+    }
+    printf("\n");
+}
+
+static bool match_node_inner(struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report, bool is_top_level)
 {
     // TODO allow undefined handling?
     if(MATCH_NODE_DEBUG) {
         const char* memoize_status;
+        /*print_memoize(memoize, config->pred_count);*/
         if(memoize != NULL) {
             if(test_bit(memoize->pass, node->id)) {
                 memoize_status = "PASS";
@@ -1020,7 +1037,7 @@ static bool match_node_inner(struct config* config, const struct event* event, c
     return result;
 }
 
-bool match_node(struct config* config, const struct event* event, const struct ast_node* node, const struct memoize* memoize, struct report* report)
+bool match_node(struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report)
 {
     return match_node_inner(config, event, node, memoize, report, true);
 }

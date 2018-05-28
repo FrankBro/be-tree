@@ -20,6 +20,8 @@ struct events {
     struct event** events;
 };
 
+extern bool MATCH_NODE_DEBUG;
+
 void add_event(struct event* event, struct events* events)
 {
     if(events->count == 0) {
@@ -90,7 +92,7 @@ size_t read_betree_events(struct config* config, struct events* events)
 
     char line[LINE_MAX * 8];
     while(fgets(line, sizeof(line), f)) {
-        if(MAX_EVENTS != 0 && events->count == MAX_EVENTS - 1) {
+        if(MAX_EVENTS != 0 && events->count == MAX_EVENTS) {
             break;
         }
 
@@ -116,17 +118,17 @@ size_t read_betree_exprs(struct config* config, struct cnode* cnode)
     FILE* f = fopen("betree_exprs", "r");
 
     char line[LINE_MAX * 2];
-    betree_sub_t sub_id = 0;
+    betree_sub_t sub_id = 1;
     while(fgets(line, sizeof(line), f)) {
-        if(MAX_EXPRS != 0 && sub_id == MAX_EXPRS - 1) {
-            break;
-        }
         betree_insert(config, sub_id, line, cnode);
         sub_id++;
+        if(MAX_EXPRS != 0 && sub_id - 1 == MAX_EXPRS) {
+            break;
+        }
     }
 
     fclose(f);
-    return sub_id + 1;
+    return sub_id - 1;
 }
 
 void read_betree_defs(struct config* config)
@@ -216,7 +218,12 @@ int test_real()
     size_t event_count = read_betree_events(config, &events);
 
     uint64_t search_timings[MAX_EVENTS] = { 0 };
-    uint64_t sum = 0;
+    uint64_t search_us_sum = 0;
+    uint64_t evaluated_sum = 0;
+    uint64_t matched_sum = 0;
+    uint64_t memoized_sum = 0;
+
+    /*MATCH_NODE_DEBUG = true;*/
 
     for(size_t i = 0; i < events.count; i++) {
         clock_gettime(CLOCK_MONOTONIC_RAW, &gen_event_done);
@@ -224,29 +231,40 @@ int test_real()
         struct event* event = events.events[i];
         struct matched_subs* matched_subs = make_matched_subs();
         struct report report = { .expressions_evaluated = 0, .expressions_matched = 0 };
-        match_be_tree(config, event, cnode, matched_subs, &report, NULL);
+        betree_search_with_event(config, event, cnode, matched_subs, &report);
 
         clock_gettime(CLOCK_MONOTONIC_RAW, &search_done);
         uint64_t search_us = (search_done.tv_sec - gen_event_done.tv_sec) * 1000000
             + (search_done.tv_nsec - gen_event_done.tv_nsec) / 1000;
+        /*
         printf("    %05zu: Search took %" PRIu64 ", evaluated %zu expressions, matched %zu\n",
             i,
             search_us,
             report.expressions_evaluated,
             report.expressions_matched);
+        */
         search_timings[i] = search_us;
-        sum += search_us;
+        search_us_sum += search_us;
+        evaluated_sum += report.expressions_evaluated;
+        matched_sum += report.expressions_matched;
+        memoized_sum += report.sub_expressions_memoized;
         free_matched_subs(matched_subs);
-        free_event((struct event*)event);
     }
 
     (void)search_timings;
 
-    double average = (double)sum / (double)MAX_EVENTS;
-    printf("For %zu expressions, %zu events, we have an average match time of %f us\n",
+    double search_us_average = (double)search_us_sum / (double)MAX_EVENTS;
+    double evaluated_average = (double)evaluated_sum / (double)MAX_EVENTS;
+    double matched_average = (double)matched_sum / (double)MAX_EVENTS;
+    double memoized_average = (double)memoized_sum / (double)MAX_EVENTS;
+    printf("%zu expressions, %zu events, %zu preds. Average: time %.2fus, evaluated %.2f, matched %.2f, memoized %.2f\n",
         expr_count,
         event_count,
-        average);
+        config->pred_count,
+        search_us_average,
+        evaluated_average,
+        matched_average,
+        memoized_average);
     // DEBUG
     write_dot_file(config, cnode);
     // DEBUG
