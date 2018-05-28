@@ -31,10 +31,15 @@ const char* integer_list_value_to_string(struct integer_list_value list)
 {
     char* string;
     for(size_t i = 0; i < list.count; i++) {
+        char* new_string;
         if(i != 0) {
-            asprintf(&string, ", ");
+            asprintf(&new_string, "%s, %ld", string, list.integers[i]);
+            free(string);
         }
-        asprintf(&string, "%" PRIu64, list.integers[i]);
+        else {
+            asprintf(&new_string, "%ld", list.integers[i]);
+        }
+        string = new_string;
     }
     return string;
 }
@@ -65,10 +70,15 @@ const char* string_list_value_to_string(struct string_list_value list)
 {
     char* string;
     for(size_t i = 0; i < list.count; i++) {
+        char* new_string;
         if(i != 0) {
-            asprintf(&string, ", ");
+            asprintf(&new_string, "%s, \"%s\"", string, list.strings[i].string);
+            free(string);
         }
-        asprintf(&string, "\"%s\"", list.strings[i].string);
+        else {
+            asprintf(&new_string, "\"%s\"", list.strings[i].string);
+        }
+        string = new_string;
     }
     return string;
 }
