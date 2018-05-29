@@ -95,6 +95,7 @@ struct attr_domain {
 };
 
 struct ast_node;
+struct pred_map;
 
 struct config {
     uint64_t lnode_max_cap;
@@ -106,8 +107,7 @@ struct config {
     char** attr_to_ids;
     size_t string_value_count;
     char** string_values;
-    betree_pred_t pred_count;
-    struct ast_node** preds;
+    struct pred_map* pred_map;
 };
 
 struct config* make_config(uint64_t lnode_max_cap, uint64_t partition_min_size);

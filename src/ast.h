@@ -4,6 +4,8 @@
 
 #include "betree.h"
 #include "memoize.h"
+#include "value.h"
+#include "var.h"
 
 // Numeric comparison (<, <=, >, >=)
 // Work on integer and float

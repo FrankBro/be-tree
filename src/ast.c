@@ -7,6 +7,7 @@
 
 #include "ast.h"
 #include "betree.h"
+#include "hashmap.h"
 #include "memoize.h"
 #include "printer.h"
 #include "special.h"
@@ -1688,52 +1689,8 @@ bool eq_expr(const struct ast_node* a, const struct ast_node* b)
     }
 }
 
-void add_predicate(struct config* config, struct ast_node* node)
-{
-    if(config->pred_count == 0) {
-        config->preds = calloc(1, sizeof(*config->preds));
-        if(config->preds == NULL) {
-            fprintf(stderr, "%s calloc failed", __func__);
-            abort();
-        }
-    }
-    else {
-        struct ast_node** preds = realloc(
-            config->preds, sizeof(*preds) * (config->pred_count + 1));
-        if(preds == NULL) {
-            fprintf(stderr, "%s realloc failed", __func__);
-            abort();
-        }
-        config->preds = preds;
-    }
-    config->preds[config->pred_count] = node;
-    config->pred_count++;
-}
-
-betree_pred_t find_or_add_predicate(struct config* config, struct ast_node* node)
-{
-    for(size_t i = 0; i < config->pred_count; i++) {
-        struct ast_node* predicate = config->preds[i];
-        if(eq_expr(node, predicate)) {
-            return i;
-        }
-    }
-    add_predicate(config, node);
-    return config->pred_count - 1;
-}
-
 void assign_pred_id(struct config* config, struct ast_node* node)
 {
-    if(node->type == AST_TYPE_BOOL_EXPR) {
-        if(node->bool_expr.op == AST_BOOL_NOT) {
-            assign_pred_id(config, node->bool_expr.unary.expr);
-        }
-        else if(node->bool_expr.op == AST_BOOL_OR || node->bool_expr.op == AST_BOOL_AND) {
-            assign_pred_id(config, node->bool_expr.binary.lhs);
-            assign_pred_id(config, node->bool_expr.binary.rhs);
-        }
-    }
-    betree_pred_t id = find_or_add_predicate(config, node);
-    node->id = id;
+    assign_pred(config->pred_map, node);
 }
 

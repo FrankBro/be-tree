@@ -10,6 +10,7 @@
 
 #include "ast.h"
 #include "betree.h"
+#include "hashmap.h"
 #include "utils.h"
 
 bool match_sub(struct config* config, const struct event* event, const struct sub* sub, struct report* report, struct memoize* memoize)
@@ -1669,6 +1670,7 @@ struct config* make_config(uint64_t lnode_max_cap, uint64_t partition_min_size)
     config->partition_min_size = partition_min_size;
     config->string_value_count = 0;
     config->string_values = NULL;
+    config->pred_map = make_pred_map();
     return config;
 }
 
@@ -2026,7 +2028,7 @@ void betree_search_with_event(struct config* config,
     struct matched_subs* matched_subs,
     struct report* report)
 {
-    struct memoize memoize = make_memoize(config->pred_count);
+    struct memoize memoize = make_memoize(config->pred_map->pred_count);
     match_be_tree(config, event, cnode, matched_subs, report, &memoize);
     free_event(event);
     free_memoize(memoize);

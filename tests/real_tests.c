@@ -9,6 +9,7 @@
 
 #include "betree.h"
 #include "debug.h"
+#include "hashmap.h"
 #include "minunit.h"
 #include "utils.h"
 
@@ -260,7 +261,7 @@ int test_real()
     printf("%zu expressions, %zu events, %zu preds. Average: time %.2fus, evaluated %.2f, matched %.2f, memoized %.2f\n",
         expr_count,
         event_count,
-        config->pred_count,
+        config->pred_map->pred_count,
         search_us_average,
         evaluated_average,
         matched_average,

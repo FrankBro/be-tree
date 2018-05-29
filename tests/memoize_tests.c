@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "ast.h"
+#include "hashmap.h"
 #include "parser.h"
 #include "minunit.h"
 #include "utils.h"
@@ -21,9 +22,8 @@ struct report test(const char* expr_a, const char* expr_b, const char* event, st
     betree_search(config, event, cnode, matched_subs, &report);
     free_cnode(cnode);
     free_matched_subs(matched_subs);
-    config->pred_count = 0;
-    free(config->preds);
-    config->preds = NULL;
+    free_pred_map(config->pred_map);
+    config->pred_map = make_pred_map();
     return report;
 }
 
