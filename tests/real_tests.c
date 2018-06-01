@@ -60,30 +60,6 @@ char* strip_chars(const char* string, const char* chars)
     return new_string;
 }
 
-struct integer_list_value string_to_integer_list_value(char* str)
-{
-    char* token;
-    char* rest = str;
-    struct integer_list_value list = { .count = 0, .integers = NULL };
-    while((token = strtok_r(rest, ",", &rest))) {
-        int64_t value = strtoll(token, NULL, 10);
-        add_integer_list_value(value, &list);
-    }
-    return list;
-}
-
-struct string_list_value string_to_string_list_value(struct config* config, char* str)
-{
-    char* token;
-    char* rest = str;
-    struct string_list_value list = { .count = 0, .strings = NULL };
-    while((token = strtok_r(rest, ",", &rest))) {
-        struct string_value value = { .string = token, .str = get_id_for_string(config, token) };
-        add_string_list_value(value, &list);
-    }
-    return list;
-}
-
 int event_parse(const char* text, struct event** event);
 
 size_t read_betree_events(struct config* config, struct events* events)
@@ -267,7 +243,7 @@ int test_real()
         matched_average,
         memoized_average);
     // DEBUG
-    write_dot_file(config, cnode);
+    /*write_dot_file(config, cnode);*/
     // DEBUG
 
 

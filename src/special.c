@@ -15,15 +15,17 @@ bool within_frequency_caps(const struct frequency_caps_list* caps,
     int64_t now)
 {
     for(size_t i = 0; i < caps->size; i++) {
-        if(caps->content[i].id == id && caps->content[i].namespace.str == namespace.str
-            && caps->content[i].type == type) {
+        if(caps->content[i].id == id && 
+            caps->content[i].namespace.var == namespace.var &&
+            caps->content[i].namespace.str == namespace.str &&
+            caps->content[i].type == type) {
             if(length <= 0) {
                 return value > caps->content[i].value;
             }
             else if(!caps->content[i].timestamp_defined) {
                 return true;
             }
-            else if((now - (caps->content[i].timestamp / 1000000)) > length) {
+            else if(((uint64_t)now - (caps->content[i].timestamp / 1000000)) > length) {
                 return true;
             }
             else if(value > caps->content[i].value) {

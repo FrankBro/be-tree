@@ -7,7 +7,6 @@
 #include "memoize.h"
 #include "value.h"
 
-typedef uint64_t betree_var_t;
 typedef uint64_t betree_sub_t;
 typedef uint64_t betree_seg_t;
 
@@ -97,6 +96,12 @@ struct attr_domain {
 struct ast_node;
 struct pred_map;
 
+struct string_map {
+    struct attr_var attr_var;
+    size_t string_value_count;
+    char** string_values;
+};
+
 struct config {
     uint64_t lnode_max_cap;
     uint64_t partition_min_size;
@@ -104,9 +109,9 @@ struct config {
     struct attr_domain** attr_domains;
     size_t attr_to_id_count;
     // TODO Make const
+    size_t string_map_count;
+    struct string_map* string_maps;
     char** attr_to_ids;
-    size_t string_value_count;
-    char** string_values;
     struct pred_map* pred_map;
 };
 
@@ -140,7 +145,7 @@ bool is_variable_allow_undefined(const struct config* config, const betree_var_t
 
 const char* get_attr_for_id(const struct config* config, betree_var_t variable_id);
 betree_var_t get_id_for_attr(struct config* config, const char* attr);
-betree_str_t get_id_for_string(struct config* config, const char* string);
+betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, const char* string);
 
 void free_sub(struct sub* sub);
 void free_event(struct event* event);
@@ -148,9 +153,6 @@ void free_event(struct event* event);
 bool sub_has_attribute(const struct sub* sub, uint64_t variable_id);
 bool sub_has_attribute_str(struct config* config, const struct sub* sub, const char* attr);
 bool sub_is_enclosed(const struct config* config, const struct sub* sub, const struct cdir* cdir);
-
-void insert_sub(const struct sub* sub, struct lnode* lnode);
-bool remove_sub(const struct sub* sub, struct lnode* lnode);
 
 struct lnode* make_lnode(const struct config* config, struct cnode* parent);
 void free_lnode(struct lnode* lnode);
@@ -171,44 +173,11 @@ struct report {
 
 struct matched_subs* make_matched_subs();
 void free_matched_subs(struct matched_subs* matched_subs);
-const struct pred* make_simple_pred_b(const char* attr, betree_var_t variable_id, bool bvalue);
-const struct pred* make_simple_pred_i(const char* attr, betree_var_t variable_id, int64_t value);
-const struct pred* make_simple_pred_f(const char* attr, betree_var_t variable_id, double fvalue);
-const struct pred* make_simple_pred_s(
-    struct config* config, betree_var_t variable_id, const char* svalue);
-const struct pred* make_simple_pred_segment(
-    const char* attr, betree_var_t variable_id, int64_t id, int64_t timestamp);
-const struct pred* make_simple_pred_frequency(betree_var_t variable_id,
-    enum frequency_type_e type,
-    uint32_t id,
-    struct string_value ns,
-    bool timestamp_defined,
-    int64_t timestamp,
-    uint32_t cap_value);
-const struct pred* make_simple_pred_str_i(struct config* config, const char* attr, int64_t value);
-const struct pred* make_simple_pred_str_il(
-    struct config* config, const char* attr, struct integer_list_value value);
-const struct pred* make_simple_pred_str_sl(
-    struct config* config, const char* attr, struct string_list_value value);
 void fill_pred(struct sub* sub, const struct ast_node* expr);
 struct sub* make_empty_sub(betree_sub_t id);
-const struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* expr);
+struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* expr);
 struct event* make_event();
-const struct event* make_simple_event_i(struct config* config, const char* attr, int64_t value);
-const struct event* make_simple_event_s(struct config* config, const char* attr, const char* value);
-const struct event* make_simple_event_il(
-    struct config* config, const char* attr, struct integer_list_value value);
-const struct event* make_simple_event_sl(
-    struct config* config, const char* attr, struct string_list_value value);
 void event_to_string(const struct event* event, char* buffer);
-
-void insert_be_tree(
-    const struct config* config, const struct sub* sub, struct cnode* cnode, struct cdir* cdir);
-void match_be_tree(struct config* config,
-    const struct event* event,
-    const struct cnode* cnode,
-    struct matched_subs* matched_subs, struct report* report, struct memoize* memoize);
-bool delete_be_tree(const struct config* config, struct sub* sub, struct cnode* cnode);
 
 void betree_insert(struct config* config, betree_sub_t id, const char* expr, struct cnode* cnode);
 void betree_search_with_event(struct config* config,
@@ -221,6 +190,7 @@ void betree_search(struct config* config,
     const struct cnode* cnode,
     struct matched_subs* matched_subs,
     struct report* report);
+bool betree_delete(struct config* config, betree_sub_t id, struct cnode* cnode);
 
 struct attr_var make_attr_var(const char* attr, struct config* config);
 struct attr_var copy_attr_var(struct attr_var attr_var);
@@ -233,4 +203,10 @@ void fill_event(struct config* config, struct event* event);
 bool validate_event(const struct config* config, const struct event* event);
 
 struct report make_empty_report();
+struct event* make_event_from_string(struct config* config, const char* event_str);
+
+struct memoize make_memoize(size_t pred_count);
+void free_memoize(struct memoize memoize);
+void free_sub(struct sub* sub);
+
 

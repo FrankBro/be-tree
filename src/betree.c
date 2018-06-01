@@ -477,11 +477,11 @@ bool sub_has_attribute_str(struct config* config, const struct sub* sub, const c
     return sub_has_attribute(sub, variable_id);
 }
 
-bool remove_sub(const struct sub* sub, struct lnode* lnode)
+bool remove_sub(betree_sub_t sub, struct lnode* lnode)
 {
     for(size_t i = 0; i < lnode->sub_count; i++) {
         const struct sub* lnode_sub = lnode->subs[i];
-        if(sub->id == lnode_sub->id) {
+        if(sub == lnode_sub->id) {
             for(size_t j = i; j < lnode->sub_count - 1; j++) {
                 lnode->subs[j] = lnode->subs[j + 1];
             }
@@ -506,7 +506,7 @@ bool remove_sub(const struct sub* sub, struct lnode* lnode)
 
 void move(const struct sub* sub, struct lnode* origin, struct lnode* destination)
 {
-    bool isFound = remove_sub(sub, origin);
+    bool isFound = remove_sub(sub->id, origin);
     if(!isFound) {
         fprintf(stderr, "Could not find sub %" PRIu64 "\n", sub->id);
         abort();
@@ -1005,9 +1005,9 @@ void space_clustering(const struct config* config, struct cdir* cdir)
     update_cluster_capacity(config, lnode);
 }
 
-bool search_delete_cdir(const struct config* config, struct sub* sub, struct cdir* cdir);
+bool search_delete_cdir(struct config* config, struct sub* sub, struct cdir* cdir);
 
-bool delete_sub_from_leaf(const struct sub* sub, struct lnode* lnode)
+bool delete_sub_from_leaf(betree_sub_t sub, struct lnode* lnode)
 {
     return remove_sub(sub, lnode);
 }
@@ -1211,10 +1211,10 @@ void free_pnode(struct pnode* pnode)
     free(pnode);
 }
 
-bool delete_be_tree(const struct config* config, struct sub* sub, struct cnode* cnode)
+bool betree_delete_inner(struct config* config, struct sub* sub, struct cnode* cnode)
 {
     struct pnode* pnode = NULL;
-    bool isFound = delete_sub_from_leaf(sub, cnode->lnode);
+    bool isFound = delete_sub_from_leaf(sub->id, cnode->lnode);
     if(!isFound) {
         for(size_t i = 0; i < sub->attr_var_count; i++) {
             betree_var_t variable_id = sub->attr_vars[i].var;
@@ -1250,6 +1250,58 @@ bool delete_be_tree(const struct config* config, struct sub* sub, struct cnode* 
     return isFound;
 }
 
+struct sub* find_sub_id(betree_sub_t id, struct cnode* cnode);
+
+struct sub* find_sub_id_cdir(betree_sub_t id, struct cdir* cdir)
+{
+    if(cdir == NULL) {
+        return NULL;
+    }
+    struct sub* in_cnode = find_sub_id(id, cdir->cnode);
+    if(in_cnode != NULL) {
+        return in_cnode;
+    }
+    struct sub* in_lcdir = find_sub_id_cdir(id, cdir->lchild);
+    if(in_lcdir != NULL) {
+        return in_lcdir;
+    }
+    struct sub* in_rcdir = find_sub_id_cdir(id, cdir->rchild);
+    if(in_rcdir != NULL) {
+        return in_rcdir;
+    }
+    return NULL;
+}
+
+struct sub* find_sub_id(betree_sub_t id, struct cnode* cnode)
+{
+    if(cnode == NULL) {
+        return NULL;
+    }
+    for(size_t i = 0; i < cnode->lnode->sub_count; i++) {
+        if(cnode->lnode->subs[i]->id == id) {
+            return cnode->lnode->subs[i];
+        }
+    }
+    if(cnode->pdir != NULL) {
+        for(size_t i = 0; i < cnode->pdir->pnode_count; i++) {
+            struct sub* in_cdir = find_sub_id_cdir(id, cnode->pdir->pnodes[i]->cdir);
+            if(in_cdir != NULL) {
+                return in_cdir;
+            }
+        }
+    }
+    return NULL;
+}
+
+bool betree_delete(struct config* config, betree_sub_t id, struct cnode* cnode)
+{
+    struct sub* sub = find_sub_id(id, cnode);
+    betree_assert(sub != NULL, "Can't find sub");
+    bool found = betree_delete_inner(config, sub, cnode);
+    free_sub(sub);
+    return found;
+}
+
 bool is_empty(struct cdir* cdir)
 {
     return is_cdir_empty(cdir);
@@ -1282,7 +1334,7 @@ void try_remove_cdir_from_parent(struct cdir* cdir)
     }
 }
 
-bool search_delete_cdir(const struct config* config, struct sub* sub, struct cdir* cdir)
+bool search_delete_cdir(struct config* config, struct sub* sub, struct cdir* cdir)
 {
     bool isFound = false;
     if(sub_is_enclosed(config, sub, cdir->lchild)) {
@@ -1292,7 +1344,7 @@ bool search_delete_cdir(const struct config* config, struct sub* sub, struct cdi
         isFound = search_delete_cdir(config, sub, cdir->rchild);
     }
     else {
-        isFound = delete_be_tree(config, sub, cdir->cnode);
+        isFound = betree_delete_inner(config, sub, cdir->cnode);
     }
     if(isFound) {
         if(is_empty(cdir->lchild)) {
@@ -1340,106 +1392,6 @@ struct pred* make_pred(const char* attr, betree_var_t variable_id, struct value 
     pred->attr_var.var = variable_id;
     pred->value = value;
     return pred;
-}
-
-const struct pred* make_simple_pred_b(const char* attr, betree_var_t variable_id, bool bvalue)
-{
-    struct value value = { .value_type = VALUE_B, .bvalue = bvalue };
-    return make_pred(attr, variable_id, value);
-}
-
-const struct pred* make_simple_pred_i(const char* attr, betree_var_t variable_id, int64_t ivalue)
-{
-    struct value value = { .value_type = VALUE_I, .ivalue = ivalue };
-    return make_pred(attr, variable_id, value);
-}
-
-const struct pred* make_simple_pred_f(const char* attr, betree_var_t variable_id, double fvalue)
-{
-    struct value value = { .value_type = VALUE_F, .fvalue = fvalue };
-    return make_pred(attr, variable_id, value);
-}
-
-const struct pred* make_simple_pred_s(
-    struct config* config, betree_var_t variable_id, const char* svalue)
-{
-    struct value value = { .value_type = VALUE_S, .svalue = { .string = strdup(svalue) } };
-    value.svalue.str = get_id_for_string(config, svalue);
-    const char* attr = get_attr_for_id(config, variable_id);
-    return make_pred(attr, variable_id, value);
-}
-
-const struct pred* make_simple_pred_il(
-    const char* attr, betree_var_t variable_id, struct integer_list_value ilvalue)
-{
-    struct value value = { .value_type = VALUE_IL, .ilvalue = ilvalue };
-    return make_pred(attr, variable_id, value);
-}
-
-const struct pred* make_simple_pred_sl(
-    const char* attr, betree_var_t variable_id, struct string_list_value slvalue)
-{
-    struct value value = { .value_type = VALUE_SL, .slvalue = slvalue };
-    return make_pred(attr, variable_id, value);
-}
-
-const struct pred* make_simple_pred_segment(
-    const char* attr, betree_var_t variable_id, int64_t id, int64_t timestamp)
-{
-    struct segment segment = { .id = id, .timestamp = timestamp };
-    struct segments_list segments_list
-        = { .size = 1, .content = calloc(1, sizeof(*segments_list.content)) };
-    segments_list.content[0] = segment;
-    struct value value = { .value_type = VALUE_SEGMENTS, .segments_value = segments_list };
-    return make_pred(attr, variable_id, value);
-}
-
-const struct pred* make_simple_pred_frequency(betree_var_t variable_id,
-    enum frequency_type_e type,
-    uint32_t id,
-    struct string_value ns,
-    bool timestamp_defined,
-    int64_t timestamp,
-    uint32_t cap_value)
-{
-    struct frequency_cap cap = { .type = type,
-        .id = id,
-        .namespace = ns,
-        .timestamp_defined = timestamp_defined,
-        .timestamp = timestamp,
-        .value = cap_value };
-    struct frequency_caps_list caps_list
-        = { .size = 1, .content = calloc(1l, sizeof(*caps_list.content)) };
-    caps_list.content[0] = cap;
-    struct value value = { .value_type = VALUE_FREQUENCY, .frequency_value = caps_list };
-    return make_pred("frequency_caps", variable_id, value);
-}
-
-const struct pred* make_simple_pred_str_i(struct config* config, const char* attr, int64_t value)
-{
-    betree_var_t variable_id = get_id_for_attr(config, attr);
-    return make_simple_pred_i(attr, variable_id, value);
-}
-
-const struct pred* make_simple_pred_str_s(
-    struct config* config, const char* attr, const char* value)
-{
-    betree_var_t variable_id = get_id_for_attr(config, attr);
-    return make_simple_pred_s(config, variable_id, value);
-}
-
-const struct pred* make_simple_pred_str_il(
-    struct config* config, const char* attr, struct integer_list_value value)
-{
-    betree_var_t variable_id = get_id_for_attr(config, attr);
-    return make_simple_pred_il(attr, variable_id, value);
-}
-
-const struct pred* make_simple_pred_str_sl(
-    struct config* config, const char* attr, struct string_list_value value)
-{
-    betree_var_t variable_id = get_id_for_attr(config, attr);
-    return make_simple_pred_sl(attr, variable_id, value);
 }
 
 void fill_pred(struct sub* sub, const struct ast_node* expr)
@@ -1539,7 +1491,7 @@ struct sub* make_empty_sub(betree_sub_t id)
     return sub;
 }
 
-const struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* expr)
+struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* expr)
 {
     struct sub* sub = make_empty_sub(id);
     sub->expr = expr;
@@ -1557,60 +1509,6 @@ struct event* make_event()
     }
     event->pred_count = 0;
     event->preds = NULL;
-    return event;
-}
-
-const struct event* make_simple_event_i(struct config* config, const char* attr, int64_t value)
-{
-    struct event* event = (struct event*)make_event();
-    event->pred_count = 1;
-    event->preds = calloc(1, sizeof(*event->preds));
-    if(event->preds == NULL) {
-        fprintf(stderr, "%s preds calloc failed\n", __func__);
-        abort();
-    }
-    event->preds[0] = (struct pred*)make_simple_pred_str_i(config, attr, value);
-    return event;
-}
-
-const struct event* make_simple_event_s(struct config* config, const char* attr, const char* value)
-{
-    struct event* event = (struct event*)make_event();
-    event->pred_count = 1;
-    event->preds = calloc(1, sizeof(*event->preds));
-    if(event->preds == NULL) {
-        fprintf(stderr, "%s preds calloc failed\n", __func__);
-        abort();
-    }
-    event->preds[0] = (struct pred*)make_simple_pred_str_s(config, attr, value);
-    return event;
-}
-
-const struct event* make_simple_event_il(
-    struct config* config, const char* attr, struct integer_list_value value)
-{
-    struct event* event = (struct event*)make_event();
-    event->pred_count = 1;
-    event->preds = calloc(1, sizeof(*event->preds));
-    if(event->preds == NULL) {
-        fprintf(stderr, "%s preds calloc failed\n", __func__);
-        abort();
-    }
-    event->preds[0] = (struct pred*)make_simple_pred_str_il(config, attr, value);
-    return event;
-}
-
-const struct event* make_simple_event_sl(
-    struct config* config, const char* attr, struct string_list_value value)
-{
-    struct event* event = (struct event*)make_event();
-    event->pred_count = 1;
-    event->preds = calloc(1, sizeof(*event->preds));
-    if(event->preds == NULL) {
-        fprintf(stderr, "%s preds calloc failed\n", __func__);
-        abort();
-    }
-    event->preds[0] = (struct pred*)make_simple_pred_str_sl(config, attr, value);
     return event;
 }
 
@@ -1668,8 +1566,8 @@ struct config* make_config(uint64_t lnode_max_cap, uint64_t partition_min_size)
     config->attr_to_ids = NULL;
     config->lnode_max_cap = lnode_max_cap;
     config->partition_min_size = partition_min_size;
-    config->string_value_count = 0;
-    config->string_values = NULL;
+    config->string_map_count = 0;
+    config->string_maps = NULL;
     config->pred_map = make_pred_map();
     return config;
 }
@@ -1699,12 +1597,20 @@ void free_config(struct config* config)
         free(config->attr_domains);
         config->attr_domains = NULL;
     }
-    if(config->string_values != NULL) {
-        for(size_t i = 0; i < config->string_value_count; i++) {
-            free(config->string_values[i]);
+    if(config->string_maps != NULL) {
+        for(size_t i = 0; i < config->string_map_count; i++) {
+            free((char*)config->string_maps[i].attr_var.attr);
+            for(size_t j = 0; j < config->string_maps[i].string_value_count; j++) {
+                free(config->string_maps[i].string_values[j]);
+            }
+            free(config->string_maps[i].string_values);
         }
-        free(config->string_values);
-        config->string_values = NULL;
+        free(config->string_maps);
+        config->string_maps = NULL;
+    }
+    if(config->pred_map != NULL) {
+        free_pred_map(config->pred_map);
+        config->pred_map = NULL;
     }
     free(config);
 }
@@ -1943,37 +1849,74 @@ void event_to_string(const struct event* event, char* buffer)
     buffer[length] = '\0';
 }
 
-betree_str_t get_id_for_string(struct config* config, const char* string)
+void add_string_map(struct attr_var attr_var, struct config* config)
 {
-    char* copy = strdup(string);
-    for(size_t i = 0; copy[i]; i++) {
-        copy[i] = tolower(copy[i]);
-    }
-    for(size_t i = 0; i < config->string_value_count; i++) {
-        if(strcmp(config->string_values[i], copy) == 0) {
-            free(copy);
-            return i;
+    if(config->string_map_count == 0) {
+        config->string_maps = calloc(1, sizeof(*config->string_maps));
+        if(config->string_maps == NULL) {
+            fprintf(stderr, "%s calloc failed\n", __func__);
+            abort();
         }
     }
-    if(config->string_value_count == 0) {
-        config->string_values = calloc(1, sizeof(*config->string_values));
-        if(config->string_values == NULL) {
+    else {
+        struct string_map* string_maps = realloc(
+            config->string_maps, sizeof(*string_maps) * (config->string_map_count + 1));
+        if(string_maps == NULL) {
+            fprintf(stderr, "%s realloc failed\n", __func__);
+            abort();
+        }
+        config->string_maps = string_maps;
+    }
+    config->string_maps[config->string_map_count].attr_var.attr = strdup(attr_var.attr);
+    config->string_maps[config->string_map_count].attr_var.var = attr_var.var;
+    config->string_maps[config->string_map_count].string_value_count = 0;
+    config->string_maps[config->string_map_count].string_values = 0;
+    config->string_map_count++;
+}
+
+void add_to_string_map(struct string_map* string_map, char* copy)
+{
+    if(string_map->string_value_count == 0) {
+        string_map->string_values = calloc(1, sizeof(*string_map->string_values));
+        if(string_map->string_values == NULL) {
             fprintf(stderr, "%s calloc failed\n", __func__);
             abort();
         }
     }
     else {
         char** string_values = realloc(
-            config->string_values, sizeof(*string_values) * (config->string_value_count + 1));
+            string_map->string_values, sizeof(*string_values) * (string_map->string_value_count + 1));
         if(string_values == NULL) {
             fprintf(stderr, "%s realloc failed\n", __func__);
             abort();
         }
-        config->string_values = string_values;
+        string_map->string_values = string_values;
     }
-    config->string_values[config->string_value_count] = copy;
-    config->string_value_count++;
-    return config->string_value_count - 1;
+    string_map->string_values[string_map->string_value_count] = copy;
+    string_map->string_value_count++;
+}
+
+betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, const char* string)
+{
+    char* copy = strdup(string);
+    struct string_map* string_map = NULL;
+    for(size_t i = 0; i < config->string_map_count; i++) {
+        if(config->string_maps[i].attr_var.var == attr_var.var) {
+            string_map = &config->string_maps[i];
+            for(size_t j = 0; j < string_map->string_value_count; j++) {
+                if(strcmp(string_map->string_values[j], copy) == 0) {
+                    free(copy);
+                    return j;
+                }
+            }
+        }
+    }
+    if(string_map == NULL) {
+        add_string_map(attr_var, config);
+        string_map = &config->string_maps[config->string_map_count - 1];
+    }
+    add_to_string_map(string_map, copy);
+    return string_map->string_value_count - 1;
 }
 
 bool is_variable_allow_undefined(const struct config* config, const betree_var_t variable_id)
@@ -2002,7 +1945,7 @@ void betree_insert(struct config* config, betree_sub_t id, const char* expr, str
     assign_variable_id(config, node);
     assign_str_id(config, node);
     assign_pred_id(config, node);
-    const struct sub* sub = make_sub(config, id, node);
+    struct sub* sub = make_sub(config, id, node);
     insert_be_tree(config, sub, cnode, NULL);
 }
 
@@ -2034,11 +1977,7 @@ void betree_search_with_event(struct config* config,
     free_memoize(memoize);
 }
 
-void betree_search(struct config* config,
-    const char* event_str,
-    const struct cnode* cnode,
-    struct matched_subs* matched_subs,
-    struct report* report)
+struct event* make_event_from_string(struct config* config, const char* event_str)
 {
     struct event* event;
     if(event_parse(event_str, &event)) {
@@ -2050,6 +1989,16 @@ void betree_search(struct config* config,
         fprintf(stderr, "Failed to validate event: %s\n", event_str);
         abort();
     }
+    return event;
+}
+
+void betree_search(struct config* config,
+    const char* event_str,
+    const struct cnode* cnode,
+    struct matched_subs* matched_subs,
+    struct report* report)
+{
+    struct event* event = make_event_from_string(config, event_str);
     betree_search_with_event(config, event, cnode, matched_subs, report);
 }
 
@@ -2118,7 +2067,8 @@ void fill_event(struct config* config, struct event* event)
                 break;
             case VALUE_S: {
                 if(pred->value.svalue.str == -1ULL) {
-                    betree_str_t str = get_id_for_string(config, pred->value.svalue.string);
+                    betree_str_t str = get_id_for_string(config, pred->attr_var, pred->value.svalue.string);
+                    pred->value.svalue.var = pred->attr_var.var;
                     pred->value.svalue.str = str;
                 }
                 break;
@@ -2127,7 +2077,8 @@ void fill_event(struct config* config, struct event* event)
                 for(size_t j = 0; j < pred->value.slvalue.count; j++) {
                     if(pred->value.slvalue.strings[j].str == -1ULL) {
                         betree_str_t str
-                            = get_id_for_string(config, pred->value.slvalue.strings[j].string);
+                            = get_id_for_string(config, pred->attr_var, pred->value.slvalue.strings[j].string);
+                        pred->value.slvalue.strings[j].var = pred->attr_var.var;
                         pred->value.slvalue.strings[j].str = str;
                     }
                 }
@@ -2137,7 +2088,8 @@ void fill_event(struct config* config, struct event* event)
                 for(size_t j = 0; j < pred->value.frequency_value.size; j++) {
                     if(pred->value.frequency_value.content[j].namespace.str == -1ULL) {
                         betree_str_t str = get_id_for_string(
-                            config, pred->value.frequency_value.content[j].namespace.string);
+                            config, pred->attr_var, pred->value.frequency_value.content[j].namespace.string);
+                        pred->value.frequency_value.content[j].namespace.var = pred->attr_var.var;
                         pred->value.frequency_value.content[j].namespace.str = str;
                     }
                 }
@@ -2177,3 +2129,4 @@ struct report make_empty_report()
     struct report report = { .expressions_evaluated = 0, .expressions_matched = 0, .expressions_memoized = 0, .sub_expressions_memoized = 0 };
     return report;
 }
+

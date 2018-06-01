@@ -6,14 +6,19 @@
 #include "ast.h"
 #include "hashmap.h"
 #include "parser.h"
+#include "memoize.h"
 #include "minunit.h"
 #include "utils.h"
 #include "value.h"
 #include "var.h"
 
+extern bool MATCH_NODE_DEBUG;
 
 struct report test(const char* expr_a, const char* expr_b, const char* event, struct config* config)
 {
+    if(config->pred_map == NULL) {
+        config->pred_map = make_pred_map();
+    }
     struct cnode* cnode = make_cnode(config, NULL);
     betree_insert(config, 1, expr_a, cnode);
     betree_insert(config, 2, expr_b, cnode);
@@ -23,7 +28,7 @@ struct report test(const char* expr_a, const char* expr_b, const char* event, st
     free_cnode(cnode);
     free_matched_subs(matched_subs);
     free_pred_map(config->pred_map);
-    config->pred_map = make_pred_map();
+    config->pred_map = NULL;
     return report;
 }
 
@@ -81,6 +86,7 @@ int test_numeric_compare_float()
     mu_assert(test_same("f <= 1.", "{\"f\": 1.}", config), "float le");
     mu_assert(test_diff("f > 0.", "f > 1.", "{\"f\": 2.}", config), "float diff");
 
+    free_config(config);
     return 0;
 }
 
@@ -93,6 +99,7 @@ int test_equality_integer()
     mu_assert(test_same("i <> 1", "{\"i\": 0}", config), "integer ne");
     mu_assert(test_diff("i <> 0", "i <> 1", "{\"i\": 2}", config), "integer diff");
 
+    free_config(config);
     return 0;
 }
 
@@ -105,6 +112,7 @@ int test_equality_float()
     mu_assert(test_same("f <> 1.", "{\"f\": 0.}", config), "float ne");
     mu_assert(test_diff("f <> 0.", "f <> 1.", "{\"f\": 2.}", config), "float diff");
 
+    free_config(config);
     return 0;
 }
 
@@ -117,6 +125,7 @@ int test_equality_string()
     mu_assert(test_same("s <> \"a\"", "{\"s\": \"b\"}", config), "string ne");
     mu_assert(test_diff("s <> \"a\"", "s <> \"b\"", "{\"s\": \"c\"}", config), "string diff");
 
+    free_config(config);
     return 0;
 }
 
@@ -129,6 +138,7 @@ int test_set_var_integer()
     mu_assert(test_same("i not in (1,2)", "{\"i\": 3}", config), "integer set var not in");
     mu_assert(test_diff("i in (1, 3)", "i in (1, 2)", "{\"i\": 1}", config), "integer set var diff");
 
+    free_config(config);
     return 0;
 }
 
@@ -141,6 +151,7 @@ int test_set_var_string()
     mu_assert(test_same("s not in (\"1\",\"2\")", "{\"s\": \"3\"}", config), "string set var not in");
     mu_assert(test_diff("s in (\"1\",\"3\")", "s in (\"1\",\"2\")", "{\"s\": \"1\"}", config), "string set var diff");
 
+    free_config(config);
     return 0;
 }
 
@@ -153,6 +164,7 @@ int test_set_list_integer()
     mu_assert(test_same("1 not in il", "{\"il\": [2, 3]}", config), "integer set list not in");
     mu_assert(test_diff("1 in il", "2 in il", "{\"il\": [1, 2]}", config), "integer set list diff");
 
+    free_config(config);
     return 0;
 }
 
@@ -165,6 +177,7 @@ int test_set_list_string()
     mu_assert(test_same("\"1\" not in sl", "{\"sl\": [\"2\", \"3\"]}", config), "string set list not in");
     mu_assert(test_diff("\"1\" in sl", "\"2\" in sl", "{\"sl\": [\"1\", \"2\"]}", config), "string set list diff");
 
+    free_config(config);
     return 0;
 }
 
@@ -178,6 +191,7 @@ int test_list_integer()
     mu_assert(test_same("il all of (1, 2)", "{\"il\": [1, 2]}", config), "integer list all of");
     mu_assert(test_diff("il one of (1, 2)", "il one of (1, 3)", "{\"il\": [1, 2]}", config), "integer list diff");
 
+    free_config(config);
     return 0;
 }
 
@@ -191,6 +205,7 @@ int test_list_string()
     mu_assert(test_same("sl all of (\"1\", \"2\")", "{\"sl\": [\"1\", \"2\"]}", config), "string list all of");
     mu_assert(test_diff("sl one of (\"1\", \"2\")", "sl one of (\"1\", \"3\")", "{\"sl\": [\"1\", \"2\"]}", config), "string list diff");
 
+    free_config(config);
     return 0;
 }
 
@@ -252,10 +267,9 @@ int test_bool()
     mu_assert(test_same("(i = 0) and (i = 0)", "{\"i\": 0}", config), "bool and complex");
     mu_assert(test_diff("(i = 0) or (i = 1)", "(i = 0) or (i = 2)", "{\"i\": 0}", config), "bool diff");
 
+    free_config(config);
     return 0;
 }
-
-extern bool MATCH_NODE_DEBUG;
 
 int test_sub()
 {
@@ -272,6 +286,39 @@ int test_sub()
         "{\"b\": false, \"i\": 6, \"sl\": [\"s1\",\"s2\"], \"il\": [1, 2]}",
         1, config), "whole left side of and");
 
+    free_config(config);
+    return 0;
+}
+
+int test_bit_logic()
+{
+    enum { pred_count = 250 };
+    struct memoize memoize = make_memoize(pred_count);
+    for(size_t i = 0; i < pred_count; i++) {
+        if(i % 2 == 0) {
+            set_bit(memoize.pass, i);
+        }
+        else {
+            set_bit(memoize.fail, i);
+        }
+        for(size_t j = 0; j < pred_count; j++) {
+            if(j <= i) {
+                if(j % 2 == 0) {
+                    mu_assert(test_bit(memoize.pass, j), "even, pass for %zu, at %zu", j, i);
+                    mu_assert(!test_bit(memoize.fail, j), "even, fail for %zu, at %zu", j, i);
+                }
+                else {
+                    mu_assert(!test_bit(memoize.pass, j), "odd, pass for %zu, at %zu", j, i);
+                    mu_assert(test_bit(memoize.fail, j), "odd, fail for %zu, at %zu", j, i);
+                }
+            }
+            else {
+                mu_assert(!test_bit(memoize.pass, j), "new, pass for %zu, at %zu", j, i);
+                mu_assert(!test_bit(memoize.fail, j), "new, fail for %zu, at %zu", j, i);
+            }
+        }
+    }
+    free_memoize(memoize);
     return 0;
 }
 
@@ -294,6 +341,7 @@ int all_tests()
     mu_run_test(test_special_string);
     mu_run_test(test_bool);
     mu_run_test(test_sub);
+    mu_run_test(test_bit_logic);
 
     return 0;
 }

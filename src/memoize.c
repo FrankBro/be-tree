@@ -4,16 +4,16 @@
 
 void set_bit(uint64_t A[], uint64_t k)
 {
-    A[k / 64] |= 1 << (k % 64);
+    A[k / 64ULL] |= (1ULL << (k % 64ULL));
 }
 
 void clear_bit(uint64_t A[], uint64_t k)
 {
-    A[k / 64] &= ~(1 << (k % 64));
+    A[k / 64ULL] &= (~(1ULL << (k % 64ULL)));
 }
 
-int test_bit(uint64_t A[], uint64_t k)
+bool test_bit(uint64_t A[], uint64_t k)
 {
-    return ((A[k / 64] & (1 << (k % 64))) != 0);
+    return ((A[k / 64ULL] & (1ULL << (k % 64ULL))) != 0ULL);
 }
 

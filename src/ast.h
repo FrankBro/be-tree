@@ -315,7 +315,8 @@ void assign_variable_id(struct config* config, struct ast_node* node);
 void assign_str_id(struct config* config, struct ast_node* node);
 void assign_pred_id(struct config* config, struct ast_node* node);
 
-struct string_value frequency_type_to_string(struct config* config, enum frequency_type_e type);
+const char* frequency_type_to_string(enum frequency_type_e type);
 bool eq_expr(const struct ast_node* a, const struct ast_node* b);
 
+struct ast_node* clone_node(const struct ast_node* node);
 

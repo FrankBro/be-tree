@@ -15,10 +15,12 @@ enum value_e {
     VALUE_FREQUENCY,
 };
 
+typedef uint64_t betree_var_t;
 typedef uint64_t betree_str_t;
 
 struct string_value {
     const char* string;
+    betree_var_t var;
     betree_str_t str;
 };
 

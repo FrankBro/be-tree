@@ -3,14 +3,9 @@
 #include "ast.h"
 #include "memoize.h"
 
-struct pred_value {
-    betree_pred_t id;
-    struct ast_node* pred;
-};
-
 struct pred_container {
     size_t count;
-    struct pred_value* preds;
+    struct ast_node** preds;
 };
 
 struct pred_numeric_compare_map {

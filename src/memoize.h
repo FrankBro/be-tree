@@ -1,5 +1,6 @@
 #pragma once
 
+#include <stdbool.h>
 #include <stdint.h>
 
 struct ast_node;
@@ -13,5 +14,5 @@ struct memoize {
 
 void set_bit(uint64_t A[], uint64_t k);
 void clear_bit(uint64_t A[], uint64_t k);
-int test_bit(uint64_t A[], uint64_t k);
+bool test_bit(uint64_t A[], uint64_t k);
 

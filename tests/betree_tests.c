@@ -9,202 +9,26 @@
 #include "minunit.h"
 #include "utils.h"
 
-struct sub* make_simple_sub1(struct config* config, betree_sub_t id, const char* attr)
+int parse(const char* text, struct ast_node** node);
+int event_parse(const char* text, struct event** event);
+
+struct sub* make_sub_from_expr(struct config* config, betree_sub_t id, const char* expr)
 {
-    struct sub* sub = make_empty_sub(id);
-    sub->attr_var_count = 1;
-    sub->attr_vars = calloc(1, sizeof(*sub->attr_vars));
-    if(sub->attr_vars == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
-        abort();
-    }
-    sub->attr_vars[0] = make_attr_var(attr, config);
+    struct ast_node* node;
+    parse(expr, &node);
+    struct sub* sub = make_sub(config, id, node);
     return sub;
-}
-
-const struct sub* make_simple_sub_i(
-    struct config* config, betree_sub_t id, const char* attr, int64_t ivalue)
-{
-    struct sub* sub = make_simple_sub1(config, id, attr);
-    struct equality_value value
-        = { .value_type = AST_EQUALITY_VALUE_INTEGER, .integer_value = ivalue };
-    struct ast_node* expr = ast_equality_expr_create(AST_EQUALITY_EQ, attr, value);
-    assign_variable_id(config, expr);
-    sub->expr = expr;
-    return sub;
-}
-
-const struct sub* make_simple_sub_set_i(
-    struct config* config, betree_sub_t id, const char* attr, enum ast_set_e op, int64_t ivalue)
-{
-    struct sub* sub = make_simple_sub1(config, id, attr);
-    struct set_left_value left
-        = { .value_type = AST_SET_LEFT_VALUE_INTEGER, .integer_value = ivalue };
-    struct set_right_value right = { .value_type = AST_SET_RIGHT_VALUE_VARIABLE,
-        .variable_value = make_attr_var(attr, config) };
-    struct ast_node* expr = ast_set_expr_create(op, left, right);
-    assign_variable_id(config, expr);
-    sub->expr = expr;
-    return sub;
-}
-
-const struct sub* make_simple_sub_set_s(struct config* config,
-    betree_sub_t id,
-    const char* attr,
-    enum ast_set_e op,
-    struct string_value svalue)
-{
-    struct sub* sub = make_simple_sub1(config, id, attr);
-    struct set_left_value left
-        = { .value_type = AST_SET_LEFT_VALUE_STRING, .string_value = svalue };
-    struct set_right_value right = { .value_type = AST_SET_RIGHT_VALUE_VARIABLE,
-        .variable_value = make_attr_var(attr, config) };
-    struct ast_node* expr = ast_set_expr_create(op, left, right);
-    assign_variable_id(config, expr);
-    sub->expr = expr;
-    return sub;
-}
-
-const struct sub* make_simple_sub_set_il(struct config* config,
-    betree_sub_t id,
-    const char* attr,
-    enum ast_set_e op,
-    struct integer_list_value ilvalue)
-{
-    struct sub* sub = make_simple_sub1(config, id, attr);
-    struct set_left_value left = { .value_type = AST_SET_LEFT_VALUE_VARIABLE,
-        .variable_value = make_attr_var(attr, config) };
-    struct set_right_value right
-        = { .value_type = AST_SET_RIGHT_VALUE_INTEGER_LIST, .integer_list_value = ilvalue };
-    struct ast_node* expr = ast_set_expr_create(op, left, right);
-    assign_variable_id(config, expr);
-    sub->expr = expr;
-    return sub;
-}
-
-const struct sub* make_simple_sub_list_il(struct config* config,
-    betree_sub_t id,
-    const char* attr,
-    enum ast_list_e op,
-    struct integer_list_value ilvalue)
-{
-    struct sub* sub = make_simple_sub1(config, id, attr);
-    struct list_value value
-        = { .value_type = AST_LIST_VALUE_INTEGER_LIST, .integer_list_value = ilvalue };
-    struct ast_node* expr = ast_list_expr_create(op, attr, value);
-    assign_variable_id(config, expr);
-    sub->expr = expr;
-    return sub;
-}
-
-const struct sub* make_simple_sub_list_sl(struct config* config,
-    betree_sub_t id,
-    const char* attr,
-    enum ast_list_e op,
-    struct string_list_value slvalue)
-{
-    struct sub* sub = make_simple_sub1(config, id, attr);
-    struct list_value value
-        = { .value_type = AST_LIST_VALUE_STRING_LIST, .string_list_value = slvalue };
-    struct ast_node* expr = ast_list_expr_create(op, attr, value);
-    assign_variable_id(config, expr);
-    sub->expr = expr;
-    return sub;
-}
-
-struct string_value make_string_value(struct config* config, const char* attr)
-{
-    struct string_value string_value = { .string = strdup(attr) };
-    betree_var_t str_id = get_id_for_string(config, string_value.string);
-    string_value.str = str_id;
-    return string_value;
-}
-
-const struct sub* make_simple_sub_sl(struct config* config,
-    betree_sub_t id,
-    const char* attr,
-    enum ast_set_e op,
-    struct string_list_value slvalue)
-{
-    struct sub* sub = make_simple_sub1(config, id, attr);
-    struct set_left_value left = { .value_type = AST_SET_LEFT_VALUE_VARIABLE,
-        .variable_value = make_attr_var(attr, config) };
-    struct set_right_value right
-        = { .value_type = AST_SET_RIGHT_VALUE_STRING_LIST, .string_list_value = slvalue };
-    struct ast_node* expr = ast_set_expr_create(op, left, right);
-    assign_variable_id(config, expr);
-    sub->expr = expr;
-    return sub;
-}
-
-const struct sub* make_simple_sub_f(
-    struct config* config, betree_sub_t id, const char* attr, double fvalue)
-{
-    struct sub* sub = make_simple_sub1(config, id, attr);
-    struct equality_value value = { .value_type = AST_EQUALITY_VALUE_FLOAT, .float_value = fvalue };
-    struct ast_node* expr = ast_equality_expr_create(AST_EQUALITY_EQ, attr, value);
-    assign_variable_id(config, expr);
-    sub->expr = expr;
-    return sub;
-}
-
-// const struct sub* make_simple_sub_b(struct config* config, betree_sub_t id, const char* attr,
-// enum ast_bool_e op)
-// {
-//     struct sub* sub = make_empty_sub(id);
-//     sub->variable_id_count = 1;
-//     sub->variable_ids = calloc(1, sizeof(*sub->variable_ids));
-//     if(sub->variable_ids == NULL) {
-//         fprintf(stderr, "%s calloc failed", __func__);
-//         abort();
-//     }
-//     sub->variable_ids[0] = get_id_for_attr(config, attr);
-//     struct ast_node* expr = ast_bool_expr_create(op, attr);
-//     assign_variable_id(config, expr);
-//     sub->expr = expr;
-//     return sub;
-// }
-
-const struct sub* make_simple_sub_s(
-    struct config* config, betree_sub_t id, const char* attr, const char* svalue)
-{
-    struct sub* sub = make_simple_sub1(config, id, attr);
-    struct equality_value value = { .value_type = AST_EQUALITY_VALUE_STRING,
-        .string_value = make_string_value(config, svalue) };
-    value.string_value.str = get_id_for_string(config, svalue);
-    struct ast_node* expr = ast_equality_expr_create(AST_EQUALITY_EQ, attr, value);
-
-    assign_variable_id(config, expr);
-    sub->expr = expr;
-    return sub;
-}
-
-const struct event* make_event_with_preds(const size_t size, const struct pred** preds)
-{
-    struct event* event = calloc(1, sizeof(*event));
-    if(event == NULL) {
-        fprintf(stderr, "%s event calloc failed", __func__);
-        abort();
-    }
-    event->pred_count = size;
-    event->preds = calloc(size, sizeof(*event->preds));
-    if(event->preds == NULL) {
-        fprintf(stderr, "%s preds calloc failed", __func__);
-        abort();
-    }
-    memcpy(event->preds, preds, sizeof(*event->preds) * size);
-    return event;
 }
 
 int test_sub_has_attribute()
 {
     struct config* config = make_default_config();
-    const struct sub* sub = make_simple_sub_i(config, 0, "a", 0);
+    struct sub* sub = make_sub_from_expr(config, 0, "a = 0");
 
     mu_assert(sub_has_attribute_str(config, sub, "a"), "Simple sub has 'a'");
     mu_assert(!sub_has_attribute_str(config, sub, "b"), "Simple sub does not have 'b'");
 
-    free_sub((struct sub*)sub);
+    free_sub(sub);
     free_config(config);
     return 0;
 }
@@ -212,35 +36,31 @@ int test_sub_has_attribute()
 int test_remove_sub()
 {
     struct config* config = make_default_config();
-    const struct sub* sub1 = make_simple_sub_i(config, 0, "a", 0);
-    const struct sub* sub2 = make_simple_sub_i(config, 1, "a", 1);
-    const struct sub* sub3 = make_simple_sub_i(config, 2, "a", 2);
-    struct lnode* lnode = (struct lnode*)make_lnode(config, NULL);
+    struct cnode* cnode = make_cnode(config, NULL);
 
-    insert_sub(sub1, lnode);
-    mu_assert(lnode->sub_count == 1 && lnode->subs[0] == sub1, "lnode has one sub and it matches");
+    betree_insert(config, 0, "a = 0", cnode);
+    mu_assert(cnode->lnode->sub_count == 1 && cnode->lnode->subs[0]->id == 0, "lnode has one sub and it matches");
 
-    remove_sub(sub1, lnode);
-    mu_assert(lnode->sub_count == 0, "lnode no longer has any subs");
+    betree_delete(config, 0, cnode);
+    mu_assert(cnode->lnode->sub_count == 0, "lnode no longer has any subs");
 
-    insert_sub(sub1, lnode);
-    insert_sub(sub2, lnode);
-    insert_sub(sub3, lnode);
-    mu_assert(lnode->sub_count == 3 && lnode->subs[0] == sub1 && lnode->subs[1] == sub2
-            && lnode->subs[2] == sub3,
+    betree_insert(config, 0, "a = 0", cnode);
+    betree_insert(config, 1, "a = 1", cnode);
+    betree_insert(config, 2, "a = 2", cnode);
+    mu_assert(cnode->lnode->sub_count == 3 && cnode->lnode->subs[0]->id == 0 && cnode->lnode->subs[1]->id == 1
+            && cnode->lnode->subs[2]->id == 2,
         "lnode has three subs and they match");
 
-    remove_sub(sub2, lnode);
-    mu_assert(lnode->sub_count == 2 && lnode->subs[0] == sub1 && lnode->subs[1] == sub3,
+    betree_delete(config, 1, cnode);
+    mu_assert(cnode->lnode->sub_count == 2 && cnode->lnode->subs[0]->id == 0 && cnode->lnode->subs[1]->id == 2,
         "lnode no longer has sub2");
 
-    free_lnode(lnode);
-    free_sub((struct sub*)sub2);
+    free_cnode(cnode);
     free_config(config);
     return 0;
 }
 
-void initialize_matched_subs(struct matched_subs* matched_subs)
+void reset_matched_subs(struct matched_subs* matched_subs)
 {
     free(matched_subs->subs);
     matched_subs->sub_count = 0;
@@ -252,36 +72,30 @@ int test_match_single_cnode()
     struct config* config = make_default_config();
     struct cnode* cnode = make_cnode(config, NULL);
     betree_sub_t sub_id = 0;
-    struct sub* sub = (struct sub*)make_simple_sub_i(config, sub_id, "a", 0);
-    insert_be_tree(config, sub, cnode, NULL);
+    betree_insert(config, sub_id, "a = 0", cnode);
 
     mu_assert(cnode->lnode->sub_count == 1, "tree has one sub");
 
-    const struct event* goodEvent = make_simple_event_i(config, "a", 0);
-    const struct event* wrongValueEvent = make_simple_event_i(config, "a", 1);
-    const struct event* wrongVariableEvent = make_simple_event_i(config, "b", 0);
 
     struct matched_subs* matched_subs = make_matched_subs();
     {
-        initialize_matched_subs(matched_subs);
-        match_be_tree(config, goodEvent, cnode, matched_subs, NULL, NULL);
+        reset_matched_subs(matched_subs);
+        betree_search(config, "{\"a\": 0}", cnode, matched_subs, NULL);
         mu_assert(matched_subs->sub_count == 1 && matched_subs->subs[0] == sub_id, "goodEvent");
     }
     {
-        initialize_matched_subs(matched_subs);
-        match_be_tree(config, wrongValueEvent, cnode, matched_subs, NULL, NULL);
+        reset_matched_subs(matched_subs);
+        betree_search(config, "{\"a\": 1}", cnode, matched_subs, NULL);
         mu_assert(matched_subs->sub_count == 0, "wrongValueEvent");
     }
     {
         // TODO: When we support missing variables/non-missing
-        // initialize_matched_subs(&matched_subs);
-        // match_be_tree(wrongVariableEvent, cnode, &matchedSub);
+        // reset_matched_subs(&matched_subs);
+        /*const struct event* wrongVariableEvent = make_event_from_string(config, "{\"b\": 0}");*/
+        // betree_search(wrongVariableEvent, cnode, &matchedSub);
         // mu_assert(matched_subs.sub_count == 0, "wrongVariableEvent");
     }
 
-    free_event((struct event*)goodEvent);
-    free_event((struct event*)wrongValueEvent);
-    free_event((struct event*)wrongVariableEvent);
     free_cnode((struct cnode*)cnode);
     free_config(config);
     free_matched_subs(matched_subs);
@@ -312,14 +126,10 @@ int test_insert_first_split()
     add_attr_domain_i(config, "a", 0, 10, false);
     add_attr_domain_i(config, "b", 0, 10, false);
     struct cnode* cnode = make_cnode(config, NULL);
-    struct sub* sub1 = (struct sub*)make_simple_sub_i(config, 0, "a", 0);
-    struct sub* sub2 = (struct sub*)make_simple_sub_i(config, 1, "a", 1);
-    struct sub* sub3 = (struct sub*)make_simple_sub_i(config, 2, "a", 2);
-    struct sub* sub4 = (struct sub*)make_simple_sub_i(config, 3, "b", 0);
-    insert_be_tree(config, sub1, cnode, NULL);
-    insert_be_tree(config, sub2, cnode, NULL);
-    insert_be_tree(config, sub3, cnode, NULL);
-    insert_be_tree(config, sub4, cnode, NULL);
+    betree_insert(config, 0, "a = 0", cnode);
+    betree_insert(config, 1, "a = 1", cnode);
+    betree_insert(config, 2, "a = 2", cnode);
+    betree_insert(config, 3, "b = 0", cnode);
 
     mu_assert(cnode->lnode->sub_count == 1, "tree has one sub in the first lnode");
     mu_assert(cnode->pdir != NULL, "cnode has a pdir");
@@ -340,55 +150,6 @@ int test_insert_first_split()
     free_cnode((struct cnode*)cnode);
     free_config(config);
     return 0;
-}
-
-struct ast_node* _AND(struct ast_node* lhs, struct ast_node* rhs)
-{
-    return ast_bool_expr_binary_create(AST_BOOL_AND, lhs, rhs);
-}
-
-struct ast_node* ast_numeric_compare_expr_create_i(
-    enum ast_numeric_compare_e op, const char* attr, int64_t ivalue)
-{
-    struct numeric_compare_value value
-        = { .value_type = AST_NUMERIC_COMPARE_VALUE_INTEGER, .integer_value = ivalue };
-    return ast_numeric_compare_expr_create(op, attr, value);
-}
-
-struct ast_node* ast_equality_expr_create_i(
-    enum ast_equality_e op, const char* attr, int64_t ivalue)
-{
-    struct equality_value value
-        = { .value_type = AST_EQUALITY_VALUE_INTEGER, .integer_value = ivalue };
-    return ast_equality_expr_create(op, attr, value);
-}
-
-struct ast_node* _GT(const char* attr, uint64_t value)
-{
-    return ast_numeric_compare_expr_create_i(AST_NUMERIC_COMPARE_GT, attr, value);
-}
-
-struct ast_node* _EQ(const char* attr, uint64_t value)
-{
-    return ast_equality_expr_create_i(AST_EQUALITY_EQ, attr, value);
-}
-
-struct ast_node* _LT(const char* attr, uint64_t value)
-{
-    return ast_numeric_compare_expr_create_i(AST_NUMERIC_COMPARE_LT, attr, value);
-}
-
-bool test_lnode_has_subs(const struct lnode* lnode, size_t sub_count, const struct sub** subs)
-{
-    if(lnode->sub_count != sub_count) {
-        return false;
-    }
-    for(size_t i = 0; i < sub_count; i++) {
-        if(lnode->subs[i] != subs[i]) {
-            return false;
-        }
-    }
-    return true;
 }
 
 bool test_cnode_has_pnodes(
@@ -413,39 +174,46 @@ int test_pdir_split_twice()
     add_attr_domain_i(config, "c", 0, 10, false);
     struct cnode* cnode = make_cnode(config, NULL);
 
-    const struct sub* sub1 = make_simple_sub_i(config, 1, "a", 0);
-    const struct sub* sub2 = make_simple_sub_i(config, 2, "a", 0);
-    const struct sub* sub3 = make_simple_sub_i(config, 3, "a", 0);
-    const struct sub* sub4 = make_simple_sub_i(config, 4, "b", 0);
-    const struct sub* sub5 = make_simple_sub_i(config, 5, "b", 0);
-    const struct sub* sub6 = make_simple_sub_i(config, 6, "b", 0);
-    const struct sub* sub7 = make_simple_sub_i(config, 7, "c", 0);
+    betree_insert(config, 1, "a = 0", cnode);
+    betree_insert(config, 2, "a = 0", cnode);
+    betree_insert(config, 3, "a = 0", cnode);
 
-    const struct sub* subs123[3] = { sub1, sub2, sub3 };
-    const struct sub* subs456[3] = { sub4, sub5, sub6 };
-    const struct sub* subs7[1] = { sub7 };
+    mu_assert(cnode->lnode->sub_count == 3 &&
+      cnode->lnode->subs[0]->id == 1 &&
+      cnode->lnode->subs[1]->id == 2 &&
+      cnode->lnode->subs[2]->id == 3
+      , "subs123 in first lnode");
 
-    insert_be_tree(config, sub1, cnode, NULL);
-    insert_be_tree(config, sub2, cnode, NULL);
-    insert_be_tree(config, sub3, cnode, NULL);
+    betree_insert(config, 4, "b = 0", cnode);
+    betree_insert(config, 5, "b = 0", cnode);
+    betree_insert(config, 6, "b = 0", cnode);
 
-    mu_assert(test_lnode_has_subs(cnode->lnode, 3, subs123), "subs123 in first lnode");
+    mu_assert(cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3 &&
+      cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[0]->id == 1 &&
+      cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[1]->id == 2 &&
+      cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[2]->id == 3
+      , "subs123 in second lnode");
+    mu_assert(cnode->lnode->sub_count == 3 &&
+      cnode->lnode->subs[0]->id == 4 &&
+      cnode->lnode->subs[1]->id == 5 &&
+      cnode->lnode->subs[2]->id == 6
+      , "subs456 in first lnode");
 
-    insert_be_tree(config, sub4, cnode, NULL);
-    insert_be_tree(config, sub5, cnode, NULL);
-    insert_be_tree(config, sub6, cnode, NULL);
+    betree_insert(config, 7, "c = 0", cnode);
 
-    mu_assert(test_lnode_has_subs(cnode->pdir->pnodes[0]->cdir->cnode->lnode, 3, subs123),
-        "subs123 in second lnode");
-    mu_assert(test_lnode_has_subs(cnode->lnode, 3, subs456), "subs456 in first lnode");
-
-    insert_be_tree(config, sub7, cnode, NULL);
-
-    mu_assert(test_lnode_has_subs(cnode->pdir->pnodes[0]->cdir->cnode->lnode, 3, subs123),
-        "subs123 in second lnode");
-    mu_assert(test_lnode_has_subs(cnode->pdir->pnodes[1]->cdir->cnode->lnode, 3, subs456),
-        "subs456 in third lnode");
-    mu_assert(test_lnode_has_subs(cnode->lnode, 1, subs7), "subs7 in first lnode");
+    mu_assert(cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3 &&
+      cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[0]->id == 1 &&
+      cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[1]->id == 2 &&
+      cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[2]->id == 3
+      , "subs123 in second lnode");
+    mu_assert(cnode->pdir->pnodes[1]->cdir->cnode->lnode->sub_count == 3 &&
+      cnode->pdir->pnodes[1]->cdir->cnode->lnode->subs[0]->id == 4 &&
+      cnode->pdir->pnodes[1]->cdir->cnode->lnode->subs[1]->id == 5 &&
+      cnode->pdir->pnodes[1]->cdir->cnode->lnode->subs[2]->id == 6
+      , "subs456 in second lnode");
+    mu_assert(cnode->lnode->sub_count == 1 &&
+      cnode->lnode->subs[0]->id == 7
+      , "subs7 in first lnode");
 
     free_cnode((struct cnode*)cnode);
     free_config(config);
@@ -459,39 +227,44 @@ int test_cdir_split_twice()
     add_attr_domain_i(config, "b", 0, 10, false);
     struct cnode* cnode = make_cnode(config, NULL);
 
-    const struct sub* sub1 = make_simple_sub_i(config, 1, "a", 2);
-    const struct sub* sub2 = make_simple_sub_i(config, 2, "a", 2);
-    const struct sub* sub3 = make_simple_sub_i(config, 3, "a", 2);
-    const struct sub* sub4 = make_simple_sub_i(config, 4, "b", 0);
-    const struct sub* sub5 = make_simple_sub_i(config, 5, "a", 7);
-    const struct sub* sub6 = make_simple_sub_i(config, 6, "a", 7);
-    const struct sub* sub7 = make_simple_sub_i(config, 7, "a", 7);
+    betree_insert(config, 1, "a = 2", cnode);
+    betree_insert(config, 2, "a = 2", cnode);
+    betree_insert(config, 3, "a = 2", cnode);
 
-    const struct sub* subs123[3] = { sub1, sub2, sub3 };
-    const struct sub* subs4[1] = { sub4 };
-    const struct sub* subs567[3] = { sub5, sub6, sub7 };
+    mu_assert(cnode->lnode->sub_count == 3 &&
+      cnode->lnode->subs[0]->id == 1 &&
+      cnode->lnode->subs[1]->id == 2 &&
+      cnode->lnode->subs[2]->id == 3
+      , "subs123 in first lnode");
 
-    insert_be_tree(config, sub1, cnode, NULL);
-    insert_be_tree(config, sub2, cnode, NULL);
-    insert_be_tree(config, sub3, cnode, NULL);
+    betree_insert(config, 4, "b = 0", cnode);
 
-    mu_assert(test_lnode_has_subs(cnode->lnode, 3, subs123), "subs123 in first lnode");
+    mu_assert(cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3 &&
+      cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[0]->id == 1 &&
+      cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[1]->id == 2 &&
+      cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[2]->id == 3
+      , "subs123 in second lnode");
+    mu_assert(cnode->lnode->sub_count == 1 &&
+      cnode->lnode->subs[0]->id == 4
+      , "subs4 in first lnode");
 
-    insert_be_tree(config, sub4, cnode, NULL);
+    betree_insert(config, 5, "a = 7", cnode);
+    betree_insert(config, 6, "a = 7", cnode);
+    betree_insert(config, 7, "a = 7", cnode);
 
-    mu_assert(test_lnode_has_subs(cnode->pdir->pnodes[0]->cdir->cnode->lnode, 3, subs123),
-        "subs123 in second lnode");
-    mu_assert(test_lnode_has_subs(cnode->lnode, 1, subs4), "subs4 in first lnode");
-
-    insert_be_tree(config, sub5, cnode, NULL);
-    insert_be_tree(config, sub6, cnode, NULL);
-    insert_be_tree(config, sub7, cnode, NULL);
-
-    mu_assert(test_lnode_has_subs(cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode, 3, subs123),
-        "subs123 in second lnode");
-    mu_assert(test_lnode_has_subs(cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode, 3, subs567),
-        "subs567 in third lnode");
-    mu_assert(test_lnode_has_subs(cnode->lnode, 1, subs4), "subs4 in first lnode");
+    mu_assert(cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->sub_count == 3 &&
+      cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->subs[0]->id == 1 &&
+      cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->subs[1]->id == 2 &&
+      cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->subs[2]->id == 3
+      , "subs123 in second lnode");
+    mu_assert(cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->sub_count == 3 &&
+      cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->subs[0]->id == 5 &&
+      cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->subs[1]->id == 6 &&
+      cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->subs[2]->id == 7
+      , "subs567 in second lnode");
+    mu_assert(cnode->lnode->sub_count == 1 &&
+      cnode->lnode->subs[0]->id == 4
+      , "subs4 in first lnode");
 
     free_cnode((struct cnode*)cnode);
     free_config(config);
@@ -502,20 +275,18 @@ int test_remove_sub_in_tree()
 {
     struct config* config = make_default_config();
     struct cnode* cnode = make_cnode(config, NULL);
-    struct sub* sub1 = (struct sub*)make_simple_sub_i(config, 0, "a", 0);
 
-    insert_be_tree(config, sub1, cnode, NULL);
+    betree_insert(config, 0, "a = 0", cnode);
 
     mu_assert(cnode->lnode->sub_count == 1, "lnode has the sub");
 
-    delete_be_tree(config, sub1, cnode);
+    betree_delete(config, 0, cnode);
 
     mu_assert(cnode->lnode->sub_count == 0, "lnode does not have the sub");
     mu_assert(cnode != NULL && cnode->lnode != NULL,
         "did not delete the cnode or lnode because it's root");
 
     free_cnode(cnode);
-    free_sub(sub1);
     free_config(config);
     return 0;
 }
@@ -526,35 +297,28 @@ int test_remove_sub_in_tree_with_delete()
     add_attr_domain_i(config, "a", 0, 10, false);
     add_attr_domain_i(config, "b", 0, 10, false);
     struct cnode* cnode = make_cnode(config, NULL);
-    struct sub* sub1 = (struct sub*)make_simple_sub_i(config, 1, "a", 0);
-    struct sub* sub2 = (struct sub*)make_simple_sub_i(config, 2, "a", 0);
-    struct sub* sub3 = (struct sub*)make_simple_sub_i(config, 3, "a", 0);
-    struct sub* sub4 = (struct sub*)make_simple_sub_i(config, 4, "b", 0);
 
-    insert_be_tree(config, sub1, cnode, NULL);
-    insert_be_tree(config, sub2, cnode, NULL);
-    insert_be_tree(config, sub3, cnode, NULL);
-    insert_be_tree(config, sub4, cnode, NULL);
+    betree_insert(config, 1, "a = 0", cnode);
+    betree_insert(config, 2, "a = 0", cnode);
+    betree_insert(config, 3, "a = 0", cnode);
+    betree_insert(config, 4, "b = 0", cnode);
 
-    const struct sub* subs123[3] = { sub1, sub2, sub3 };
-    const struct sub* subs4[1] = { sub4 };
-    mu_assert(test_lnode_has_subs(cnode->lnode, 1, subs4), "sub 4 is in lnode");
-    mu_assert(test_lnode_has_subs(cnode->pdir->pnodes[0]->cdir->cnode->lnode, 3, subs123),
+    mu_assert(cnode->lnode->sub_count == 1, "sub 4 is in lnode");
+    mu_assert(cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3,
         "sub 1, 2, and 3 is lower lnode");
 
-    delete_be_tree(config, sub1, cnode);
-    delete_be_tree(config, sub2, cnode);
-    delete_be_tree(config, sub3, cnode);
+    betree_delete(config, 1, cnode);
+    betree_delete(config, 2, cnode);
+    betree_delete(config, 3, cnode);
 
     mu_assert(cnode->pdir == NULL, "deleted everything down of the pdir");
 
     free_cnode(cnode);
-    free_sub(sub1);
-    free_sub(sub2);
-    free_sub(sub3);
     free_config(config);
     return 0;
 }
+
+extern bool MATCH_NODE_DEBUG;
 
 int test_match_deeper()
 {
@@ -563,15 +327,11 @@ int test_match_deeper()
     add_attr_domain_i(config, "b", 0, 1, false);
 
     struct cnode* cnode = make_cnode(config, NULL);
-    const struct sub* sub1 = make_sub(config, 1, _AND(_EQ("a", 0), _EQ("b", 0)));
-    const struct sub* sub2 = make_simple_sub_i(config, 2, "a", 1);
-    const struct sub* sub3 = make_sub(config, 3, _AND(_EQ("a", 0), _EQ("b", 0)));
-    const struct sub* sub4 = make_sub(config, 4, _AND(_EQ("a", 0), _EQ("b", 1)));
 
-    insert_be_tree(config, sub1, cnode, NULL);
-    insert_be_tree(config, sub2, cnode, NULL);
-    insert_be_tree(config, sub3, cnode, NULL);
-    insert_be_tree(config, sub4, cnode, NULL);
+    betree_insert(config, 1, "a = 0 and b = 0", cnode);
+    betree_insert(config, 2, "a = 1", cnode);
+    betree_insert(config, 3, "a = 0 and b = 0", cnode);
+    betree_insert(config, 4, "a = 0 and b = 1", cnode);
 
     const struct lnode* lnode = cnode->lnode;
     const struct pdir* pdir_a = cnode->pdir;
@@ -595,18 +355,12 @@ int test_match_deeper()
     mu_assert(lnode_a->sub_count == 1, "lnode in 'a' has one sub");
     mu_assert(lnode_b->sub_count == 3, "lnode in 'a' has one sub");
 
-    const struct pred* pred_a = make_simple_pred_str_i(config, "a", 0);
-    const struct pred* pred_b = make_simple_pred_str_i(config, "b", 1);
-    const struct pred* preds[2] = { pred_a, pred_b };
-    const struct event* event = make_event_with_preds(2, preds);
-
     struct matched_subs* matched_subs = make_matched_subs();
-    initialize_matched_subs(matched_subs);
-    match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+    reset_matched_subs(matched_subs);
+    betree_search(config, "{\"a\": 0, \"b\": 1}", cnode, matched_subs, NULL);
     mu_assert(matched_subs->sub_count == 1 && matched_subs->subs[0] == 4, "goodEvent");
 
-    free_event((struct event*)event);
-    free_cnode((struct cnode*)cnode);
+    free_cnode(cnode);
     free_matched_subs(matched_subs);
     free_config(config);
     return 0;
@@ -620,18 +374,18 @@ int test_large_cdir_split()
     struct cnode* cnode = make_cnode(config, NULL);
 
     for(size_t i = 0; i < 100; i++) {
-        const struct sub* sub = make_simple_sub_i(config, i, "a", i);
-        insert_be_tree(config, sub, cnode, NULL);
+        char* expr;
+        asprintf(&expr, "a = %zu", i);
+        betree_insert(config, i, expr, cnode);
+        free(expr);
     }
 
-    const struct event* event = make_simple_event_i(config, "a", 0);
     struct matched_subs* matched_subs = make_matched_subs();
-    match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+    betree_search(config, "{\"a\": 0}", cnode, matched_subs, NULL);
 
     mu_assert(matched_subs->sub_count == 1, "matched one");
 
     free_matched_subs(matched_subs);
-    free_event((struct event*)event);
     free_cnode(cnode);
     free_config(config);
     return 0;
@@ -648,15 +402,10 @@ int test_min_partition()
 
     struct cnode* cnode = make_cnode(config, NULL);
 
-    struct sub* sub = NULL;
-    sub = (struct sub*)make_simple_sub_i(config, 0, "a", 0);
-    insert_be_tree(config, sub, cnode, NULL);
-    sub = (struct sub*)make_simple_sub_i(config, 1, "a", 0);
-    insert_be_tree(config, sub, cnode, NULL);
-    sub = (struct sub*)make_simple_sub_i(config, 2, "b", 0);
-    insert_be_tree(config, sub, cnode, NULL);
-    sub = (struct sub*)make_simple_sub_i(config, 3, "c", 0);
-    insert_be_tree(config, sub, cnode, NULL);
+    betree_insert(config, 0, "a = 0", cnode);
+    betree_insert(config, 1, "a = 0", cnode);
+    betree_insert(config, 2, "b = 0", cnode);
+    betree_insert(config, 3, "c = 0", cnode);
 
     mu_assert(cnode->lnode->sub_count == 2, "First lnode has two subs");
     mu_assert(cnode->pdir->pnode_count == 1 && cnode->pdir->pnodes[0]->attr_var.var == 0
@@ -674,14 +423,10 @@ int test_min_partition()
 
     cnode = make_cnode(config, NULL);
 
-    sub = (struct sub*)make_simple_sub_i(config, 0, "a", 0);
-    insert_be_tree(config, sub, cnode, NULL);
-    sub = (struct sub*)make_simple_sub_i(config, 1, "a", 0);
-    insert_be_tree(config, sub, cnode, NULL);
-    sub = (struct sub*)make_simple_sub_i(config, 2, "b", 0);
-    insert_be_tree(config, sub, cnode, NULL);
-    sub = (struct sub*)make_simple_sub_i(config, 3, "c", 0);
-    insert_be_tree(config, sub, cnode, NULL);
+    betree_insert(config, 0, "a = 0", cnode);
+    betree_insert(config, 1, "a = 0", cnode);
+    betree_insert(config, 2, "b = 0", cnode);
+    betree_insert(config, 3, "c = 0", cnode);
 
     mu_assert(cnode->lnode->sub_count == 4, "First lnode has four subs");
     mu_assert(cnode->lnode->max != lnode_max_cap, "First lnode max cap went up");
@@ -692,60 +437,25 @@ int test_min_partition()
     return 0;
 }
 
-int parse(const char* text, struct ast_node** node);
-
 int test_allow_undefined()
 {
     enum { expr_count = 4 };
-    const char* exprs[expr_count] = { "a = 0", "a = 1", "a = 0 || b = 0", "b = 1" };
-
-    // With defined only
-    struct config* config = make_default_config();
-    add_attr_domain_i(config, "a", 0, 10, false);
-    add_attr_domain_i(config, "b", 0, 10, false);
-
-    struct cnode* cnode = make_cnode(config, NULL);
-    struct event* event = (struct event*)make_simple_event_i(config, "b", 0);
-
-    for(size_t i = 0; i < expr_count; i++) {
-        const char* expr = exprs[i];
-        struct ast_node* node = NULL;
-        (void)parse(expr, &node);
-        const struct sub* sub = make_sub(config, i + 1, node);
-        insert_be_tree(config, sub, cnode, NULL);
-    }
-
-    struct matched_subs* matched_subs = make_matched_subs();
-    match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
-
-    mu_assert(cnode->lnode->sub_count == 1 && cnode->pdir != NULL && cnode->pdir->pnode_count == 1
-            && cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3,
-        "Structure is what is expected");
-    mu_assert(matched_subs->sub_count == 0, "Found no sub");
-
-    free_cnode(cnode);
-    free_config(config);
-    free_matched_subs(matched_subs);
-    free_event((struct event*)event);
+    const char* exprs[expr_count] = { "a = 0", "a = 1", "a = 0 or b = 0", "b = 1" };
 
     // With allow undefined
-    config = make_default_config();
+    struct config* config = make_default_config();
     add_attr_domain_i(config, "a", 0, 10, true);
     add_attr_domain_i(config, "b", 0, 10, false);
 
-    cnode = make_cnode(config, NULL);
-    event = (struct event*)make_simple_event_i(config, "b", 0);
+    struct cnode* cnode = make_cnode(config, NULL);
 
     for(size_t i = 0; i < expr_count; i++) {
         const char* expr = exprs[i];
-        struct ast_node* node = NULL;
-        (void)parse(expr, &node);
-        const struct sub* sub = make_sub(config, i + 1, node);
-        insert_be_tree(config, sub, cnode, NULL);
+        betree_insert(config, i + 1, expr, cnode);
     }
 
-    matched_subs = make_matched_subs();
-    match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+    struct matched_subs* matched_subs = make_matched_subs();
+    betree_search(config, "{\"b\": 0}", cnode, matched_subs, NULL);
 
     mu_assert(cnode->lnode->sub_count == 1 && cnode->pdir != NULL && cnode->pdir->pnode_count == 1
             && cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3,
@@ -755,7 +465,6 @@ int test_allow_undefined()
     free_cnode(cnode);
     free_config(config);
     free_matched_subs(matched_subs);
-    free_event((struct event*)event);
 
     return 0;
 }
@@ -769,8 +478,10 @@ int test_float()
 
     for(size_t i = 0; i < 4; i++) {
         double value = i < 3 ? 0. : 7.;
-        struct sub* sub = (struct sub*)make_simple_sub_f(config, i, "a", value);
-        insert_be_tree(config, sub, cnode, NULL);
+        char* expr;
+        asprintf(&expr, "a = %.1f", value);
+        betree_insert(config, i, expr, cnode);
+        free(expr);
     }
 
     const struct pnode* pnode = cnode->pdir->pnodes[0];
@@ -823,19 +534,16 @@ int test_string()
 
     struct cnode* cnode = make_cnode(config, NULL);
 
-    struct sub* sub = (struct sub*)make_simple_sub_s(config, 0, "a", "a");
-    insert_be_tree(config, sub, cnode, NULL);
+    betree_insert(config, 0, "a = \"a\"", cnode);
 
-    const struct event* event = make_simple_event_s(config, "a", "a");
     struct matched_subs* matched_subs = make_matched_subs();
-    match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+    betree_search(config, "{\"a\": \"a\"}", cnode, matched_subs, NULL);
 
     mu_assert(matched_subs->sub_count == 1, "found our sub");
 
     free_cnode(cnode);
     free_config(config);
     free_matched_subs(matched_subs);
-    free_event((struct event*)event);
 
     return 0;
 }
@@ -848,8 +556,7 @@ int test_string_wont_split()
     struct cnode* cnode = make_cnode(config, NULL);
 
     for(size_t i = 0; i < 4; i++) {
-        struct sub* sub = (struct sub*)make_simple_sub_s(config, i, "a", "a");
-        insert_be_tree(config, sub, cnode, NULL);
+        betree_insert(config, i, "a = \"a\"", cnode);
     }
 
     mu_assert(cnode->lnode->sub_count == 4, "did not split");
@@ -872,8 +579,10 @@ int test_negative_int()
 
     for(size_t i = 0; i < 4; i++) {
         int64_t value = i < 3 ? -6 : -12;
-        struct sub* sub = (struct sub*)make_simple_sub_i(config, i, "a", value);
-        insert_be_tree(config, sub, cnode, NULL);
+        char* expr;
+        asprintf(&expr, "a = %ld", value);
+        betree_insert(config, i, expr, cnode);
+        free(expr);
     }
 
     const struct cdir* cdir = cnode->pdir->pnodes[0]->cdir;
@@ -904,9 +613,11 @@ int test_negative_float()
     struct cnode* cnode = make_cnode(config, NULL);
 
     for(size_t i = 0; i < 4; i++) {
-        int64_t value = i < 3 ? -6. : -12.;
-        struct sub* sub = (struct sub*)make_simple_sub_f(config, i, "a", value);
-        insert_be_tree(config, sub, cnode, NULL);
+        double value = i < 3 ? -6. : -12.;
+        char* expr;
+        asprintf(&expr, "a = %.1f", value);
+        betree_insert(config, i, expr, cnode);
+        free(expr);
     }
 
     const struct cdir* cdir = cnode->pdir->pnodes[0]->cdir;
@@ -934,50 +645,28 @@ int test_integer_set()
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        size_t count = 3;
-        struct integer_list_value integer_list = { .count = count };
-        integer_list.integers = calloc(3, sizeof(*integer_list.integers));
-        integer_list.integers[0] = 1;
-        integer_list.integers[1] = 2;
-        integer_list.integers[2] = 0;
+        betree_insert(config, 0, "a in (1, 2, 0)", cnode);
 
-        struct sub* sub
-            = (struct sub*)make_simple_sub_set_il(config, 0, "a", AST_SET_IN, integer_list);
-        insert_be_tree(config, sub, cnode, NULL);
-
-        const struct event* event = make_simple_event_i(config, "a", 0);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, "{\"a\": 0}", cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
         free_matched_subs(matched_subs);
-        free_event((struct event*)event);
         free_cnode(cnode);
     }
 
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        size_t count = 3;
-        struct integer_list_value integer_list = { .count = count };
-        integer_list.integers = calloc(3, sizeof(*integer_list.integers));
-        integer_list.integers[0] = 1;
-        integer_list.integers[1] = 2;
-        integer_list.integers[2] = 0;
+        betree_insert(config, 0, "a not in (1, 2, 0)", cnode);
 
-        struct sub* sub
-            = (struct sub*)make_simple_sub_set_il(config, 0, "a", AST_SET_NOT_IN, integer_list);
-        insert_be_tree(config, sub, cnode, NULL);
-
-        const struct event* event = make_simple_event_i(config, "a", 0);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, "{\"a\": 0}", cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "did not find our sub");
 
         free_matched_subs(matched_subs);
-        free_event((struct event*)event);
         free_cnode(cnode);
     }
 
@@ -991,22 +680,15 @@ int test_integer_set_reverse()
     struct config* config = make_default_config();
     add_attr_domain_il(config, "a", false);
 
-    size_t count = 3;
-    struct integer_list_value integer_list = { .count = count };
-    integer_list.integers = calloc(3, sizeof(*integer_list.integers));
-    integer_list.integers[0] = 1;
-    integer_list.integers[1] = 2;
-    integer_list.integers[2] = 0;
-    const struct event* event = make_simple_event_il(config, "a", integer_list);
+    const char* event = "{\"a\": [1, 2, 0]}";
 
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        struct sub* sub = (struct sub*)make_simple_sub_set_i(config, 0, "a", AST_SET_IN, 0);
-        insert_be_tree(config, sub, cnode, NULL);
+        betree_insert(config, 0, "0 in a", cnode);
 
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, event, cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
@@ -1017,11 +699,10 @@ int test_integer_set_reverse()
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        struct sub* sub = (struct sub*)make_simple_sub_set_i(config, 0, "a", AST_SET_NOT_IN, 0);
-        insert_be_tree(config, sub, cnode, NULL);
+        betree_insert(config, 0, "0 not in a", cnode);
 
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, event, cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "did not find our sub");
 
@@ -1029,7 +710,6 @@ int test_integer_set_reverse()
         free_cnode(cnode);
     }
 
-    free_event((struct event*)event);
     free_config(config);
 
     return 0;
@@ -1039,53 +719,34 @@ int test_string_set()
 {
     struct config* config = make_default_config();
     add_attr_domain_s(config, "a", false);
+    
+    const char* event = "{\"a\": \"a\"}";
 
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        size_t count = 3;
-        struct string_list_value string_list = { .count = count };
-        string_list.strings = calloc(3, sizeof(*string_list.strings));
-        string_list.strings[0] = make_string_value(config, "b");
-        string_list.strings[1] = make_string_value(config, "c");
-        string_list.strings[2] = make_string_value(config, "a");
+        betree_insert(config, 0, "a in (\"b\", \"c\", \"a\")", cnode);
 
-        struct sub* sub = (struct sub*)make_simple_sub_sl(config, 0, "a", AST_SET_IN, string_list);
-        insert_be_tree(config, sub, cnode, NULL);
-
-        const struct event* event = make_simple_event_s(config, "a", "a");
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, event, cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
         free_matched_subs(matched_subs);
-        free_event((struct event*)event);
         free_cnode(cnode);
     }
 
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        size_t count = 3;
-        struct string_list_value string_list = { .count = count };
-        string_list.strings = calloc(3, sizeof(*string_list.strings));
-        string_list.strings[0] = make_string_value(config, "b");
-        string_list.strings[1] = make_string_value(config, "c");
-        string_list.strings[2] = make_string_value(config, "a");
+        betree_insert(config, 0, "a not in (\"b\", \"c\", \"a\")", cnode);
 
-        struct sub* sub
-            = (struct sub*)make_simple_sub_sl(config, 0, "a", AST_SET_NOT_IN, string_list);
-        insert_be_tree(config, sub, cnode, NULL);
-
-        const struct event* event = make_simple_event_s(config, "a", "a");
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, event, cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "did not find our sub");
 
         free_matched_subs(matched_subs);
-        free_event((struct event*)event);
         free_cnode(cnode);
     }
 
@@ -1099,23 +760,15 @@ int test_string_set_reverse()
     struct config* config = make_default_config();
     add_attr_domain_sl(config, "a", false);
 
-    size_t count = 3;
-    struct string_list_value string_list = { .count = count };
-    string_list.strings = calloc(3, sizeof(*string_list.strings));
-    string_list.strings[0] = make_string_value(config, "1");
-    string_list.strings[1] = make_string_value(config, "2");
-    string_list.strings[2] = make_string_value(config, "0");
-    const struct event* event = make_simple_event_sl(config, "a", string_list);
+    const char* event = "{\"a\": [\"1\", \"2\", \"0\"]}";
 
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        struct string_value value = make_string_value(config, "0");
-        struct sub* sub = (struct sub*)make_simple_sub_set_s(config, 0, "a", AST_SET_IN, value);
-        insert_be_tree(config, sub, cnode, NULL);
+        betree_insert(config, 0, "\"0\" in a", cnode);
 
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, event, cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
@@ -1126,12 +779,10 @@ int test_string_set_reverse()
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        struct string_value value = make_string_value(config, "0");
-        struct sub* sub = (struct sub*)make_simple_sub_set_s(config, 0, "a", AST_SET_NOT_IN, value);
-        insert_be_tree(config, sub, cnode, NULL);
+        betree_insert(config, 0, "\"0\" not in a", cnode);
 
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, event, cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "did not find our sub");
 
@@ -1139,7 +790,6 @@ int test_string_set_reverse()
         free_cnode(cnode);
     }
 
-    free_event((struct event*)event);
     free_config(config);
 
     return 0;
@@ -1153,192 +803,96 @@ int test_integer_list()
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        size_t count = 3;
-        struct integer_list_value integer_list = { .count = count };
-        integer_list.integers = calloc(3, sizeof(*integer_list.integers));
-        integer_list.integers[0] = 1;
-        integer_list.integers[1] = 2;
-        integer_list.integers[2] = 0;
+        betree_insert(config, 0, "a one of (1, 2, 0)", cnode);
 
-        struct sub* sub
-            = (struct sub*)make_simple_sub_list_il(config, 0, "a", AST_LIST_ONE_OF, integer_list);
-        insert_be_tree(config, sub, cnode, NULL);
+        const char* event = "{\"a\": [1, 2, 0]}";
 
-        size_t event_count = 3;
-        struct integer_list_value event_integer_list = { .count = event_count };
-        event_integer_list.integers = calloc(3, sizeof(*event_integer_list.integers));
-        event_integer_list.integers[0] = 1;
-        event_integer_list.integers[1] = 2;
-        event_integer_list.integers[2] = 0;
-
-        const struct event* event = make_simple_event_il(config, "a", event_integer_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, event, cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
         free_matched_subs(matched_subs);
-        free_event((struct event*)event);
         free_cnode(cnode);
     }
 
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        size_t count = 3;
-        struct integer_list_value integer_list = { .count = count };
-        integer_list.integers = calloc(3, sizeof(*integer_list.integers));
-        integer_list.integers[0] = 1;
-        integer_list.integers[1] = 2;
-        integer_list.integers[2] = 0;
+        betree_insert(config, 0, "a one of (1, 2, 0)", cnode);
 
-        struct sub* sub
-            = (struct sub*)make_simple_sub_list_il(config, 0, "a", AST_LIST_ONE_OF, integer_list);
-        insert_be_tree(config, sub, cnode, NULL);
+        const char* event = "{\"a\": [4, 5, 3]}";
 
-        size_t event_count = 3;
-        struct integer_list_value event_integer_list = { .count = event_count };
-        event_integer_list.integers = calloc(3, sizeof(*event_integer_list.integers));
-        event_integer_list.integers[0] = 4;
-        event_integer_list.integers[1] = 5;
-        event_integer_list.integers[2] = 3;
-
-        const struct event* event = make_simple_event_il(config, "a", event_integer_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, event, cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "found no sub");
 
         free_matched_subs(matched_subs);
-        free_event((struct event*)event);
         free_cnode(cnode);
     }
 
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        size_t count = 3;
-        struct integer_list_value integer_list = { .count = count };
-        integer_list.integers = calloc(3, sizeof(*integer_list.integers));
-        integer_list.integers[0] = 1;
-        integer_list.integers[1] = 2;
-        integer_list.integers[2] = 0;
+        betree_insert(config, 0, "a none of (1, 2, 0)", cnode);
 
-        struct sub* sub
-            = (struct sub*)make_simple_sub_list_il(config, 0, "a", AST_LIST_NONE_OF, integer_list);
-        insert_be_tree(config, sub, cnode, NULL);
+        const char* event = "{\"a\": [4, 5, 3]}";
 
-        size_t event_count = 3;
-        struct integer_list_value event_integer_list = { .count = event_count };
-        event_integer_list.integers = calloc(3, sizeof(*event_integer_list.integers));
-        event_integer_list.integers[0] = 4;
-        event_integer_list.integers[1] = 5;
-        event_integer_list.integers[2] = 3;
-
-        const struct event* event = make_simple_event_il(config, "a", event_integer_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, event, cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
         free_matched_subs(matched_subs);
-        free_event((struct event*)event);
         free_cnode(cnode);
     }
 
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        size_t count = 3;
-        struct integer_list_value integer_list = { .count = count };
-        integer_list.integers = calloc(3, sizeof(*integer_list.integers));
-        integer_list.integers[0] = 1;
-        integer_list.integers[1] = 2;
-        integer_list.integers[2] = 0;
+        betree_insert(config, 0, "a none of (1, 2, 0)", cnode);
 
-        struct sub* sub
-            = (struct sub*)make_simple_sub_list_il(config, 0, "a", AST_LIST_NONE_OF, integer_list);
-        insert_be_tree(config, sub, cnode, NULL);
+        const char* event = "{\"a\": [1, 2, 0]}";
 
-        size_t event_count = 3;
-        struct integer_list_value event_integer_list = { .count = event_count };
-        event_integer_list.integers = calloc(3, sizeof(*event_integer_list.integers));
-        event_integer_list.integers[0] = 1;
-        event_integer_list.integers[1] = 2;
-        event_integer_list.integers[2] = 0;
-
-        const struct event* event = make_simple_event_il(config, "a", event_integer_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, event, cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "found no sub");
 
         free_matched_subs(matched_subs);
-        free_event((struct event*)event);
         free_cnode(cnode);
     }
 
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        size_t count = 3;
-        struct integer_list_value integer_list = { .count = count };
-        integer_list.integers = calloc(3, sizeof(*integer_list.integers));
-        integer_list.integers[0] = 1;
-        integer_list.integers[1] = 2;
-        integer_list.integers[2] = 0;
+        betree_insert(config, 0, "a all of (1, 2, 0)", cnode);
 
-        struct sub* sub
-            = (struct sub*)make_simple_sub_list_il(config, 0, "a", AST_LIST_ALL_OF, integer_list);
-        insert_be_tree(config, sub, cnode, NULL);
+        const char* event = "{\"a\": [1, 2, 0]}";
 
-        size_t event_count = 3;
-        struct integer_list_value event_integer_list = { .count = event_count };
-        event_integer_list.integers = calloc(3, sizeof(*event_integer_list.integers));
-        event_integer_list.integers[0] = 1;
-        event_integer_list.integers[1] = 2;
-        event_integer_list.integers[2] = 0;
-
-        const struct event* event = make_simple_event_il(config, "a", event_integer_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, event, cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
         free_matched_subs(matched_subs);
-        free_event((struct event*)event);
         free_cnode(cnode);
     }
 
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        size_t count = 3;
-        struct integer_list_value integer_list = { .count = count };
-        integer_list.integers = calloc(3, sizeof(*integer_list.integers));
-        integer_list.integers[0] = 1;
-        integer_list.integers[1] = 2;
-        integer_list.integers[2] = 0;
+        betree_insert(config, 0, "a all of (1, 2, 0)", cnode);
 
-        struct sub* sub
-            = (struct sub*)make_simple_sub_list_il(config, 0, "a", AST_LIST_ALL_OF, integer_list);
-        insert_be_tree(config, sub, cnode, NULL);
+        const char* event = "{\"a\": [1, 2, 3]}";
 
-        size_t event_count = 3;
-        struct integer_list_value event_integer_list = { .count = event_count };
-        event_integer_list.integers = calloc(3, sizeof(*event_integer_list.integers));
-        event_integer_list.integers[0] = 1;
-        event_integer_list.integers[1] = 2;
-        event_integer_list.integers[2] = 3;
-
-        const struct event* event = make_simple_event_il(config, "a", event_integer_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, event, cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "found no sub");
 
         free_matched_subs(matched_subs);
-        free_event((struct event*)event);
         free_cnode(cnode);
     }
 
@@ -1355,192 +909,96 @@ int test_string_list()
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        size_t count = 3;
-        struct string_list_value string_list = { .count = count };
-        string_list.strings = calloc(3, sizeof(*string_list.strings));
-        string_list.strings[0] = make_string_value(config, "1");
-        string_list.strings[1] = make_string_value(config, "2");
-        string_list.strings[2] = make_string_value(config, "0");
+        betree_insert(config, 0, "a one of (\"1\", \"2\", \"0\")", cnode);
 
-        struct sub* sub
-            = (struct sub*)make_simple_sub_list_sl(config, 0, "a", AST_LIST_ONE_OF, string_list);
-        insert_be_tree(config, sub, cnode, NULL);
+        const char* event = "{\"a\": [\"1\", \"2\", \"0\"]}";
 
-        size_t event_count = 3;
-        struct string_list_value event_string_list = { .count = event_count };
-        event_string_list.strings = calloc(3, sizeof(*event_string_list.strings));
-        event_string_list.strings[0] = make_string_value(config, "1");
-        event_string_list.strings[1] = make_string_value(config, "2");
-        event_string_list.strings[2] = make_string_value(config, "0");
-
-        const struct event* event = make_simple_event_sl(config, "a", event_string_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, event, cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
         free_matched_subs(matched_subs);
-        free_event((struct event*)event);
         free_cnode(cnode);
     }
 
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        size_t count = 3;
-        struct string_list_value string_list = { .count = count };
-        string_list.strings = calloc(3, sizeof(*string_list.strings));
-        string_list.strings[0] = make_string_value(config, "1");
-        string_list.strings[1] = make_string_value(config, "2");
-        string_list.strings[2] = make_string_value(config, "0");
+        betree_insert(config, 0, "a one of (\"1\", \"2\", \"0\")", cnode);
 
-        struct sub* sub
-            = (struct sub*)make_simple_sub_list_sl(config, 0, "a", AST_LIST_ONE_OF, string_list);
-        insert_be_tree(config, sub, cnode, NULL);
+        const char* event = "{\"a\": [\"4\", \"5\", \"3\"]}";
 
-        size_t event_count = 3;
-        struct string_list_value event_string_list = { .count = event_count };
-        event_string_list.strings = calloc(3, sizeof(*event_string_list.strings));
-        event_string_list.strings[0] = make_string_value(config, "4");
-        event_string_list.strings[1] = make_string_value(config, "5");
-        event_string_list.strings[2] = make_string_value(config, "3");
-
-        const struct event* event = make_simple_event_sl(config, "a", event_string_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, event, cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "found no sub");
 
         free_matched_subs(matched_subs);
-        free_event((struct event*)event);
         free_cnode(cnode);
     }
 
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        size_t count = 3;
-        struct string_list_value string_list = { .count = count };
-        string_list.strings = calloc(3, sizeof(*string_list.strings));
-        string_list.strings[0] = make_string_value(config, "1");
-        string_list.strings[1] = make_string_value(config, "2");
-        string_list.strings[2] = make_string_value(config, "0");
+        betree_insert(config, 0, "a none of (\"1\", \"2\", \"0\")", cnode);
 
-        struct sub* sub
-            = (struct sub*)make_simple_sub_list_sl(config, 0, "a", AST_LIST_NONE_OF, string_list);
-        insert_be_tree(config, sub, cnode, NULL);
+        const char* event = "{\"a\": [\"4\", \"5\", \"3\"]}";
 
-        size_t event_count = 3;
-        struct string_list_value event_string_list = { .count = event_count };
-        event_string_list.strings = calloc(3, sizeof(*event_string_list.strings));
-        event_string_list.strings[0] = make_string_value(config, "4");
-        event_string_list.strings[1] = make_string_value(config, "5");
-        event_string_list.strings[2] = make_string_value(config, "3");
-
-        const struct event* event = make_simple_event_sl(config, "a", event_string_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, event, cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
         free_matched_subs(matched_subs);
-        free_event((struct event*)event);
         free_cnode(cnode);
     }
 
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        size_t count = 3;
-        struct string_list_value string_list = { .count = count };
-        string_list.strings = calloc(3, sizeof(*string_list.strings));
-        string_list.strings[0] = make_string_value(config, "1");
-        string_list.strings[1] = make_string_value(config, "2");
-        string_list.strings[2] = make_string_value(config, "0");
+        betree_insert(config, 0, "a none of (\"1\", \"2\", \"0\")", cnode);
 
-        struct sub* sub
-            = (struct sub*)make_simple_sub_list_sl(config, 0, "a", AST_LIST_NONE_OF, string_list);
-        insert_be_tree(config, sub, cnode, NULL);
+        const char* event = "{\"a\": [\"1\", \"2\", \"0\"]}";
 
-        size_t event_count = 3;
-        struct string_list_value event_string_list = { .count = event_count };
-        event_string_list.strings = calloc(3, sizeof(*event_string_list.strings));
-        event_string_list.strings[0] = make_string_value(config, "1");
-        event_string_list.strings[1] = make_string_value(config, "2");
-        event_string_list.strings[2] = make_string_value(config, "0");
-
-        const struct event* event = make_simple_event_sl(config, "a", event_string_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, event, cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "found no sub");
 
         free_matched_subs(matched_subs);
-        free_event((struct event*)event);
         free_cnode(cnode);
     }
 
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        size_t count = 3;
-        struct string_list_value string_list = { .count = count };
-        string_list.strings = calloc(3, sizeof(*string_list.strings));
-        string_list.strings[0] = make_string_value(config, "1");
-        string_list.strings[1] = make_string_value(config, "2");
-        string_list.strings[2] = make_string_value(config, "0");
+        betree_insert(config, 0, "a all of (\"1\", \"2\", \"0\")", cnode);
 
-        struct sub* sub
-            = (struct sub*)make_simple_sub_list_sl(config, 0, "a", AST_LIST_ALL_OF, string_list);
-        insert_be_tree(config, sub, cnode, NULL);
+        const char* event = "{\"a\": [\"1\", \"2\", \"0\"]}";
 
-        size_t event_count = 3;
-        struct string_list_value event_string_list = { .count = event_count };
-        event_string_list.strings = calloc(3, sizeof(*event_string_list.strings));
-        event_string_list.strings[0] = make_string_value(config, "1");
-        event_string_list.strings[1] = make_string_value(config, "2");
-        event_string_list.strings[2] = make_string_value(config, "0");
-
-        const struct event* event = make_simple_event_sl(config, "a", event_string_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, event, cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 1, "found our sub");
 
         free_matched_subs(matched_subs);
-        free_event((struct event*)event);
         free_cnode(cnode);
     }
 
     {
         struct cnode* cnode = make_cnode(config, NULL);
 
-        size_t count = 3;
-        struct string_list_value string_list = { .count = count };
-        string_list.strings = calloc(3, sizeof(*string_list.strings));
-        string_list.strings[0] = make_string_value(config, "1");
-        string_list.strings[1] = make_string_value(config, "2");
-        string_list.strings[2] = make_string_value(config, "0");
+        betree_insert(config, 0, "a all of (\"1\", \"2\", \"0\")", cnode);
 
-        struct sub* sub
-            = (struct sub*)make_simple_sub_list_sl(config, 0, "a", AST_LIST_ALL_OF, string_list);
-        insert_be_tree(config, sub, cnode, NULL);
+        const char* event = "{\"a\": [\"1\", \"2\", \"3\"]}";
 
-        size_t event_count = 3;
-        struct string_list_value event_string_list = { .count = event_count };
-        event_string_list.strings = calloc(3, sizeof(*event_string_list.strings));
-        event_string_list.strings[0] = make_string_value(config, "1");
-        event_string_list.strings[1] = make_string_value(config, "2");
-        event_string_list.strings[2] = make_string_value(config, "3");
-
-        const struct event* event = make_simple_event_sl(config, "a", event_string_list);
         struct matched_subs* matched_subs = make_matched_subs();
-        match_be_tree(config, event, cnode, matched_subs, NULL, NULL);
+        betree_search(config, event, cnode, matched_subs, NULL);
 
         mu_assert(matched_subs->sub_count == 0, "found no sub");
 
         free_matched_subs(matched_subs);
-        free_event((struct event*)event);
         free_cnode(cnode);
     }
 

@@ -173,7 +173,7 @@ const char* list_op_to_string(enum ast_list_e op)
     }
 }
 
-const char* ast_to_string(const struct ast_node* node)
+char* ast_to_string(const struct ast_node* node)
 {
     char* expr;
     switch(node->type) {

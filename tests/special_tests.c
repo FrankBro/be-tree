@@ -15,12 +15,12 @@ frequency(
     bool has_not,
     enum frequency_type_e type, const char* ns, int64_t value, int64_t length, 
     int64_t now, 
-    enum frequency_type_e cap_type, uint32_t cap_id, const char* cap_ns, uint32_t cap_value, bool timestamp_defined, int64_t timestamp)
+    enum frequency_type_e cap_type, uint32_t cap_id, const char* cap_ns, uint32_t cap_value, int64_t timestamp)
 {
     struct config* config = make_default_config();
     add_attr_domain_i(config, "now", 0, 10, false);
-    add_attr_domain_frequency(config, "frequency_caps", false);
-    struct ast_node* node = NULL;
+    const char* frequency_attr = "frequency_caps";
+    add_attr_domain_frequency(config, frequency_attr, false);
     char* expr;
     const char* pre;
     if(has_not) {
@@ -30,135 +30,134 @@ frequency(
         pre = "";
     }
     int64_t usec = 1000 * 1000;
-    struct string_value type_value = frequency_type_to_string(config, type);
-    asprintf(&expr, "%swithin_frequency_cap(\"%s\", \"%s\", %" PRId64 ", %" PRId64 ")", pre, type_value.string, ns, value, length);
-    (void)parse(expr, &node);
-    assign_str_id(config, node);
-    struct event* event = (struct event*)make_event();
-    event->pred_count = 2;
-    event->preds = calloc(2, sizeof(*event->preds));
-    event->preds[0] = (struct pred*)make_simple_pred_i("now", 0, now);
-    struct string_value cap_ns_value = { .string = strdup(cap_ns), .str = get_id_for_string(config, cap_ns) };
-    event->preds[1] = (struct pred*)make_simple_pred_frequency(1, cap_type, cap_id, cap_ns_value, timestamp_defined, timestamp * usec, cap_value);
-    bool result = match_node(config, event, node, NULL, NULL);
+    const char* type_value = frequency_type_to_string(type);
+    asprintf(&expr, "%swithin_frequency_cap(\"%s\", \"%s\", %" PRId64 ", %" PRId64 ")", pre, type_value, ns, value, length);
+    struct cnode* cnode = make_cnode(config, NULL);
+    betree_insert(config, 1, expr, cnode);
+    char* event_str;
+    const char* cap_type_value = frequency_type_to_string(cap_type);
+    asprintf(&event_str, "{\"now\": %ld, \"frequency_caps\": [[\"%s\", %u, \"%s\", %ld, %d]]}", now, cap_type_value, cap_id, cap_ns, timestamp * usec, cap_value);
+    struct matched_subs* matched_subs = make_matched_subs();
+    betree_search(config, event_str, cnode, matched_subs, NULL);
+    bool result = matched_subs->sub_count == 1;
     free_config(config);
-    free_ast_node(node);
-    free_event((struct event*)event);
+    free_cnode(cnode);
+    free_matched_subs(matched_subs);
     return result;
 }
 
 static bool within_frequency_cap(
     enum frequency_type_e type, const char* ns, int64_t value, int64_t length, 
     int64_t now, 
-    enum frequency_type_e cap_type, uint32_t cap_id, const char* cap_ns, uint32_t cap_value, bool timestamp_defined, int64_t timestamp) 
-    { return frequency(false, type, ns, value, length, now, cap_type, cap_id, cap_ns, cap_value, timestamp_defined, timestamp); }
+    enum frequency_type_e cap_type, uint32_t cap_id, const char* cap_ns, uint32_t cap_value, int64_t timestamp) 
+    { return frequency(false, type, ns, value, length, now, cap_type, cap_id, cap_ns, cap_value, timestamp); }
 static bool not_within_frequency_cap(
     enum frequency_type_e type, const char* ns, int64_t value, int64_t length, 
     int64_t now, 
-    enum frequency_type_e cap_type, uint32_t cap_id, const char* cap_ns, uint32_t cap_value, bool timestamp_defined, int64_t timestamp) 
-    { return frequency(true, type, ns, value, length, now, cap_type, cap_id, cap_ns, cap_value, timestamp_defined, timestamp); }
+    enum frequency_type_e cap_type, uint32_t cap_id, const char* cap_ns, uint32_t cap_value, int64_t timestamp) 
+    { return frequency(true, type, ns, value, length, now, cap_type, cap_id, cap_ns, cap_value, timestamp); }
 
 int test_frequency()
 {
     mu_assert(within_frequency_cap(
         FREQUENCY_TYPE_FLIGHT, "ns", 100, 0,
         0, 
-        FREQUENCY_TYPE_FLIGHT, 10, "ns", 0, false, 0
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 0, 0
     ), "fcap_type_flight");
     mu_assert(within_frequency_cap(
         FREQUENCY_TYPE_FLIGHTIP, "ns", 100, 0,
         0, 
-        FREQUENCY_TYPE_FLIGHTIP, 10, "ns", 0, false, 0
+        FREQUENCY_TYPE_FLIGHTIP, 10, "ns", 0, 0
     ), "fcap_type_flight_ip");
     mu_assert(within_frequency_cap(
         FREQUENCY_TYPE_ADVERTISER, "ns", 100, 0,
         0, 
-        FREQUENCY_TYPE_ADVERTISER, 20, "ns", 0, false, 0
+        FREQUENCY_TYPE_ADVERTISER, 20, "ns", 0, 0
     ), "fcap_type_advertiser");
     mu_assert(within_frequency_cap(
         FREQUENCY_TYPE_ADVERTISERIP, "ns", 100, 0,
         0, 
-        FREQUENCY_TYPE_ADVERTISERIP, 20, "ns", 0, false, 0
+        FREQUENCY_TYPE_ADVERTISERIP, 20, "ns", 0, 0
     ), "fcap_type_advertiser_ip");
     mu_assert(within_frequency_cap(
         FREQUENCY_TYPE_CAMPAIGN, "ns", 100, 0,
         0, 
-        FREQUENCY_TYPE_CAMPAIGN, 30, "ns", 0, false, 0
+        FREQUENCY_TYPE_CAMPAIGN, 30, "ns", 0, 0
     ), "fcap_type_campaign");
     mu_assert(within_frequency_cap(
         FREQUENCY_TYPE_CAMPAIGNIP, "ns", 100, 0,
         0, 
-        FREQUENCY_TYPE_CAMPAIGNIP, 30, "ns", 0, false, 0
+        FREQUENCY_TYPE_CAMPAIGNIP, 30, "ns", 0, 0
     ), "fcap_type_campaign_ip");
     mu_assert(within_frequency_cap(
         FREQUENCY_TYPE_PRODUCT, "ns", 100, 0,
         0, 
-        FREQUENCY_TYPE_PRODUCT, 40, "ns", 0, false, 0
+        FREQUENCY_TYPE_PRODUCT, 40, "ns", 0, 0
     ), "fcap_type_product");
     mu_assert(within_frequency_cap(
         FREQUENCY_TYPE_PRODUCTIP, "ns", 100, 0,
         0, 
-        FREQUENCY_TYPE_PRODUCTIP, 40, "ns", 0, false, 0
+        FREQUENCY_TYPE_PRODUCTIP, 40, "ns", 0, 0
     ), "fcap_type_product_ip");
 
     mu_assert(within_frequency_cap(
         FREQUENCY_TYPE_PRODUCT, "ns", 100, 0,
         0, 
-        FREQUENCY_TYPE_FLIGHT, 10, "ns", 200, false, 0
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 200, 0
     ), "fcap_id_type_ne");
     mu_assert(within_frequency_cap(
         FREQUENCY_TYPE_FLIGHT, "ns", 100, 0,
         0, 
-        FREQUENCY_TYPE_FLIGHT, 1, "ns", 200, false, 0
+        FREQUENCY_TYPE_FLIGHT, 1, "ns", 200, 0
     ), "fcap_id_id_ne");
     mu_assert(within_frequency_cap(
         FREQUENCY_TYPE_FLIGHT, "blah", 100, 0,
         0, 
-        FREQUENCY_TYPE_FLIGHT, 10, "ns", 200, false, 0
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 200, 0
     ), "fcap_id_ns_ne");
 
     mu_assert(within_frequency_cap(
         FREQUENCY_TYPE_FLIGHT, "ns", 100, 0,
         0, 
-        FREQUENCY_TYPE_FLIGHT, 10, "ns", 99, false, 0
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 99, 0
     ), "fcap_val_lt");
     mu_assert(!within_frequency_cap(
         FREQUENCY_TYPE_FLIGHT, "ns", 100, 0,
         0, 
-        FREQUENCY_TYPE_FLIGHT, 10, "ns", 100, false, 0
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 100, 0
     ), "fcap_val_eq");
     mu_assert(!within_frequency_cap(
         FREQUENCY_TYPE_FLIGHT, "ns", 100, 0,
         0, 
-        FREQUENCY_TYPE_FLIGHT, 10, "ns", 101, false, 0
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 101, 0
     ), "fcap_val_gt");
 
     mu_assert(within_frequency_cap(
         FREQUENCY_TYPE_FLIGHT, "ns", 100, 20,
         40, 
-        FREQUENCY_TYPE_FLIGHT, 10, "ns", 200, true, 10
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 200, 10
     ), "fcap_ts_lt");
     mu_assert(!within_frequency_cap(
         FREQUENCY_TYPE_FLIGHT, "ns", 100, 20,
         40, 
-        FREQUENCY_TYPE_FLIGHT, 10, "ns", 200, true, 20
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 200, 20
     ), "fcap_ts_eq");
     mu_assert(!within_frequency_cap(
         FREQUENCY_TYPE_FLIGHT, "ns", 100, 20,
         40, 
-        FREQUENCY_TYPE_FLIGHT, 10, "ns", 200, true, 30
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 200, 30
     ), "fcap_ts_gt");
 
     mu_assert(within_frequency_cap(
         FREQUENCY_TYPE_FLIGHT, "ns", 100, 20,
         40, 
-        FREQUENCY_TYPE_FLIGHT, 10, "ns", 99, true, 30
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 99, 30
     ), "fcap_val_lt_ts_gt");
 
     mu_assert(!not_within_frequency_cap(
         FREQUENCY_TYPE_FLIGHT, "ns", 100, 20,
         40, 
-        FREQUENCY_TYPE_FLIGHT, 10, "ns", 99, true, 30
+        FREQUENCY_TYPE_FLIGHT, 10, "ns", 99, 30
     ), "fcap_not_val_lt_ts_gt");
     return 0;
 }
@@ -223,17 +222,13 @@ segment(bool has_not, enum segment_function_type func_type,
     int64_t usec = 1000 * 1000;
     asprintf(&expr, "%s%s(%s%" PRId64 ", %" PRId64 ")", pre, func, var, id, seconds);
     (void)parse(expr, &node);
-    struct event* event = (struct event*)make_event();
-    event->pred_count = 4;
-    event->preds = calloc(4, sizeof(*event->preds));
-    event->preds[0] = (struct pred*)make_simple_pred_i("now", 0, 40);
-    event->preds[1] = (struct pred*)make_simple_pred_segment("seg_a", 1, 1, 30 * usec);
-    event->preds[2] = (struct pred*)make_simple_pred_segment("seg_b", 2, 1, 10 * usec);
-    event->preds[3] = (struct pred*)make_simple_pred_segment("segments_with_timestamp", 3, segment_id, segment_seconds * usec);
+    char* event_str;
+    asprintf(&event_str, "{\"now\": 40, \"seg_a\": [[1, %ld]], \"seg_b\": [[1, %ld]], \"segments_with_timestamp\": [[%ld, %ld]]}", 30 * usec, 10 * usec, segment_id, segment_seconds * usec);
+    struct event* event = make_event_from_string(config, event_str);
     bool result = match_node(config, event, node, NULL, NULL);
     free_config(config);
     free_ast_node(node);
-    free_event((struct event*)event);
+    free_event(event);
     return result;
 }
 
@@ -293,15 +288,13 @@ static bool geo(bool has_not, const char* latitude, const char* longitude, const
     }
     asprintf(&expr, "%sgeo_within_radius(%s, %s, %s)", pre, latitude, longitude, radius);
     parse(expr, &node);
-    struct event* event = (struct event*)make_event();
-    event->pred_count = 2;
-    event->preds = calloc(2, sizeof(*event->preds));
-    event->preds[0] = (struct pred*)make_simple_pred_f("latitude", 0, latitude_value);
-    event->preds[1] = (struct pred*)make_simple_pred_f("longitude", 1, longitude_value);
+    char* event_str;
+    asprintf(&event_str, "{\"latitude\": %.1f, \"longitude\": %.1f}", latitude_value, longitude_value);
+    struct event* event = make_event_from_string(config, event_str);
     bool result = match_node(config, event, node, NULL, NULL);
     free_config(config);
     free_ast_node(node);
-    free_event((struct event*)event);
+    free_event(event);
     return result;
 }
 
@@ -335,11 +328,13 @@ static bool contains(bool has_not, const char* attr, bool allow_undefined, const
     asprintf(&expr, "%scontains(%s, \"%s\")", pre, attr, pattern);
     parse(expr, &node);
     const char* event_attr = allow_undefined ? "a" : attr;
-    const struct event* event = make_simple_event_s(config, event_attr, value);
+    char* event_str;
+    asprintf(&event_str, "{\"%s\": \"%s\"}", event_attr, value);
+    struct event* event = make_event_from_string(config, event_str);
     bool result = match_node(config, event, node, NULL, NULL);
     free_config(config);
     free_ast_node(node);
-    free_event((struct event*)event);
+    free_event(event);
     return result;
 }
 
@@ -383,11 +378,13 @@ static bool starts_with(bool has_not, const char* attr, bool allow_undefined, co
     asprintf(&expr, "%sstarts_with(%s, \"%s\")", pre, attr, pattern);
     parse(expr, &node);
     const char* event_attr = allow_undefined ? "a" : attr;
-    const struct event* event = make_simple_event_s(config, event_attr, value);
+    char* event_str;
+    asprintf(&event_str, "{\"%s\": \"%s\"}", event_attr, value);
+    struct event* event = make_event_from_string(config, event_str);
     bool result = match_node(config, event, node, NULL, NULL);
     free_config(config);
     free_ast_node(node);
-    free_event((struct event*)event);
+    free_event(event);
     return result;
 }
 
@@ -426,11 +423,13 @@ static bool ends_with(bool has_not, const char* attr, bool allow_undefined, cons
     asprintf(&expr, "%sends_with(%s, \"%s\")", pre, attr, pattern);
     parse(expr, &node);
     const char* event_attr = allow_undefined ? "a" : attr;
-    const struct event* event = make_simple_event_s(config, event_attr, value);
+    char* event_str;
+    asprintf(&event_str, "{\"%s\": \"%s\"}", event_attr, value);
+    struct event* event = make_event_from_string(config, event_str);
     bool result = match_node(config, event, node, NULL, NULL);
     free_config(config);
     free_ast_node(node);
-    free_event((struct event*)event);
+    free_event(event);
     return result;
 }
 
