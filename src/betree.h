@@ -127,24 +127,18 @@ void add_attr_domain_f(
 void add_attr_domain_b(
     struct config* config, const char* attr, bool min, bool max, bool allow_undefined);
 void add_attr_domain_s(struct config* config, const char* attr, bool allow_undefined);
+void add_attr_domain_bounded_s(struct config* config, const char* attr, bool allow_undefined, size_t max);
 void add_attr_domain_il(struct config* config, const char* attr, bool allow_undefined);
 void add_attr_domain_sl(struct config* config, const char* attr, bool allow_undefined);
 void add_attr_domain_segments(struct config* config, const char* attr, bool allow_undefined);
 void add_attr_domain_frequency(struct config* config, const char* attr, bool allow_undefined);
-void adjust_attr_domains(struct config* config,
-    const struct ast_node* node,
-    struct value_bound bound,
-    bool allow_undefined);
-void adjust_attr_domains_i(struct config* config,
-    const struct ast_node* node,
-    int64_t min,
-    int64_t max,
-    bool allow_undefined);
 const struct attr_domain* get_attr_domain(const struct config* config, betree_var_t variable_id);
 bool is_variable_allow_undefined(const struct config* config, const betree_var_t variable_id);
 
 const char* get_attr_for_id(const struct config* config, betree_var_t variable_id);
+betree_var_t try_get_id_for_attr(const struct config* config, const char* attr);
 betree_var_t get_id_for_attr(struct config* config, const char* attr);
+betree_str_t try_get_id_for_string(const struct config* config, struct attr_var attr_var, const char* string);
 betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, const char* string);
 
 void free_sub(struct sub* sub);
@@ -179,13 +173,14 @@ struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* ex
 struct event* make_event();
 void event_to_string(const struct event* event, char* buffer);
 
+bool betree_can_insert(const struct config* config, betree_sub_t id, const char* expr, struct cnode* cnode);
 void betree_insert(struct config* config, betree_sub_t id, const char* expr, struct cnode* cnode);
-void betree_search_with_event(struct config* config,
+void betree_search_with_event(const struct config* config,
     struct event* event,
     const struct cnode* cnode,
     struct matched_subs* matched_subs,
     struct report* report);
-void betree_search(struct config* config,
+void betree_search(const struct config* config,
     const char* event,
     const struct cnode* cnode,
     struct matched_subs* matched_subs,
@@ -199,11 +194,11 @@ void free_attr_var(struct attr_var attr_var);
 struct pred* make_pred(const char* attr, betree_var_t variable_id, struct value value);
 void add_pred(struct pred* pred, struct event* event);
 
-void fill_event(struct config* config, struct event* event);
+void fill_event(const struct config* config, struct event* event);
 bool validate_event(const struct config* config, const struct event* event);
 
 struct report make_empty_report();
-struct event* make_event_from_string(struct config* config, const char* event_str);
+struct event* make_event_from_string(const struct config* config, const char* event_str);
 
 struct memoize make_memoize(size_t pred_count);
 void free_memoize(struct memoize memoize);

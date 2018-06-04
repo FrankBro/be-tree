@@ -36,9 +36,9 @@ enum variable_state_e get_float_var(
 }
 
 enum variable_state_e get_float_attr(
-    struct config* config, const struct event* event, const char* attr, double* ret)
+    const struct config* config, const struct event* event, const char* attr, double* ret)
 {
-    betree_var_t var = get_id_for_attr(config, attr);
+    betree_var_t var = try_get_id_for_attr(config, attr);
     return get_float_var(config, var, event, ret);
 }
 
@@ -57,9 +57,9 @@ enum variable_state_e get_string_var(const struct config* config,
 }
 
 enum variable_state_e get_string_attr(
-    struct config* config, const struct event* event, const char* attr, struct string_value* ret)
+    const struct config* config, const struct event* event, const char* attr, struct string_value* ret)
 {
-    betree_var_t var = get_id_for_attr(config, attr);
+    betree_var_t var = try_get_id_for_attr(config, attr);
     return get_string_var(config, var, event, ret);
 }
 
@@ -76,9 +76,9 @@ enum variable_state_e get_integer_var(
 }
 
 enum variable_state_e get_integer_attr(
-    struct config* config, const struct event* event, const char* attr, int64_t* ret)
+    const struct config* config, const struct event* event, const char* attr, int64_t* ret)
 {
-    betree_var_t var = get_id_for_attr(config, attr);
+    betree_var_t var = try_get_id_for_attr(config, attr);
     return get_integer_var(config, var, event, ret);
 }
 
@@ -140,9 +140,9 @@ enum variable_state_e get_segments_var(const struct config* config,
 }
 
 enum variable_state_e get_segments_attr(
-    struct config* config, const struct event* event, const char* attr, struct segments_list* ret)
+    const struct config* config, const struct event* event, const char* attr, struct segments_list* ret)
 {
-    betree_var_t var = get_id_for_attr(config, attr);
+    betree_var_t var = try_get_id_for_attr(config, attr);
     return get_segments_var(config, var, event, ret);
 }
 
@@ -162,9 +162,9 @@ enum variable_state_e get_frequency_var(const struct config* config,
 }
 
 enum variable_state_e get_frequency_attr(
-    struct config* config, const struct event* event, struct frequency_caps_list* ret)
+    const struct config* config, const struct event* event, struct frequency_caps_list* ret)
 {
-    betree_var_t var = get_id_for_attr(config, "frequency_caps");
+    betree_var_t var = try_get_id_for_attr(config, "frequency_caps");
     return get_frequency_var(config, var, event, ret);
 }
 

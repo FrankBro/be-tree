@@ -1049,6 +1049,39 @@ int test_parenthesis()
     return 0;
 }
 
+int splitable_string_domain()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_bounded_s(config, "s", false, 5);
+
+    struct cnode* cnode = make_cnode(config, NULL);
+    betree_insert(config, 0, "s = \"0\"", cnode);
+    betree_insert(config, 1, "s = \"1\"", cnode);
+    betree_insert(config, 2, "s = \"2\"", cnode);
+    betree_insert(config, 3, "s = \"3\"", cnode);
+    betree_insert(config, 4, "s = \"4\"", cnode);
+
+    mu_assert(!betree_can_insert(config, 5, "s = \"5\"", cnode), "can't insert another string value");
+
+    mu_assert(cnode->lnode->sub_count == 0, "first lnode empty");
+    mu_assert(cnode->pdir->pnode_count == 1, "has a pnode");
+    mu_assert(cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 0, "second lnode empty");
+    mu_assert(cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->sub_count == 3, "lchild has 3 subs");
+    mu_assert(cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->sub_count == 2, "rchild has 2 subs");
+
+    struct matched_subs* matched_subs = make_matched_subs();
+    struct report report = make_empty_report();
+    betree_search(config, "{\"s\": \"2\"}", cnode, matched_subs, &report);
+
+    mu_assert(matched_subs->sub_count == 1, "matched 1");
+    mu_assert(report.expressions_matched == 1 && report.expressions_evaluated == 3, "only had to evaluate lchild");
+
+    free_config(config);
+    free_cnode(cnode);
+    free_matched_subs(matched_subs);
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_sub_has_attribute);
@@ -1076,6 +1109,7 @@ int all_tests()
     mu_run_test(test_integer_list);
     mu_run_test(test_string_list);
     mu_run_test(test_parenthesis);
+    mu_run_test(splitable_string_domain);
 
     return 0;
 }

@@ -150,7 +150,13 @@ void read_betree_defs(struct config* config)
             add_attr_domain_segments(config, name, allow_undefined);
         }
         else if(strcmp(type, "string") == 0) {
-            add_attr_domain_s(config, name, allow_undefined);
+            if(min_str != NULL) {
+                size_t max = atoi(min_str);
+                add_attr_domain_bounded_s(config, name, allow_undefined, max);
+            }
+            else {
+                add_attr_domain_s(config, name, allow_undefined);
+            }
         }
         else if(strcmp(type, "integer list") == 0) {
             add_attr_domain_il(config, name, allow_undefined);
@@ -243,7 +249,7 @@ int test_real()
         matched_average,
         memoized_average);
     // DEBUG
-    /*write_dot_file(config, cnode);*/
+    write_dot_file(config, cnode);
     // DEBUG
 
 

@@ -306,7 +306,7 @@ struct ast_node* ast_special_string_create(
     enum ast_special_string_e op, const char* name, const char* pattern);
 void free_ast_node(struct ast_node* node);
 
-bool match_node(struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report);
+bool match_node(const struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report);
 
 void get_variable_bound(
     const struct attr_domain* domain, const struct ast_node* node, struct value_bound* bound);
@@ -319,4 +319,7 @@ const char* frequency_type_to_string(enum frequency_type_e type);
 bool eq_expr(const struct ast_node* a, const struct ast_node* b);
 
 struct ast_node* clone_node(const struct ast_node* node);
+
+bool all_variables_in_config(const struct config* config, const struct ast_node* node);
+bool all_bounded_strings_valid(const struct config* config, const struct ast_node* node);
 

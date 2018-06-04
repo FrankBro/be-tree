@@ -410,7 +410,7 @@ const char* frequency_type_to_string(enum frequency_type_e type)
 }
 
 bool match_special_expr(
-    struct config* config, const struct event* event, const struct ast_special_expr special_expr)
+    const struct config* config, const struct event* event, const struct ast_special_expr special_expr)
 {
     switch(special_expr.type) {
         case AST_SPECIAL_FREQUENCY: {
@@ -890,10 +890,10 @@ bool match_equality_expr(const struct config* config,
     }
 }
 
-static bool match_node_inner(struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report, bool is_top_level);
+static bool match_node_inner(const struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report, bool is_top_level);
 
 bool match_bool_expr(
-    struct config* config, const struct event* event, const struct ast_bool_expr bool_expr, struct memoize* memoize, struct report* report)
+    const struct config* config, const struct event* event, const struct ast_bool_expr bool_expr, struct memoize* memoize, struct report* report)
 {
     switch(bool_expr.op) {
         case AST_BOOL_AND: {
@@ -961,7 +961,7 @@ void print_memoize(const struct memoize* memoize, size_t pred_count)
     printf("\n");
 }
 
-static bool match_node_inner(struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report, bool is_top_level)
+static bool match_node_inner(const struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report, bool is_top_level)
 {
     // TODO allow undefined handling?
     if(MATCH_NODE_DEBUG) {
@@ -1037,7 +1037,7 @@ static bool match_node_inner(struct config* config, const struct event* event, c
     return result;
 }
 
-bool match_node(struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report)
+bool match_node(const struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report)
 {
     return match_node_inner(config, event, node, memoize, report, true);
 }
@@ -1103,7 +1103,8 @@ void get_variable_bound(
                             return;
                         }
                         case AST_EQUALITY_VALUE_STRING: {
-                            invalid_expr("Trying to get the bound of a string value");
+                            bound->smin = smin(bound->smin, node->equality_expr.value.string_value.str);
+                            bound->smax = smax(bound->smax, node->equality_expr.value.string_value.str);
                             return;
                         }
                         default: {
@@ -1125,7 +1126,8 @@ void get_variable_bound(
                             return;
                         }
                         case AST_EQUALITY_VALUE_STRING: {
-                            invalid_expr("Trying to get the bound of a string value");
+                            bound->smin = domain->bound.smin;
+                            bound->smax = domain->bound.smax;
                             return;
                         }
                         default: {
@@ -1968,5 +1970,152 @@ struct ast_node* clone_node(const struct ast_node* node)
             break;
     }
     return clone;
+}
+
+bool var_exists(const struct config* config, const char* attr)
+{
+    for(size_t i = 0; i < config->attr_to_id_count; i++) {
+        if(strcmp(attr, config->attr_to_ids[i]) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool all_variables_in_config(const struct config* config, const struct ast_node* node)
+{
+    switch(node->type) {
+        case AST_TYPE_NUMERIC_COMPARE_EXPR:
+            return var_exists(config, node->numeric_compare_expr.attr_var.attr);
+        case AST_TYPE_EQUALITY_EXPR:
+            return var_exists(config, node->equality_expr.attr_var.attr);
+        case AST_TYPE_BOOL_EXPR:
+            switch(node->bool_expr.op) {
+                case AST_BOOL_OR:
+                case AST_BOOL_AND:
+                    return all_variables_in_config(config, node->bool_expr.binary.lhs) && all_variables_in_config(config, node->bool_expr.binary.rhs);
+                case AST_BOOL_NOT:
+                    return all_variables_in_config(config, node->bool_expr.unary.expr);
+                case AST_BOOL_VARIABLE:
+                    return var_exists(config, node->bool_expr.variable.attr);
+                default:
+                    switch_default_error("Invalid bool expr op");
+                    return false;
+            }
+        case AST_TYPE_SET_EXPR:
+            if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
+                return var_exists(config, node->set_expr.left_value.variable_value.attr);
+            }
+            if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
+                return var_exists(config, node->set_expr.right_value.variable_value.attr);
+            }
+            fprintf(stderr, "Invalid set expr");
+            abort();
+            return false;
+        case AST_TYPE_LIST_EXPR:
+            return var_exists(config, node->list_expr.attr_var.attr);
+        case AST_TYPE_SPECIAL_EXPR:
+            switch(node->special_expr.type) {
+                case AST_SPECIAL_FREQUENCY:
+                    return var_exists(config, node->special_expr.frequency.attr_var.attr);
+                case AST_SPECIAL_SEGMENT:
+                    return var_exists(config, node->special_expr.segment.attr_var.attr);
+                case AST_SPECIAL_GEO:
+                    return true;
+                case AST_SPECIAL_STRING:
+                    return var_exists(config, node->special_expr.string.attr_var.attr);
+                default:
+                    switch_default_error("Invalid special expr type");
+                    return false;
+            }
+        default:
+            switch_default_error("Invalid node type");
+            return false;
+    }
+}
+
+bool str_valid(const struct config* config, const char* attr, const char* string)
+{
+    size_t bound = 0;
+    for(size_t i = 0; i < config->attr_domain_count; i++) {
+        if(strcmp(attr, config->attr_domains[i]->attr_var.attr) == 0) {
+            betree_assert(config->attr_domains[i]->bound.value_type == VALUE_S, "Trying to validate a string for a domain that isn't string");
+            if(config->attr_domains[i]->bound.is_string_bounded == false) {
+                return true;
+            }
+            else {
+                bound = config->attr_domains[i]->bound.smax;
+                break;
+            }
+        }
+    }
+    for(size_t i = 0; i < config->string_map_count; i++) {
+        struct string_map string_map = config->string_maps[i];
+        if(strcmp(attr, string_map.attr_var.attr) == 0) {
+            size_t j;
+            for(j = 0; j < string_map.string_value_count; j++) {
+                if(strcmp(string, string_map.string_values[j]) == 0) {
+                    return true;
+                }
+            }
+            return j + 1 < bound;
+        }
+    }
+    return false;
+}
+
+bool all_bounded_strings_valid(const struct config* config, const struct ast_node* node)
+{
+    switch(node->type) {
+        case AST_TYPE_NUMERIC_COMPARE_EXPR:
+            return true;
+        case AST_TYPE_EQUALITY_EXPR:
+            if(node->equality_expr.value.value_type == AST_EQUALITY_VALUE_STRING) {
+                return str_valid(config, node->equality_expr.attr_var.attr, node->equality_expr.value.string_value.string);
+            }
+            return true;
+        case AST_TYPE_BOOL_EXPR:
+            switch(node->bool_expr.op) {
+                case AST_BOOL_OR:
+                case AST_BOOL_AND:
+                    return all_variables_in_config(config, node->bool_expr.binary.lhs) && all_variables_in_config(config, node->bool_expr.binary.rhs);
+                case AST_BOOL_NOT:
+                    return all_variables_in_config(config, node->bool_expr.unary.expr);
+                case AST_BOOL_VARIABLE:
+                    return var_exists(config, node->bool_expr.variable.attr);
+                default:
+                    switch_default_error("Invalid bool expr op");
+                    return false;
+            }
+        case AST_TYPE_SET_EXPR:
+            if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
+                return var_exists(config, node->set_expr.left_value.variable_value.attr);
+            }
+            if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
+                return var_exists(config, node->set_expr.right_value.variable_value.attr);
+            }
+            fprintf(stderr, "Invalid set expr");
+            abort();
+            return false;
+        case AST_TYPE_LIST_EXPR:
+            return var_exists(config, node->list_expr.attr_var.attr);
+        case AST_TYPE_SPECIAL_EXPR:
+            switch(node->special_expr.type) {
+                case AST_SPECIAL_FREQUENCY:
+                    return var_exists(config, node->special_expr.frequency.attr_var.attr);
+                case AST_SPECIAL_SEGMENT:
+                    return var_exists(config, node->special_expr.segment.attr_var.attr);
+                case AST_SPECIAL_GEO:
+                    return true;
+                case AST_SPECIAL_STRING:
+                    return var_exists(config, node->special_expr.string.attr_var.attr);
+                default:
+                    switch_default_error("Invalid special expr type");
+                    return false;
+            }
+        default:
+            switch_default_error("Invalid node type");
+            return false;
+    }
 }
 

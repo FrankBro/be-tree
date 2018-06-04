@@ -98,6 +98,11 @@ struct value_bound {
             bool bmin;
             bool bmax;
         };
+        struct {
+            bool is_string_bounded;
+            size_t smin;
+            size_t smax;
+        };
     };
 };
 

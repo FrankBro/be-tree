@@ -54,8 +54,8 @@ void print_cdir(const struct config* config, const struct cdir* cdir, uint64_t l
             break;
         }
         case(VALUE_S): {
-            fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
-            abort();
+            printf(" cdir [%zu , %zu]", cdir->bound.smin, cdir->bound.smax);
+            break;
         }
         case(VALUE_IL): {
             fprintf(stderr, "%s a integer list value cdir should never happen for now", __func__);
@@ -224,8 +224,8 @@ const char* get_path_cdir(const struct config* config, const struct cdir* cdir, 
             break;
         }
         case(VALUE_S): {
-            fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
-            abort();
+            asprintf(&name, "%s_%zu_%zu", parent_path, cdir->bound.smin, cdir->bound.smax);
+            break;
         }
         case(VALUE_IL): {
             fprintf(stderr, "%s a integer list value cdir should never happen for now", __func__);
@@ -396,8 +396,13 @@ void write_dot_file_cdir_td(FILE* f,
                     break;
                 }
                 case(VALUE_S): {
-                    fprintf(stderr, "%s a string value cdir should never happen for now", __func__);
-                    abort();
+                    fprintf(f,
+                        "<td colspan=\"%" PRIu64 "\" port=\"%s\">[%zu, %zu]</td>\n",
+                        colspan,
+                        name,
+                        cdir->bound.smin,
+                        cdir->bound.smax);
+                    break;
                 }
                 case(VALUE_IL): {
                     fprintf(stderr,
