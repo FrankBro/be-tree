@@ -1479,7 +1479,7 @@ bool eq_equality_value(struct equality_value a, struct equality_value b)
         case AST_EQUALITY_VALUE_FLOAT:
             return feq(a.float_value, b.float_value);
         case AST_EQUALITY_VALUE_STRING:
-            return a.string_value.var == b.string_value.str && a.string_value.str == b.string_value.str;
+            return a.string_value.var == b.string_value.var && a.string_value.str == b.string_value.str;
         default:
             switch_default_error("Invalid equality value type");
             return false;
