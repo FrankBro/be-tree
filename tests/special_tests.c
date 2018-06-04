@@ -315,7 +315,8 @@ int test_geo()
 static bool contains(bool has_not, const char* attr, bool allow_undefined, const char* pattern, const char* value)
 {
     struct config* config = make_default_config();
-    add_attr_domain_s(config, attr, allow_undefined);
+    add_attr_domain_s(config, "a", true);
+    add_attr_domain_s(config, "b", true);
     struct ast_node* node = NULL;
     char* expr;
     const char* pre;
@@ -365,7 +366,8 @@ static int test_contains()
 static bool starts_with(bool has_not, const char* attr, bool allow_undefined, const char* pattern, const char* value)
 {
     struct config* config = make_default_config();
-    add_attr_domain_s(config, attr, allow_undefined);
+    add_attr_domain_s(config, "a", true);
+    add_attr_domain_s(config, "b", true);
     struct ast_node* node = NULL;
     char* expr;
     const char* pre;
@@ -410,7 +412,8 @@ static int test_starts_with()
 static bool ends_with(bool has_not, const char* attr, bool allow_undefined, const char* pattern, const char* value)
 {
     struct config* config = make_default_config();
-    add_attr_domain_s(config, attr, allow_undefined);
+    add_attr_domain_s(config, "a", true);
+    add_attr_domain_s(config, "b", true);
     struct ast_node* node = NULL;
     char* expr;
     const char* pre;
