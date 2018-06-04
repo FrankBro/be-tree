@@ -1731,7 +1731,7 @@ void add_attr_domain_bounded_s(struct config* config, const char* attr, bool all
     struct value_bound bound = { .value_type = VALUE_S };
     bound.is_string_bounded = true;
     bound.smin = 0;
-    bound.smax = max;
+    bound.smax = max - 1;
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
