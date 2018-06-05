@@ -7,11 +7,18 @@
 
 ## Implementation
 * For variables that allow undefined, keep in mind that `match_be_tree` will always need to go down pnode's with those variables. Therefore, we rank them worse in the scoring part because they will cause a bunch of useless evaluations.
-* Right now, strings won't ever be chosen for becoming a pnode since we can't really split them on their domain.
+* Integer, float and bool can be split into a pnode/cdir. Strings with a bound can also be selected.
+* Integer and string lists always assume they will show up in the same order, this will be wrong until we implement sorting them
 
 ## TODO
-* Allow a way to mark string values as if we know all of the possible values and they could therefore be split.
-* Allow a way to control the splitting of float values. Right now it splits like integers but that won't work well for values that have a small domain (eg -0.01 to 0.01). Use domain to find a good split
+* Domain:
+    * Float:
+        * Allow a way to control the splitting of float values. Right now it splits like integers but that won't work well for values that have a small domain (eg -0.01 to 0.01). Use domain to find a good split
+* betree_remove:
+    * Remove useless preds from the memoize
 * In match expr, don't search for variable ids, know which they are before hand
 * match_be_tree, config should be const but we don't have a way to get a variable id without also creating if it doesn't exist. Fix that
 * When we are within a "not" expression, we would technically need to invert all the ranges inside, if that's even possible
+* Sort integer and string lists for quicker inserting (via memoize) and operations
+* Reorder and/or for easy of evaluation
+
