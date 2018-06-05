@@ -23,6 +23,48 @@ struct events {
 
 extern bool MATCH_NODE_DEBUG;
 
+struct value_bound get_integer_events_bound(betree_var_t var, struct event** events, size_t event_count) 
+{
+    struct value_bound bound = { .imin = INT64_MAX, .imax = INT64_MIN };
+    for(size_t i = 0; i < event_count; i++) {
+        struct event* event = events[i];
+        for(size_t j = 0; j < event->pred_count; j++) {
+            struct pred* pred = event->preds[j];
+            if(pred->attr_var.var == var) {
+                if(pred->value.ivalue < bound.imin) {
+                    bound.imin = pred->value.ivalue;
+                }
+                if(pred->value.ivalue > bound.imax) {
+                    bound.imax = pred->value.ivalue;
+                }
+                break;
+            }
+        }
+    }
+    return bound;
+}
+
+struct value_bound get_float_events_bound(betree_var_t var, struct event** events, size_t event_count) 
+{
+    struct value_bound bound = { .fmin = DBL_MAX, .fmax = -DBL_MAX };
+    for(size_t i = 0; i < event_count; i++) {
+        struct event* event = events[i];
+        for(size_t j = 0; j < event->pred_count; j++) {
+            struct pred* pred = event->preds[j];
+            if(pred->attr_var.var == var) {
+                if(pred->value.fvalue < bound.fmin) {
+                    bound.fmin = pred->value.fvalue;
+                }
+                if(pred->value.fvalue > bound.fmax) {
+                    bound.fmax = pred->value.fvalue;
+                }
+                break;
+            }
+        }
+    }
+    return bound;
+}
+
 void add_event(struct event* event, struct events* events)
 {
     if(events->count == 0) {
@@ -199,6 +241,20 @@ int test_real()
 
     struct events events = { .count = 0, .events = NULL };
     size_t event_count = read_betree_events(config, &events);
+
+    // <DEBUG>
+    /*for(size_t i = 0; i < config->attr_domain_count; i++) {*/
+        /*const struct attr_domain* attr_domain = config->attr_domains[i];*/
+        /*if(attr_domain->bound.value_type == VALUE_I) {*/
+            /*struct value_bound bound = get_integer_events_bound(attr_domain->attr_var.var, events.events, event_count);*/
+            /*printf("    %s: [%ld, %ld]\n", attr_domain->attr_var.attr, bound.imin, bound.imax);*/
+        /*}*/
+        /*else if(attr_domain->bound.value_type == VALUE_F) {*/
+            /*struct value_bound bound = get_float_events_bound(attr_domain->attr_var.var, events.events, event_count);*/
+            /*printf("    %s: [%.2f, %.2f]\n", attr_domain->attr_var.attr, bound.fmin, bound.fmax);*/
+        /*}*/
+    /*}*/
+    // </DEBUG>
 
     uint64_t search_timings[MAX_EVENTS] = { 0 };
     uint64_t search_us_sum = 0;
