@@ -18,7 +18,6 @@
     * Remove useless preds from the memoize
 * In match expr, don't search for variable ids, know which they are before hand
 * match_be_tree, config should be const but we don't have a way to get a variable id without also creating if it doesn't exist. Fix that
-* When we are within a "not" expression, we would technically need to invert all the ranges inside, if that's even possible
 * Sort integer and string lists for quicker inserting (via memoize) and operations
 * Reorder and/or for easy of evaluation
 
