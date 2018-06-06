@@ -275,6 +275,7 @@ struct ast_node {
     };
 };
 
+struct ast_node* ast_node_create();
 struct ast_node* ast_numeric_compare_expr_create(
     enum ast_numeric_compare_e op, const char* name, struct numeric_compare_value value);
 struct ast_node* ast_equality_expr_create(
@@ -317,8 +318,6 @@ void assign_pred_id(struct config* config, struct ast_node* node);
 
 const char* frequency_type_to_string(enum frequency_type_e type);
 bool eq_expr(const struct ast_node* a, const struct ast_node* b);
-
-struct ast_node* clone_node(const struct ast_node* node);
 
 bool all_variables_in_config(const struct config* config, const struct ast_node* node);
 bool all_bounded_strings_valid(const struct config* config, const struct ast_node* node);
