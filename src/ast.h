@@ -318,6 +318,7 @@ void assign_pred_id(struct config* config, struct ast_node* node);
 
 const char* frequency_type_to_string(enum frequency_type_e type);
 bool eq_expr(const struct ast_node* a, const struct ast_node* b);
+bool fast_eq_expr(const struct ast_node* a, const struct ast_node* b);
 
 bool all_variables_in_config(const struct config* config, const struct ast_node* node);
 bool all_bounded_strings_valid(const struct config* config, const struct ast_node* node);

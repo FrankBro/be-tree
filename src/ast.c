@@ -1829,6 +1829,25 @@ bool eq_expr(const struct ast_node* a, const struct ast_node* b)
     }
 }
 
+bool fast_eq_expr(const struct ast_node* a, const struct ast_node* b)
+{
+    if(a == NULL || b == NULL) {
+        return false;
+    }
+    if(a->type != b->type) {
+        return false;
+    }
+    if(a->type == AST_TYPE_BOOL_EXPR) {
+        if(a->bool_expr.op == AST_BOOL_NOT) {
+            return a->bool_expr.unary.expr->id == b->bool_expr.unary.expr->id;
+        }
+        if(a->bool_expr.op == AST_BOOL_AND || a->bool_expr.op == AST_BOOL_OR) {
+            return a->bool_expr.binary.lhs->id == b->bool_expr.binary.lhs->id && a->bool_expr.binary.rhs->id == b->bool_expr.binary.rhs->id;
+        }
+    }
+    return a->id == b->id;
+}
+
 void assign_pred_id(struct config* config, struct ast_node* node)
 {
     assign_pred(config->pred_map, node);

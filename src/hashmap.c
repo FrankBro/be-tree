@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include "ast.h"
+#include "clone.h"
 #include "hashmap.h"
 #include "printer.h"
 #include "utils.h"
@@ -131,12 +132,13 @@ void assign_equality_pred(struct pred_map* pred_map, struct ast_equality_expr* t
     }
 }
 
+// BIG assumption, the inner expressions have been assigned a pred. So we save a bunch of time for "and", "or" and "not"
 void assign_bool_pred(struct pred_map* pred_map, struct ast_bool_expr* typed, struct ast_node* node)
 {
     switch(typed->op) {
         case AST_BOOL_NOT:
             for(size_t i = 0; i < pred_map->bool_map.not_preds.count; i++) {
-                if(eq_expr(node, pred_map->bool_map.not_preds.preds[i])) {
+                if(fast_eq_expr(node, pred_map->bool_map.not_preds.preds[i])) {
                     node->id = pred_map->bool_map.not_preds.preds[i]->id;
                     return;
                 }
@@ -145,7 +147,7 @@ void assign_bool_pred(struct pred_map* pred_map, struct ast_bool_expr* typed, st
             break;
         case AST_BOOL_OR:
             for(size_t i = 0; i < pred_map->bool_map.or_preds.count; i++) {
-                if(eq_expr(node, pred_map->bool_map.or_preds.preds[i])) {
+                if(fast_eq_expr(node, pred_map->bool_map.or_preds.preds[i])) {
                     node->id = pred_map->bool_map.or_preds.preds[i]->id;
                     return;
                 }
@@ -154,7 +156,7 @@ void assign_bool_pred(struct pred_map* pred_map, struct ast_bool_expr* typed, st
             break;
         case AST_BOOL_AND:
             for(size_t i = 0; i < pred_map->bool_map.and_preds.count; i++) {
-                if(eq_expr(node, pred_map->bool_map.and_preds.preds[i])) {
+                if(fast_eq_expr(node, pred_map->bool_map.and_preds.preds[i])) {
                     node->id = pred_map->bool_map.and_preds.preds[i]->id;
                     return;
                 }
