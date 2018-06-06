@@ -5,6 +5,7 @@
 
 #include "betree.h"
 #include "special.h"
+#include "utils.h"
 
 bool within_frequency_caps(const struct frequency_caps_list* caps,
     enum frequency_type_e type,
@@ -15,8 +16,8 @@ bool within_frequency_caps(const struct frequency_caps_list* caps,
     int64_t now)
 {
     for(size_t i = 0; i < caps->size; i++) {
+        betree_assert(caps->content[i].namespace.var == namespace.var, "String does not belong to the same var");
         if(caps->content[i].id == id && 
-            caps->content[i].namespace.var == namespace.var &&
             caps->content[i].namespace.str == namespace.str &&
             caps->content[i].type == type) {
             if(length <= 0) {

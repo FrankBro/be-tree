@@ -308,8 +308,8 @@ void free_ast_node(struct ast_node* node);
 
 bool match_node(const struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report);
 
-void get_variable_bound(
-    const struct attr_domain* domain, const struct ast_node* node, struct value_bound* bound);
+struct value_bound get_variable_bound(
+    const struct attr_domain* domain, const struct ast_node* node);
 
 void assign_variable_id(struct config* config, struct ast_node* node);
 void assign_str_id(struct config* config, struct ast_node* node);

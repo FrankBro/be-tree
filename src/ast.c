@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <math.h>
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -601,7 +602,8 @@ bool match_list_expr(
                         struct string_value left = variable.slvalue.strings[i];
                         for(size_t j = 0; j < list_expr.value.string_list_value.count; j++) {
                             struct string_value right = list_expr.value.string_list_value.strings[j];
-                            if(left.var == right.var && left.str == right.str) {
+                            betree_assert(left.var == right.var, "String does not belong to the same var");
+                            if(left.str == right.str) {
                                 result = true;
                                 break;
                             }
@@ -653,7 +655,8 @@ bool match_list_expr(
                         struct string_value right = list_expr.value.string_list_value.strings[i];
                         for(size_t j = 0; j < variable.slvalue.count; j++) {
                             struct string_value left = variable.slvalue.strings[j];
-                            if(left.var == right.var && left.str == right.str) {
+                            betree_assert(left.var == right.var, "String does not belong to the same var");
+                            if(left.str == right.str) {
                                 count++;
                                 break;
                             }
@@ -854,7 +857,8 @@ bool match_equality_expr(const struct config* config,
                     return result;
                 }
                 case AST_EQUALITY_VALUE_STRING: {
-                    bool result = variable.svalue.var == equality_expr.value.string_value.var && variable.svalue.str == equality_expr.value.string_value.str;
+                    betree_assert(variable.svalue.var == equality_expr.value.string_value.var, "String does not belong to the same var");
+                    bool result = variable.svalue.str == equality_expr.value.string_value.str;
                     return result;
                 }
                 default: {
@@ -874,7 +878,8 @@ bool match_equality_expr(const struct config* config,
                     return result;
                 }
                 case AST_EQUALITY_VALUE_STRING: {
-                    bool result = variable.svalue.var != equality_expr.value.string_value.var || variable.svalue.str != equality_expr.value.string_value.str;
+                    betree_assert(variable.svalue.var == equality_expr.value.string_value.var, "String does not belong to the same var");
+                    bool result = variable.svalue.str != equality_expr.value.string_value.str;
                     return result;
                 }
                 default: {
@@ -1042,208 +1047,336 @@ bool match_node(const struct config* config, const struct event* event, const st
     return match_node_inner(config, event, node, memoize, report, true);
 }
 
-void get_variable_bound(
-    const struct attr_domain* domain, const struct ast_node* node, struct value_bound* bound)
+static void get_variable_bound_inner(const struct attr_domain* domain, const struct ast_node* node, struct value_bound* bound, bool is_reversed, bool* was_touched)
 {
     if(node == NULL) {
         return;
     }
+    bool was_touched_value = *was_touched;
     switch(node->type) {
-        case AST_TYPE_SPECIAL_EXPR: {
+        case AST_TYPE_SPECIAL_EXPR: 
+        case AST_TYPE_LIST_EXPR:
+        case AST_TYPE_SET_EXPR:
             return;
-        }
-        case AST_TYPE_LIST_EXPR: {
-            return;
-        }
-        case AST_TYPE_SET_EXPR: {
-            return;
-        }
-        case AST_TYPE_BOOL_EXPR: {
+        case AST_TYPE_BOOL_EXPR:
             switch(node->bool_expr.op) {
-                case AST_BOOL_VARIABLE: {
+                case AST_BOOL_VARIABLE:
+                    if(domain->attr_var.var != node->bool_expr.variable.var) {
+                        return;
+                    }
+                    if(domain->bound.value_type != VALUE_B) {
+                        invalid_expr("Domain and expr type mismatch");
+                        return;
+                    }
+                    if(is_reversed) {
+                        bound->bmin = false;
+                        if(!was_touched_value) {
+                            bound->bmax = false;
+                        }
+                    }
+                    else {
+                        if(!was_touched_value) {
+                            bound->bmin = true;
+                        }
+                        bound->bmax = true;
+                    }
+                    *was_touched = true;
                     return;
-                }
-                case AST_BOOL_NOT: {
-                    get_variable_bound(domain, node->bool_expr.unary.expr, bound);
+                case AST_BOOL_NOT:
+                    get_variable_bound_inner(domain, node->bool_expr.unary.expr, bound, !is_reversed, was_touched);
                     return;
-                }
                 case AST_BOOL_OR:
-                case AST_BOOL_AND: {
-                    get_variable_bound(domain, node->bool_expr.binary.lhs, bound);
-                    get_variable_bound(domain, node->bool_expr.binary.rhs, bound);
+                case AST_BOOL_AND:
+                    get_variable_bound_inner(domain, node->bool_expr.binary.lhs, bound, is_reversed, was_touched);
+                    get_variable_bound_inner(domain, node->bool_expr.binary.rhs, bound, is_reversed, was_touched);
                     return;
-                }
-                default: {
+                default:
                     switch_default_error("Invalid bool operation");
                     return;
-                }
             }
-        }
-        case AST_TYPE_EQUALITY_EXPR: {
+        case AST_TYPE_EQUALITY_EXPR:
             if(domain->attr_var.var != node->equality_expr.attr_var.var) {
                 return;
             }
-            if(domain->bound.value_type != bound->value_type
-                || !equality_value_matches(
-                       node->equality_expr.value.value_type, domain->bound.value_type)) {
-                invalid_expr("Domain, bound or expr type mismatch");
+            if(!equality_value_matches(node->equality_expr.value.value_type, domain->bound.value_type)) {
+                invalid_expr("Domain and expr type mismatch");
                 return;
             }
             switch(node->equality_expr.op) {
-                case AST_EQUALITY_EQ: {
+                case AST_EQUALITY_EQ:
                     switch(node->equality_expr.value.value_type) {
-                        case AST_EQUALITY_VALUE_INTEGER: {
-                            bound->imin = d64min(bound->imin, node->equality_expr.value.integer_value);
-                            bound->imax = d64max(bound->imax, node->equality_expr.value.integer_value);
-                            return;
-                        }
-                        case AST_EQUALITY_VALUE_FLOAT: {
-                            bound->fmin = fmin(bound->fmin, node->equality_expr.value.float_value);
-                            bound->fmax = fmax(bound->fmax, node->equality_expr.value.float_value);
-                            return;
-                        }
-                        case AST_EQUALITY_VALUE_STRING: {
-                            bound->smin = smin(bound->smin, node->equality_expr.value.string_value.str);
-                            bound->smax = smax(bound->smax, node->equality_expr.value.string_value.str);
-                            return;
-                        }
-                        default: {
+                        case AST_EQUALITY_VALUE_INTEGER:
+                            if(is_reversed) {
+                                bound->imin = domain->bound.imin;
+                                bound->imax = domain->bound.imax;
+                            }
+                            else {
+                                bound->imin = d64min(bound->imin, node->equality_expr.value.integer_value);
+                                bound->imax = d64max(bound->imax, node->equality_expr.value.integer_value);
+                            }
+                            break;
+                        case AST_EQUALITY_VALUE_FLOAT:
+                            if(is_reversed) {
+                                bound->fmin = domain->bound.fmin;
+                                bound->fmax = domain->bound.fmax;
+                            }
+                            else {
+                                bound->fmin = fmin(bound->fmin, node->equality_expr.value.float_value);
+                                bound->fmax = fmax(bound->fmax, node->equality_expr.value.float_value);
+                            }
+                            break;
+                        case AST_EQUALITY_VALUE_STRING:
+                            if(is_reversed) {
+                                bound->smin = domain->bound.smin;
+                                bound->smax = domain->bound.smax;
+                            }
+                            else {
+                                bound->smin = smin(bound->smin, node->equality_expr.value.string_value.str);
+                                bound->smax = smax(bound->smax, node->equality_expr.value.string_value.str);
+                            }
+                            break;
+                        default:
                             switch_default_error("Invalid equality value type");
-                            return;
-                        }
+                            break;
                     }
-                }
-                case AST_EQUALITY_NE: {
+                    break;
+                case AST_EQUALITY_NE:
                     switch(node->equality_expr.value.value_type) {
-                        case AST_EQUALITY_VALUE_INTEGER: {
-                            bound->imin = domain->bound.imin;
-                            bound->imax = domain->bound.imax;
-                            return;
-                        }
-                        case AST_EQUALITY_VALUE_FLOAT: {
-                            bound->fmin = domain->bound.fmin;
-                            bound->fmax = domain->bound.fmax;
-                            return;
-                        }
-                        case AST_EQUALITY_VALUE_STRING: {
-                            bound->smin = domain->bound.smin;
-                            bound->smax = domain->bound.smax;
-                            return;
-                        }
-                        default: {
+                        case AST_EQUALITY_VALUE_INTEGER:
+                            if(is_reversed) {
+                                bound->imin = d64min(bound->imin, node->equality_expr.value.integer_value);
+                                bound->imax = d64max(bound->imax, node->equality_expr.value.integer_value);
+                            }
+                            else {
+                                bound->imin = domain->bound.imin;
+                                bound->imax = domain->bound.imax;
+                            }
+                            break;
+                        case AST_EQUALITY_VALUE_FLOAT:
+                            if(is_reversed) {
+                                bound->fmin = fmin(bound->fmin, node->equality_expr.value.float_value);
+                                bound->fmax = fmax(bound->fmax, node->equality_expr.value.float_value);
+                            }
+                            else {
+                                bound->fmin = domain->bound.fmin;
+                                bound->fmax = domain->bound.fmax;
+                            }
+                            break;
+                        case AST_EQUALITY_VALUE_STRING:
+                            if(is_reversed) {
+                                bound->smin = smin(bound->smin, node->equality_expr.value.string_value.str);
+                                bound->smax = smax(bound->smax, node->equality_expr.value.string_value.str);
+                            }
+                            else {
+                                bound->smin = domain->bound.smin;
+                                bound->smax = domain->bound.smax;
+                            }
+                            break;
+                        default:
                             switch_default_error("Invalid equality value type");
-                            return;
-                        }
+                            break;
                     }
-                }
-                default: {
+                    break;
+                default:
                     switch_default_error("Invalid equality operation");
-                    return;
-                }
+                    break;
             }
-        }
-        case AST_TYPE_NUMERIC_COMPARE_EXPR: {
+            *was_touched = true;
+            return;
+        case AST_TYPE_NUMERIC_COMPARE_EXPR:
             if(domain->attr_var.var != node->numeric_compare_expr.attr_var.var) {
                 return;
             }
-            if(domain->bound.value_type != bound->value_type
-                || !numeric_compare_value_matches(
-                       node->numeric_compare_expr.value.value_type, domain->bound.value_type)) {
-                invalid_expr("Domain, bound or expr type mismatch");
+            if(!numeric_compare_value_matches(node->numeric_compare_expr.value.value_type, domain->bound.value_type)) {
+                invalid_expr("Domain and expr type mismatch");
                 return;
             }
             switch(node->numeric_compare_expr.op) {
-                case AST_NUMERIC_COMPARE_LT: {
+                case AST_NUMERIC_COMPARE_LT:
                     switch(node->numeric_compare_expr.value.value_type) {
-                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-                            bound->imin = domain->bound.imin;
-                            bound->imax = d64max(
-                                bound->imax, node->numeric_compare_expr.value.integer_value - 1);
-                            return;
-                        }
-                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-                            bound->fmin = domain->bound.fmin;
-                            bound->fmax = fmax(bound->fmax,
-                                node->numeric_compare_expr.value.float_value - __DBL_EPSILON__);
-                            return;
-                        }
-                        default: {
+                        case AST_NUMERIC_COMPARE_VALUE_INTEGER:
+                            if(is_reversed) {
+                                bound->imin = d64min(bound->imin, node->numeric_compare_expr.value.integer_value);
+                                bound->imax = domain->bound.imax;
+                            }
+                            else {
+                                bound->imin = domain->bound.imin;
+                                bound->imax = d64max(bound->imax, node->numeric_compare_expr.value.integer_value - 1);
+                            }
+                            break;
+                        case AST_NUMERIC_COMPARE_VALUE_FLOAT:
+                            if(is_reversed) {
+                                bound->fmin = fmin(bound->fmin, node->numeric_compare_expr.value.float_value);
+                                bound->fmax = domain->bound.fmax;
+                            }
+                            else {
+                                bound->fmin = domain->bound.fmin;
+                                bound->fmax = fmax(bound->fmax, node->numeric_compare_expr.value.float_value - __DBL_EPSILON__);
+                            }
+                            break;
+                        default:
                             switch_default_error("Invalid numeric compare value type");
-                            return;
-                        }
+                            break;
                     }
-                }
-                case AST_NUMERIC_COMPARE_LE: {
+                    break;
+                case AST_NUMERIC_COMPARE_LE:
                     switch(node->numeric_compare_expr.value.value_type) {
-                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-                            bound->imin = domain->bound.imin;
-                            bound->imax
-                                = d64max(bound->imax, node->numeric_compare_expr.value.integer_value);
-                            return;
-                        }
-                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-                            bound->fmin = domain->bound.fmin;
-                            bound->fmax
-                                = fmax(bound->fmax, node->numeric_compare_expr.value.float_value);
-                            return;
-                        }
-                        default: {
+                        case AST_NUMERIC_COMPARE_VALUE_INTEGER:
+                            if(is_reversed) {
+                                bound->imin = d64min(bound->imin, node->numeric_compare_expr.value.integer_value + 1);
+                                bound->imax = domain->bound.imax;
+                            }
+                            else {
+                                bound->imin = domain->bound.imin;
+                                bound->imax = d64max(bound->imax, node->numeric_compare_expr.value.integer_value);
+                            }
+                            break;
+                        case AST_NUMERIC_COMPARE_VALUE_FLOAT:
+                            if(is_reversed) {
+                                bound->fmin = fmin(bound->fmin, node->numeric_compare_expr.value.float_value + __DBL_EPSILON__);
+                                bound->fmax = domain->bound.fmax;
+                            }
+                            else {
+                                bound->fmin = domain->bound.fmin;
+                                bound->fmax = fmax(bound->fmax, node->numeric_compare_expr.value.float_value);
+                            }
+                            break;
+                        default:
                             switch_default_error("Invalid numeric compare value type");
-                            return;
-                        }
+                            break;
                     }
-                }
-                case AST_NUMERIC_COMPARE_GT: {
+                    break;
+                case AST_NUMERIC_COMPARE_GT:
                     switch(node->numeric_compare_expr.value.value_type) {
-                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-                            bound->imin = d64min(
-                                bound->imin, node->numeric_compare_expr.value.integer_value + 1);
-                            bound->imax = domain->bound.imax;
-                            return;
-                        }
-                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-                            bound->fmin = fmin(bound->fmin,
-                                node->numeric_compare_expr.value.float_value + __DBL_EPSILON__);
-                            bound->fmax = domain->bound.fmax;
-                            return;
-                        }
-                        default: {
+                        case AST_NUMERIC_COMPARE_VALUE_INTEGER:
+                            if(is_reversed) {
+                                bound->imin = domain->bound.imin;
+                                bound->imax = d64max(bound->imax, node->numeric_compare_expr.value.integer_value);
+                            }
+                            else {
+                                bound->imin = d64min(bound->imin, node->numeric_compare_expr.value.integer_value + 1);
+                                bound->imax = domain->bound.imax;
+                            }
+                            break;
+                        case AST_NUMERIC_COMPARE_VALUE_FLOAT:
+                            if(is_reversed) {
+                                bound->fmin = domain->bound.fmin;
+                                bound->fmax = fmax(bound->fmax, node->numeric_compare_expr.value.float_value);
+                            }
+                            else {
+                                bound->fmin = fmin(bound->fmin, node->numeric_compare_expr.value.float_value + __DBL_EPSILON__);
+                                bound->fmax = domain->bound.fmax;
+                            }
+                            break;
+                        default:
                             switch_default_error("Invalid numeric compare value type");
-                            return;
-                        }
+                            break;
                     }
-                }
-                case AST_NUMERIC_COMPARE_GE: {
+                    break;
+                case AST_NUMERIC_COMPARE_GE:
                     switch(node->numeric_compare_expr.value.value_type) {
-                        case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-                            bound->imin
-                                = d64min(bound->imin, node->numeric_compare_expr.value.integer_value);
-                            bound->imax = domain->bound.imax;
-                            return;
-                        }
-                        case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-                            bound->fmin
-                                = fmin(bound->fmin, node->numeric_compare_expr.value.float_value);
-                            bound->fmax = domain->bound.fmax;
-                            return;
-                        }
-                        default: {
+                        case AST_NUMERIC_COMPARE_VALUE_INTEGER:
+                            if(is_reversed) {
+                                bound->imin = domain->bound.imin;
+                                bound->imax = d64max(bound->imax, node->numeric_compare_expr.value.integer_value - 1);
+                            }
+                            else {
+                                bound->imin = d64min(bound->imin, node->numeric_compare_expr.value.integer_value);
+                                bound->imax = domain->bound.imax;
+                            }
+                            break;
+                        case AST_NUMERIC_COMPARE_VALUE_FLOAT:
+                            if(is_reversed) {
+                                bound->fmin = domain->bound.fmin;
+                                bound->fmax = fmax(bound->fmax, node->numeric_compare_expr.value.float_value - __DBL_EPSILON__);
+                            }
+                            else {
+                                bound->fmin = fmin(bound->fmin, node->numeric_compare_expr.value.float_value);
+                                bound->fmax = domain->bound.fmax;
+                            }
+                            break;
+                        default:
                             switch_default_error("Invalid numeric compare value type");
-                            return;
-                        }
+                            break;
                     }
-                }
-                default: {
+                    break;
+                default:
                     switch_default_error("Invalid numeric compare operation");
-                    return;
-                }
+                    break;;
             }
-        }
-        default: {
+            *was_touched = true;
+            return;
+        default:
             switch_default_error("Invalid expr type");
             return;
+    }
+}
+
+struct value_bound get_variable_bound(const struct attr_domain* domain, const struct ast_node* node)
+{
+    bool was_touched = false;
+    struct value_bound bound;
+    switch(domain->bound.value_type) {
+        case VALUE_B:
+            bound.value_type = VALUE_B;
+            bound.bmin = domain->bound.bmax;
+            bound.bmax = domain->bound.bmin;
+            break;
+        case VALUE_I:
+            bound.value_type = VALUE_I;
+            bound.imin = domain->bound.imax;
+            bound.imax = domain->bound.imin;
+            break;
+        case VALUE_F:
+            bound.value_type = VALUE_F;
+            bound.fmin = domain->bound.fmax;
+            bound.fmax = domain->bound.fmin;
+            break;
+        case VALUE_S:
+            if(domain->bound.is_string_bounded) {
+                bound.value_type = VALUE_S;
+                bound.smin = domain->bound.smax;
+                bound.smax = domain->bound.smin;
+                break;
+            }
+            __attribute__ ((fallthrough));
+        case VALUE_IL:
+        case VALUE_SL:
+        case VALUE_SEGMENTS:
+        case VALUE_FREQUENCY:
+        default:
+            fprintf(stderr, "Invalid domain type to get a bound\n");
+            abort();
+    }
+    get_variable_bound_inner(domain, node, &bound, false, &was_touched);
+    if(!was_touched) {
+        switch(domain->bound.value_type) {
+            case VALUE_B:
+                bound.bmin = domain->bound.bmin;
+                bound.bmax = domain->bound.bmax;
+                break;
+            case VALUE_I:
+                bound.imin = domain->bound.imin;
+                bound.imax = domain->bound.imax;
+                break;
+            case VALUE_F:
+                bound.fmin = domain->bound.fmin;
+                bound.fmax = domain->bound.fmax;
+                break;
+            case VALUE_S:
+                bound.smin = domain->bound.smin;
+                bound.smax = domain->bound.smax;
+                break;
+            case VALUE_IL:
+            case VALUE_SL:
+            case VALUE_SEGMENTS:
+            case VALUE_FREQUENCY:
+            default:
+                fprintf(stderr, "Invalid domain type to get a bound\n");
+                abort();
         }
     }
+    return bound;
 }
 
 void assign_variable_id(struct config* config, struct ast_node* node)

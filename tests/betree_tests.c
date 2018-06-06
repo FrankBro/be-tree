@@ -1049,7 +1049,7 @@ int test_parenthesis()
     return 0;
 }
 
-int splitable_string_domain()
+int test_splitable_string_domain()
 {
     // Simple test
     {
@@ -1115,6 +1115,68 @@ int splitable_string_domain()
     return 0;
 }
 
+int test_not_domain_changing()
+{
+    struct config* config = make_config(1, 0);
+    add_attr_domain_i(config, "i", 0, 10, false);
+
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+
+        betree_insert(config, 1, "not (i > 2)", cnode);
+        betree_insert(config, 2, "not (i < 7)", cnode);
+
+        mu_assert(cnode->lnode->sub_count == 0, "first lnode empty");
+        mu_assert(cnode->pdir->pnode_count == 1 &&
+          cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 0, "second lnode empty");
+        struct cdir* cdir = cnode->pdir->pnodes[0]->cdir;
+        mu_assert(cdir->lchild != NULL && cdir->rchild != NULL &&
+          cdir->lchild->cnode->lnode->sub_count == 1 &&
+          cdir->rchild->cnode->lnode->sub_count == 1, "lchild and rchild contain our subs");
+
+        struct report report = make_empty_report();
+        struct matched_subs* matched_subs = make_matched_subs();
+        betree_search(config, "{\"i\": 1}", cnode, matched_subs, &report);
+
+        mu_assert(matched_subs->sub_count == 1 && 
+          matched_subs->subs[0] == 1 &&
+          report.expressions_evaluated == 1 &&
+          report.expressions_matched == 1, "only evaluated and found the correct expressions");
+
+        free_cnode(cnode);
+        free_matched_subs(matched_subs);
+    }
+    {
+        struct cnode* cnode = make_cnode(config, NULL);
+
+        betree_insert(config, 1, "not (not (i < 2))", cnode);
+        betree_insert(config, 2, "not (not (i > 7))", cnode);
+
+        mu_assert(cnode->lnode->sub_count == 0, "first lnode empty");
+        mu_assert(cnode->pdir->pnode_count == 1 &&
+          cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 0, "second lnode empty");
+        struct cdir* cdir = cnode->pdir->pnodes[0]->cdir;
+        mu_assert(cdir->lchild != NULL && cdir->rchild != NULL &&
+          cdir->lchild->cnode->lnode->sub_count == 1 &&
+          cdir->rchild->cnode->lnode->sub_count == 1, "lchild and rchild contain our subs");
+
+        struct report report = make_empty_report();
+        struct matched_subs* matched_subs = make_matched_subs();
+        betree_search(config, "{\"i\": 1}", cnode, matched_subs, &report);
+
+        mu_assert(matched_subs->sub_count == 1 && 
+          matched_subs->subs[0] == 1 &&
+          report.expressions_evaluated == 1 &&
+          report.expressions_matched == 1, "only evaluated and found the correct expressions");
+
+        free_cnode(cnode);
+        free_matched_subs(matched_subs);
+    }
+
+    free_config(config);
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_sub_has_attribute);
@@ -1142,7 +1204,8 @@ int all_tests()
     mu_run_test(test_integer_list);
     mu_run_test(test_string_list);
     mu_run_test(test_parenthesis);
-    mu_run_test(splitable_string_domain);
+    mu_run_test(test_splitable_string_domain);
+    mu_run_test(test_not_domain_changing);
 
     return 0;
 }

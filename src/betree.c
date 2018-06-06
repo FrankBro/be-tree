@@ -133,10 +133,6 @@ bool is_event_enclosed(const struct config* config, const struct event* event, c
                 case VALUE_F:
                     return attr_domain->bound.fmin <= pred->value.fvalue && attr_domain->bound.fmax >= pred->value.fvalue;
                 case VALUE_S:
-                    // If the str from the event did not exist in the string_map and we are the top-level cdir, we need to look
-                    if(pred->value.svalue.str == UINT64_MAX && cdir->parent_type == CNODE_PARENT_PNODE) {
-                        return true;
-                    }
                     return attr_domain->bound.smin <= pred->value.svalue.str && attr_domain->bound.smax >= pred->value.svalue.str;
                 case VALUE_IL:
                 case VALUE_SL:
@@ -172,56 +168,7 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
                 fprintf(stderr, "cannot find variable_id %" PRIu64 " in attr_domains\n", variable_id);
                 abort();
             }
-            struct value_bound bound;
-            bound.value_type = attr_domain->bound.value_type;
-            switch(attr_domain->bound.value_type) {
-                case(VALUE_I): {
-                    bound.imin = INT64_MAX;
-                    bound.imax = INT64_MIN;
-                    break;
-                }
-                case(VALUE_F): {
-                    bound.fmin = DBL_MAX;
-                    bound.fmax = -DBL_MAX;
-                    break;
-                }
-                case(VALUE_B): {
-                    bound.bmin = true;
-                    bound.bmax = false;
-                    break;
-                }
-                case(VALUE_S): {
-                    bound.smin = (size_t)-1;
-                    bound.smax = 0;
-                    break;
-                }
-                case(VALUE_IL): {
-                    fprintf(stderr,
-                        "%s a integer list value cdir should never happen for now\n",
-                        __func__);
-                    abort();
-                }
-                case(VALUE_SL): {
-                    fprintf(stderr,
-                        "%s a string list value cdir should never happen for now\n",
-                        __func__);
-                    abort();
-                }
-                case(VALUE_SEGMENTS): {
-                    fprintf(
-                        stderr, "%s a segments value cdir should never happen for now\n", __func__);
-                    abort();
-                }
-                case(VALUE_FREQUENCY): {
-                    fprintf(
-                        stderr, "%s a frequency value cdir should never happen for now\n", __func__);
-                    abort();
-                }
-                default: {
-                    switch_default_error("Invalid bound value type");
-                }
-            }
-            get_variable_bound(attr_domain, sub->expr, &bound);
+            struct value_bound bound = get_variable_bound(attr_domain, sub->expr);
             switch(attr_domain->bound.value_type) {
                 case(VALUE_I): {
                     return cdir->bound.imin <= bound.imin && cdir->bound.imax >= bound.imax;
