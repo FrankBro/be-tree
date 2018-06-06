@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+bool bmin(bool a, bool b);
+bool bmax(bool a, bool b);
 int64_t d64min(int64_t a, int64_t b);
 int64_t d64max(int64_t a, int64_t b);
 uint64_t u64min(uint64_t a, uint64_t b);

@@ -8,6 +8,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+bool bmin(bool a, bool b)
+{
+    return a < b ? a : b;
+}
+
+bool bmax(bool a, bool b)
+{
+    return a > b ? a : b;
+}
+
 int64_t d64min(int64_t a, int64_t b)
 {
     return a < b ? a : b;
