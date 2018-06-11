@@ -1,6 +1,6 @@
 #pragma once
 
-#include "betree.h"
+#include "tree.h"
 
 enum variable_state_e {
     VARIABLE_DEFINED,

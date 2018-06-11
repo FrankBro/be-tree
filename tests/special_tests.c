@@ -17,10 +17,10 @@ frequency(
     int64_t now, 
     enum frequency_type_e cap_type, uint32_t cap_id, const char* cap_ns, uint32_t cap_value, int64_t timestamp)
 {
-    struct config* config = make_default_config();
-    add_attr_domain_i(config, "now", 0, 10, false);
+    struct betree* tree = betree_make();
+    add_attr_domain_i(tree->config, "now", 0, 10, false);
     const char* frequency_attr = "frequency_caps";
-    add_attr_domain_frequency(config, frequency_attr, false);
+    add_attr_domain_frequency(tree->config, frequency_attr, false);
     char* expr;
     const char* pre;
     if(has_not) {
@@ -32,17 +32,15 @@ frequency(
     int64_t usec = 1000 * 1000;
     const char* type_value = frequency_type_to_string(type);
     asprintf(&expr, "%swithin_frequency_cap(\"%s\", \"%s\", %" PRId64 ", %" PRId64 ")", pre, type_value, ns, value, length);
-    struct cnode* cnode = make_cnode(config, NULL);
-    betree_insert(config, 1, expr, cnode);
+    betree_insert(1, expr, tree);
     char* event_str;
     const char* cap_type_value = frequency_type_to_string(cap_type);
     asprintf(&event_str, "{\"now\": %ld, \"frequency_caps\": [[\"%s\", %u, \"%s\", %ld, %d]]}", now, cap_type_value, cap_id, cap_ns, timestamp * usec, cap_value);
-    struct matched_subs* matched_subs = make_matched_subs();
-    betree_search(config, event_str, cnode, matched_subs, NULL);
-    bool result = matched_subs->sub_count == 1;
-    free_config(config);
-    free_cnode(cnode);
-    free_matched_subs(matched_subs);
+    struct report* report = make_report();
+    betree_search(tree, event_str, report);
+    bool result = report->matched == 1;
+    free_report(report);
+    betree_free(tree);
     return result;
 }
 

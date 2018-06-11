@@ -8,6 +8,7 @@
 
 #include "ast.h"
 #include "betree.h"
+#include "error.h"
 #include "hashmap.h"
 #include "memoize.h"
 #include "printer.h"
@@ -419,13 +420,13 @@ bool match_special_expr(
                 case AST_SPECIAL_WITHINFREQUENCYCAP: {
                     int64_t now;
                     enum variable_state_e state = get_integer_attr(config, event, "now", &now);
-                    betree_assert(state != VARIABLE_MISSING, "Attribute 'now' is not defined");
+                    betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
                     if(state == VARIABLE_UNDEFINED) {
                         return false;
                     }
                     struct frequency_caps_list caps;
                     enum variable_state_e caps_state = get_frequency_attr(config, event, &caps);
-                    betree_assert(caps_state != VARIABLE_MISSING, "Attribute is not defined");
+                    betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
                     if(caps_state == VARIABLE_UNDEFINED) {
                         return false;
                     }
@@ -456,7 +457,8 @@ bool match_special_expr(
                                 switch_default_error("Invalid frequency type");
                                 break;
                         }
-                        return within_frequency_caps(&caps,
+                        return within_frequency_caps(config,
+                            &caps,
                             special_expr.frequency.type,
                             id,
                             special_expr.frequency.ns,
@@ -474,14 +476,14 @@ bool match_special_expr(
         case AST_SPECIAL_SEGMENT: {
             int64_t now;
             enum variable_state_e now_state = get_integer_attr(config, event, "now", &now);
-            betree_assert(now_state != VARIABLE_MISSING, "Attribute 'now' is not defined");
+            betree_assert(config->abort_on_error, ERROR_VAR_MISSING, now_state != VARIABLE_MISSING);
             struct segments_list segments;
             const char* segments_attr = special_expr.segment.has_variable
                 ? special_expr.segment.attr_var.attr
                 : "segments_with_timestamp";
             enum variable_state_e segments_state
                 = get_segments_attr(config, event, segments_attr, &segments);
-            betree_assert(segments_state != VARIABLE_MISSING, "Attribute is not defined");
+            betree_assert(config->abort_on_error, ERROR_VAR_MISSING, segments_state != VARIABLE_MISSING);
             if(now_state == VARIABLE_UNDEFINED || segments_state == VARIABLE_UNDEFINED) {
                 return false;
             }
@@ -512,10 +514,8 @@ bool match_special_expr(
                         = get_float_attr(config, event, "latitude", &latitude_var);
                     enum variable_state_e longitude_var_state
                         = get_float_attr(config, event, "longitude", &longitude_var);
-                    betree_assert(latitude_var_state != VARIABLE_MISSING,
-                        "Attribute 'latitude' is not defined");
-                    betree_assert(longitude_var_state != VARIABLE_MISSING,
-                        "Attribute 'longitude' is not defined");
+                    betree_assert(config->abort_on_error, ERROR_VAR_MISSING, latitude_var_state != VARIABLE_MISSING);
+                    betree_assert(config->abort_on_error, ERROR_VAR_MISSING, longitude_var_state != VARIABLE_MISSING);
                     if(latitude_var_state == VARIABLE_UNDEFINED
                         || longitude_var_state == VARIABLE_UNDEFINED) {
                         return false;
@@ -538,7 +538,7 @@ bool match_special_expr(
             struct string_value value;
             enum variable_state_e state
                 = get_string_attr(config, event, special_expr.string.attr_var.attr, &value);
-            betree_assert(state != VARIABLE_MISSING, "Attribute is not defined");
+            betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
             if(state == VARIABLE_UNDEFINED) {
                 return false;
             }
@@ -570,12 +570,11 @@ bool match_list_expr(
 {
     struct value variable;
     enum variable_state_e state = get_variable(config, list_expr.attr_var.var, event, &variable);
-    betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
+    betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
     if(state == VARIABLE_UNDEFINED) {
         return false;
     }
-    betree_assert(list_value_matches(list_expr.value.value_type, variable.value_type),
-        "List value types do not match");
+    betree_assert(config->abort_on_error, ERROR_LIST_TYPE_MISMATCH, list_value_matches(list_expr.value.value_type, variable.value_type));
     switch(list_expr.op) {
         case AST_LIST_ONE_OF:
         case AST_LIST_NONE_OF: {
@@ -602,7 +601,7 @@ bool match_list_expr(
                         struct string_value left = variable.slvalue.strings[i];
                         for(size_t j = 0; j < list_expr.value.string_list_value.count; j++) {
                             struct string_value right = list_expr.value.string_list_value.strings[j];
-                            betree_assert(left.var == right.var, "String does not belong to the same var");
+                            betree_assert(config->abort_on_error, ERROR_STRING_VAR_MISMATCH, left.var == right.var);
                             if(left.str == right.str) {
                                 result = true;
                                 break;
@@ -655,7 +654,7 @@ bool match_list_expr(
                         struct string_value right = list_expr.value.string_list_value.strings[i];
                         for(size_t j = 0; j < variable.slvalue.count; j++) {
                             struct string_value left = variable.slvalue.strings[j];
-                            betree_assert(left.var == right.var, "String does not belong to the same var");
+                            betree_assert(config->abort_on_error, ERROR_STRING_VAR_MISMATCH, left.var == right.var);
                             if(left.str == right.str) {
                                 count++;
                                 break;
@@ -689,7 +688,7 @@ bool match_set_expr(
         struct integer_list_value variable;
         enum variable_state_e state
             = get_integer_list_var(config, right.variable_value.var, event, &variable);
-        betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
+        betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
         if(state == VARIABLE_UNDEFINED) {
             return false;
         }
@@ -700,7 +699,7 @@ bool match_set_expr(
         struct string_list_value variable;
         enum variable_state_e state
             = get_string_list_var(config, right.variable_value.var, event, &variable);
-        betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
+        betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
         if(state == VARIABLE_UNDEFINED) {
             return false;
         }
@@ -711,7 +710,7 @@ bool match_set_expr(
         int64_t variable;
         enum variable_state_e state
             = get_integer_var(config, left.variable_value.var, event, &variable);
-        betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
+        betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
         if(state == VARIABLE_UNDEFINED) {
             return false;
         }
@@ -722,7 +721,7 @@ bool match_set_expr(
         struct string_value variable;
         enum variable_state_e state
             = get_string_var(config, left.variable_value.var, event, &variable);
-        betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
+        betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
         if(state == VARIABLE_UNDEFINED) {
             return false;
         }
@@ -753,13 +752,11 @@ bool match_numeric_compare_expr(const struct config* config,
     struct value variable;
     enum variable_state_e state
         = get_variable(config, numeric_compare_expr.attr_var.var, event, &variable);
-    betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
+    betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
     if(state == VARIABLE_UNDEFINED) {
         return false;
     }
-    betree_assert(
-        numeric_compare_value_matches(numeric_compare_expr.value.value_type, variable.value_type),
-        "Numeric compare value types do not match");
+    betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, numeric_compare_value_matches(numeric_compare_expr.value.value_type, variable.value_type));
     switch(numeric_compare_expr.op) {
         case AST_NUMERIC_COMPARE_LT: {
             switch(numeric_compare_expr.value.value_type) {
@@ -839,12 +836,11 @@ bool match_equality_expr(const struct config* config,
     struct value variable;
     enum variable_state_e state
         = get_variable(config, equality_expr.attr_var.var, event, &variable);
-    betree_assert(state != VARIABLE_MISSING, "Variable is not defined");
+    betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
     if(state == VARIABLE_UNDEFINED) {
         return false;
     }
-    betree_assert(equality_value_matches(equality_expr.value.value_type, variable.value_type),
-        "Equality value types do not match");
+    betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, equality_value_matches(equality_expr.value.value_type, variable.value_type));
     switch(equality_expr.op) {
         case AST_EQUALITY_EQ: {
             switch(equality_expr.value.value_type) {
@@ -857,7 +853,7 @@ bool match_equality_expr(const struct config* config,
                     return result;
                 }
                 case AST_EQUALITY_VALUE_STRING: {
-                    betree_assert(variable.svalue.var == equality_expr.value.string_value.var, "String does not belong to the same var");
+                    betree_assert(config->abort_on_error, ERROR_STRING_VAR_MISMATCH, variable.svalue.var == equality_expr.value.string_value.var);
                     bool result = variable.svalue.str == equality_expr.value.string_value.str;
                     return result;
                 }
@@ -878,7 +874,7 @@ bool match_equality_expr(const struct config* config,
                     return result;
                 }
                 case AST_EQUALITY_VALUE_STRING: {
-                    betree_assert(variable.svalue.var == equality_expr.value.string_value.var, "String does not belong to the same var");
+                    betree_assert(config->abort_on_error, ERROR_STRING_VAR_MISMATCH, variable.svalue.var == equality_expr.value.string_value.var);
                     bool result = variable.svalue.str != equality_expr.value.string_value.str;
                     return result;
                 }
@@ -895,37 +891,37 @@ bool match_equality_expr(const struct config* config,
     }
 }
 
-static bool match_node_inner(const struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report, bool is_top_level);
+static bool match_node_inner(const struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report);
 
 bool match_bool_expr(
     const struct config* config, const struct event* event, const struct ast_bool_expr bool_expr, struct memoize* memoize, struct report* report)
 {
     switch(bool_expr.op) {
         case AST_BOOL_AND: {
-            bool lhs = match_node_inner(config, event, bool_expr.binary.lhs, memoize, report, false);
+            bool lhs = match_node_inner(config, event, bool_expr.binary.lhs, memoize, report);
             if(lhs == false) {
                 return false;
             }
-            bool rhs = match_node_inner(config, event, bool_expr.binary.rhs, memoize, report, false);
+            bool rhs = match_node_inner(config, event, bool_expr.binary.rhs, memoize, report);
             return rhs;
         }
         case AST_BOOL_OR: {
-            bool lhs = match_node_inner(config, event, bool_expr.binary.lhs, memoize, report, false);
+            bool lhs = match_node_inner(config, event, bool_expr.binary.lhs, memoize, report);
             if(lhs == true) {
                 return true;
             }
-            bool rhs = match_node_inner(config, event, bool_expr.binary.rhs, memoize, report, false);
+            bool rhs = match_node_inner(config, event, bool_expr.binary.rhs, memoize, report);
             return rhs;
         }
         case AST_BOOL_NOT: {
-            bool result = match_node_inner(config, event, bool_expr.unary.expr, memoize, report, false);
+            bool result = match_node_inner(config, event, bool_expr.unary.expr, memoize, report);
             return !result;
         }
         case AST_BOOL_VARIABLE: {
             bool value;
             enum variable_state_e state
                 = get_bool_var(config, bool_expr.variable.var, event, &value);
-            betree_assert(state != VARIABLE_MISSING, "Variable is missing");
+            betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
             if(state == VARIABLE_UNDEFINED) {
                 return false;
             }
@@ -938,13 +934,10 @@ bool match_bool_expr(
     }
 }
 
-void report_memoized(struct report* report, bool is_top_level)
+void report_memoized(struct report* report)
 {
     if(report != NULL) {
-        if(is_top_level) {
-            report->expressions_memoized++;
-        }
-        report->sub_expressions_memoized++;
+        report->memoized++;
     }
 }
 
@@ -966,7 +959,7 @@ void print_memoize(const struct memoize* memoize, size_t pred_count)
     printf("\n");
 }
 
-static bool match_node_inner(const struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report, bool is_top_level)
+static bool match_node_inner(const struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report)
 {
     // TODO allow undefined handling?
     if(MATCH_NODE_DEBUG) {
@@ -992,11 +985,11 @@ static bool match_node_inner(const struct config* config, const struct event* ev
     }
     if(memoize != NULL) {
         if(test_bit(memoize->pass, node->id)) {
-            report_memoized(report, is_top_level);
+            report_memoized(report);
             return true;
         }
         if(test_bit(memoize->fail, node->id)) {
-            report_memoized(report, is_top_level);
+            report_memoized(report);
             return false;
         }
     }
@@ -1044,7 +1037,7 @@ static bool match_node_inner(const struct config* config, const struct event* ev
 
 bool match_node(const struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report)
 {
-    return match_node_inner(config, event, node, memoize, report, true);
+    return match_node_inner(config, event, node, memoize, report);
 }
 
 static void get_variable_bound_inner(const struct attr_domain* domain, const struct ast_node* node, struct value_bound* bound, bool is_reversed, bool* was_touched)
@@ -1920,7 +1913,7 @@ bool str_valid(const struct config* config, const char* attr, const char* string
     size_t bound = 0;
     for(size_t i = 0; i < config->attr_domain_count; i++) {
         if(strcmp(attr, config->attr_domains[i]->attr_var.attr) == 0) {
-            betree_assert(config->attr_domains[i]->bound.value_type == VALUE_S, "Trying to validate a string for a domain that isn't string");
+            betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_TYPE_MISMATCH, config->attr_domains[i]->bound.value_type == VALUE_S);
             if(config->attr_domains[i]->bound.is_string_bounded == false) {
                 return true;
             }
@@ -1929,6 +1922,9 @@ bool str_valid(const struct config* config, const char* attr, const char* string
                 break;
             }
         }
+    }
+    if(config->string_map_count == 0) {
+        return true;
     }
     for(size_t i = 0; i < config->string_map_count; i++) {
         struct string_map string_map = config->string_maps[i];
@@ -1939,7 +1935,7 @@ bool str_valid(const struct config* config, const char* attr, const char* string
                     return true;
                 }
             }
-            return j + 1 < bound;
+            return j <= bound;
         }
     }
     return false;

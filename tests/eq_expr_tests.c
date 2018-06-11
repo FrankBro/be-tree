@@ -298,11 +298,13 @@ int test_set_var_wrong()
     add_attr_domain_i(config, "i2", 0, 10, false);
 
     {
+        config->abort_on_error = false;
         struct ast_node* a = parse_and_assign("i in (1, 2)", config);
         struct ast_node* b = parse_and_assign("i in (\"1\", \"2\")", config);
         mu_assert(!eq_expr(a, b), "wrong value type");
         free_ast_node(a);
         free_ast_node(b);
+        config->abort_on_error = true;
     }
     {
         struct ast_node* a = parse_and_assign("i in (1, 2)", config);
@@ -382,11 +384,13 @@ int test_set_list_wrong()
     add_attr_domain_il(config, "il2", false);
 
     {
+        config->abort_on_error = false;
         struct ast_node* a = parse_and_assign("1 in il", config);
         struct ast_node* b = parse_and_assign("\"1\" in il", config);
         mu_assert(!eq_expr(a, b), "wrong value type");
         free_ast_node(a);
         free_ast_node(b);
+        config->abort_on_error = true;
     }
     {
         struct ast_node* a = parse_and_assign("1 in il", config);
@@ -476,15 +480,17 @@ int test_list_string()
 int test_list_wrong()
 {
     struct config* config = make_default_config();
-    add_attr_domain_il(config, "i", false);
-    add_attr_domain_il(config, "i2", false);
+    add_attr_domain_il(config, "il", false);
+    add_attr_domain_il(config, "il2", false);
 
     {
+        config->abort_on_error = false;
         struct ast_node* a = parse_and_assign("il one of (1, 2)", config);
         struct ast_node* b = parse_and_assign("il one of (\"1\", \"2\")", config);
         mu_assert(!eq_expr(a, b), "wrong value type");
         free_ast_node(a);
         free_ast_node(b);
+        config->abort_on_error = true;
     }
     {
         struct ast_node* a = parse_and_assign("il one of (1, 2)", config);
@@ -514,6 +520,7 @@ int test_list_wrong()
 int test_special_frequency()
 {
     struct config* config = make_default_config();
+    add_attr_domain_frequency(config, "frequency_caps", false);
 
     {
         struct ast_node* a = parse_and_assign("within_frequency_cap(\"flight\", \"namespace\", 1, 2)", config);

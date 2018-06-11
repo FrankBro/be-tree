@@ -1,5 +1,3 @@
-#include "utils.h"
-
 #include <math.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -7,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "utils.h"
 
 bool bmin(bool a, bool b)
 {
@@ -74,62 +74,13 @@ void switch_default_error(const char* str)
     abort();
 }
 
-/*
-char* strdup(const char* str)
+void betree_assert(bool should_abort, enum error_e error, bool expr)
 {
-    int n = strlen(str) + 1;
-    char* dup = malloc(n);
-    if(dup) {
-        strcpy(dup, str);
+    (void)error;
+    if(!expr) {
+        if(should_abort) {
+            abort();
+        }
     }
-    return dup;
-}
-*/
-
-int asprintf(char** buf, const char* format, ...)
-{
-    int ret;
-    va_list va;
-
-    va_start(va, format);
-    ret = vasprintf(buf, format, va);
-    va_end(va);
-    return ret;
 }
 
-int vasprintf(char** buf, const char* format, va_list va)
-{
-    int len, ret;
-    va_list tmp_va;
-    char dummy;
-
-    va_copy(tmp_va, va);
-    len = vsnprintf(&dummy, 0, format, tmp_va);
-    va_end(tmp_va);
-    if(len < 0) {
-        *buf = NULL;
-        return len;
-    }
-
-    len += 1;
-    *buf = malloc(len);
-    if(*buf == NULL) {
-        return -1;
-    }
-
-    ret = vsnprintf(*buf, len, format, va);
-    if(ret < 0) {
-        free(*buf);
-        *buf = NULL;
-    }
-
-    return ret;
-}
-
-void betree_assert(bool test, const char* message)
-{
-    if(!test) {
-        fprintf(stderr, "%s", message);
-        abort();
-    }
-}

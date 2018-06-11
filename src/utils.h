@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "error.h"
+
 bool bmin(bool a, bool b);
 bool bmax(bool a, bool b);
 int64_t d64min(int64_t a, int64_t b);
@@ -20,8 +22,6 @@ bool random_bool();
 bool feq(double a, double b);
 bool fne(double a, double b);
 void switch_default_error(const char* str);
-// char* strdup(const char* str);
-int asprintf(char** buf, const char* format, ...);
-int vasprintf(char** buf, const char* format, va_list va);
 
-void betree_assert(bool test, const char* message);
+void betree_assert(bool abort, enum error_e error, bool expr);
+

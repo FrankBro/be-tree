@@ -14,204 +14,218 @@
 
 extern bool MATCH_NODE_DEBUG;
 
-struct report test(const char* expr_a, const char* expr_b, const char* event, struct config* config)
+struct report* test(const char* expr_a, const char* expr_b, const char* event, struct betree* tree)
 {
-    if(config->pred_map == NULL) {
-        config->pred_map = make_pred_map();
+    if(tree->config->pred_map == NULL) {
+        tree->config->pred_map = make_pred_map();
     }
-    struct cnode* cnode = make_cnode(config, NULL);
-    betree_insert(config, 1, expr_a, cnode);
-    betree_insert(config, 2, expr_b, cnode);
-    struct matched_subs* matched_subs = make_matched_subs();
-    struct report report = make_empty_report();
-    betree_search(config, event, cnode, matched_subs, &report);
-    free_cnode(cnode);
-    free_matched_subs(matched_subs);
-    free_pred_map(config->pred_map);
-    config->pred_map = NULL;
+    betree_insert(1, expr_a, tree);
+    betree_insert(2, expr_b, tree);
+    struct report* report = make_report();
+    betree_search(tree, event, report);
+    free_cnode(tree->cnode);
+    tree->cnode = make_cnode(tree->config, NULL);
+    free_pred_map(tree->config->pred_map);
+    tree->config->pred_map = NULL;
     return report;
 }
 
-bool test_same(const char* expr, const char* event, struct config* config)
+bool test_same(const char* expr, const char* event, struct betree* tree)
 {
-    struct report report = test(expr, expr, event, config);
-    return
-      report.expressions_evaluated == 2 &&
-      report.expressions_matched == 2 &&
-      report.expressions_memoized == 1;
+    struct report* report = test(expr, expr, event, tree);
+    bool result =
+        report->evaluated == 2 &&
+        report->matched == 2 &&
+        report->memoized == 1;
+    free_report(report);
+    return result;
 }
 
-bool test_diff(const char* expr_a, const char* expr_b, const char* event, struct config* config)
+bool test_diff(const char* expr_a, const char* expr_b, const char* event, struct betree* tree)
 {
-    struct report report = test(expr_a, expr_b, event, config);
-    return
-      report.expressions_evaluated == 2 &&
-      report.expressions_matched == 2 &&
-      report.expressions_memoized == 0;
+    struct report* report = test(expr_a, expr_b, event, tree);
+    bool result =
+        report->evaluated == 2 &&
+        report->matched == 2 &&
+        report->memoized == 0;
+    free_report(report);
+    return result;
 }
 
-bool test_same_sub(const char* expr_a, const char* expr_b, const char* event, size_t memoized, struct config* config)
+bool test_same1(size_t memoized, const char* expr, const char* event, struct betree* tree)
 {
-    struct report report = test(expr_a, expr_b, event, config);
-    return
-      report.expressions_evaluated == 2 &&
-      report.expressions_matched == 2 &&
-      report.expressions_memoized == 0 &&
-      report.sub_expressions_memoized == memoized;
+    struct report* report = test(expr, expr, event, tree);
+    bool result =
+        report->evaluated == 2 &&
+        report->matched == 2 &&
+        report->memoized == memoized;
+    free_report(report);
+    return result;
+}
+
+bool test_same2(size_t memoized, const char* expr_a, const char* expr_b, const char* event, struct betree* tree)
+{
+    struct report* report = test(expr_a, expr_b, event, tree);
+    bool result =
+        report->evaluated == 2 &&
+        report->matched == 2 &&
+        report->memoized == memoized;
+    free_report(report);
+    return result;
 }
 
 int test_numeric_compare_integer()
 {
-    struct config* config = make_default_config();
-    add_attr_domain_i(config, "i", 0, 10, false);
+    struct betree* tree = betree_make();
+    add_attr_domain_i(tree->config, "i", 0, 10, false);
 
-    mu_assert(test_same("i > 1", "{\"i\": 2}", config), "integer gt");
-    mu_assert(test_same("i >= 1", "{\"i\": 2}", config), "integer ge");
-    mu_assert(test_same("i < 1", "{\"i\": 0}", config), "integer lt");
-    mu_assert(test_same("i <= 1", "{\"i\": 1}", config), "integer le");
-    mu_assert(test_diff("i > 0", "i > 1", "{\"i\": 2}", config), "integer diff");
+    mu_assert(test_same("i > 1", "{\"i\": 2}", tree), "integer gt");
+    mu_assert(test_same("i >= 1", "{\"i\": 2}", tree), "integer ge");
+    mu_assert(test_same("i < 1", "{\"i\": 0}", tree), "integer lt");
+    mu_assert(test_same("i <= 1", "{\"i\": 1}", tree), "integer le");
+    mu_assert(test_diff("i > 0", "i > 1", "{\"i\": 2}", tree), "integer diff");
 
-    free_config(config);
+    betree_free(tree);
     return 0;
 }
 
 int test_numeric_compare_float()
 {
-    struct config* config = make_default_config();
-    add_attr_domain_f(config, "f", 0., 10., false);
+    struct betree* tree = betree_make();
+    add_attr_domain_f(tree->config, "f", 0., 10., false);
 
-    mu_assert(test_same("f > 1.", "{\"f\": 2.}", config), "float gt");
-    mu_assert(test_same("f >= 1.", "{\"f\": 2.}", config), "float ge");
-    mu_assert(test_same("f < 1.", "{\"f\": 0.}", config), "float lt");
-    mu_assert(test_same("f <= 1.", "{\"f\": 1.}", config), "float le");
-    mu_assert(test_diff("f > 0.", "f > 1.", "{\"f\": 2.}", config), "float diff");
+    mu_assert(test_same("f > 1.", "{\"f\": 2.}", tree), "float gt");
+    mu_assert(test_same("f >= 1.", "{\"f\": 2.}", tree), "float ge");
+    mu_assert(test_same("f < 1.", "{\"f\": 0.}", tree), "float lt");
+    mu_assert(test_same("f <= 1.", "{\"f\": 1.}", tree), "float le");
+    mu_assert(test_diff("f > 0.", "f > 1.", "{\"f\": 2.}", tree), "float diff");
 
-    free_config(config);
+    betree_free(tree);
     return 0;
 }
 
 int test_equality_integer()
 {
-    struct config* config = make_default_config();
-    add_attr_domain_i(config, "i", 0, 10, false);
+    struct betree* tree = betree_make();
+    add_attr_domain_i(tree->config, "i", 0, 10, false);
 
-    mu_assert(test_same("i = 1", "{\"i\": 1}", config), "integer eq");
-    mu_assert(test_same("i <> 1", "{\"i\": 0}", config), "integer ne");
-    mu_assert(test_diff("i <> 0", "i <> 1", "{\"i\": 2}", config), "integer diff");
+    mu_assert(test_same("i = 1", "{\"i\": 1}", tree), "integer eq");
+    mu_assert(test_same("i <> 1", "{\"i\": 0}", tree), "integer ne");
+    mu_assert(test_diff("i <> 0", "i <> 1", "{\"i\": 2}", tree), "integer diff");
 
-    free_config(config);
+    betree_free(tree);
     return 0;
 }
 
 int test_equality_float()
 {
-    struct config* config = make_default_config();
-    add_attr_domain_f(config, "f", 0., 10., false);
+    struct betree* tree = betree_make();
+    add_attr_domain_f(tree->config, "f", 0., 10., false);
 
-    mu_assert(test_same("f = 1.", "{\"f\": 1.}", config), "float eq");
-    mu_assert(test_same("f <> 1.", "{\"f\": 0.}", config), "float ne");
-    mu_assert(test_diff("f <> 0.", "f <> 1.", "{\"f\": 2.}", config), "float diff");
+    mu_assert(test_same("f = 1.", "{\"f\": 1.}", tree), "float eq");
+    mu_assert(test_same("f <> 1.", "{\"f\": 0.}", tree), "float ne");
+    mu_assert(test_diff("f <> 0.", "f <> 1.", "{\"f\": 2.}", tree), "float diff");
 
-    free_config(config);
+    betree_free(tree);
     return 0;
 }
 
 int test_equality_string()
 {
-    struct config* config = make_default_config();
-    add_attr_domain_s(config, "s", false);
+    struct betree* tree = betree_make();
+    add_attr_domain_s(tree->config, "s", false);
 
-    mu_assert(test_same("s = \"a\"", "{\"s\": \"a\"}", config), "string eq");
-    mu_assert(test_same("s <> \"a\"", "{\"s\": \"b\"}", config), "string ne");
-    mu_assert(test_diff("s <> \"a\"", "s <> \"b\"", "{\"s\": \"c\"}", config), "string diff");
+    mu_assert(test_same("s = \"a\"", "{\"s\": \"a\"}", tree), "string eq");
+    mu_assert(test_same("s <> \"a\"", "{\"s\": \"b\"}", tree), "string ne");
+    mu_assert(test_diff("s <> \"a\"", "s <> \"b\"", "{\"s\": \"c\"}", tree), "string diff");
 
-    free_config(config);
+    betree_free(tree);
     return 0;
 }
 
 int test_set_var_integer()
 {
-    struct config* config = make_default_config();
-    add_attr_domain_i(config, "i", 0, 10, false);
+    struct betree* tree = betree_make();
+    add_attr_domain_i(tree->config, "i", 0, 10, false);
 
-    mu_assert(test_same("i in (1,2)", "{\"i\": 1}", config), "integer set var in");
-    mu_assert(test_same("i not in (1,2)", "{\"i\": 3}", config), "integer set var not in");
-    mu_assert(test_diff("i in (1, 3)", "i in (1, 2)", "{\"i\": 1}", config), "integer set var diff");
+    mu_assert(test_same("i in (1,2)", "{\"i\": 1}", tree), "integer set var in");
+    mu_assert(test_same("i not in (1,2)", "{\"i\": 3}", tree), "integer set var not in");
+    mu_assert(test_diff("i in (1, 3)", "i in (1, 2)", "{\"i\": 1}", tree), "integer set var diff");
 
-    free_config(config);
+    betree_free(tree);
     return 0;
 }
 
 int test_set_var_string()
 {
-    struct config* config = make_default_config();
-    add_attr_domain_s(config, "s", false);
+    struct betree* tree = betree_make();
+    add_attr_domain_s(tree->config, "s", false);
 
-    mu_assert(test_same("s in (\"1\",\"2\")", "{\"s\": \"1\"}", config), "string set var in");
-    mu_assert(test_same("s not in (\"1\",\"2\")", "{\"s\": \"3\"}", config), "string set var not in");
-    mu_assert(test_diff("s in (\"1\",\"3\")", "s in (\"1\",\"2\")", "{\"s\": \"1\"}", config), "string set var diff");
+    mu_assert(test_same("s in (\"1\",\"2\")", "{\"s\": \"1\"}", tree), "string set var in");
+    mu_assert(test_same("s not in (\"1\",\"2\")", "{\"s\": \"3\"}", tree), "string set var not in");
+    mu_assert(test_diff("s in (\"1\",\"3\")", "s in (\"1\",\"2\")", "{\"s\": \"1\"}", tree), "string set var diff");
 
-    free_config(config);
+    betree_free(tree);
     return 0;
 }
 
 int test_set_list_integer()
 {
-    struct config* config = make_default_config();
-    add_attr_domain_il(config, "il", false);
+    struct betree* tree = betree_make();
+    add_attr_domain_il(tree->config, "il", false);
 
-    mu_assert(test_same("1 in il", "{\"il\": [1, 2]}", config), "integer set list in");
-    mu_assert(test_same("1 not in il", "{\"il\": [2, 3]}", config), "integer set list not in");
-    mu_assert(test_diff("1 in il", "2 in il", "{\"il\": [1, 2]}", config), "integer set list diff");
+    mu_assert(test_same("1 in il", "{\"il\": [1, 2]}", tree), "integer set list in");
+    mu_assert(test_same("1 not in il", "{\"il\": [2, 3]}", tree), "integer set list not in");
+    mu_assert(test_diff("1 in il", "2 in il", "{\"il\": [1, 2]}", tree), "integer set list diff");
 
-    free_config(config);
+    betree_free(tree);
     return 0;
 }
 
 int test_set_list_string()
 {
-    struct config* config = make_default_config();
-    add_attr_domain_sl(config, "sl", false);
+    struct betree* tree = betree_make();
+    add_attr_domain_sl(tree->config, "sl", false);
 
-    mu_assert(test_same("\"1\" in sl", "{\"sl\": [\"1\", \"2\"]}", config), "string set list in");
-    mu_assert(test_same("\"1\" not in sl", "{\"sl\": [\"2\", \"3\"]}", config), "string set list not in");
-    mu_assert(test_diff("\"1\" in sl", "\"2\" in sl", "{\"sl\": [\"1\", \"2\"]}", config), "string set list diff");
+    mu_assert(test_same("\"1\" in sl", "{\"sl\": [\"1\", \"2\"]}", tree), "string set list in");
+    mu_assert(test_same("\"1\" not in sl", "{\"sl\": [\"2\", \"3\"]}", tree), "string set list not in");
+    mu_assert(test_diff("\"1\" in sl", "\"2\" in sl", "{\"sl\": [\"1\", \"2\"]}", tree), "string set list diff");
 
-    free_config(config);
+    betree_free(tree);
     return 0;
 }
 
 int test_list_integer()
 {
-    struct config* config = make_default_config();
-    add_attr_domain_il(config, "il", false);
+    struct betree* tree = betree_make();
+    add_attr_domain_il(tree->config, "il", false);
 
-    mu_assert(test_same("il one of (1, 2)", "{\"il\": [1, 2]}", config), "integer list one of");
-    mu_assert(test_same("il none of (1, 2)", "{\"il\": [3, 4]}", config), "integer list none of");
-    mu_assert(test_same("il all of (1, 2)", "{\"il\": [1, 2]}", config), "integer list all of");
-    mu_assert(test_diff("il one of (1, 2)", "il one of (1, 3)", "{\"il\": [1, 2]}", config), "integer list diff");
+    mu_assert(test_same("il one of (1, 2)", "{\"il\": [1, 2]}", tree), "integer list one of");
+    mu_assert(test_same("il none of (1, 2)", "{\"il\": [3, 4]}", tree), "integer list none of");
+    mu_assert(test_same("il all of (1, 2)", "{\"il\": [1, 2]}", tree), "integer list all of");
+    mu_assert(test_diff("il one of (1, 2)", "il one of (1, 3)", "{\"il\": [1, 2]}", tree), "integer list diff");
 
-    free_config(config);
+    betree_free(tree);
     return 0;
 }
 
 int test_list_string()
 {
-    struct config* config = make_default_config();
-    add_attr_domain_sl(config, "sl", false);
+    struct betree* tree = betree_make();
+    add_attr_domain_sl(tree->config, "sl", false);
 
-    mu_assert(test_same("sl one of (\"1\", \"2\")", "{\"sl\": [\"1\", \"2\"]}", config), "string list one of");
-    mu_assert(test_same("sl none of (\"1\", \"2\")", "{\"sl\": [\"3\", \"4\"]}", config), "string list none of");
-    mu_assert(test_same("sl all of (\"1\", \"2\")", "{\"sl\": [\"1\", \"2\"]}", config), "string list all of");
-    mu_assert(test_diff("sl one of (\"1\", \"2\")", "sl one of (\"1\", \"3\")", "{\"sl\": [\"1\", \"2\"]}", config), "string list diff");
+    mu_assert(test_same("sl one of (\"1\", \"2\")", "{\"sl\": [\"1\", \"2\"]}", tree), "string list one of");
+    mu_assert(test_same("sl none of (\"1\", \"2\")", "{\"sl\": [\"3\", \"4\"]}", tree), "string list none of");
+    mu_assert(test_same("sl all of (\"1\", \"2\")", "{\"sl\": [\"1\", \"2\"]}", tree), "string list all of");
+    mu_assert(test_diff("sl one of (\"1\", \"2\")", "sl one of (\"1\", \"3\")", "{\"sl\": [\"1\", \"2\"]}", tree), "string list diff");
 
-    free_config(config);
+    betree_free(tree);
     return 0;
 }
 
 int test_special_frequency()
 {
-    //struct config* config = make_default_config();
+    //struct betree* tree = betree_make();
 
     // "within_frequency_cap(\"flight\", \"namespace\", 1, 2)"
 
@@ -220,7 +234,7 @@ int test_special_frequency()
 
 int test_special_segment()
 {
-    //struct config* config = make_default_config();
+    //struct betree* tree = betree_make();
 
     // "segment_within(1, 2)"
     // "segment_within(segment, 1, 2)"
@@ -232,7 +246,7 @@ int test_special_segment()
 
 int test_special_geo()
 {
-    //struct config* config = make_default_config();
+    //struct betree* tree = betree_make();
 
     // "geo_within_radius(1, 2, 3)"
     // "geo_within_radius(1., 2., 3.)"
@@ -242,7 +256,7 @@ int test_special_geo()
 
 int test_special_string()
 {
-    //struct config* config = make_default_config();
+    //struct betree* tree = betree_make();
     //add_attr_domain_s(config, "s", false);
     //add_attr_domain_s(config, "s2", false);
 
@@ -255,38 +269,38 @@ int test_special_string()
 
 int test_bool()
 {
-    struct config* config = make_default_config();
-    add_attr_domain_b(config, "b", false, true, true);
-    add_attr_domain_i(config, "i", 0, 10, true);
+    struct betree* tree = betree_make();
+    add_attr_domain_b(tree->config, "b", false, true, true);
+    add_attr_domain_i(tree->config, "i", 0, 10, true);
 
-    mu_assert(test_same("b", "{\"b\": true}", config), "bool var");
-    mu_assert(test_same("not b", "{\"b\": false}", config), "bool not");
-    mu_assert(test_same("b and b", "{\"b\": true}", config), "bool and");
-    mu_assert(test_same("b or b", "{\"b\": true}", config), "bool or");
-    mu_assert(test_same("not (i = 0)", "{\"i\": 1}", config), "bool not complex");
-    mu_assert(test_same("(i = 0) and (i = 0)", "{\"i\": 0}", config), "bool and complex");
-    mu_assert(test_diff("(i = 0) or (i = 1)", "(i = 0) or (i = 2)", "{\"i\": 0}", config), "bool diff");
+    mu_assert(test_same("b", "{\"b\": true}", tree), "bool var");
+    mu_assert(test_same("not b", "{\"b\": false}", tree), "bool not");
+    mu_assert(test_same1(2, "b and b", "{\"b\": true}", tree), "bool and");
+    mu_assert(test_same("b or b", "{\"b\": true}", tree), "bool or");
+    mu_assert(test_same("not (i = 0)", "{\"i\": 1}", tree), "bool not complex");
+    mu_assert(test_same1(2, "(i = 0) and (i = 0)", "{\"i\": 0}", tree), "bool and complex");
+    mu_assert(test_diff("(i = 0) or (i = 1)", "(i <> 1) or (i = 2)", "{\"i\": 0}", tree), "bool diff");
 
-    free_config(config);
+    betree_free(tree);
     return 0;
 }
 
 int test_sub()
 {
-    struct config* config = make_default_config();
-    add_attr_domain_i(config, "i", 0, 10, true);
-    add_attr_domain_b(config, "b", false, true, true);
-    add_attr_domain_il(config, "il", true);
-    add_attr_domain_sl(config, "sl", true);
+    struct betree* tree = betree_make();
+    add_attr_domain_i(tree->config, "i", 0, 10, true);
+    add_attr_domain_b(tree->config, "b", false, true, true);
+    add_attr_domain_il(tree->config, "il", true);
+    add_attr_domain_sl(tree->config, "sl", true);
 
-    mu_assert(test_same_sub("(i = 0) or (i = 1)", "(i = 0) or (i = 2)", "{\"i\": 0}", 1, config), "");
-    mu_assert(test_same_sub(
+    mu_assert(test_same2(1, "(i = 0) or (i = 1)", "(i = 0) or (i = 2)", "{\"i\": 0}", tree), "");
+    mu_assert(test_same2(1, 
         "((((not b) or (i = 6 and (\"s2\" in sl)))) and (il one of (2, 3)))",
         "((((not b) or (i = 6 and (\"s2\" in sl)))) and (il one of (2, 4)))",
         "{\"b\": false, \"i\": 6, \"sl\": [\"s1\",\"s2\"], \"il\": [1, 2]}",
-        1, config), "whole left side of and");
+        tree), "whole left side of and");
 
-    free_config(config);
+    betree_free(tree);
     return 0;
 }
 

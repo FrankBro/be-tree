@@ -16,33 +16,31 @@ int parse(const char* text, struct ast_node** node);
 
 int test_cdir_split()
 {
-    struct config* config = make_default_config();
-    add_attr_domain_i(config, "a", 0, COUNT, false);
+    struct betree* tree = betree_make();
+    add_attr_domain_i(tree->config, "a", 0, COUNT, false);
 
     struct timespec start, init_done, insert_done, search_done;
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &start);
-
-    struct cnode* cnode = make_cnode(config, NULL);
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &init_done);
 
     for(size_t i = 0; i < COUNT; i++) {
         char* expr;
         asprintf(&expr, "a = %zu", i);
-        betree_insert(config, i + 1, expr, cnode);
+        betree_insert(i + 1, expr, tree);
         free(expr);
     }
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &insert_done);
 
+    struct report* report = make_report();
     const char* event = "{\"a\": 0}";
-    struct matched_subs* matched_subs = make_matched_subs();
-    betree_search(config, event, cnode, matched_subs, NULL);
+    betree_search(tree, event, report);
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &search_done);
 
-    mu_assert(matched_subs->sub_count == 1, "Found our sub");
+    mu_assert(report->matched == 1, "Found our sub");
 
     uint64_t init_us
         = (init_done.tv_sec - start.tv_sec) * 1000000 + (init_done.tv_nsec - start.tv_nsec) / 1000;
@@ -55,9 +53,8 @@ int test_cdir_split()
     printf("    Insert took %" PRIu64 "\n", insert_us);
     printf("    Search took %" PRIu64 "\n", search_us);
 
-    free_config(config);
-    free_matched_subs(matched_subs);
-    free_cnode(cnode);
+    free_report(report);
+    betree_free(tree);
     return 0;
 }
 
@@ -65,12 +62,12 @@ extern bool MATCH_NODE_DEBUG;
 
 int test_pdir_split()
 {
-    struct config* config = make_default_config();
+    struct betree* tree = betree_make();
 
     for(size_t i = 0; i < COUNT; i++) {
         char* name;
         asprintf(&name, "a%zu", i);
-        add_attr_domain_i(config, name, 0, 10, true);
+        add_attr_domain_i(tree->config, name, 0, 10, true);
         free(name);
     }
 
@@ -78,25 +75,24 @@ int test_pdir_split()
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
-    struct cnode* cnode = make_cnode(config, NULL);
     clock_gettime(CLOCK_MONOTONIC_RAW, &init_done);
 
     for(size_t i = 0; i < COUNT; i++) {
         char* expr;
         asprintf(&expr, "a%zu = 0", i);
-        betree_insert(config, i + 1, expr, cnode);
+        betree_insert(i + 1, expr, tree);
         free(expr);
     }
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &insert_done);
 
     const char* event = "{\"a0\": 0}";
-    struct matched_subs* matched_subs = make_matched_subs();
-    betree_search(config, event, cnode, matched_subs, NULL);
+    struct report* report = make_report();
+    betree_search(tree, event, report);
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &search_done);
 
-    mu_assert(matched_subs->sub_count == 1, "Found our sub");
+    mu_assert(report->matched == 1, "Found our sub");
 
     uint64_t init_us
         = (init_done.tv_sec - start.tv_sec) * 1000000 + (init_done.tv_nsec - start.tv_nsec) / 1000;
@@ -109,9 +105,8 @@ int test_pdir_split()
     printf("    Insert took %" PRIu64 "\n", insert_us);
     printf("    Search took %" PRIu64 "\n", search_us);
 
-    free_config(config);
-    free_matched_subs(matched_subs);
-    free_cnode(cnode);
+    free_report(report);
+    betree_free(tree);
     return 0;
 }
 

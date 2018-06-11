@@ -1,5 +1,6 @@
 #include "var.h"
 #include "betree.h"
+#include "error.h"
 #include "utils.h"
 
 enum variable_state_e get_variable(const struct config* config,
@@ -29,7 +30,7 @@ enum variable_state_e get_float_var(
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
     if(state == VARIABLE_DEFINED) {
-        betree_assert(value.value_type == VALUE_F, "Var is not a float");
+        betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, value.value_type == VALUE_F);
         *ret = value.fvalue;
     }
     return state;
@@ -50,7 +51,7 @@ enum variable_state_e get_string_var(const struct config* config,
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
     if(state == VARIABLE_DEFINED) {
-        betree_assert(value.value_type == VALUE_S, "Var is not a string");
+        betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, value.value_type == VALUE_S);
         *ret = value.svalue;
     }
     return state;
@@ -69,7 +70,7 @@ enum variable_state_e get_integer_var(
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
     if(state == VARIABLE_DEFINED) {
-        betree_assert(value.value_type == VALUE_I, "Var is not an integer");
+        betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, value.value_type == VALUE_I);
         *ret = value.ivalue;
     }
     return state;
@@ -88,7 +89,7 @@ enum variable_state_e get_bool_var(
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
     if(state == VARIABLE_DEFINED) {
-        betree_assert(value.value_type == VALUE_B, "Var is not a bool");
+        betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, value.value_type == VALUE_B);
         *ret = value.bvalue;
     }
     return state;
@@ -102,8 +103,8 @@ enum variable_state_e get_integer_list_var(const struct config* config,
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
     if(state == VARIABLE_DEFINED) {
-        betree_assert(
-            is_empty_list(value) || value.value_type == VALUE_IL, "Var is not an integer list");
+        betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, 
+            is_empty_list(value) || value.value_type == VALUE_IL);
         *ret = value.ilvalue;
     }
     return state;
@@ -117,8 +118,8 @@ enum variable_state_e get_string_list_var(const struct config* config,
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
     if(state == VARIABLE_DEFINED) {
-        betree_assert(
-            is_empty_list(value) || value.value_type == VALUE_SL, "Var is not an string list");
+        betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, 
+            is_empty_list(value) || value.value_type == VALUE_SL);
         *ret = value.slvalue;
     }
     return state;
@@ -132,8 +133,8 @@ enum variable_state_e get_segments_var(const struct config* config,
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
     if(state == VARIABLE_DEFINED) {
-        betree_assert(
-            is_empty_list(value) || value.value_type == VALUE_SEGMENTS, "Var is not a segments");
+        betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, 
+            is_empty_list(value) || value.value_type == VALUE_SEGMENTS);
         *ret = value.segments_value;
     }
     return state;
@@ -154,8 +155,8 @@ enum variable_state_e get_frequency_var(const struct config* config,
     struct value value;
     enum variable_state_e state = get_variable(config, var, event, &value);
     if(state == VARIABLE_DEFINED) {
-        betree_assert(
-            is_empty_list(value) || value.value_type == VALUE_FREQUENCY, "Var is not a frequency");
+        betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, 
+            is_empty_list(value) || value.value_type == VALUE_FREQUENCY);
         *ret = value.frequency_value;
     }
     return state;

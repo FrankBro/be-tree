@@ -132,14 +132,14 @@ size_t read_betree_events(struct config* config, struct events* events)
     return count;
 }
 
-size_t read_betree_exprs(struct config* config, struct cnode* cnode)
+size_t read_betree_exprs(struct betree* tree)
 {
     FILE* f = fopen("betree_exprs", "r");
 
     char line[LINE_MAX * 2];
     betree_sub_t sub_id = 1;
     while(fgets(line, sizeof(line), f)) {
-        betree_insert(config, sub_id, line, cnode);
+        betree_insert(sub_id, line, tree);
         sub_id++;
         if(MAX_EXPRS != 0 && sub_id - 1 == MAX_EXPRS) {
             break;
@@ -225,14 +225,13 @@ int test_real()
     struct timespec start, insert_done, gen_event_done, search_done;
 
     // Init
-    struct config* config = make_default_config();
-    read_betree_defs(config);
+    struct betree* tree = betree_make();
+    read_betree_defs(tree->config);
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
     // Insert
-    struct cnode* cnode = make_cnode(config, NULL);
-    size_t expr_count = read_betree_exprs(config, cnode);
+    size_t expr_count = read_betree_exprs(tree);
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &insert_done);
     uint64_t insert_us = (insert_done.tv_sec - start.tv_sec) * 1000000
@@ -240,7 +239,7 @@ int test_real()
     printf("    Insert took %" PRIu64 "\n", insert_us);
 
     struct events events = { .count = 0, .events = NULL };
-    size_t event_count = read_betree_events(config, &events);
+    size_t event_count = read_betree_events(tree->config, &events);
 
     // <DEBUG>
     /*for(size_t i = 0; i < config->attr_domain_count; i++) {*/
@@ -268,9 +267,8 @@ int test_real()
         clock_gettime(CLOCK_MONOTONIC_RAW, &gen_event_done);
 
         struct event* event = events.events[i];
-        struct matched_subs* matched_subs = make_matched_subs();
-        struct report report = { .expressions_evaluated = 0, .expressions_matched = 0 };
-        betree_search_with_event(config, event, cnode, matched_subs, &report);
+        struct report* report = make_report();
+        betree_search_with_event(tree->config, event, tree->cnode, report);
 
         clock_gettime(CLOCK_MONOTONIC_RAW, &search_done);
         uint64_t search_us = (search_done.tv_sec - gen_event_done.tv_sec) * 1000000
@@ -284,10 +282,10 @@ int test_real()
         */
         search_timings[i] = search_us;
         search_us_sum += search_us;
-        evaluated_sum += report.expressions_evaluated;
-        matched_sum += report.expressions_matched;
-        memoized_sum += report.sub_expressions_memoized;
-        free_matched_subs(matched_subs);
+        evaluated_sum += report->evaluated;
+        matched_sum += report->matched;
+        memoized_sum += report->memoized;
+        free_report(report);
     }
 
     (void)search_timings;
@@ -299,19 +297,18 @@ int test_real()
     printf("%zu expressions, %zu events, %zu preds. Average: time %.2fus, evaluated %.2f, matched %.2f, memoized %.2f\n",
         expr_count,
         event_count,
-        config->pred_map->pred_count,
+        tree->config->pred_map->pred_count,
         search_us_average,
         evaluated_average,
         matched_average,
         memoized_average);
     // DEBUG
-    write_dot_file(config, cnode);
+    write_dot_file(tree->config, tree->cnode);
     // DEBUG
 
 
     free(events.events);
-    free_cnode(cnode);
-    free_config(config);
+    betree_free(tree);
     return 0;
 }
 
