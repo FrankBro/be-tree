@@ -2,14 +2,11 @@
 # Variables
 ################################################################################
 
-# ERTS_INCLUDE_DIR ?= $(shell erl -noshell -s init stop -eval "io:format(\"~s/erts-~s/include/\", [code:root_dir(), erlang:system_info(version)]).")
-
 CFLAGS := -g -std=gnu11 -D_GNU_SOURCE -Wall -Wextra -Wshadow -Wfloat-equal -Wundef -Wcast-align \
 	-Wwrite-strings -Wunreachable-code -Wformat=2 -Wswitch-enum \
-	-Wswitch-default -Winit-self -Wno-strict-aliasing \
-	# -I$(ERTS_INCLUDE_DIR) \
+	-Wswitch-default -Winit-self -Wno-strict-aliasing
 
-LDFLAGS := -lm
+LDFLAGS := -lm -fPIC
 
 # LDFLAGS := -shared
 
@@ -26,8 +23,6 @@ YACC_OBJECTS=$(patsubst %.y,%.c,${YACC_SOURCES}) $(patsubst %.y,%.h,${YACC_SOURC
 
 SOURCES=$(wildcard src/*.c)
 OBJECTS=$(patsubst %.c,%.o,${SOURCES}) $(patsubst %.l,%.o,${LEX_SOURCES}) $(patsubst %.y,%.o,${YACC_SOURCES})
-LIB_SOURCES=$(filter-out src/erlang.c,${SOURCES})
-LIB_OBJECTS=$(filter-out src/erlang.o,${OBJECTS})
 TEST_SOURCES=$(wildcard tests/*_tests.c)
 TEST_OBJECTS=$(patsubst %.c,%,${TEST_SOURCES})
 TOOL_SOURCES=$(wildcard tools/*.c)
@@ -39,6 +34,7 @@ YFLAGS?=-dv
 
 VALGRIND=valgrind --leak-check=full --track-origins=yes --suppressions=valgrind.supp
 CALLGRIND=valgrind --tool=callgrind
+CACHEGRIND=valgrind --tool=cachegrind
 
 ################################################################################
 # Default Target
@@ -46,7 +42,7 @@ CALLGRIND=valgrind --tool=callgrind
 
 # all: build/betree.a build/betree.so $(OBJECTS) tool test dot
 # all: build/betree.a build/betree.so $(OBJECTS) tool test
-all: build/betree.a tool test
+all: build/libbetree.so tool test
 
 dot:
 	# dot -Tpng betree.dot -o betree.png
@@ -56,19 +52,8 @@ dot:
 # Binaries
 ################################################################################
 
-build/betree.a: build $(LIB_OBJECTS)
-	rm -f build/betree.a
-	ar rcs $@ $(LIB_OBJECTS)
-	ranlib $@
-
-# src/erlang.c: $(LEX_OBJECTS)
-
-# src/erlang.o: src/erlang.c
-# 	$(CC) $(CFLAGS) -c -o $@ $^
-
-# build/betree.so: $(OBJECTS)
-# 	# -rdynamic before -o
-# 	$(CC) $(LDFLAGS) -o $@ src/erlang.o build/betree.a
+build/libbetree.so: build $(OBJECTS)
+	$(CC) -shared $(OBJECTS) -o $@
 
 build:
 	mkdir -p build
@@ -95,7 +80,7 @@ src/event_parser.c: src/event_parser.y
 # BETree
 ################################################################################
 
-src.betree.o: src/betree.c
+src/%.o: src/%.c
 	$(CC) $(CFLAGS) -c -o $@ $^ $(LDFLAGS)
 
 ################################################################################
@@ -108,7 +93,7 @@ build/tools:
 	mkdir -p build/tools
 
 $(TOOL_OBJECTS): %: %.c build/tools
-	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/betree.a $(LDFLAGS)
+	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/libbetree.so $(LDFLAGS)
 
 ################################################################################
 # Tests
@@ -121,19 +106,24 @@ test: $(TEST_OBJECTS) build/tests/betree_tests
 build/tests:
 	mkdir -p build/tests
 
-$(TEST_OBJECTS): %: %.c build/tests build/betree.a
-	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/betree.a $(LDFLAGS)
+$(TEST_OBJECTS): %: %.c build/tests build/libbetree.so
+	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/libbetree.so $(LDFLAGS)
 
 clean:
-	rm -rf build/betree.so build/betree.a $(OBJECTS) $(LEX_OBJECTS) $(YACC_OBJECTS)
-	rm -rf build/tests
+	rm -rf build/libbetree.so $(OBJECTS) $(LEX_OBJECTS) $(YACC_OBJECTS)
+	rm -rf build
 
 valgrind:
 	$(VALGRIND) build/tests/betree_tests
 	$(VALGRIND) build/tests/parser_tests
 	$(VALGRIND) build/tests/event_parser_tests
-	#$(VALGRIND) build/tests/performance_tests
-	#$(VALGRIND) build/tools/gen_expr
+	$(VALGRIND) build/tests/performance_tests
+	$(VALGRIND) build/tools/gen_expr
+	$(VALGRIND) build/tests/memoize_tests
 
 callgrind:
-	$(CALLGRIND) build/tests/performance_tests
+	$(CALLGRIND) build/tests/real_tests
+
+cachegrind:
+	$(CACHEGRIND) build/tests/real_tests
+
