@@ -136,18 +136,21 @@ size_t read_betree_exprs(struct betree* tree)
 {
     FILE* f = fopen("betree_exprs", "r");
 
+    char* lines[MAX_EXPRS];
     char line[LINE_MAX * 2];
-    betree_sub_t sub_id = 1;
+    size_t count = 0;
     while(fgets(line, sizeof(line), f)) {
-        betree_insert(sub_id, line, tree);
-        sub_id++;
-        if(MAX_EXPRS != 0 && sub_id - 1 == MAX_EXPRS) {
+        lines[count] = strdup(line);
+        count++;
+        if(MAX_EXPRS != 0 && count == MAX_EXPRS) {
             break;
         }
     }
 
+    betree_insert_all(tree, count, (const char**)lines);
+
     fclose(f);
-    return sub_id - 1;
+    return count;
 }
 
 void read_betree_defs(struct betree* tree)

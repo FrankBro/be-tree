@@ -24,6 +24,7 @@ void betree_free(struct betree* betree);
 
 void betree_add_domain(struct betree* betree, char* domain);
 
+bool betree_insert_all(struct betree* tree, size_t count, const char** exprs);
 bool betree_insert(betree_sub_t id, const char* expr, struct betree* tree);
 void betree_search(const struct betree* betree, const char* event, struct report* report);
 bool betree_delete(betree_sub_t id, struct betree* betree);

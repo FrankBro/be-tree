@@ -1080,6 +1080,34 @@ int test_not_domain_changing()
     return 0;
 }
 
+int test_insert_all()
+{
+    struct betree* tree = betree_make();
+    add_attr_domain_i(tree->config, "i1", 0, 10, true);
+    add_attr_domain_i(tree->config, "i2", 0, 10, true);
+
+    const char* exprs[3] = {
+        "i1 = 0 || i1 = 2",
+        "i1 = 0 || i1 = 4",
+        "i1 = 0 || i1 = 6"
+    };
+    betree_insert_all(tree, 3, exprs);
+    mu_assert(tree->cnode->lnode->sub_count == 3, "did not split yet");
+
+    mu_assert(betree_insert(5, "i2 = 0 || i2 = 2", tree), "");
+    mu_assert(tree->cnode->lnode->sub_count == 1 &&
+      tree->cnode->pdir != NULL &&
+      tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3, "split");
+
+    struct report* report = make_report();
+    betree_search(tree, "{\"i1\": 0}", report);
+    mu_assert(report->matched == 3, "correct match");
+
+    free_report(report);
+    betree_free(tree);
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_sub_has_attribute);
@@ -1109,6 +1137,7 @@ int all_tests()
     mu_run_test(test_parenthesis);
     mu_run_test(test_splitable_string_domain);
     mu_run_test(test_not_domain_changing);
+    mu_run_test(test_insert_all);
 
     return 0;
 }

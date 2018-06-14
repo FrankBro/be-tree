@@ -53,6 +53,7 @@ dot:
 ################################################################################
 
 build/libbetree.so: build $(OBJECTS)
+	rm -f build/libbetree.so
 	$(CC) -shared $(OBJECTS) -o $@
 
 build:

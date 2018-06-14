@@ -37,6 +37,33 @@ static bool is_valid(const struct config* config, const struct ast_node* node)
     return str;
 }
 
+bool betree_insert_all(struct betree* tree, size_t count, const char** exprs)
+{
+    // Hackish a bit for now, insert all except the last manually, then insert the last one legit
+    struct sub** subs = calloc(count - 1, sizeof(*subs));
+    for(size_t i = 0; i < count - 1; i++) {
+        const char* expr = exprs[i];
+        struct ast_node* node;
+        if(parse(expr, &node) != 0) {
+            fprintf(stderr, "Failed to parse id %" PRIu64 ": %s\n", i, expr);
+            if(tree->config->abort_on_error) {
+                abort();
+            }
+        }
+        if(!is_valid(tree->config, node)) {
+            return false;
+        }
+        assign_variable_id(tree->config, node);
+        assign_str_id(tree->config, node);
+        assign_pred_id(tree->config, node);
+        struct sub* sub = make_sub(tree->config, i, node);
+        subs[i] = sub;
+    }
+    tree->cnode->lnode->sub_count = count - 1;
+    tree->cnode->lnode->subs = subs;
+    return betree_insert(count - 1, exprs[count - 1], tree);
+}
+
 bool betree_insert(betree_sub_t id, const char* expr, struct betree* tree)
 {
     struct ast_node* node;
