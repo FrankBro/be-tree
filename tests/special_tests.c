@@ -32,7 +32,7 @@ frequency(
     int64_t usec = 1000 * 1000;
     const char* type_value = frequency_type_to_string(type);
     asprintf(&expr, "%swithin_frequency_cap(\"%s\", \"%s\", %" PRId64 ", %" PRId64 ")", pre, type_value, ns, value, length);
-    betree_insert(1, expr, tree);
+    betree_insert(tree, 1, expr);
     char* event_str;
     const char* cap_type_value = frequency_type_to_string(cap_type);
     asprintf(&event_str, "{\"now\": %ld, \"frequency_caps\": [[\"%s\", %u, \"%s\", %ld, %d]]}", now, cap_type_value, cap_id, cap_ns, timestamp * usec, cap_value);

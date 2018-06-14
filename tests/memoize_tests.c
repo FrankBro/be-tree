@@ -19,8 +19,8 @@ struct report* test(const char* expr_a, const char* expr_b, const char* event, s
     if(tree->config->pred_map == NULL) {
         tree->config->pred_map = make_pred_map();
     }
-    betree_insert(1, expr_a, tree);
-    betree_insert(2, expr_b, tree);
+    betree_insert(tree, 1, expr_a);
+    betree_insert(tree, 2, expr_b);
     struct report* report = make_report();
     betree_search(tree, event, report);
     free_cnode(tree->cnode);

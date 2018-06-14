@@ -17,7 +17,7 @@ int test_sub_has_attribute()
     struct betree* tree = betree_make();
     add_attr_domain_i(tree->config, "a", 0, 10, false);
     
-    mu_assert(betree_insert(0, "a = 0", tree), "");
+    mu_assert(betree_insert(tree, 0, "a = 0"), "");
 
     struct sub* sub = tree->cnode->lnode->subs[0];
     mu_assert(sub_has_attribute_str(tree->config, sub, "a"), "Simple sub has 'a'");
@@ -60,18 +60,18 @@ int test_remove_sub()
     struct betree* tree = betree_make();
     add_attr_domain_i(tree->config, "a", 0, 10, false);
 
-    mu_assert(betree_insert(0, "a = 0", tree), "");
+    mu_assert(betree_insert(tree, 0, "a = 0"), "");
     mu_assert(cnode_has_sub1(tree->cnode, 0), "lnode has one sub and it matches");
 
-    mu_assert(betree_delete(0, tree), "");
+    mu_assert(betree_delete(tree, 0), "");
     mu_assert(cnode_has_sub0(tree->cnode), "lnode no longer has any subs");
 
-    mu_assert(betree_insert(0, "a = 0", tree), "");
-    mu_assert(betree_insert(1, "a = 1", tree), "");
-    mu_assert(betree_insert(2, "a = 2", tree), "");
+    mu_assert(betree_insert(tree, 0, "a = 0"), "");
+    mu_assert(betree_insert(tree, 1, "a = 1"), "");
+    mu_assert(betree_insert(tree, 2, "a = 2"), "");
     mu_assert(cnode_has_sub3(tree->cnode, 0, 1, 2), "lnode has three subs and they match");
 
-    mu_assert(betree_delete(1, tree), "");
+    mu_assert(betree_delete(tree, 1), "");
     mu_assert(cnode_has_sub2(tree->cnode, 0, 2), "lnode no longer has sub2");
 
     betree_free(tree);
@@ -85,7 +85,7 @@ int test_match_single_cnode()
 
     betree_sub_t sub_id = 0;
 
-    mu_assert(betree_insert(sub_id, "a = 0", tree), "");
+    mu_assert(betree_insert(tree, sub_id, "a = 0"), "");
     mu_assert(cnode_has_sub1(tree->cnode, sub_id), "tree has one sub");
 
     {
@@ -129,10 +129,10 @@ int test_insert_first_split()
     add_attr_domain_i(tree->config, "a", 0, 10, false);
     add_attr_domain_i(tree->config, "b", 0, 10, false);
 
-    mu_assert(betree_insert(0, "a = 0", tree), "");
-    mu_assert(betree_insert(1, "a = 1", tree), "");
-    mu_assert(betree_insert(2, "a = 2", tree), "");
-    mu_assert(betree_insert(3, "b = 0", tree), "");
+    mu_assert(betree_insert(tree, 0, "a = 0"), "");
+    mu_assert(betree_insert(tree, 1, "a = 1"), "");
+    mu_assert(betree_insert(tree, 2, "a = 2"), "");
+    mu_assert(betree_insert(tree, 3, "b = 0"), "");
 
     mu_assert(tree->cnode->lnode->sub_count == 1, "tree has one sub in the first lnode");
     mu_assert(tree->cnode->pdir != NULL, "cnode has a pdir");
@@ -172,9 +172,9 @@ int test_pdir_split_twice()
     add_attr_domain_i(tree->config, "b", 0, 10, false);
     add_attr_domain_i(tree->config, "c", 0, 10, false);
 
-    mu_assert(betree_insert(1, "a = 0", tree), "");
-    mu_assert(betree_insert(2, "a = 0", tree), "");
-    mu_assert(betree_insert(3, "a = 0", tree), "");
+    mu_assert(betree_insert(tree, 1, "a = 0"), "");
+    mu_assert(betree_insert(tree, 2, "a = 0"), "");
+    mu_assert(betree_insert(tree, 3, "a = 0"), "");
 
     mu_assert(tree->cnode->lnode->sub_count == 3 &&
       tree->cnode->lnode->subs[0]->id == 1 &&
@@ -182,9 +182,9 @@ int test_pdir_split_twice()
       tree->cnode->lnode->subs[2]->id == 3
       , "subs123 in first lnode");
 
-    mu_assert(betree_insert(4, "b = 0", tree), "");
-    mu_assert(betree_insert(5, "b = 0", tree), "");
-    mu_assert(betree_insert(6, "b = 0", tree), "");
+    mu_assert(betree_insert(tree, 4, "b = 0"), "");
+    mu_assert(betree_insert(tree, 5, "b = 0"), "");
+    mu_assert(betree_insert(tree, 6, "b = 0"), "");
 
     mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3 &&
       tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[0]->id == 1 &&
@@ -197,7 +197,7 @@ int test_pdir_split_twice()
       tree->cnode->lnode->subs[2]->id == 6
       , "subs456 in first lnode");
 
-    mu_assert(betree_insert(7, "c = 0", tree), "");
+    mu_assert(betree_insert(tree, 7, "c = 0"), "");
 
     mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3 &&
       tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[0]->id == 1 &&
@@ -223,9 +223,9 @@ int test_cdir_split_twice()
     add_attr_domain_i(tree->config, "a", 0, 10, false);
     add_attr_domain_i(tree->config, "b", 0, 10, false);
 
-    mu_assert(betree_insert(1, "a = 2", tree), "");
-    mu_assert(betree_insert(2, "a = 2", tree), "");
-    mu_assert(betree_insert(3, "a = 2", tree), "");
+    mu_assert(betree_insert(tree, 1, "a = 2"), "");
+    mu_assert(betree_insert(tree, 2, "a = 2"), "");
+    mu_assert(betree_insert(tree, 3, "a = 2"), "");
 
     mu_assert(tree->cnode->lnode->sub_count == 3 &&
       tree->cnode->lnode->subs[0]->id == 1 &&
@@ -233,7 +233,7 @@ int test_cdir_split_twice()
       tree->cnode->lnode->subs[2]->id == 3
       , "subs123 in first lnode");
 
-    mu_assert(betree_insert(4, "b = 0", tree), "");
+    mu_assert(betree_insert(tree, 4, "b = 0"), "");
 
     mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3 &&
       tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[0]->id == 1 &&
@@ -244,9 +244,9 @@ int test_cdir_split_twice()
       tree->cnode->lnode->subs[0]->id == 4
       , "subs4 in first lnode");
 
-    mu_assert(betree_insert(5, "a = 7", tree), "");
-    mu_assert(betree_insert(6, "a = 7", tree), "");
-    mu_assert(betree_insert(7, "a = 7", tree), "");
+    mu_assert(betree_insert(tree, 5, "a = 7"), "");
+    mu_assert(betree_insert(tree, 6, "a = 7"), "");
+    mu_assert(betree_insert(tree, 7, "a = 7"), "");
 
     mu_assert(tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->sub_count == 3 &&
       tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->subs[0]->id == 1 &&
@@ -271,11 +271,11 @@ int test_remove_sub_in_tree()
     struct betree* tree = betree_make();
     add_attr_domain_i(tree->config, "a", 0, 10, false);
 
-    mu_assert(betree_insert(0, "a = 0", tree), "");
+    mu_assert(betree_insert(tree, 0, "a = 0"), "");
 
     mu_assert(tree->cnode->lnode->sub_count == 1, "lnode has the sub");
 
-    mu_assert(betree_delete(0, tree), "");
+    mu_assert(betree_delete(tree, 0), "");
 
     mu_assert(tree->cnode->lnode->sub_count == 0, "lnode does not have the sub");
     mu_assert(tree->cnode != NULL && tree->cnode->lnode != NULL,
@@ -291,18 +291,18 @@ int test_remove_sub_in_tree_with_delete()
     add_attr_domain_i(tree->config, "a", 0, 10, false);
     add_attr_domain_i(tree->config, "b", 0, 10, false);
 
-    mu_assert(betree_insert(1, "a = 0", tree), "");
-    mu_assert(betree_insert(2, "a = 0", tree), "");
-    mu_assert(betree_insert(3, "a = 0", tree), "");
-    mu_assert(betree_insert(4, "b = 0", tree), "");
+    mu_assert(betree_insert(tree, 1, "a = 0"), "");
+    mu_assert(betree_insert(tree, 2, "a = 0"), "");
+    mu_assert(betree_insert(tree, 3, "a = 0"), "");
+    mu_assert(betree_insert(tree, 4, "b = 0"), "");
 
     mu_assert(tree->cnode->lnode->sub_count == 1, "sub 4 is in lnode");
     mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3,
         "sub 1, 2, and 3 is lower lnode");
 
-    mu_assert(betree_delete(1, tree), "");
-    mu_assert(betree_delete(2, tree), "");
-    mu_assert(betree_delete(3, tree), "");
+    mu_assert(betree_delete(tree, 1), "");
+    mu_assert(betree_delete(tree, 2), "");
+    mu_assert(betree_delete(tree, 3), "");
 
     mu_assert(tree->cnode->pdir == NULL, "deleted everything down of the pdir");
 
@@ -318,10 +318,10 @@ int test_match_deeper()
     add_attr_domain_i(tree->config, "a", 0, 0, false);
     add_attr_domain_i(tree->config, "b", 0, 1, false);
 
-    mu_assert(betree_insert(1, "a = 0 and b = 0", tree), "");
-    mu_assert(betree_insert(2, "a = 1", tree), "");
-    mu_assert(betree_insert(3, "a = 0 and b = 0", tree), "");
-    mu_assert(betree_insert(4, "a = 0 and b = 1", tree), "");
+    mu_assert(betree_insert(tree, 1, "a = 0 and b = 0"), "");
+    mu_assert(betree_insert(tree, 2, "a = 1"), "");
+    mu_assert(betree_insert(tree, 3, "a = 0 and b = 0"), "");
+    mu_assert(betree_insert(tree, 4, "a = 0 and b = 1"), "");
 
     const struct lnode* lnode = tree->cnode->lnode;
     const struct pdir* pdir_a = tree->cnode->pdir;
@@ -362,7 +362,7 @@ int test_large_cdir_split()
     for(size_t i = 0; i < 100; i++) {
         char* expr;
         asprintf(&expr, "a = %zu", i);
-        mu_assert(betree_insert(i, expr, tree), "");
+        mu_assert(betree_insert(tree, i, expr), "");
         free(expr);
     }
 
@@ -385,10 +385,10 @@ int test_min_partition()
     add_attr_domain_i(tree->config, "b", 0, 10, false);
     add_attr_domain_i(tree->config, "c", 0, 10, false);
 
-    mu_assert(betree_insert(0, "a = 0", tree), "");
-    mu_assert(betree_insert(1, "a = 0", tree), "");
-    mu_assert(betree_insert(2, "b = 0", tree), "");
-    mu_assert(betree_insert(3, "c = 0", tree), "");
+    mu_assert(betree_insert(tree, 0, "a = 0"), "");
+    mu_assert(betree_insert(tree, 1, "a = 0"), "");
+    mu_assert(betree_insert(tree, 2, "b = 0"), "");
+    mu_assert(betree_insert(tree, 3, "c = 0"), "");
 
     mu_assert(tree->cnode->lnode->sub_count == 2, "First lnode has two subs");
     mu_assert(tree->cnode->pdir->pnode_count == 1 && 
@@ -404,10 +404,10 @@ int test_min_partition()
     add_attr_domain_i(tree->config, "b", 0, 10, false);
     add_attr_domain_i(tree->config, "c", 0, 10, false);
 
-    mu_assert(betree_insert(0, "a = 0", tree), "");
-    mu_assert(betree_insert(1, "a = 0", tree), "");
-    mu_assert(betree_insert(2, "b = 0", tree), "");
-    mu_assert(betree_insert(3, "c = 0", tree), "");
+    mu_assert(betree_insert(tree, 0, "a = 0"), "");
+    mu_assert(betree_insert(tree, 1, "a = 0"), "");
+    mu_assert(betree_insert(tree, 2, "b = 0"), "");
+    mu_assert(betree_insert(tree, 3, "c = 0"), "");
 
     mu_assert(tree->cnode->lnode->sub_count == 4, "First lnode has four subs");
     mu_assert(tree->cnode->lnode->max != lnode_max_cap, "First lnode max cap went up");
@@ -429,7 +429,7 @@ int test_allow_undefined()
 
     for(size_t i = 0; i < expr_count; i++) {
         const char* expr = exprs[i];
-        mu_assert(betree_insert(i + 1, expr, tree), "");
+        mu_assert(betree_insert(tree, i + 1, expr), "");
     }
 
     struct report* report = make_report();
@@ -455,7 +455,7 @@ int test_float()
         double value = i < 3 ? 0. : 7.;
         char* expr;
         asprintf(&expr, "a = %.1f", value);
-        mu_assert(betree_insert(i, expr, tree), "");
+        mu_assert(betree_insert(tree, i, expr), "");
         free(expr);
     }
 
@@ -503,7 +503,7 @@ int test_string()
     struct betree* tree = betree_make();
     add_attr_domain_s(tree->config, "a", false);
 
-    mu_assert(betree_insert(0, "a = \"a\"", tree), "");
+    mu_assert(betree_insert(tree, 0, "a = \"a\""), "");
 
     struct report* report = make_report();
     betree_search(tree, "{\"a\": \"a\"}", report);
@@ -522,7 +522,7 @@ int test_string_wont_split()
     add_attr_domain_s(tree->config, "a", false);
 
     for(size_t i = 0; i < 4; i++) {
-        mu_assert(betree_insert(i, "a = \"a\"", tree), "");
+        mu_assert(betree_insert(tree, i, "a = \"a\""), "");
     }
 
     mu_assert(tree->cnode->lnode->sub_count == 4, "did not split");
@@ -544,7 +544,7 @@ int test_negative_int()
         int64_t value = i < 3 ? -6 : -12;
         char* expr;
         asprintf(&expr, "a = %ld", value);
-        mu_assert(betree_insert(i, expr, tree), "");
+        mu_assert(betree_insert(tree, i, expr), "");
         free(expr);
     }
 
@@ -576,7 +576,7 @@ int test_negative_float()
         double value = i < 3 ? -6. : -12.;
         char* expr;
         asprintf(&expr, "a = %.1f", value);
-        mu_assert(betree_insert(i, expr, tree), "");
+        mu_assert(betree_insert(tree, i, expr), "");
         free(expr);
     }
 
@@ -610,7 +610,7 @@ int test_integer_set()
     add_attr_domain_i(tree->config, "a", 0, 10, false);
 
     {
-        mu_assert(betree_insert(0, "a in (1, 2, 0)", tree), "");
+        mu_assert(betree_insert(tree, 0, "a in (1, 2, 0)"), "");
 
         struct report* report = make_report();
         betree_search(tree, "{\"a\": 0}", report);
@@ -622,7 +622,7 @@ int test_integer_set()
     }
 
     {
-        mu_assert(betree_insert(0, "a not in (1, 2, 0)", tree), "");
+        mu_assert(betree_insert(tree, 0, "a not in (1, 2, 0)"), "");
 
         struct report* report = make_report();
         betree_search(tree, "{\"a\": 0}", report);
@@ -646,7 +646,7 @@ int test_integer_set_reverse()
     const char* event = "{\"a\": [1, 2, 0]}";
 
     {
-        mu_assert(betree_insert(0, "0 in a", tree), "");
+        mu_assert(betree_insert(tree, 0, "0 in a"), "");
 
         struct report* report = make_report();
         betree_search(tree, event, report);
@@ -658,7 +658,7 @@ int test_integer_set_reverse()
     }
 
     {
-        mu_assert(betree_insert(0, "0 not in a", tree), "");
+        mu_assert(betree_insert(tree, 0, "0 not in a"), "");
 
         struct report* report = make_report();
         betree_search(tree, event, report);
@@ -682,7 +682,7 @@ int test_string_set()
     const char* event = "{\"a\": \"a\"}";
 
     {
-        mu_assert(betree_insert(0, "a in (\"b\", \"c\", \"a\")", tree), "");
+        mu_assert(betree_insert(tree, 0, "a in (\"b\", \"c\", \"a\")"), "");
 
         struct report* report = make_report();
         betree_search(tree, event, report);
@@ -694,7 +694,7 @@ int test_string_set()
     }
 
     {
-        mu_assert(betree_insert(0, "a not in (\"b\", \"c\", \"a\")", tree), "");
+        mu_assert(betree_insert(tree, 0, "a not in (\"b\", \"c\", \"a\")"), "");
 
         struct report* report = make_report();
         betree_search(tree, event, report);
@@ -716,7 +716,7 @@ int test_string_set_reverse()
     const char* event = "{\"a\": [\"1\", \"2\", \"0\"]}";
 
     {
-        mu_assert(betree_insert(0, "\"0\" in a", tree), "");
+        mu_assert(betree_insert(tree, 0, "\"0\" in a"), "");
 
         struct report* report = make_report();
         betree_search(tree, event, report);
@@ -728,7 +728,7 @@ int test_string_set_reverse()
     }
 
     {
-        mu_assert(betree_insert(0, "\"0\" not in a", tree), "");
+        mu_assert(betree_insert(tree, 0, "\"0\" not in a"), "");
 
         struct report* report = make_report();
         betree_search(tree, event, report);
@@ -748,7 +748,7 @@ int test_integer_list()
     add_attr_domain_il(tree->config, "a", false);
 
     {
-        mu_assert(betree_insert(0, "a one of (1, 2, 0)", tree), "");
+        mu_assert(betree_insert(tree, 0, "a one of (1, 2, 0)"), "");
 
         const char* event = "{\"a\": [1, 2, 0]}";
 
@@ -762,7 +762,7 @@ int test_integer_list()
     }
 
     {
-        mu_assert(betree_insert(0, "a one of (1, 2, 0)", tree), "");
+        mu_assert(betree_insert(tree, 0, "a one of (1, 2, 0)"), "");
 
         const char* event = "{\"a\": [4, 5, 3]}";
 
@@ -776,7 +776,7 @@ int test_integer_list()
     }
 
     {
-        mu_assert(betree_insert(0, "a none of (1, 2, 0)", tree), "");
+        mu_assert(betree_insert(tree, 0, "a none of (1, 2, 0)"), "");
 
         const char* event = "{\"a\": [4, 5, 3]}";
 
@@ -790,7 +790,7 @@ int test_integer_list()
     }
 
     {
-        mu_assert(betree_insert(0, "a none of (1, 2, 0)", tree), "");
+        mu_assert(betree_insert(tree, 0, "a none of (1, 2, 0)"), "");
 
         const char* event = "{\"a\": [1, 2, 0]}";
 
@@ -804,7 +804,7 @@ int test_integer_list()
     }
 
     {
-        mu_assert(betree_insert(0, "a all of (1, 2, 0)", tree), "");
+        mu_assert(betree_insert(tree, 0, "a all of (1, 2, 0)"), "");
 
         const char* event = "{\"a\": [1, 2, 0]}";
 
@@ -818,7 +818,7 @@ int test_integer_list()
     }
 
     {
-        mu_assert(betree_insert(0, "a all of (1, 2, 0)", tree), "");
+        mu_assert(betree_insert(tree, 0, "a all of (1, 2, 0)"), "");
 
         const char* event = "{\"a\": [1, 2, 3]}";
 
@@ -840,7 +840,7 @@ int test_string_list()
     add_attr_domain_sl(tree->config, "a", false);
 
     {
-        mu_assert(betree_insert(0, "a one of (\"1\", \"2\", \"0\")", tree), "");
+        mu_assert(betree_insert(tree, 0, "a one of (\"1\", \"2\", \"0\")"), "");
 
         const char* event = "{\"a\": [\"1\", \"2\", \"0\"]}";
 
@@ -854,7 +854,7 @@ int test_string_list()
     }
 
     {
-        mu_assert(betree_insert(0, "a one of (\"1\", \"2\", \"0\")", tree), "");
+        mu_assert(betree_insert(tree, 0, "a one of (\"1\", \"2\", \"0\")"), "");
 
         const char* event = "{\"a\": [\"4\", \"5\", \"3\"]}";
 
@@ -868,7 +868,7 @@ int test_string_list()
     }
 
     {
-        mu_assert(betree_insert(0, "a none of (\"1\", \"2\", \"0\")", tree), "");
+        mu_assert(betree_insert(tree, 0, "a none of (\"1\", \"2\", \"0\")"), "");
 
         const char* event = "{\"a\": [\"4\", \"5\", \"3\"]}";
 
@@ -882,7 +882,7 @@ int test_string_list()
     }
 
     {
-        mu_assert(betree_insert(0, "a none of (\"1\", \"2\", \"0\")", tree), "");
+        mu_assert(betree_insert(tree, 0, "a none of (\"1\", \"2\", \"0\")"), "");
 
         const char* event = "{\"a\": [\"1\", \"2\", \"0\"]}";
 
@@ -896,7 +896,7 @@ int test_string_list()
     }
 
     {
-        mu_assert(betree_insert(0, "a all of (\"1\", \"2\", \"0\")", tree), "");
+        mu_assert(betree_insert(tree, 0, "a all of (\"1\", \"2\", \"0\")"), "");
 
         const char* event = "{\"a\": [\"1\", \"2\", \"0\"]}";
 
@@ -910,7 +910,7 @@ int test_string_list()
     }
 
     {
-        mu_assert(betree_insert(0, "a all of (\"1\", \"2\", \"0\")", tree), "");
+        mu_assert(betree_insert(tree, 0, "a all of (\"1\", \"2\", \"0\")"), "");
 
         const char* event = "{\"a\": [\"1\", \"2\", \"3\"]}";
 
@@ -936,7 +936,7 @@ int test_parenthesis()
     add_attr_domain_b(tree->config, "c", false, true, false);
 
     {
-        mu_assert(betree_insert(1, "a || (b && c)", tree), "");
+        mu_assert(betree_insert(tree, 1, "a || (b && c)"), "");
         struct report* report = make_report();
         betree_search(tree, "{\"a\":true,\"b\":false,\"c\":false}", report);
         mu_assert(report->matched == 1, "");
@@ -944,7 +944,7 @@ int test_parenthesis()
         free_report(report);
     }
     {
-        mu_assert(betree_insert(1, "(a || b) && c", tree), "");
+        mu_assert(betree_insert(tree, 1, "(a || b) && c"), "");
         struct report* report = make_report();
         betree_search(tree, "{\"a\":true,\"b\":false,\"c\":false}", report);
         mu_assert(report->matched == 0, "");
@@ -952,7 +952,7 @@ int test_parenthesis()
         free_report(report);
     }
     {
-        mu_assert(betree_insert(1, "a || (b && c)", tree), "");
+        mu_assert(betree_insert(tree, 1, "a || (b && c)"), "");
         struct report* report = make_report();
         betree_search(tree, "{\"a\":false,\"b\":true,\"c\":true}", report);
         mu_assert(report->matched == 1, "");
@@ -970,13 +970,13 @@ int test_splitable_string_domain()
         struct betree* tree = betree_make();
         add_attr_domain_bounded_s(tree->config, "s", false, 5);
 
-        mu_assert(betree_insert(0, "s = \"0\"", tree), "");
-        mu_assert(betree_insert(1, "s = \"1\"", tree), "");
-        mu_assert(betree_insert(2, "s = \"2\"", tree), "");
-        mu_assert(betree_insert(3, "s = \"3\"", tree), "");
-        mu_assert(betree_insert(4, "s = \"4\"", tree), "");
+        mu_assert(betree_insert(tree, 0, "s = \"0\""), "");
+        mu_assert(betree_insert(tree, 1, "s = \"1\""), "");
+        mu_assert(betree_insert(tree, 2, "s = \"2\""), "");
+        mu_assert(betree_insert(tree, 3, "s = \"3\""), "");
+        mu_assert(betree_insert(tree, 4, "s = \"4\""), "");
 
-        mu_assert(!betree_insert(5, "s = \"5\"", tree), "can't insert another string value");
+        mu_assert(!betree_insert(tree, 5, "s = \"5\""), "can't insert another string value");
 
         mu_assert(tree->cnode->lnode->sub_count == 0, "first lnode empty");
         mu_assert(tree->cnode->pdir->pnode_count == 1, "has a pnode");
@@ -1000,10 +1000,10 @@ int test_splitable_string_domain()
         tree->config->lnode_max_cap = 1;
         add_attr_domain_bounded_s(tree->config, "s", false, 2);
 
-        mu_assert(betree_insert(0, "s <> \"0\"", tree), "");
-        mu_assert(betree_insert(1, "s = \"1\"", tree), "");
+        mu_assert(betree_insert(tree, 0, "s <> \"0\""), "");
+        mu_assert(betree_insert(tree, 1, "s = \"1\""), "");
 
-        mu_assert(!betree_insert(2, "s = \"2\"", tree), "can't insert another string value");
+        mu_assert(!betree_insert(tree, 2, "s = \"2\""), "can't insert another string value");
 
         mu_assert(tree->cnode->lnode->sub_count == 0, "first lnode empty");
         mu_assert(tree->cnode->pdir->pnode_count == 1, "a pdir was created");
@@ -1031,8 +1031,8 @@ int test_not_domain_changing()
     add_attr_domain_i(tree->config, "i", 0, 10, false);
 
     {
-        mu_assert(betree_insert(1, "not (i > 2)", tree), "");
-        mu_assert(betree_insert(2, "not (i < 7)", tree), "");
+        mu_assert(betree_insert(tree, 1, "not (i > 2)"), "");
+        mu_assert(betree_insert(tree, 2, "not (i < 7)"), "");
 
         mu_assert(tree->cnode->lnode->sub_count == 0, "first lnode empty");
         mu_assert(tree->cnode->pdir->pnode_count == 1 &&
@@ -1054,8 +1054,8 @@ int test_not_domain_changing()
         free_report(report);
     }
     {
-        mu_assert(betree_insert(1, "not (not (i < 2))", tree), "");
-        mu_assert(betree_insert(2, "not (not (i > 7))", tree), "");
+        mu_assert(betree_insert(tree, 1, "not (not (i < 2))"), "");
+        mu_assert(betree_insert(tree, 2, "not (not (i > 7))"), "");
 
         mu_assert(tree->cnode->lnode->sub_count == 0, "first lnode empty");
         mu_assert(tree->cnode->pdir->pnode_count == 1 &&
@@ -1094,7 +1094,7 @@ int test_insert_all()
     betree_insert_all(tree, 3, exprs);
     mu_assert(tree->cnode->lnode->sub_count == 3, "did not split yet");
 
-    mu_assert(betree_insert(5, "i2 = 0 || i2 = 2", tree), "");
+    mu_assert(betree_insert(tree, 5, "i2 = 0 || i2 = 2"), "");
     mu_assert(tree->cnode->lnode->sub_count == 1 &&
       tree->cnode->pdir != NULL &&
       tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3, "split");

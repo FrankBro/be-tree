@@ -28,7 +28,7 @@ int test_cdir_split()
     for(size_t i = 0; i < COUNT; i++) {
         char* expr;
         asprintf(&expr, "a = %zu", i);
-        betree_insert(i + 1, expr, tree);
+        betree_insert(tree, i + 1, expr);
         free(expr);
     }
 
@@ -80,7 +80,7 @@ int test_pdir_split()
     for(size_t i = 0; i < COUNT; i++) {
         char* expr;
         asprintf(&expr, "a%zu = 0", i);
-        betree_insert(i + 1, expr, tree);
+        betree_insert(tree, i + 1, expr);
         free(expr);
     }
 

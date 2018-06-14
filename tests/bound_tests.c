@@ -149,9 +149,9 @@ int test_string_bounds()
     add_attr_domain_b(tree->config, "wrong", false, true, true);
 
     // Add some useless exprs to make sure you pick all the str
-    betree_insert(1, "s = \"a\"", tree);
-    betree_insert(2, "s = \"b\"", tree);
-    betree_insert(3, "s = \"c\"", tree);
+    betree_insert(tree, 1, "s = \"a\"");
+    betree_insert(tree, 2, "s = \"b\"");
+    betree_insert(tree, 3, "s = \"c\"");
 
     mu_assert(match_string(tree->config, "s = \"a\"", 0, 0), "eq");
     mu_assert(match_string(tree->config, "not (s = \"a\")", min, max), "not eq");

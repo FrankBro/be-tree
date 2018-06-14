@@ -15,7 +15,7 @@
 #include "tree.h"
 #include "utils.h"
 
-bool betree_delete(betree_sub_t id, struct betree* betree)
+bool betree_delete(struct betree* betree, betree_sub_t id)
 {
     struct sub* sub = find_sub_id(id, betree->cnode);
     betree_assert(betree->config->abort_on_error, ERROR_CANT_FIND_SUB, sub != NULL);
@@ -61,10 +61,10 @@ bool betree_insert_all(struct betree* tree, size_t count, const char** exprs)
     }
     tree->cnode->lnode->sub_count = count - 1;
     tree->cnode->lnode->subs = subs;
-    return betree_insert(count - 1, exprs[count - 1], tree);
+    return betree_insert(tree, count - 1, exprs[count - 1]);
 }
 
-bool betree_insert(betree_sub_t id, const char* expr, struct betree* tree)
+bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr)
 {
     struct ast_node* node;
     if(parse(expr, &node) != 0) {
