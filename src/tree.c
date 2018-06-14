@@ -341,7 +341,7 @@ void update_partition_score(const struct config* config, struct pnode* pnode)
         abort();
     }
     uint64_t loss = attr_domain->allow_undefined ? 1.0 : 0.0;
-    loss = attr_domain->bound.value_type == VALUE_S && !attr_domain->bound.is_string_bounded ? 2.0 : 0.0;
+    loss += attr_domain->bound.value_type == VALUE_S && !attr_domain->bound.is_string_bounded ? 2.0 : 0.0;
     pnode->score = (1.0 - alpha) * (float)gain - alpha * (float)loss;
 }
 
@@ -1832,6 +1832,7 @@ betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, 
     betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_TYPE_MISMATCH, attr_domain != NULL && 
         (attr_domain->bound.value_type == VALUE_S || attr_domain->bound.value_type == VALUE_SL || attr_domain->bound.value_type == VALUE_FREQUENCY));
     if(attr_domain->bound.is_string_bounded && attr_domain->bound.smax + 1 == string_map->string_value_count) {
+        free(copy);
         return UINT64_MAX;
     }
     add_to_string_map(string_map, copy);

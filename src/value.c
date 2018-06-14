@@ -29,7 +29,7 @@ void add_integer_list_value(int64_t integer, struct integer_list_value* list)
 
 const char* integer_list_value_to_string(struct integer_list_value list)
 {
-    char* string;
+    char* string = NULL;
     for(size_t i = 0; i < list.count; i++) {
         char* new_string;
         if(i != 0) {
@@ -68,7 +68,7 @@ void add_string_list_value(struct string_value string, struct string_list_value*
 
 const char* string_list_value_to_string(struct string_list_value list)
 {
-    char* string;
+    char* string = NULL;
     for(size_t i = 0; i < list.count; i++) {
         char* new_string;
         if(i != 0) {
