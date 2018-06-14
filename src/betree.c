@@ -113,3 +113,62 @@ void betree_free(struct betree* tree)
     free(tree);
 }
 
+void betree_add_domain(struct betree* betree, char* domain)
+{
+    struct config* config = betree->config;
+    char* line_rest = domain;
+    const char* name = strtok_r(line_rest, "|", &line_rest);
+    const char* type = strtok_r(line_rest, "|", &line_rest);
+    bool allow_undefined = strcmp(strtok_r(line_rest, "|\n", &line_rest), "true") == 0;
+    const char* min_str = strtok_r(line_rest, "|\n", &line_rest);
+    const char* max_str = strtok_r(line_rest, "|\n", &line_rest);
+    if(strcmp(type, "integer") == 0) {
+        int64_t min = INT64_MIN, max = INT64_MAX;
+        if(min_str != NULL) {
+            min = strtoll(min_str, NULL, 10);
+        }
+        if(max_str != NULL) {
+            max = strtoll(max_str, NULL, 10);
+        }
+        add_attr_domain_i(config, name, min, max, allow_undefined);
+    }
+    else if(strcmp(type, "float") == 0) {
+        double min = -DBL_MAX, max = DBL_MAX;
+        if(min_str != NULL) {
+            min = atof(min_str);
+        }
+        if(max_str != NULL) {
+            max = atof(max_str);
+        }
+        add_attr_domain_i(config, name, min, max, allow_undefined);
+    }
+    else if(strcmp(type, "boolean") == 0) {
+        add_attr_domain_b(config, name, false, true, allow_undefined);
+    }
+    else if(strcmp(type, "frequency") == 0) {
+        add_attr_domain_frequency(config, name, allow_undefined);
+    }
+    else if(strcmp(type, "segments") == 0) {
+        add_attr_domain_segments(config, name, allow_undefined);
+    }
+    else if(strcmp(type, "string") == 0) {
+        if(min_str != NULL) {
+            size_t max = atoi(min_str);
+            add_attr_domain_bounded_s(config, name, allow_undefined, max);
+        }
+        else {
+            add_attr_domain_s(config, name, allow_undefined);
+        }
+    }
+    else if(strcmp(type, "integer list") == 0) {
+        add_attr_domain_il(config, name, allow_undefined);
+    }
+    else if(strcmp(type, "string list") == 0) {
+        add_attr_domain_sl(config, name, allow_undefined);
+    }
+    else {
+        fprintf(stderr, "Unknown definition type");
+        abort();
+    }
+}
+
