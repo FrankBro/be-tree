@@ -8,20 +8,13 @@ CFLAGS := -g -std=gnu11 -D_GNU_SOURCE -Wall -Wextra -Wshadow -Wfloat-equal -Wund
 
 LDFLAGS := -lm -fPIC
 
-# LDFLAGS := -shared
-
-# UNAME_SYS := $(shell uname -s)
-# ifeq ($(UNAME_SYS), Darwin)
-# 	LDFLAGS += -flat_namespace -undefined suppress
-# endif
-
 LEX_SOURCES=$(wildcard src/*.l) 
 LEX_OBJECTS=$(patsubst %.l,%.c,${LEX_SOURCES}) $(patsubst %.l,%.h,${LEX_SOURCES})
 
 YACC_SOURCES=$(wildcard src/*.y) 
 YACC_OBJECTS=$(patsubst %.y,%.c,${YACC_SOURCES}) $(patsubst %.y,%.h,${YACC_SOURCES})
 
-SOURCES=$(wildcard src/*.c)
+SOURCES=$(filter-out ${YACC_OBJECTS},$(filter-out ${LEX_OBJECTS},$(wildcard src/*.c)))
 OBJECTS=$(patsubst %.c,%.o,${SOURCES}) $(patsubst %.l,%.o,${LEX_SOURCES}) $(patsubst %.y,%.o,${YACC_SOURCES})
 TEST_SOURCES=$(wildcard tests/*_tests.c)
 TEST_OBJECTS=$(patsubst %.c,%,${TEST_SOURCES})
@@ -53,7 +46,6 @@ dot:
 ################################################################################
 
 build/libbetree.so: build $(OBJECTS)
-	rm -f build/libbetree.so
 	$(CC) -shared $(OBJECTS) -o $@
 
 build:
@@ -100,8 +92,8 @@ $(TOOL_OBJECTS): %: %.c build/tools
 # Tests
 ################################################################################
 
-.PHONY: test
-test: $(TEST_OBJECTS) build/tests/betree_tests
+.PHONY: clean test
+test: $(TEST_OBJECTS)
 	@bash ./tests/runtests.sh
 
 build/tests:
