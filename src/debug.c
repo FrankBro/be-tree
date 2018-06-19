@@ -964,3 +964,9 @@ void write_dot_file(const struct config* config, const struct cnode* root)
     write_dot_file_cnode_ranks(f, config, root, 1);
     fprintf(f, "}\n");
 }
+
+void write_dot_file_tree(const struct betree* tree)
+{
+    write_dot_file(tree->config, tree->cnode);
+}
+
