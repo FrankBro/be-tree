@@ -376,6 +376,9 @@ int test_frequency()
             && test_frequency_list_pred1("product:ip", "product:ip", 0, "", 0, 0, event, 7),
         "all types");
     free_event(event);
+    event_parse("{\"new_format\": [[[\"flight\", 1, \"ns\"], 2, 3]]}", &event);
+    mu_assert(event->pred_count == 1 && test_frequency_list_pred1("new_format", "flight", 1, "ns", 2, 3, event, 0), "new format");
+    free_event(event);
     return 0;
 }
 
