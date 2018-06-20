@@ -1108,6 +1108,26 @@ int test_insert_all()
     return 0;
 }
 
+int test_bug_cases()
+{
+    struct betree* tree = betree_make_with_parameters(1, 0);
+    add_attr_domain_b(tree->config, "b", false, true, false);
+    add_attr_domain_i(tree->config, "i", 0, 10, true);
+
+    mu_assert(betree_insert(tree, 0, "not b || i > 8"), "");
+    mu_assert(betree_insert(tree, 1, "not b"), "");
+    mu_assert(betree_insert(tree, 2, "b && i < 8"), "");
+
+    struct report* report = make_report();
+    betree_search(tree, "{\"b\": true, \"i\": 9}", report);
+    mu_assert(report->matched == 1, "correct match");
+    write_dot_file_tree(tree);
+
+    free_report(report);
+    betree_free(tree);
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_sub_has_attribute);
@@ -1138,6 +1158,7 @@ int all_tests()
     mu_run_test(test_splitable_string_domain);
     mu_run_test(test_not_domain_changing);
     mu_run_test(test_insert_all);
+    mu_run_test(test_bug_cases);
 
     return 0;
 }

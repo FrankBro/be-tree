@@ -1079,6 +1079,7 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                     get_variable_bound_inner(domain, node->bool_expr.unary.expr, bound, !is_reversed, was_touched);
                     return;
                 case AST_BOOL_OR:
+                    return;
                 case AST_BOOL_AND:
                     get_variable_bound_inner(domain, node->bool_expr.binary.lhs, bound, is_reversed, was_touched);
                     get_variable_bound_inner(domain, node->bool_expr.binary.rhs, bound, is_reversed, was_touched);
