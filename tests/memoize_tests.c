@@ -270,7 +270,7 @@ int test_special_string()
 int test_bool()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_b(tree->config, "b", false, true, true);
+    add_attr_domain_b(tree->config, "b", true);
     add_attr_domain_i(tree->config, "i", 0, 10, true);
 
     mu_assert(test_same("b", "{\"b\": true}", tree), "bool var");
@@ -289,7 +289,7 @@ int test_sub()
 {
     struct betree* tree = betree_make();
     add_attr_domain_i(tree->config, "i", 0, 10, true);
-    add_attr_domain_b(tree->config, "b", false, true, true);
+    add_attr_domain_b(tree->config, "b", true);
     add_attr_domain_il(tree->config, "il", true);
     add_attr_domain_sl(tree->config, "sl", true);
 

@@ -1632,9 +1632,9 @@ void add_attr_domain_f(
 }
 
 void add_attr_domain_b(
-    struct config* config, const char* attr, bool min, bool max, bool allow_undefined)
+    struct config* config, const char* attr, bool allow_undefined)
 {
-    struct value_bound bound = { .value_type = VALUE_B, .bmin = min, .bmax = max };
+    struct value_bound bound = { .value_type = VALUE_B, .bmin = false, .bmax = true };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 

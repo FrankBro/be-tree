@@ -931,9 +931,9 @@ int event_parse(const char* text, struct event** event);
 int test_parenthesis()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_b(tree->config, "a", false, true, false);
-    add_attr_domain_b(tree->config, "b", false, true, false);
-    add_attr_domain_b(tree->config, "c", false, true, false);
+    add_attr_domain_b(tree->config, "a", false);
+    add_attr_domain_b(tree->config, "b", false);
+    add_attr_domain_b(tree->config, "c", false);
 
     {
         mu_assert(betree_insert(tree, 1, "a || (b && c)"), "");
@@ -1111,7 +1111,7 @@ int test_insert_all()
 int test_bug_cases()
 {
     struct betree* tree = betree_make_with_parameters(1, 0);
-    add_attr_domain_b(tree->config, "b", false, true, false);
+    add_attr_domain_b(tree->config, "b", false);
     add_attr_domain_i(tree->config, "i", 0, 10, true);
 
     mu_assert(betree_insert(tree, 0, "not b || i > 8"), "");

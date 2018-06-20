@@ -723,7 +723,7 @@ int test_special_string()
 int test_bool()
 {
     struct config* config = make_default_config();
-    add_attr_domain_b(config, "b", false, true, false);
+    add_attr_domain_b(config, "b", false);
     add_attr_domain_i(config, "i", 0, 10, false);
 
     {
@@ -775,8 +775,8 @@ int test_bool()
 int test_bool_wrong()
 {
     struct config* config = make_default_config();
-    add_attr_domain_b(config, "b", false, true, false);
-    add_attr_domain_b(config, "b2", false, true, false);
+    add_attr_domain_b(config, "b", false);
+    add_attr_domain_b(config, "b2", false);
     add_attr_domain_i(config, "i", 0, 10, false);
 
     {

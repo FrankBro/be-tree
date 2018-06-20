@@ -170,7 +170,7 @@ void betree_add_domain(struct betree* betree, char* domain)
         add_attr_domain_i(config, name, min, max, allow_undefined);
     }
     else if(strcmp(type, "boolean") == 0) {
-        add_attr_domain_b(config, name, false, true, allow_undefined);
+        add_attr_domain_b(config, name, allow_undefined);
     }
     else if(strcmp(type, "frequency") == 0) {
         add_attr_domain_frequency(config, name, allow_undefined);

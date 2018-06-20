@@ -66,8 +66,8 @@ bool match_string(struct config* config, const char* expr, size_t min, size_t ma
 int test_bool_bounds()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_b(tree->config, "b", false, true, true);
-    add_attr_domain_b(tree->config, "wrong", false, true, true);
+    add_attr_domain_b(tree->config, "b", true);
+    add_attr_domain_b(tree->config, "wrong", true);
 
     mu_assert(match_bool(tree->config, "b", true, true), "single variable");
     mu_assert(match_bool(tree->config, "not b", false, false), "not variable");
@@ -87,7 +87,7 @@ int test_integer_bounds()
     int64_t min = -10;
     int64_t max = 10;
     add_attr_domain_i(tree->config, "i", min, max, false);
-    add_attr_domain_b(tree->config, "wrong", false, true, true);
+    add_attr_domain_b(tree->config, "wrong", true);
 
     mu_assert(match_integer(tree->config, "i = 1", 1, 1), "eq");
     mu_assert(match_integer(tree->config, "not (i = 1)", min, max), "not eq");
@@ -117,7 +117,7 @@ int test_float_bounds()
     double max = 10.;
     double change = __DBL_EPSILON__;
     add_attr_domain_f(tree->config, "f", min, max, false);
-    add_attr_domain_b(tree->config, "wrong", false, true, true);
+    add_attr_domain_b(tree->config, "wrong", true);
 
     mu_assert(match_float(tree->config, "f = 1.", 1., 1.), "eq");
     mu_assert(match_float(tree->config, "not (f = 1.)", min, max), "not eq");
@@ -146,7 +146,7 @@ int test_string_bounds()
     size_t min = 0;
     size_t max = 2;
     add_attr_domain_bounded_s(tree->config, "s", false, max + 1);
-    add_attr_domain_b(tree->config, "wrong", false, true, true);
+    add_attr_domain_b(tree->config, "wrong", true);
 
     // Add some useless exprs to make sure you pick all the str
     betree_insert(tree, 1, "s = \"a\"");

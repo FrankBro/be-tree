@@ -126,7 +126,7 @@ void add_attr_domain_i(
 void add_attr_domain_f(
     struct config* config, const char* attr, double min, double max, bool allow_undefined);
 void add_attr_domain_b(
-    struct config* config, const char* attr, bool min, bool max, bool allow_undefined);
+    struct config* config, const char* attr, bool allow_undefined);
 void add_attr_domain_s(struct config* config, const char* attr, bool allow_undefined);
 void add_attr_domain_bounded_s(struct config* config, const char* attr, bool allow_undefined, size_t max);
 void add_attr_domain_il(struct config* config, const char* attr, bool allow_undefined);
