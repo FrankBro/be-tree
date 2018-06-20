@@ -126,13 +126,13 @@ bool is_event_enclosed(const struct config* config, const struct event* event, c
             betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_TYPE_MISMATCH, attr_domain->bound.value_type == pred->value.value_type);
             switch(attr_domain->bound.value_type) {
                 case VALUE_B:
-                    return attr_domain->bound.bmin <= pred->value.bvalue && attr_domain->bound.bmax >= pred->value.bvalue;
+                    return cdir->bound.bmin <= pred->value.bvalue && cdir->bound.bmax >= pred->value.bvalue;
                 case VALUE_I:
-                    return attr_domain->bound.imin <= pred->value.ivalue && attr_domain->bound.imax >= pred->value.ivalue;
+                    return cdir->bound.imin <= pred->value.ivalue && cdir->bound.imax >= pred->value.ivalue;
                 case VALUE_F:
-                    return attr_domain->bound.fmin <= pred->value.fvalue && attr_domain->bound.fmax >= pred->value.fvalue;
+                    return cdir->bound.fmin <= pred->value.fvalue && cdir->bound.fmax >= pred->value.fvalue;
                 case VALUE_S:
-                    return attr_domain->bound.smin <= pred->value.svalue.str && attr_domain->bound.smax >= pred->value.svalue.str;
+                    return cdir->bound.smin <= pred->value.svalue.str && cdir->bound.smax >= pred->value.svalue.str;
                 case VALUE_IL:
                 case VALUE_SL:
                 case VALUE_SEGMENTS:
