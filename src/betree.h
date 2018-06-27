@@ -15,6 +15,7 @@ struct report {
     size_t evaluated;
     size_t matched;
     size_t memoized;
+    size_t shorted;
     betree_sub_t* subs;
 };
 

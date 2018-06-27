@@ -272,10 +272,9 @@ int test_segment()
 
 static bool geo(bool has_not, const char* latitude, const char* longitude, const char* radius, double latitude_value, double longitude_value)
 {
-    struct config* config = make_default_config();
-    add_attr_domain_f(config, "latitude", 0.0, 10.0, false);
-    add_attr_domain_f(config, "longitude", 0.0, 10.0, false);
-    struct ast_node* node = NULL;
+    struct betree* tree = betree_make();
+    add_attr_domain_f(tree->config, "latitude", 0.0, 10.0, false);
+    add_attr_domain_f(tree->config, "longitude", 0.0, 10.0, false);
     char* expr;
     const char* pre;
     if(has_not) {
@@ -285,14 +284,14 @@ static bool geo(bool has_not, const char* latitude, const char* longitude, const
         pre = "";
     }
     asprintf(&expr, "%sgeo_within_radius(%s, %s, %s)", pre, latitude, longitude, radius);
-    parse(expr, &node);
+    betree_insert(tree, 1, expr);
     char* event_str;
     asprintf(&event_str, "{\"latitude\": %.1f, \"longitude\": %.1f}", latitude_value, longitude_value);
-    struct event* event = make_event_from_string(config, event_str);
-    bool result = match_node(config, event, node, NULL, NULL);
-    free_config(config);
-    free_ast_node(node);
-    free_event(event);
+    struct report* report = make_report();
+    betree_search(tree, event_str, report);
+    bool result = report->matched == 1;
+    free_report(report);
+    betree_free(tree);
     return result;
 }
 

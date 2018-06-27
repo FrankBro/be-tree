@@ -12,18 +12,52 @@
 #include "betree.h"
 #include "error.h"
 #include "hashmap.h"
+#include "memoize.h"
 #include "tree.h"
 #include "utils.h"
 
-bool match_sub(const struct config* config, const struct event* event, const struct sub* sub, struct report* report, struct memoize* memoize)
+enum short_circuit_e {
+    SHORT_CIRCUIT_PASS,
+    SHORT_CIRCUIT_FAIL,
+    SHORT_CIRCUIT_NONE
+};
+
+enum short_circuit_e try_short_circuit(const struct config* config, struct short_circuit short_circuit, const uint64_t* undefined)
+{
+    size_t count = config->attr_domain_count / 64 + 1;
+    for(size_t i = 0; i < count; i++) {
+        bool pass = short_circuit.pass[i] & undefined[i];
+        if(pass) {
+            return SHORT_CIRCUIT_PASS;
+        }
+        bool fail = short_circuit.fail[i] & undefined[i];
+        if(fail) {
+            return SHORT_CIRCUIT_FAIL;
+        }
+    }
+    return SHORT_CIRCUIT_NONE;
+}
+
+bool match_sub(const struct config* config, const struct event* event, const struct sub* sub, struct report* report, struct memoize* memoize, const uint64_t* undefined)
 {
     if(sub == NULL) {
         return false;
     }
-    bool result = match_node(config, event, sub->expr, memoize, report);
     if(report != NULL) {
         report->evaluated++;
     }
+    enum short_circuit_e short_circuit = try_short_circuit(config, sub->short_circuit, undefined);
+    if(short_circuit != SHORT_CIRCUIT_NONE) {
+        report->shorted++;
+        if(short_circuit == SHORT_CIRCUIT_PASS) {
+            report->matched++;
+            return true;
+        }
+        else if(short_circuit == SHORT_CIRCUIT_FAIL) {
+            return false;
+        }
+    }
+    bool result = match_node(config, event, sub->expr, memoize, report);
     return result;
 }
 
@@ -31,11 +65,12 @@ void check_sub(const struct config* config,
     const struct event* event,
     const struct lnode* lnode,
     struct report* report, 
-    struct memoize* memoize)
+    struct memoize* memoize,
+    const uint64_t* undefined)
 {
     for(size_t i = 0; i < lnode->sub_count; i++) {
         const struct sub* sub = lnode->subs[i];
-        if(match_sub(config, event, sub, report, memoize) == true) {
+        if(match_sub(config, event, sub, report, memoize, undefined) == true) {
             if(report->matched == 0) {
                 report->subs = calloc(1, sizeof(*report->subs));
                 if(report->subs == NULL) {
@@ -76,7 +111,8 @@ void search_cdir(const struct config* config,
     const struct event* event,
     struct cdir* cdir,
     struct report* report, 
-    struct memoize* memoize);
+    struct memoize* memoize,
+    const uint64_t* undefined);
 
 bool event_contains_variable(const struct event* event, betree_var_t variable_id)
 {
@@ -93,9 +129,10 @@ void match_be_tree(const struct config* config,
     const struct event* event,
     const struct cnode* cnode,
     struct report* report, 
-    struct memoize* memoize)
+    struct memoize* memoize,
+    const uint64_t* undefined)
 {
-    check_sub(config, event, cnode->lnode, report, memoize);
+    check_sub(config, event, cnode->lnode, report, memoize, undefined);
     if(cnode->pdir != NULL) {
         for(size_t i = 0; i < cnode->pdir->pnode_count; i++) {
             struct pnode* pnode = cnode->pdir->pnodes[i];
@@ -106,7 +143,7 @@ void match_be_tree(const struct config* config,
             }
             if(attr_domain->allow_undefined
                 || event_contains_variable(event, pnode->attr_var.var)) {
-                search_cdir(config, event, pnode->cdir, report, memoize);
+                search_cdir(config, event, pnode->cdir, report, memoize, undefined);
             }
         }
     }
@@ -216,13 +253,14 @@ void search_cdir(const struct config* config,
     const struct event* event,
     struct cdir* cdir,
     struct report* report, 
-    struct memoize* memoize)
+    struct memoize* memoize,
+    const uint64_t* undefined)
 {
-    match_be_tree(config, event, cdir->cnode, report, memoize);
+    match_be_tree(config, event, cdir->cnode, report, memoize, undefined);
     if(is_event_enclosed(config, event, cdir->lchild))
-        search_cdir(config, event, cdir->lchild, report, memoize);
+        search_cdir(config, event, cdir->lchild, report, memoize, undefined);
     else if(is_event_enclosed(config, event, cdir->rchild))
-        search_cdir(config, event, cdir->rchild, report, memoize);
+        search_cdir(config, event, cdir->rchild, report, memoize, undefined);
 }
 
 bool is_used_cnode(betree_var_t variable_id, const struct cnode* cnode);
@@ -1339,61 +1377,8 @@ struct pred* make_pred(const char* attr, betree_var_t variable_id, struct value 
     return pred;
 }
 
-void fill_pred(struct sub* sub, const struct ast_node* expr)
+void fill_pred_attr_var(struct sub* sub, struct attr_var attr_var)
 {
-    struct attr_var attr_var;
-    switch(expr->type) {
-        case AST_TYPE_SPECIAL_EXPR: {
-            attr_var = expr->special_expr.frequency.attr_var;
-            break;
-        }
-        case AST_TYPE_BOOL_EXPR: {
-            switch(expr->bool_expr.op) {
-                case AST_BOOL_AND:
-                case AST_BOOL_OR:
-                    fill_pred(sub, expr->bool_expr.binary.lhs);
-                    fill_pred(sub, expr->bool_expr.binary.rhs);
-                    return;
-                case AST_BOOL_NOT:
-                    fill_pred(sub, expr->bool_expr.unary.expr);
-                    return;
-                case AST_BOOL_VARIABLE:
-                    attr_var = expr->bool_expr.variable;
-                    break;
-                default:
-                    switch_default_error("Invalid bool op");
-                    break;
-            }
-            break;
-        }
-        case AST_TYPE_NUMERIC_COMPARE_EXPR: {
-            attr_var = expr->numeric_compare_expr.attr_var;
-            break;
-        }
-        case AST_TYPE_EQUALITY_EXPR: {
-            attr_var = expr->equality_expr.attr_var;
-            break;
-        }
-        case AST_TYPE_SET_EXPR: {
-            if(expr->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
-                attr_var = expr->set_expr.left_value.variable_value;
-            }
-            else if(expr->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
-                attr_var = expr->set_expr.right_value.variable_value;
-            }
-            else {
-                return;
-            }
-            break;
-        }
-        case AST_TYPE_LIST_EXPR: {
-            attr_var = expr->list_expr.attr_var;
-            break;
-        }
-        default: {
-            switch_default_error("Invalid expr type");
-        }
-    }
     bool is_found = false;
     for(size_t i = 0; i < sub->attr_var_count; i++) {
         if(sub->attr_vars[i].var == attr_var.var) {
@@ -1423,6 +1408,79 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
     }
 }
 
+void fill_pred(struct sub* sub, const struct ast_node* expr)
+{
+    switch(expr->type) {
+        case AST_TYPE_SPECIAL_EXPR: {
+            switch(expr->special_expr.type) {
+                case AST_SPECIAL_FREQUENCY:
+                    fill_pred_attr_var(sub, expr->special_expr.frequency.attr_var);
+                    return;
+                case AST_SPECIAL_GEO:
+                    fill_pred_attr_var(sub, expr->special_expr.geo.latitude_var);
+                    fill_pred_attr_var(sub, expr->special_expr.geo.longitude_var);
+                    return;
+                case AST_SPECIAL_STRING:
+                    fill_pred_attr_var(sub, expr->special_expr.string.attr_var);
+                    return;
+                case AST_SPECIAL_SEGMENT:
+                    fill_pred_attr_var(sub, expr->special_expr.segment.attr_var);
+                    return;
+                default:
+                    switch_default_error("Invalid special expr type");
+                    return;
+            }
+            return;
+        }
+        case AST_TYPE_BOOL_EXPR: {
+            switch(expr->bool_expr.op) {
+                case AST_BOOL_AND:
+                case AST_BOOL_OR:
+                    fill_pred(sub, expr->bool_expr.binary.lhs);
+                    fill_pred(sub, expr->bool_expr.binary.rhs);
+                    return;
+                case AST_BOOL_NOT:
+                    fill_pred(sub, expr->bool_expr.unary.expr);
+                    return;
+                case AST_BOOL_VARIABLE:
+                    fill_pred_attr_var(sub, expr->bool_expr.variable);
+                    return;
+                default:
+                    switch_default_error("Invalid bool op");
+                    return;
+            }
+            return;
+        }
+        case AST_TYPE_NUMERIC_COMPARE_EXPR: {
+            fill_pred_attr_var(sub, expr->numeric_compare_expr.attr_var);
+            return;
+        }
+        case AST_TYPE_EQUALITY_EXPR: {
+            fill_pred_attr_var(sub, expr->equality_expr.attr_var);
+            return;
+        }
+        case AST_TYPE_SET_EXPR: {
+            if(expr->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
+                fill_pred_attr_var(sub, expr->set_expr.left_value.variable_value);
+            }
+            else if(expr->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
+                fill_pred_attr_var(sub, expr->set_expr.right_value.variable_value);
+            }
+            else {
+                return;
+            }
+            return;
+        }
+        case AST_TYPE_LIST_EXPR: {
+            fill_pred_attr_var(sub, expr->list_expr.attr_var);
+            return;
+        }
+        default: {
+            switch_default_error("Invalid expr type");
+        }
+    }
+}
+
 struct sub* make_empty_sub(betree_sub_t id)
 {
     struct sub* sub = calloc(1, sizeof(*sub));
@@ -1436,12 +1494,111 @@ struct sub* make_empty_sub(betree_sub_t id)
     return sub;
 }
 
+enum short_circuit_e short_circuit_for_attr_var(betree_var_t id, bool inverted, struct attr_var attr_var) {
+    if(id == attr_var.var) {
+        if(inverted) {
+            return SHORT_CIRCUIT_PASS;
+        }
+        else {
+            return SHORT_CIRCUIT_FAIL;
+        }
+    }
+    else {
+        return SHORT_CIRCUIT_NONE;
+    }
+}
+
+enum short_circuit_e short_circuit_for_node(betree_var_t id, bool inverted, const struct ast_node* node) {
+    switch(node->type) {
+        case AST_TYPE_NUMERIC_COMPARE_EXPR: 
+            return short_circuit_for_attr_var(id, inverted, node->numeric_compare_expr.attr_var);
+        case AST_TYPE_EQUALITY_EXPR: 
+            return short_circuit_for_attr_var(id, inverted, node->equality_expr.attr_var);
+        case AST_TYPE_BOOL_EXPR:
+            switch(node->bool_expr.op) {
+                case AST_BOOL_OR: {
+                    enum short_circuit_e lhs = short_circuit_for_node(id, inverted, node->bool_expr.binary.lhs);
+                    enum short_circuit_e rhs = short_circuit_for_node(id, inverted, node->bool_expr.binary.rhs);
+                    if(lhs == SHORT_CIRCUIT_PASS || rhs == SHORT_CIRCUIT_PASS) {
+                        return SHORT_CIRCUIT_PASS;
+                    }
+                    if(lhs == SHORT_CIRCUIT_FAIL && rhs == SHORT_CIRCUIT_FAIL) {
+                        return SHORT_CIRCUIT_FAIL;
+                    }
+                    return SHORT_CIRCUIT_NONE;
+                }
+                case AST_BOOL_AND: {
+                    enum short_circuit_e lhs = short_circuit_for_node(id, inverted, node->bool_expr.binary.lhs);
+                    enum short_circuit_e rhs = short_circuit_for_node(id, inverted, node->bool_expr.binary.rhs);
+                    if(lhs == SHORT_CIRCUIT_FAIL || rhs == SHORT_CIRCUIT_FAIL) {
+                        return SHORT_CIRCUIT_FAIL;
+                    }
+                    if(lhs == SHORT_CIRCUIT_PASS && rhs == SHORT_CIRCUIT_PASS) {
+                        return SHORT_CIRCUIT_PASS;
+                    }
+                    return SHORT_CIRCUIT_NONE;
+                }
+                case AST_BOOL_NOT:
+                    return short_circuit_for_node(id, !inverted, node->bool_expr.unary.expr);
+                case AST_BOOL_VARIABLE:
+                    return short_circuit_for_attr_var(id, inverted, node->bool_expr.variable);
+                default:
+                    abort();
+            }
+        case AST_TYPE_SET_EXPR:
+            if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
+                return short_circuit_for_attr_var(id, inverted, node->set_expr.left_value.variable_value);
+            }
+            else {
+                return short_circuit_for_attr_var(id, inverted, node->set_expr.right_value.variable_value);
+            }
+        case AST_TYPE_LIST_EXPR:
+            return short_circuit_for_attr_var(id, inverted, node->list_expr.attr_var);
+        case AST_TYPE_SPECIAL_EXPR:
+            switch(node->special_expr.type) {
+                case AST_SPECIAL_FREQUENCY:
+                    return short_circuit_for_attr_var(id, inverted, node->special_expr.frequency.attr_var);
+                case AST_SPECIAL_SEGMENT:
+                    return short_circuit_for_attr_var(id, inverted, node->special_expr.segment.attr_var);
+                case AST_SPECIAL_GEO:
+                    return short_circuit_for_attr_var(id, inverted, node->special_expr.geo.latitude_var) || short_circuit_for_attr_var(id, inverted, node->special_expr.geo.longitude_var);
+                case AST_SPECIAL_STRING:
+                    return short_circuit_for_attr_var(id, inverted, node->special_expr.string.attr_var);
+                default:
+                    abort();
+            }
+        default:
+            abort();
+    }
+    return SHORT_CIRCUIT_NONE;
+}
+
+void fill_short_circuit(struct config* config, struct sub* sub)
+{
+    for(size_t i = 0; i < config->attr_domain_count; i++) {
+        struct attr_domain* attr_domain = config->attr_domains[i];
+        if(attr_domain->allow_undefined) {
+            enum short_circuit_e result = short_circuit_for_node(attr_domain->attr_var.var, false, sub->expr);
+            if(result == SHORT_CIRCUIT_PASS) {
+                set_bit(sub->short_circuit.pass, i);
+            }
+            else if(result == SHORT_CIRCUIT_FAIL) {
+                set_bit(sub->short_circuit.fail, i);
+            }
+        }
+    }
+}
+
 struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* expr)
 {
     struct sub* sub = make_empty_sub(id);
     sub->expr = expr;
     assign_variable_id(config, expr);
     fill_pred(sub, sub->expr);
+    size_t count = config->attr_domain_count / 64 + 1;
+    sub->short_circuit.pass = calloc(count, sizeof(*sub->short_circuit.pass));
+    sub->short_circuit.fail = calloc(count, sizeof(*sub->short_circuit.fail));
+    fill_short_circuit(config, sub);
     return sub;
 }
 
@@ -1884,15 +2041,38 @@ void free_memoize(struct memoize memoize)
     free(memoize.fail);
 }
 
+void init_undefined(const struct config* config, const struct event* event, uint64_t* undefined)
+{
+    for(size_t i = 0; i < config->attr_domain_count; i++) {
+        const struct attr_domain* attr_domain = config->attr_domains[i];
+        if(attr_domain->allow_undefined) {
+            bool found = false;
+            for(size_t j = 0; j < event->pred_count; j++) {
+                const struct pred* pred = event->preds[j];
+                if(attr_domain->attr_var.var == pred->attr_var.var) {
+                    found = true;
+                    break;
+                }
+            }
+            if(!found) {
+                set_bit(undefined, i);
+            }
+        }
+    }
+}
+
 void betree_search_with_event(const struct config* config,
     struct event* event,
     const struct cnode* cnode,
     struct report* report)
 {
+    uint64_t* undefined = calloc(config->attr_domain_count, sizeof(*undefined));
+    init_undefined(config, event, undefined);
     struct memoize memoize = make_memoize(config->pred_map->pred_count);
-    match_be_tree(config, event, cnode, report, &memoize);
+    match_be_tree(config, event, cnode, report, &memoize, undefined);
     free_event(event);
     free_memoize(memoize);
+    free(undefined);
 }
 
 struct event* make_event_from_string(const struct config* config, const char* event_str)

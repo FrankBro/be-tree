@@ -158,7 +158,9 @@ struct ast_node* ast_special_geo_create(const enum ast_special_geo_e op,
         .latitude = latitude,
         .longitude = longitude,
         .has_radius = has_radius,
-        .radius = radius };
+        .radius = radius,
+        .latitude_var = make_attr_var("latitude", NULL),
+        .longitude_var = make_attr_var("longitude", NULL) };
     node->special_expr.type = AST_SPECIAL_GEO;
     node->special_expr.geo = geo;
     return node;
@@ -511,9 +513,9 @@ bool match_special_expr(
                 case AST_SPECIAL_GEOWITHINRADIUS: {
                     double latitude_var, longitude_var;
                     enum variable_state_e latitude_var_state
-                        = get_float_attr(config, event, "latitude", &latitude_var);
+                        = get_float_var(config, special_expr.geo.latitude_var.var, event, &latitude_var);
                     enum variable_state_e longitude_var_state
-                        = get_float_attr(config, event, "longitude", &longitude_var);
+                        = get_float_var(config, special_expr.geo.longitude_var.var, event, &longitude_var);
                     betree_assert(config->abort_on_error, ERROR_VAR_MISSING, latitude_var_state != VARIABLE_MISSING);
                     betree_assert(config->abort_on_error, ERROR_VAR_MISSING, longitude_var_state != VARIABLE_MISSING);
                     if(latitude_var_state == VARIABLE_UNDEFINED
@@ -1391,6 +1393,10 @@ void assign_variable_id(struct config* config, struct ast_node* node)
                     return;
                 }
                 case AST_SPECIAL_GEO: {
+                    betree_var_t latitude_id = get_id_for_attr(config, node->special_expr.geo.latitude_var.attr);
+                    node->special_expr.geo.latitude_var.var = latitude_id;
+                    betree_var_t longitude_id = get_id_for_attr(config, node->special_expr.geo.longitude_var.attr);
+                    node->special_expr.geo.longitude_var.var = longitude_id;
                     return;
                 }
                 case AST_SPECIAL_STRING: {

@@ -99,6 +99,7 @@ struct report* make_report()
     report->evaluated = 0;
     report->matched = 0;
     report->memoized = 0;
+    report->shorted = 0;
     report->subs = NULL;
     return report;
 }

@@ -20,11 +20,17 @@ struct pred {
     struct value value;
 };
 
+struct short_circuit {
+    uint64_t* pass;
+    uint64_t* fail;
+};
+
 struct sub {
     betree_sub_t id;
     size_t attr_var_count;
     struct attr_var* attr_vars;
     const struct ast_node* expr;
+    struct short_circuit short_circuit;
 };
 
 struct event {

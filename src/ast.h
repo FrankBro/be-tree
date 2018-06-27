@@ -220,6 +220,8 @@ struct ast_special_geo {
     struct special_geo_value latitude;
     struct special_geo_value longitude;
     struct special_geo_value radius;
+    struct attr_var latitude_var;
+    struct attr_var longitude_var;
 };
 
 enum ast_special_string_e {
