@@ -119,3 +119,4 @@ bool ends_with(const char* value, const char* pattern)
     size_t off = value_size - pattern_size;
     return strstr(value + off, pattern) != NULL;
 }
+
