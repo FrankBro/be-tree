@@ -176,12 +176,11 @@ segment(bool has_not, enum segment_function_type func_type,
     enum segment_var_type var_type, int64_t id, int64_t seconds, 
     int64_t segment_id, int64_t segment_seconds)
 {
-    struct config* config = make_default_config();
-    add_attr_domain_i(config, "now", 0.0, 10.0, false);
-    add_attr_domain_segments(config, "seg_a", false);
-    add_attr_domain_segments(config, "seg_b", false);
-    add_attr_domain_segments(config, "segments_with_timestamp", false);
-    struct ast_node* node = NULL;
+    struct betree* tree = betree_make();
+    add_attr_domain_i(tree->config, "now", 0.0, 10.0, false);
+    add_attr_domain_segments(tree->config, "seg_a", false);
+    add_attr_domain_segments(tree->config, "seg_b", false);
+    add_attr_domain_segments(tree->config, "segments_with_timestamp", false);
     char* expr;
     const char* pre;
     if(has_not) {
@@ -219,14 +218,14 @@ segment(bool has_not, enum segment_function_type func_type,
     }
     int64_t usec = 1000 * 1000;
     asprintf(&expr, "%s%s(%s%" PRId64 ", %" PRId64 ")", pre, func, var, id, seconds);
-    (void)parse(expr, &node);
+    betree_insert(tree, 1, expr);
     char* event_str;
     asprintf(&event_str, "{\"now\": 40, \"seg_a\": [[1, %ld]], \"seg_b\": [[1, %ld]], \"segments_with_timestamp\": [[%ld, %ld]]}", 30 * usec, 10 * usec, segment_id, segment_seconds * usec);
-    struct event* event = make_event_from_string(config, event_str);
-    bool result = match_node(config, event, node, NULL, NULL);
-    free_config(config);
-    free_ast_node(node);
-    free_event(event);
+    struct report* report = make_report();
+    betree_search(tree, event_str, report);
+    bool result = report->matched == 1;
+    free_report(report);
+    betree_free(tree);
     return result;
 }
 
@@ -311,10 +310,9 @@ int test_geo()
 
 static bool contains(bool has_not, const char* attr, bool allow_undefined, const char* pattern, const char* value)
 {
-    struct config* config = make_default_config();
-    add_attr_domain_s(config, "a", true);
-    add_attr_domain_s(config, "b", true);
-    struct ast_node* node = NULL;
+    struct betree* tree = betree_make();
+    add_attr_domain_s(tree->config, "a", true);
+    add_attr_domain_s(tree->config, "b", true);
     char* expr;
     const char* pre;
     if(has_not) {
@@ -324,15 +322,15 @@ static bool contains(bool has_not, const char* attr, bool allow_undefined, const
         pre = "";
     }
     asprintf(&expr, "%scontains(%s, \"%s\")", pre, attr, pattern);
-    parse(expr, &node);
+    betree_insert(tree, 1, expr);
     const char* event_attr = allow_undefined ? "a" : attr;
     char* event_str;
     asprintf(&event_str, "{\"%s\": \"%s\"}", event_attr, value);
-    struct event* event = make_event_from_string(config, event_str);
-    bool result = match_node(config, event, node, NULL, NULL);
-    free_config(config);
-    free_ast_node(node);
-    free_event(event);
+    struct report* report = make_report();
+    betree_search(tree, event_str, report);
+    bool result = report->matched == 1;
+    free_report(report);
+    betree_free(tree);
     return result;
 }
 
@@ -362,10 +360,9 @@ static int test_contains()
 
 static bool starts_with(bool has_not, const char* attr, bool allow_undefined, const char* pattern, const char* value)
 {
-    struct config* config = make_default_config();
-    add_attr_domain_s(config, "a", true);
-    add_attr_domain_s(config, "b", true);
-    struct ast_node* node = NULL;
+    struct betree* tree = betree_make();
+    add_attr_domain_s(tree->config, "a", true);
+    add_attr_domain_s(tree->config, "b", true);
     char* expr;
     const char* pre;
     if(has_not) {
@@ -375,15 +372,15 @@ static bool starts_with(bool has_not, const char* attr, bool allow_undefined, co
         pre = "";
     }
     asprintf(&expr, "%sstarts_with(%s, \"%s\")", pre, attr, pattern);
-    parse(expr, &node);
+    betree_insert(tree, 1, expr);
     const char* event_attr = allow_undefined ? "a" : attr;
     char* event_str;
     asprintf(&event_str, "{\"%s\": \"%s\"}", event_attr, value);
-    struct event* event = make_event_from_string(config, event_str);
-    bool result = match_node(config, event, node, NULL, NULL);
-    free_config(config);
-    free_ast_node(node);
-    free_event(event);
+    struct report* report = make_report();
+    betree_search(tree, event_str, report);
+    bool result = report->matched == 1;
+    free_report(report);
+    betree_free(tree);
     return result;
 }
 
@@ -408,10 +405,9 @@ static int test_starts_with()
 
 static bool ends_with(bool has_not, const char* attr, bool allow_undefined, const char* pattern, const char* value)
 {
-    struct config* config = make_default_config();
-    add_attr_domain_s(config, "a", true);
-    add_attr_domain_s(config, "b", true);
-    struct ast_node* node = NULL;
+    struct betree* tree = betree_make();
+    add_attr_domain_s(tree->config, "a", true);
+    add_attr_domain_s(tree->config, "b", true);
     char* expr;
     const char* pre;
     if(has_not) {
@@ -421,15 +417,15 @@ static bool ends_with(bool has_not, const char* attr, bool allow_undefined, cons
         pre = "";
     }
     asprintf(&expr, "%sends_with(%s, \"%s\")", pre, attr, pattern);
-    parse(expr, &node);
+    betree_insert(tree, 1, expr);
     const char* event_attr = allow_undefined ? "a" : attr;
     char* event_str;
     asprintf(&event_str, "{\"%s\": \"%s\"}", event_attr, value);
-    struct event* event = make_event_from_string(config, event_str);
-    bool result = match_node(config, event, node, NULL, NULL);
-    free_config(config);
-    free_ast_node(node);
-    free_event(event);
+    struct report* report = make_report();
+    betree_search(tree, event_str, report);
+    bool result = report->matched == 1;
+    free_report(report);
+    betree_free(tree);
     return result;
 }
 
