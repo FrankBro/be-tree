@@ -17,7 +17,6 @@
 * betree_remove:
     * Remove useless preds from the memoize
 * In match expr, don't search for variable ids, know which they are before hand
-* match_be_tree, config should be const but we don't have a way to get a variable id without also creating if it doesn't exist. Fix that
 * Sort integer and string lists for quicker inserting (via memoize) and operations
 * Reorder and/or for easy of evaluation
 * What if we wrote the lexers/parsers to have the set of possible attributes directly since we know them. While we never use the string attribute during runtime, it slows insertion.
