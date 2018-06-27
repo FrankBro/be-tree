@@ -72,12 +72,50 @@ struct ast_node* ast_bool_expr_unary_create(struct ast_node* expr)
     return node;
 }
 
+uint64_t score_node(struct ast_node* node)
+{
+    switch(node->type) {
+        case AST_TYPE_NUMERIC_COMPARE_EXPR:
+            return 1;
+        case AST_TYPE_EQUALITY_EXPR:
+            return 1;
+        case AST_TYPE_BOOL_EXPR:
+            switch(node->bool_expr.op) {
+                case AST_BOOL_OR:
+                case AST_BOOL_AND:
+                    return score_node(node->bool_expr.binary.lhs) + score_node(node->bool_expr.binary.rhs);
+                case AST_BOOL_NOT:
+                    return score_node(node->bool_expr.unary.expr);
+                case AST_BOOL_VARIABLE:
+                    return 1;
+                default:
+                    abort();
+            }
+        case AST_TYPE_SET_EXPR:
+            return 5;
+        case AST_TYPE_LIST_EXPR:
+            return 10;
+        case AST_TYPE_SPECIAL_EXPR:
+            return 20;
+        default:
+            abort();
+    }
+}
+
 struct ast_node* ast_bool_expr_binary_create(
     enum ast_bool_e op, struct ast_node* lhs, struct ast_node* rhs)
 {
     struct ast_node* node = ast_bool_expr_create(op);
-    node->bool_expr.binary.lhs = lhs;
-    node->bool_expr.binary.rhs = rhs;
+    uint64_t lhs_score = score_node(lhs);
+    uint64_t rhs_score = score_node(rhs);
+    if(rhs_score < lhs_score) {
+        node->bool_expr.binary.lhs = rhs;
+        node->bool_expr.binary.rhs = lhs;
+    }
+    else {
+        node->bool_expr.binary.lhs = lhs;
+        node->bool_expr.binary.rhs = rhs;
+    }
     return node;
 }
 

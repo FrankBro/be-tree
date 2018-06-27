@@ -19,7 +19,6 @@
     * Remove useless preds from the memoize
 * In match expr, don't search for variable ids, know which they are before hand
 * Sort integer and string lists for quicker inserting (via memoize) and operations
-* Reorder and/or for easy of evaluation
 * What if we wrote the lexers/parsers to have the set of possible attributes directly since we know them. While we never use the string attribute during runtime, it slows insertion.
 * All calloc/realloc/free need to be in config, use a function pointer so we can use enif_alloc/enif_realloc/enif_free
 * Don't actually need to call get_id_for_attr, from initializing the tree, we have all the possible vars
