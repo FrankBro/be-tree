@@ -705,6 +705,8 @@ int test_string_set()
         empty_tree(tree);
     }
 
+    betree_free(tree);
+
     return 0;
 }
 
@@ -738,6 +740,8 @@ int test_string_set_reverse()
         free_report(report);
         empty_tree(tree);
     }
+
+    betree_free(tree);
 
     return 0;
 }
@@ -831,6 +835,8 @@ int test_integer_list()
         empty_tree(tree);
     }
 
+    betree_free(tree);
+
     return 0;
 }
 
@@ -923,6 +929,8 @@ int test_string_list()
         empty_tree(tree);
     }
 
+    betree_free(tree);
+
     return 0;
 }
 
@@ -959,6 +967,8 @@ int test_parenthesis()
         empty_tree(tree);
         free_report(report);
     }
+
+    betree_free(tree);
 
     return 0;
 }
@@ -1076,6 +1086,8 @@ int test_not_domain_changing()
         empty_tree(tree);
         free_report(report);
     }
+
+    betree_free(tree);
 
     return 0;
 }

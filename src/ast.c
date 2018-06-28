@@ -222,12 +222,16 @@ void free_special_expr(struct ast_special_expr special_expr)
     switch(special_expr.type) {
         case AST_SPECIAL_FREQUENCY:
             free_attr_var(special_expr.frequency.attr_var);
+            free_attr_var(special_expr.frequency.now);
             free((char*)special_expr.frequency.ns.string);
             break;
         case AST_SPECIAL_SEGMENT:
             free_attr_var(special_expr.segment.attr_var);
+            free_attr_var(special_expr.segment.now);
             break;
         case AST_SPECIAL_GEO:
+            free_attr_var(special_expr.geo.latitude_var);
+            free_attr_var(special_expr.geo.longitude_var);
             break;
         case AST_SPECIAL_STRING:
             free_attr_var(special_expr.string.attr_var);

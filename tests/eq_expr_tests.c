@@ -60,6 +60,8 @@ int test_numeric_compare_integer()
         free_ast_node(b);
     }
 
+    free_config(config);
+
     return 0;
 }
 
@@ -96,6 +98,8 @@ int test_numeric_compare_float()
         free_ast_node(a);
         free_ast_node(b);
     }
+
+    free_config(config);
 
     return 0;
 }
@@ -135,6 +139,8 @@ int test_numeric_compare_wrong()
         free_ast_node(b);
     }
 
+    free_config(config);
+
     return 0;
 }
 
@@ -157,6 +163,8 @@ int test_equality_integer()
         free_ast_node(a);
         free_ast_node(b);
     }
+
+    free_config(config);
 
     return 0;
 }
@@ -181,6 +189,8 @@ int test_equality_float()
         free_ast_node(b);
     }
 
+    free_config(config);
+
     return 0;
 }
 
@@ -203,6 +213,8 @@ int test_equality_string()
         free_ast_node(a);
         free_ast_node(b);
     }
+
+    free_config(config);
 
     return 0;
 }
@@ -242,6 +254,8 @@ int test_equality_wrong()
         free_ast_node(b);
     }
 
+    free_config(config);
+
     return 0;
 }
 
@@ -265,6 +279,8 @@ int test_set_var_integer()
         free_ast_node(b);
     }
 
+    free_config(config);
+
     return 0;
 }
 
@@ -287,6 +303,8 @@ int test_set_var_string()
         free_ast_node(a);
         free_ast_node(b);
     }
+
+    free_config(config);
 
     return 0;
 }
@@ -328,6 +346,8 @@ int test_set_var_wrong()
         free_ast_node(b);
     }
 
+    free_config(config);
+
     return 0;
 }
 
@@ -351,6 +371,8 @@ int test_set_list_integer()
         free_ast_node(b);
     }
 
+    free_config(config);
+
     return 0;
 }
 
@@ -373,6 +395,8 @@ int test_set_list_string()
         free_ast_node(a);
         free_ast_node(b);
     }
+
+    free_config(config);
 
     return 0;
 }
@@ -414,6 +438,8 @@ int test_set_list_wrong()
         free_ast_node(b);
     }
 
+    free_config(config);
+
     return 0;
 }
 
@@ -444,6 +470,8 @@ int test_list_integer()
         free_ast_node(b);
     }
 
+    free_config(config);
+
     return 0;
 }
 
@@ -473,6 +501,8 @@ int test_list_string()
         free_ast_node(a);
         free_ast_node(b);
     }
+
+    free_config(config);
 
     return 0;
 }
@@ -513,6 +543,8 @@ int test_list_wrong()
         free_ast_node(a);
         free_ast_node(b);
     }
+
+    free_config(config);
 
     return 0;
 }
@@ -557,6 +589,8 @@ int test_special_frequency()
         free_ast_node(a);
         free_ast_node(b);
     }
+
+    free_config(config);
 
     return 0;
 }
@@ -622,6 +656,8 @@ int test_special_segment()
         free_ast_node(b);
     }
 
+    free_config(config);
+
     return 0;
 }
 
@@ -664,6 +700,8 @@ int test_special_geo()
         free_ast_node(a);
         free_ast_node(b);
     }
+
+    free_config(config);
 
     return 0;
 }
@@ -717,6 +755,8 @@ int test_special_string()
         free_ast_node(b);
     }
 
+    free_config(config);
+
     return 0;
 }
 
@@ -769,6 +809,8 @@ int test_bool()
         free_ast_node(b);
     }
 
+    free_config(config);
+
     return 0;
 }
 
@@ -814,6 +856,8 @@ int test_bool_wrong()
         free_ast_node(a);
         free_ast_node(b);
     }
+
+    free_config(config);
 
     return 0;
 }

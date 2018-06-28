@@ -39,6 +39,8 @@ frequency(
     struct report* report = make_report();
     betree_search(tree, event_str, report);
     bool result = report->matched == 1;
+    free(expr);
+    free(event_str);
     free_report(report);
     betree_free(tree);
     return result;
@@ -224,6 +226,8 @@ segment(bool has_not, enum segment_function_type func_type,
     struct report* report = make_report();
     betree_search(tree, event_str, report);
     bool result = report->matched == 1;
+    free(expr);
+    free(event_str);
     free_report(report);
     betree_free(tree);
     return result;
@@ -289,6 +293,8 @@ static bool geo(bool has_not, const char* latitude, const char* longitude, const
     struct report* report = make_report();
     betree_search(tree, event_str, report);
     bool result = report->matched == 1;
+    free(expr);
+    free(event_str);
     free_report(report);
     betree_free(tree);
     return result;
@@ -329,6 +335,8 @@ static bool contains(bool has_not, const char* attr, bool allow_undefined, const
     struct report* report = make_report();
     betree_search(tree, event_str, report);
     bool result = report->matched == 1;
+    free(expr);
+    free(event_str);
     free_report(report);
     betree_free(tree);
     return result;
@@ -379,6 +387,8 @@ static bool starts_with(bool has_not, const char* attr, bool allow_undefined, co
     struct report* report = make_report();
     betree_search(tree, event_str, report);
     bool result = report->matched == 1;
+    free(expr);
+    free(event_str);
     free_report(report);
     betree_free(tree);
     return result;
@@ -424,6 +434,8 @@ static bool ends_with(bool has_not, const char* attr, bool allow_undefined, cons
     struct report* report = make_report();
     betree_search(tree, event_str, report);
     bool result = report->matched == 1;
+    free(expr);
+    free(event_str);
     free_report(report);
     betree_free(tree);
     return result;

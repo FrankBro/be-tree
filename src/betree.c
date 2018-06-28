@@ -75,6 +75,7 @@ bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr)
         }
     }
     if(!is_valid(tree->config, node)) {
+        free_ast_node(node);
         return false;
     }
     assign_variable_id(tree->config, node);

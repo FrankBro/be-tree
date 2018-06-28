@@ -108,11 +108,14 @@ clean:
 
 valgrind:
 	$(VALGRIND) build/tests/betree_tests
-	$(VALGRIND) build/tests/parser_tests
+	$(VALGRIND) build/tests/bound_tests
+	$(VALGRIND) build/tests/eq_expr_tests
 	$(VALGRIND) build/tests/event_parser_tests
-	$(VALGRIND) build/tests/performance_tests
-	$(VALGRIND) build/tools/gen_expr
 	$(VALGRIND) build/tests/memoize_tests
+	$(VALGRIND) build/tests/parser_tests
+	$(VALGRIND) build/tests/performance_tests
+	$(VALGRIND) build/tests/report_tests
+	$(VALGRIND) build/tests/special_tests
 
 callgrind:
 	$(CALLGRIND) build/tests/real_tests

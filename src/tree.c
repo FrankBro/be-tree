@@ -1126,6 +1126,8 @@ void free_sub(struct sub* sub)
     sub->attr_vars = NULL;
     free_ast_node((struct ast_node*)sub->expr);
     sub->expr = NULL;
+    free(sub->short_circuit.pass);
+    free(sub->short_circuit.fail);
     free(sub);
 }
 
