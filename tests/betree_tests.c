@@ -1128,6 +1128,20 @@ int test_bug_cases()
     return 0;
 }
 
+int test_null_report()
+{
+    struct betree* tree = betree_make();
+    add_attr_domain_i(tree->config, "i", 0, 10, false);
+
+    mu_assert(betree_insert(tree, 0, "i = 0"), "");
+
+    betree_search(tree, "{\"i\": 0}", NULL);
+    betree_search(tree, "{\"i\": 1}", NULL);
+
+    betree_free(tree);
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_sub_has_attribute);
@@ -1159,6 +1173,7 @@ int all_tests()
     mu_run_test(test_not_domain_changing);
     mu_run_test(test_insert_all);
     mu_run_test(test_bug_cases);
+    mu_run_test(test_null_report);
 
     return 0;
 }

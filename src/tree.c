@@ -48,9 +48,13 @@ bool match_sub(const struct config* config, const struct pred** preds, const str
     }
     enum short_circuit_e short_circuit = try_short_circuit(config, sub->short_circuit, undefined);
     if(short_circuit != SHORT_CIRCUIT_NONE) {
-        report->shorted++;
+        if(report != NULL) {
+            report->shorted++;
+        }
         if(short_circuit == SHORT_CIRCUIT_PASS) {
-            report->matched++;
+            if(report != NULL) {
+                report->matched++;
+            }
             return true;
         }
         else if(short_circuit == SHORT_CIRCUIT_FAIL) {
@@ -71,24 +75,26 @@ void check_sub(const struct config* config,
     for(size_t i = 0; i < lnode->sub_count; i++) {
         const struct sub* sub = lnode->subs[i];
         if(match_sub(config, preds, sub, report, memoize, undefined) == true) {
-            if(report->matched == 0) {
-                report->subs = calloc(1, sizeof(*report->subs));
-                if(report->subs == NULL) {
-                    fprintf(stderr, "%s calloc failed\n", __func__);
-                    abort();
+            if(report != NULL) {
+                if(report->matched == 0) {
+                    report->subs = calloc(1, sizeof(*report->subs));
+                    if(report->subs == NULL) {
+                        fprintf(stderr, "%s calloc failed\n", __func__);
+                        abort();
+                    }
                 }
-            }
-            else {
-                betree_sub_t* subs = realloc(report->subs,
-                    sizeof(*report->subs) * (report->matched + 1));
-                if(subs == NULL) {
-                    fprintf(stderr, "%s realloc failed\n", __func__);
-                    abort();
+                else {
+                    betree_sub_t* subs = realloc(report->subs,
+                        sizeof(*report->subs) * (report->matched + 1));
+                    if(subs == NULL) {
+                        fprintf(stderr, "%s realloc failed\n", __func__);
+                        abort();
+                    }
+                    report->subs = subs;
                 }
-                report->subs = subs;
+                report->subs[report->matched] = sub->id;
+                report->matched++;
             }
-            report->subs[report->matched] = sub->id;
-            report->matched++;
         }
     }
 }
