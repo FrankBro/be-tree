@@ -19,11 +19,12 @@
 
 struct events {
     size_t count;
-    struct event** events;
+    char** events;
 };
 
 extern bool MATCH_NODE_DEBUG;
 
+/*
 struct value_bound get_integer_events_bound(betree_var_t var, struct event** events, size_t event_count) 
 {
     struct value_bound bound = { .imin = INT64_MAX, .imax = INT64_MIN };
@@ -92,8 +93,9 @@ size_t get_string_events_bound(betree_var_t var, struct event** events, size_t e
     }
     return count;
 }
+*/
 
-void add_event(struct event* event, struct events* events)
+void add_event(char* event, struct events* events)
 {
     if(events->count == 0) {
         events->events = calloc(1, sizeof(*events->events));
@@ -103,7 +105,7 @@ void add_event(struct event* event, struct events* events)
         }
     }
     else {
-        struct event** new_events
+        char** new_events
             = realloc(events->events, sizeof(*new_events) * ((events->count) + 1));
         if(new_events == NULL) {
             fprintf(stderr, "%s realloc failed", __func__);
@@ -111,7 +113,7 @@ void add_event(struct event* event, struct events* events)
         }
         events->events = new_events;
     }
-    events->events[events->count] = event;
+    events->events[events->count] = strdup(event);
     events->count++;
 }
 
@@ -153,7 +155,7 @@ size_t read_betree_events(struct config* config, struct events* events)
         if(!validate_event(config, event)) {
             abort();
         }
-        add_event(event, events);
+        add_event(line, events);
         count++;
     }
     fclose(f);
@@ -272,9 +274,9 @@ int test_real()
     for(size_t i = 0; i < events.count; i++) {
         clock_gettime(CLOCK_MONOTONIC_RAW, &gen_event_done);
 
-        struct event* event = events.events[i];
+        char* event = events.events[i];
         struct report* report = make_report();
-        betree_search_with_event(tree->config, event, tree->cnode, report);
+        betree_search(tree, event, report);
 
         clock_gettime(CLOCK_MONOTONIC_RAW, &search_done);
         uint64_t search_us = (search_done.tv_sec - gen_event_done.tv_sec) * 1000000
