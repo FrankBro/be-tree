@@ -319,6 +319,7 @@ struct value_bound get_variable_bound(
 void assign_variable_id(struct config* config, struct ast_node* node);
 void assign_str_id(struct config* config, struct ast_node* node);
 void assign_pred_id(struct config* config, struct ast_node* node);
+void sort_lists(struct ast_node* node);
 
 const char* frequency_type_to_string(enum frequency_type_e type);
 bool eq_expr(const struct ast_node* a, const struct ast_node* b);

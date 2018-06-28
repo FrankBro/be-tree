@@ -1892,6 +1892,107 @@ void assign_pred_id(struct config* config, struct ast_node* node)
     assign_pred(config->pred_map, node);
 }
 
+int icmpfunc(const void *a, const void *b) {
+  const int64_t x = *(int64_t*)a;
+  const int64_t y = *(int64_t*)b;
+  int64_t comp =  x - y;
+  if (comp < 0)
+    return -1;
+  if (comp > 0)
+    return 1;
+  return comp;
+}
+
+int scmpfunc(const void *a, const void *b) {
+  const struct string_value* x = (struct string_value*)a;
+  const struct string_value* y = (struct string_value*)b;
+  betree_str_t comp =  x->str - y->str;
+  if (comp < 0)
+    return -1;
+  if (comp > 0)
+    return 1;
+  return comp;
+}
+
+void sort_lists(struct ast_node* node)
+{
+    switch(node->type) {
+        case AST_TYPE_NUMERIC_COMPARE_EXPR: 
+        case AST_TYPE_EQUALITY_EXPR:
+            return;
+        case AST_TYPE_BOOL_EXPR:
+            switch(node->bool_expr.op) {
+                case AST_BOOL_OR:
+                case AST_BOOL_AND:
+                    sort_lists(node->bool_expr.binary.lhs);
+                    sort_lists(node->bool_expr.binary.rhs);
+                    return;
+                case AST_BOOL_NOT:
+                    return sort_lists(node->bool_expr.unary.expr);
+                case AST_BOOL_VARIABLE:
+                    return;
+                default:
+                    switch_default_error("Invalid bool expr op");
+                    return;
+            }
+        case AST_TYPE_SET_EXPR:
+            if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
+                switch(node->set_expr.right_value.value_type) {
+                    case AST_SET_RIGHT_VALUE_INTEGER_LIST:
+                        qsort(node->set_expr.right_value.integer_list_value.integers, 
+                          node->set_expr.right_value.integer_list_value.count, 
+                          sizeof(*node->set_expr.right_value.integer_list_value.integers),
+                          icmpfunc);
+                        return;
+                    case AST_SET_RIGHT_VALUE_STRING_LIST:
+                        qsort(node->set_expr.right_value.string_list_value.strings, 
+                          node->set_expr.right_value.string_list_value.count, 
+                          sizeof(*node->set_expr.right_value.string_list_value.strings),
+                          scmpfunc);
+                        return;
+                    case AST_SET_RIGHT_VALUE_VARIABLE:
+                    default:
+                        fprintf(stderr, "Invalid set expr");
+                        abort();
+                        return;
+                }
+            }
+            return;
+        case AST_TYPE_LIST_EXPR:
+            switch(node->list_expr.value.value_type) {
+                case AST_LIST_VALUE_INTEGER_LIST:
+                    qsort(node->list_expr.value.integer_list_value.integers, 
+                      node->list_expr.value.integer_list_value.count, 
+                      sizeof(*node->list_expr.value.integer_list_value.integers),
+                      icmpfunc);
+                    return;
+                case AST_LIST_VALUE_STRING_LIST:
+                    qsort(node->list_expr.value.string_list_value.strings, 
+                      node->list_expr.value.string_list_value.count, 
+                      sizeof(*node->list_expr.value.string_list_value.strings),
+                      scmpfunc);
+                    return;
+                default:
+                    switch_default_error("Invalid list value type");
+                    return;
+            }
+        case AST_TYPE_SPECIAL_EXPR:
+            switch(node->special_expr.type) {
+                case AST_SPECIAL_FREQUENCY:
+                case AST_SPECIAL_SEGMENT:
+                case AST_SPECIAL_GEO:
+                case AST_SPECIAL_STRING:
+                    return;
+                default:
+                    switch_default_error("Invalid special expr type");
+                    return;
+            }
+        default:
+            switch_default_error("Invalid node type");
+            return;
+    }
+}
+
 bool var_exists(const struct config* config, const char* attr)
 {
     for(size_t i = 0; i < config->attr_to_id_count; i++) {

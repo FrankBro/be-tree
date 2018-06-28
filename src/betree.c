@@ -55,6 +55,7 @@ bool betree_insert_all(struct betree* tree, size_t count, const char** exprs)
         }
         assign_variable_id(tree->config, node);
         assign_str_id(tree->config, node);
+        sort_lists(node);
         assign_pred_id(tree->config, node);
         struct sub* sub = make_sub(tree->config, i, node);
         subs[i] = sub;
@@ -78,6 +79,7 @@ bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr)
     }
     assign_variable_id(tree->config, node);
     assign_str_id(tree->config, node);
+    sort_lists(node);
     assign_pred_id(tree->config, node);
     struct sub* sub = make_sub(tree->config, id, node);
     return insert_be_tree(tree->config, sub, tree->cnode, NULL);
