@@ -38,7 +38,7 @@ enum short_circuit_e try_short_circuit(const struct config* config, struct short
     return SHORT_CIRCUIT_NONE;
 }
 
-bool match_sub(const struct config* config, const struct event* event, const struct sub* sub, struct report* report, struct memoize* memoize, const uint64_t* undefined)
+bool match_sub(const struct config* config, const struct pred** preds, const struct sub* sub, struct report* report, struct memoize* memoize, const uint64_t* undefined)
 {
     if(sub == NULL) {
         return false;
@@ -57,12 +57,12 @@ bool match_sub(const struct config* config, const struct event* event, const str
             return false;
         }
     }
-    bool result = match_node(config, event, sub->expr, memoize, report);
+    bool result = match_node(config, preds, sub->expr, memoize, report);
     return result;
 }
 
 void check_sub(const struct config* config,
-    const struct event* event,
+    const struct pred** preds,
     const struct lnode* lnode,
     struct report* report, 
     struct memoize* memoize,
@@ -70,7 +70,7 @@ void check_sub(const struct config* config,
 {
     for(size_t i = 0; i < lnode->sub_count; i++) {
         const struct sub* sub = lnode->subs[i];
-        if(match_sub(config, event, sub, report, memoize, undefined) == true) {
+        if(match_sub(config, preds, sub, report, memoize, undefined) == true) {
             if(report->matched == 0) {
                 report->subs = calloc(1, sizeof(*report->subs));
                 if(report->subs == NULL) {
@@ -108,31 +108,25 @@ struct pnode* search_pdir(betree_var_t variable_id, const struct pdir* pdir)
 }
 
 void search_cdir(const struct config* config,
-    const struct event* event,
+    const struct pred** preds,
     struct cdir* cdir,
     struct report* report, 
     struct memoize* memoize,
     const uint64_t* undefined);
 
-bool event_contains_variable(const struct event* event, betree_var_t variable_id)
+bool event_contains_variable(const struct pred** preds, betree_var_t variable_id)
 {
-    for(size_t i = 0; i < event->pred_count; i++) {
-        const struct pred* pred = event->preds[i];
-        if(variable_id == pred->attr_var.var) {
-            return true;
-        }
-    }
-    return false;
+    return preds[variable_id] != NULL;
 }
 
 void match_be_tree(const struct config* config,
-    const struct event* event,
+    const struct pred** preds,
     const struct cnode* cnode,
     struct report* report, 
     struct memoize* memoize,
     const uint64_t* undefined)
 {
-    check_sub(config, event, cnode->lnode, report, memoize, undefined);
+    check_sub(config, preds, cnode->lnode, report, memoize, undefined);
     if(cnode->pdir != NULL) {
         for(size_t i = 0; i < cnode->pdir->pnode_count; i++) {
             struct pnode* pnode = cnode->pdir->pnodes[i];
@@ -142,44 +136,42 @@ void match_be_tree(const struct config* config,
                 abort();
             }
             if(attr_domain->allow_undefined
-                || event_contains_variable(event, pnode->attr_var.var)) {
-                search_cdir(config, event, pnode->cdir, report, memoize, undefined);
+                || event_contains_variable(preds, pnode->attr_var.var)) {
+                search_cdir(config, preds, pnode->cdir, report, memoize, undefined);
             }
         }
     }
 }
 
-bool is_event_enclosed(const struct config* config, const struct event* event, const struct cdir* cdir)
+bool is_event_enclosed(const struct config* config, const struct pred** preds, const struct cdir* cdir)
 {
     if(cdir == NULL) {
         return false;
     }
-    for(size_t i = 0; i < event->pred_count; i++) {
-        const struct pred* pred = event->preds[i];
-        betree_var_t variable_id = pred->attr_var.var;
-        if(variable_id == cdir->attr_var.var) {
-            const struct attr_domain* attr_domain = get_attr_domain(config, variable_id);
-            betree_assert(config->abort_on_error, ERROR_UNDEFINED_ATTR_DOMAIN, attr_domain != NULL);
-            betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_TYPE_MISMATCH, attr_domain->bound.value_type == pred->value.value_type);
-            switch(attr_domain->bound.value_type) {
-                case VALUE_B:
-                    return cdir->bound.bmin <= pred->value.bvalue && cdir->bound.bmax >= pred->value.bvalue;
-                case VALUE_I:
-                    return cdir->bound.imin <= pred->value.ivalue && cdir->bound.imax >= pred->value.ivalue;
-                case VALUE_F:
-                    return cdir->bound.fmin <= pred->value.fvalue && cdir->bound.fmax >= pred->value.fvalue;
-                case VALUE_S:
-                    return cdir->bound.smin <= pred->value.svalue.str && cdir->bound.smax >= pred->value.svalue.str;
-                case VALUE_IL:
-                case VALUE_SL:
-                case VALUE_SEGMENTS:
-                case VALUE_FREQUENCY:
-                    return true;
-                default:
-                    switch_default_error("Invalid value type");
-                    return false;
-            }
-        }
+    const struct pred* pred = preds[cdir->attr_var.var];
+    if(pred == NULL) {
+        return false;
+    }
+    const struct attr_domain* attr_domain = get_attr_domain(config, cdir->attr_var.var);
+    betree_assert(config->abort_on_error, ERROR_UNDEFINED_ATTR_DOMAIN, attr_domain != NULL);
+    betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_TYPE_MISMATCH, attr_domain->bound.value_type == pred->value.value_type);
+    switch(attr_domain->bound.value_type) {
+        case VALUE_B:
+            return cdir->bound.bmin <= pred->value.bvalue && cdir->bound.bmax >= pred->value.bvalue;
+        case VALUE_I:
+            return cdir->bound.imin <= pred->value.ivalue && cdir->bound.imax >= pred->value.ivalue;
+        case VALUE_F:
+            return cdir->bound.fmin <= pred->value.fvalue && cdir->bound.fmax >= pred->value.fvalue;
+        case VALUE_S:
+            return cdir->bound.smin <= pred->value.svalue.str && cdir->bound.smax >= pred->value.svalue.str;
+        case VALUE_IL:
+        case VALUE_SL:
+        case VALUE_SEGMENTS:
+        case VALUE_FREQUENCY:
+            return true;
+        default:
+            switch_default_error("Invalid value type");
+            return false;
     }
     return false;
 }
@@ -250,17 +242,17 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
 }
 
 void search_cdir(const struct config* config,
-    const struct event* event,
+    const struct pred** preds,
     struct cdir* cdir,
     struct report* report, 
     struct memoize* memoize,
     const uint64_t* undefined)
 {
-    match_be_tree(config, event, cdir->cnode, report, memoize, undefined);
-    if(is_event_enclosed(config, event, cdir->lchild))
-        search_cdir(config, event, cdir->lchild, report, memoize, undefined);
-    else if(is_event_enclosed(config, event, cdir->rchild))
-        search_cdir(config, event, cdir->rchild, report, memoize, undefined);
+    match_be_tree(config, preds, cdir->cnode, report, memoize, undefined);
+    if(is_event_enclosed(config, preds, cdir->lchild))
+        search_cdir(config, preds, cdir->lchild, report, memoize, undefined);
+    else if(is_event_enclosed(config, preds, cdir->rchild))
+        search_cdir(config, preds, cdir->rchild, report, memoize, undefined);
 }
 
 bool is_used_cnode(betree_var_t variable_id, const struct cnode* cnode);
@@ -1837,13 +1829,7 @@ void add_attr_domain_frequency(struct config* config, const char* attr, bool all
 
 const struct attr_domain* get_attr_domain(const struct config* config, betree_var_t variable_id)
 {
-    for(size_t i = 0; i < config->attr_domain_count; i++) {
-        const struct attr_domain* attr_domain = config->attr_domains[i];
-        if(attr_domain->attr_var.var == variable_id) {
-            return attr_domain;
-        }
-    }
-    return NULL;
+    return config->attr_domains[variable_id];
 }
 
 void event_to_string(const struct event* event, char* buffer)
@@ -1998,15 +1984,9 @@ betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, 
 
 bool is_variable_allow_undefined(const struct config* config, const betree_var_t variable_id)
 {
-    for(size_t i = 0; i < config->attr_domain_count; i++) {
-        const struct attr_domain* attr_domain = config->attr_domains[i];
-        if(attr_domain->attr_var.var == variable_id) {
-            return attr_domain->allow_undefined;
-        }
-    }
-    fprintf(stderr, "Missing attr domain for variable id %" PRIu64 "\n", variable_id);
-    abort();
-    return false;
+    betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_MISSING, variable_id < config->attr_domain_count);
+    betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_NOT_INDEX, config->attr_domains[variable_id]->attr_var.var == variable_id);
+    return config->attr_domains[variable_id]->allow_undefined;
 }
 
 int parse(const char* text, struct ast_node** node);
@@ -2061,6 +2041,15 @@ void init_undefined(const struct config* config, const struct event* event, uint
     }
 }
 
+struct pred** make_environment(const struct config* config, const struct event* event)
+{
+    struct pred** preds = calloc(config->attr_domain_count, sizeof(*preds));
+    for(size_t i = 0; i < event->pred_count; i++) {
+        preds[event->preds[i]->attr_var.var] = event->preds[i];
+    }
+    return preds;
+}
+
 void betree_search_with_event(const struct config* config,
     struct event* event,
     const struct cnode* cnode,
@@ -2069,10 +2058,12 @@ void betree_search_with_event(const struct config* config,
     uint64_t* undefined = calloc(config->attr_domain_count, sizeof(*undefined));
     init_undefined(config, event, undefined);
     struct memoize memoize = make_memoize(config->pred_map->pred_count);
-    match_be_tree(config, event, cnode, report, &memoize, undefined);
-    free_event(event);
+    struct pred** preds = make_environment(config, event);
+    match_be_tree(config, (const struct pred**)preds, cnode, report, &memoize, undefined);
     free_memoize(memoize);
     free(undefined);
+    free_event(event);
+    free(preds);
 }
 
 struct event* make_event_from_string(const struct config* config, const char* event_str)

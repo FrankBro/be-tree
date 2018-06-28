@@ -164,6 +164,7 @@ struct ast_node* ast_special_frequency_create(const enum ast_special_frequency_e
         .length = length };
     node->special_expr.type = AST_SPECIAL_FREQUENCY;
     node->special_expr.frequency = frequency;
+    node->special_expr.frequency.now = make_attr_var("now", NULL);
     return node;
 }
 
@@ -182,6 +183,7 @@ struct ast_node* ast_special_segment_create(
     }
     node->special_expr.type = AST_SPECIAL_SEGMENT;
     node->special_expr.segment = segment;
+    node->special_expr.segment.now = make_attr_var("now", NULL);
     return node;
 }
 
@@ -452,20 +454,20 @@ const char* frequency_type_to_string(enum frequency_type_e type)
 }
 
 bool match_special_expr(
-    const struct config* config, const struct event* event, const struct ast_special_expr special_expr)
+    const struct config* config, const struct pred** preds, const struct ast_special_expr special_expr)
 {
     switch(special_expr.type) {
         case AST_SPECIAL_FREQUENCY: {
             switch(special_expr.frequency.op) {
                 case AST_SPECIAL_WITHINFREQUENCYCAP: {
                     int64_t now;
-                    enum variable_state_e state = get_integer_attr(config, event, "now", &now);
+                    enum variable_state_e state = get_integer_var(config, special_expr.frequency.now.var, preds, &now);
                     betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
                     if(state == VARIABLE_UNDEFINED) {
                         return false;
                     }
                     struct frequency_caps_list caps;
-                    enum variable_state_e caps_state = get_frequency_attr(config, event, &caps);
+                    enum variable_state_e caps_state = get_frequency_var(config, special_expr.frequency.attr_var.var, preds, &caps);
                     betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
                     if(caps_state == VARIABLE_UNDEFINED) {
                         return false;
@@ -515,14 +517,11 @@ bool match_special_expr(
         }
         case AST_SPECIAL_SEGMENT: {
             int64_t now;
-            enum variable_state_e now_state = get_integer_attr(config, event, "now", &now);
+            enum variable_state_e now_state = get_integer_var(config, special_expr.segment.now.var, preds, &now);
             betree_assert(config->abort_on_error, ERROR_VAR_MISSING, now_state != VARIABLE_MISSING);
             struct segments_list segments;
-            const char* segments_attr = special_expr.segment.has_variable
-                ? special_expr.segment.attr_var.attr
-                : "segments_with_timestamp";
             enum variable_state_e segments_state
-                = get_segments_attr(config, event, segments_attr, &segments);
+                = get_segments_var(config, special_expr.segment.attr_var.var, preds, &segments);
             betree_assert(config->abort_on_error, ERROR_VAR_MISSING, segments_state != VARIABLE_MISSING);
             if(now_state == VARIABLE_UNDEFINED || segments_state == VARIABLE_UNDEFINED) {
                 return false;
@@ -551,9 +550,9 @@ bool match_special_expr(
                 case AST_SPECIAL_GEOWITHINRADIUS: {
                     double latitude_var, longitude_var;
                     enum variable_state_e latitude_var_state
-                        = get_float_var(config, special_expr.geo.latitude_var.var, event, &latitude_var);
+                        = get_float_var(config, special_expr.geo.latitude_var.var, preds, &latitude_var);
                     enum variable_state_e longitude_var_state
-                        = get_float_var(config, special_expr.geo.longitude_var.var, event, &longitude_var);
+                        = get_float_var(config, special_expr.geo.longitude_var.var, preds, &longitude_var);
                     betree_assert(config->abort_on_error, ERROR_VAR_MISSING, latitude_var_state != VARIABLE_MISSING);
                     betree_assert(config->abort_on_error, ERROR_VAR_MISSING, longitude_var_state != VARIABLE_MISSING);
                     if(latitude_var_state == VARIABLE_UNDEFINED
@@ -577,7 +576,7 @@ bool match_special_expr(
         case AST_SPECIAL_STRING: {
             struct string_value value;
             enum variable_state_e state
-                = get_string_attr(config, event, special_expr.string.attr_var.attr, &value);
+                = get_string_var(config, special_expr.string.attr_var.var, preds, &value);
             betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
             if(state == VARIABLE_UNDEFINED) {
                 return false;
@@ -606,10 +605,10 @@ bool match_special_expr(
 }
 
 bool match_list_expr(
-    const struct config* config, const struct event* event, const struct ast_list_expr list_expr)
+    const struct config* config, const struct pred** preds, const struct ast_list_expr list_expr)
 {
     struct value variable;
-    enum variable_state_e state = get_variable(config, list_expr.attr_var.var, event, &variable);
+    enum variable_state_e state = get_variable(config, list_expr.attr_var.var, preds, &variable);
     betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
     if(state == VARIABLE_UNDEFINED) {
         return false;
@@ -718,7 +717,7 @@ bool match_list_expr(
 }
 
 bool match_set_expr(
-    const struct config* config, const struct event* event, const struct ast_set_expr set_expr)
+    const struct config* config, const struct pred** preds, const struct ast_set_expr set_expr)
 {
     struct set_left_value left = set_expr.left_value;
     struct set_right_value right = set_expr.right_value;
@@ -727,7 +726,7 @@ bool match_set_expr(
         && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
         struct integer_list_value variable;
         enum variable_state_e state
-            = get_integer_list_var(config, right.variable_value.var, event, &variable);
+            = get_integer_list_var(config, right.variable_value.var, preds, &variable);
         betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
         if(state == VARIABLE_UNDEFINED) {
             return false;
@@ -738,7 +737,7 @@ bool match_set_expr(
         && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
         struct string_list_value variable;
         enum variable_state_e state
-            = get_string_list_var(config, right.variable_value.var, event, &variable);
+            = get_string_list_var(config, right.variable_value.var, preds, &variable);
         betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
         if(state == VARIABLE_UNDEFINED) {
             return false;
@@ -749,7 +748,7 @@ bool match_set_expr(
         && right.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST) {
         int64_t variable;
         enum variable_state_e state
-            = get_integer_var(config, left.variable_value.var, event, &variable);
+            = get_integer_var(config, left.variable_value.var, preds, &variable);
         betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
         if(state == VARIABLE_UNDEFINED) {
             return false;
@@ -760,7 +759,7 @@ bool match_set_expr(
         && right.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
         struct string_value variable;
         enum variable_state_e state
-            = get_string_var(config, left.variable_value.var, event, &variable);
+            = get_string_var(config, left.variable_value.var, preds, &variable);
         betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
         if(state == VARIABLE_UNDEFINED) {
             return false;
@@ -786,12 +785,12 @@ bool match_set_expr(
 }
 
 bool match_numeric_compare_expr(const struct config* config,
-    const struct event* event,
+    const struct pred** preds,
     const struct ast_numeric_compare_expr numeric_compare_expr)
 {
     struct value variable;
     enum variable_state_e state
-        = get_variable(config, numeric_compare_expr.attr_var.var, event, &variable);
+        = get_variable(config, numeric_compare_expr.attr_var.var, preds, &variable);
     betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
     if(state == VARIABLE_UNDEFINED) {
         return false;
@@ -870,12 +869,12 @@ bool match_numeric_compare_expr(const struct config* config,
 }
 
 bool match_equality_expr(const struct config* config,
-    const struct event* event,
+    const struct pred** preds,
     const struct ast_equality_expr equality_expr)
 {
     struct value variable;
     enum variable_state_e state
-        = get_variable(config, equality_expr.attr_var.var, event, &variable);
+        = get_variable(config, equality_expr.attr_var.var, preds, &variable);
     betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
     if(state == VARIABLE_UNDEFINED) {
         return false;
@@ -931,36 +930,36 @@ bool match_equality_expr(const struct config* config,
     }
 }
 
-static bool match_node_inner(const struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report);
+static bool match_node_inner(const struct config* config, const struct pred** preds, const struct ast_node* node, struct memoize* memoize, struct report* report);
 
 bool match_bool_expr(
-    const struct config* config, const struct event* event, const struct ast_bool_expr bool_expr, struct memoize* memoize, struct report* report)
+    const struct config* config, const struct pred** preds, const struct ast_bool_expr bool_expr, struct memoize* memoize, struct report* report)
 {
     switch(bool_expr.op) {
         case AST_BOOL_AND: {
-            bool lhs = match_node_inner(config, event, bool_expr.binary.lhs, memoize, report);
+            bool lhs = match_node_inner(config, preds, bool_expr.binary.lhs, memoize, report);
             if(lhs == false) {
                 return false;
             }
-            bool rhs = match_node_inner(config, event, bool_expr.binary.rhs, memoize, report);
+            bool rhs = match_node_inner(config, preds, bool_expr.binary.rhs, memoize, report);
             return rhs;
         }
         case AST_BOOL_OR: {
-            bool lhs = match_node_inner(config, event, bool_expr.binary.lhs, memoize, report);
+            bool lhs = match_node_inner(config, preds, bool_expr.binary.lhs, memoize, report);
             if(lhs == true) {
                 return true;
             }
-            bool rhs = match_node_inner(config, event, bool_expr.binary.rhs, memoize, report);
+            bool rhs = match_node_inner(config, preds, bool_expr.binary.rhs, memoize, report);
             return rhs;
         }
         case AST_BOOL_NOT: {
-            bool result = match_node_inner(config, event, bool_expr.unary.expr, memoize, report);
+            bool result = match_node_inner(config, preds, bool_expr.unary.expr, memoize, report);
             return !result;
         }
         case AST_BOOL_VARIABLE: {
             bool value;
             enum variable_state_e state
-                = get_bool_var(config, bool_expr.variable.var, event, &value);
+                = get_bool_var(config, bool_expr.variable.var, preds, &value);
             betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
             if(state == VARIABLE_UNDEFINED) {
                 return false;
@@ -999,7 +998,7 @@ void print_memoize(const struct memoize* memoize, size_t pred_count)
     printf("\n");
 }
 
-static bool match_node_inner(const struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report)
+static bool match_node_inner(const struct config* config, const struct pred** preds, const struct ast_node* node, struct memoize* memoize, struct report* report)
 {
     // TODO allow undefined handling?
     if(MATCH_NODE_DEBUG) {
@@ -1036,27 +1035,27 @@ static bool match_node_inner(const struct config* config, const struct event* ev
     bool result;
     switch(node->type) {
         case AST_TYPE_SPECIAL_EXPR: {
-            result = match_special_expr(config, event, node->special_expr);
+            result = match_special_expr(config, preds, node->special_expr);
             break;
         }
         case AST_TYPE_BOOL_EXPR: {
-            result = match_bool_expr(config, event, node->bool_expr, memoize, report);
+            result = match_bool_expr(config, preds, node->bool_expr, memoize, report);
             break;
         }
         case AST_TYPE_LIST_EXPR: {
-            result = match_list_expr(config, event, node->list_expr);
+            result = match_list_expr(config, preds, node->list_expr);
             break;
         }
         case AST_TYPE_SET_EXPR: {
-            result = match_set_expr(config, event, node->set_expr);
+            result = match_set_expr(config, preds, node->set_expr);
             break;
         }
         case AST_TYPE_NUMERIC_COMPARE_EXPR: {
-            result = match_numeric_compare_expr(config, event, node->numeric_compare_expr);
+            result = match_numeric_compare_expr(config, preds, node->numeric_compare_expr);
             break;
         }
         case AST_TYPE_EQUALITY_EXPR: {
-            result = match_equality_expr(config, event, node->equality_expr);
+            result = match_equality_expr(config, preds, node->equality_expr);
             break;
         }
         default: {
@@ -1075,9 +1074,9 @@ static bool match_node_inner(const struct config* config, const struct event* ev
     return result;
 }
 
-bool match_node(const struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report)
+bool match_node(const struct config* config, const struct pred** preds, const struct ast_node* node, struct memoize* memoize, struct report* report)
 {
-    return match_node_inner(config, event, node, memoize, report);
+    return match_node_inner(config, preds, node, memoize, report);
 }
 
 static void get_variable_bound_inner(const struct attr_domain* domain, const struct ast_node* node, struct value_bound* bound, bool is_reversed, bool* was_touched)
@@ -1419,15 +1418,17 @@ void assign_variable_id(struct config* config, struct ast_node* node)
         case(AST_TYPE_SPECIAL_EXPR): {
             switch(node->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY: {
-                    betree_var_t variable_id
-                        = get_id_for_attr(config, node->special_expr.frequency.attr_var.attr);
+                    betree_var_t variable_id = get_id_for_attr(config, node->special_expr.frequency.attr_var.attr);
                     node->special_expr.frequency.attr_var.var = variable_id;
+                    betree_var_t now_id = get_id_for_attr(config, node->special_expr.frequency.now.attr);
+                    node->special_expr.frequency.now.var = now_id;
                     return;
                 }
                 case AST_SPECIAL_SEGMENT: {
-                    betree_var_t variable_id
-                        = get_id_for_attr(config, node->special_expr.segment.attr_var.attr);
+                    betree_var_t variable_id = get_id_for_attr(config, node->special_expr.segment.attr_var.attr);
                     node->special_expr.segment.attr_var.var = variable_id;
+                    betree_var_t now_id = get_id_for_attr(config, node->special_expr.segment.now.attr);
+                    node->special_expr.segment.now.var = now_id;
                     return;
                 }
                 case AST_SPECIAL_GEO: {

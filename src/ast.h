@@ -182,6 +182,7 @@ struct ast_special_frequency {
     struct string_value ns;
     int64_t value;
     size_t length;
+    struct attr_var now;
 };
 
 enum ast_special_segment_e {
@@ -195,6 +196,7 @@ struct ast_special_segment {
     struct attr_var attr_var;
     betree_seg_t segment_id;
     int64_t seconds;
+    struct attr_var now;
 };
 
 enum ast_special_geo_value_e {
@@ -309,7 +311,7 @@ struct ast_node* ast_special_string_create(
     enum ast_special_string_e op, const char* name, const char* pattern);
 void free_ast_node(struct ast_node* node);
 
-bool match_node(const struct config* config, const struct event* event, const struct ast_node* node, struct memoize* memoize, struct report* report);
+bool match_node(const struct config* config, const struct pred** preds, const struct ast_node* node, struct memoize* memoize, struct report* report);
 
 struct value_bound get_variable_bound(
     const struct attr_domain* domain, const struct ast_node* node);
