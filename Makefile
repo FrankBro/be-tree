@@ -26,7 +26,7 @@ YACC?=bison
 YFLAGS?=-dv
 
 VALGRIND=valgrind --leak-check=full --track-origins=yes --suppressions=valgrind.supp
-CALLGRIND=valgrind --tool=callgrind
+CALLGRIND=valgrind --tool=callgrind --instr-atstart=no
 CACHEGRIND=valgrind --tool=cachegrind
 
 ################################################################################
