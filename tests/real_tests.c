@@ -6,7 +6,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
-#include <valgrind/callgrind.h>
+/*#include <valgrind/callgrind.h>*/
 
 #include "betree.h"
 #include "debug.h"
@@ -269,7 +269,7 @@ int test_real()
 
     FILE* fOut = fopen("real_test_output", "w");
 
-    CALLGRIND_START_INSTRUMENTATION;
+    /*CALLGRIND_START_INSTRUMENTATION;*/
 
     for(size_t i = 0; i < events.count; i++) {
         clock_gettime(CLOCK_MONOTONIC_RAW, &gen_event_done);
@@ -308,8 +308,8 @@ int test_real()
         free_report(report);
     }
 
-    CALLGRIND_STOP_INSTRUMENTATION;
-    CALLGRIND_DUMP_STATS;
+    /*CALLGRIND_STOP_INSTRUMENTATION;*/
+    /*CALLGRIND_DUMP_STATS;*/
 
     fclose(fOut);
 
