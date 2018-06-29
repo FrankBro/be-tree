@@ -608,6 +608,70 @@ bool match_special_expr(
     }
 }
 
+static bool match_not_all_of_int(struct value variable, struct ast_list_expr list_expr)
+{
+    for(size_t i = 0; i < variable.ilvalue.count; i++) {
+        int64_t left = variable.ilvalue.integers[i];
+        for(size_t j = 0; j < list_expr.value.integer_list_value.count; j++) {
+            int64_t right = list_expr.value.integer_list_value.integers[j];
+            if(left == right) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+static bool match_not_all_of_string(const struct config* config, struct value variable, struct ast_list_expr list_expr)
+{
+    for(size_t i = 0; i < variable.slvalue.count; i++) {
+        struct string_value left = variable.slvalue.strings[i];
+        for(size_t j = 0; j < list_expr.value.string_list_value.count; j++) {
+            struct string_value right = list_expr.value.string_list_value.strings[j];
+            betree_assert(config->abort_on_error, ERROR_STRING_VAR_MISMATCH, left.var == right.var);
+            if(left.str == right.str) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+static bool match_all_of_int(struct value variable, struct ast_list_expr list_expr)
+{
+    size_t count = 0, target_count = 0;
+    target_count = list_expr.value.integer_list_value.count;
+    for(size_t i = 0; i < target_count; i++) {
+        int64_t right = list_expr.value.integer_list_value.integers[i];
+        for(size_t j = 0; j < variable.ilvalue.count; j++) {
+            int64_t left = variable.ilvalue.integers[j];
+            if(left == right) {
+                count++;
+                break;
+            }
+        }
+    }
+    return count == target_count;
+}
+
+static bool match_all_of_string(const struct config* config, struct value variable, struct ast_list_expr list_expr)
+{
+    size_t count = 0, target_count = 0;
+    target_count = list_expr.value.string_list_value.count;
+    for(size_t i = 0; i < target_count; i++) {
+        struct string_value right = list_expr.value.string_list_value.strings[i];
+        for(size_t j = 0; j < variable.slvalue.count; j++) {
+            struct string_value left = variable.slvalue.strings[j];
+            betree_assert(config->abort_on_error, ERROR_STRING_VAR_MISMATCH, left.var == right.var);
+            if(left.str == right.str) {
+                count++;
+                break;
+            }
+        }
+    }
+    return count == target_count;
+}
+
 bool match_list_expr(
     const struct config* config, const struct pred** preds, const struct ast_list_expr list_expr)
 {
@@ -623,37 +687,11 @@ bool match_list_expr(
         case AST_LIST_NONE_OF: {
             bool result = false;
             switch(list_expr.value.value_type) {
-                case AST_LIST_VALUE_INTEGER_LIST: {
-                    for(size_t i = 0; i < variable.ilvalue.count; i++) {
-                        int64_t left = variable.ilvalue.integers[i];
-                        for(size_t j = 0; j < list_expr.value.integer_list_value.count; j++) {
-                            int64_t right = list_expr.value.integer_list_value.integers[j];
-                            if(left == right) {
-                                result = true;
-                                break;
-                            }
-                        }
-                        if(result == true) {
-                            break;
-                        }
-                    }
+                case AST_LIST_VALUE_INTEGER_LIST: 
+                    result = match_not_all_of_int(variable, list_expr);
                     break;
-                }
                 case AST_LIST_VALUE_STRING_LIST: {
-                    for(size_t i = 0; i < variable.slvalue.count; i++) {
-                        struct string_value left = variable.slvalue.strings[i];
-                        for(size_t j = 0; j < list_expr.value.string_list_value.count; j++) {
-                            struct string_value right = list_expr.value.string_list_value.strings[j];
-                            betree_assert(config->abort_on_error, ERROR_STRING_VAR_MISMATCH, left.var == right.var);
-                            if(left.str == right.str) {
-                                result = true;
-                                break;
-                            }
-                        }
-                        if(result == true) {
-                            break;
-                        }
-                    }
+                    result = match_not_all_of_string(config, variable, list_expr);
                     break;
                 }
                 default: {
@@ -675,43 +713,16 @@ bool match_list_expr(
             }
         }
         case AST_LIST_ALL_OF: {
-            size_t count = 0, target_count = 0;
             switch(list_expr.value.value_type) {
-                case AST_LIST_VALUE_INTEGER_LIST: {
-                    target_count = list_expr.value.integer_list_value.count;
-                    for(size_t i = 0; i < target_count; i++) {
-                        int64_t right = list_expr.value.integer_list_value.integers[i];
-                        for(size_t j = 0; j < variable.ilvalue.count; j++) {
-                            int64_t left = variable.ilvalue.integers[j];
-                            if(left == right) {
-                                count++;
-                                break;
-                            }
-                        }
-                    }
-                    break;
-                }
-                case AST_LIST_VALUE_STRING_LIST: {
-                    target_count = list_expr.value.string_list_value.count;
-                    for(size_t i = 0; i < target_count; i++) {
-                        struct string_value right = list_expr.value.string_list_value.strings[i];
-                        for(size_t j = 0; j < variable.slvalue.count; j++) {
-                            struct string_value left = variable.slvalue.strings[j];
-                            betree_assert(config->abort_on_error, ERROR_STRING_VAR_MISMATCH, left.var == right.var);
-                            if(left.str == right.str) {
-                                count++;
-                                break;
-                            }
-                        }
-                    }
-                    break;
-                }
+                case AST_LIST_VALUE_INTEGER_LIST:
+                    return match_all_of_int(variable, list_expr);
+                case AST_LIST_VALUE_STRING_LIST:
+                    return match_all_of_string(config, variable, list_expr);
                 default: {
                     switch_default_error("Invalid list value type");
                     return false;
                 }
             }
-            return count == target_count;
         }
         default: {
             switch_default_error("Invalid list operation");
