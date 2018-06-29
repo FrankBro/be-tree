@@ -103,6 +103,16 @@ struct value_bound {
             size_t smin;
             size_t smax;
         };
+        struct {
+            bool is_integer_list_bounded;
+            int64_t ilmin;
+            int64_t ilmax;
+        };
+        struct {
+            bool is_string_list_bounded;
+            size_t slmin;
+            size_t slmax;
+        };
     };
 };
 
