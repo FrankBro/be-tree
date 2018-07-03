@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "betree.h"
 #include "utils.h"
 
 bool bmin(bool a, bool b)
@@ -82,5 +83,28 @@ void betree_assert(bool should_abort, enum error_e error, bool expr)
             abort();
         }
     }
+}
+
+int icmpfunc(const void *a, const void *b) 
+{
+  const int64_t x = *(int64_t*)a;
+  const int64_t y = *(int64_t*)b;
+  int64_t comp =  x - y;
+  if (comp < 0)
+    return -1;
+  if (comp > 0)
+    return 1;
+  return comp;
+}
+
+int scmpfunc(const void *a, const void *b) 
+{
+  const struct string_value* x = (struct string_value*)a;
+  const struct string_value* y = (struct string_value*)b;
+  if (x->str < y->str)
+    return -1;
+  if (x->str > y->str)
+    return 1;
+  return 0;
 }
 

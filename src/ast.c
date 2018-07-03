@@ -1907,28 +1907,6 @@ void assign_pred_id(struct config* config, struct ast_node* node)
     assign_pred(config->pred_map, node);
 }
 
-int icmpfunc(const void *a, const void *b) {
-  const int64_t x = *(int64_t*)a;
-  const int64_t y = *(int64_t*)b;
-  int64_t comp =  x - y;
-  if (comp < 0)
-    return -1;
-  if (comp > 0)
-    return 1;
-  return comp;
-}
-
-int scmpfunc(const void *a, const void *b) {
-  const struct string_value* x = (struct string_value*)a;
-  const struct string_value* y = (struct string_value*)b;
-  betree_str_t comp =  x->str - y->str;
-  if (comp < 0)
-    return -1;
-  if (comp > 0)
-    return 1;
-  return comp;
-}
-
 void sort_lists(struct ast_node* node)
 {
     switch(node->type) {
