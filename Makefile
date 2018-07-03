@@ -6,7 +6,7 @@ CFLAGS := -g -std=gnu11 -D_GNU_SOURCE -Wall -Wextra -Wshadow -Wfloat-equal -Wund
 	-Wwrite-strings -Wunreachable-code -Wformat=2 -Wswitch-enum \
 	-Wswitch-default -Winit-self -Wno-strict-aliasing
 
-LDFLAGS := -lm -fPIC
+LDFLAGS := -lm -lgsl -lgslcblas -fPIC
 
 LEX_SOURCES=$(wildcard src/*.l) 
 LEX_OBJECTS=$(patsubst %.l,%.c,${LEX_SOURCES}) $(patsubst %.l,%.h,${LEX_SOURCES})
@@ -118,7 +118,7 @@ valgrind:
 	$(VALGRIND) build/tests/special_tests
 
 callgrind:
-	$(CALLGRIND) build/tests/real_tests
+	$(CALLGRIND) build/tests/real_tests 1
 
 cachegrind:
 	$(CACHEGRIND) build/tests/real_tests
