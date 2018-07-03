@@ -608,15 +608,48 @@ bool match_special_expr(
     }
 }
 
+bool binary_search(int64_t arr[], int min, int max, int64_t to_find)
+{
+   if(max >= min)
+   {
+        int mid = min + (max - min)/2;
+
+        if (arr[mid] == to_find) {
+            return true;
+        }
+
+        if (arr[mid] > to_find) {
+            return binary_search(arr, min, mid-1, to_find);
+        }
+
+        return binary_search(arr, mid+1, max, to_find);
+   }
+
+   return false;
+}
+
 static bool match_not_all_of_int(struct value variable, struct ast_list_expr list_expr)
 {
-    for(size_t i = 0; i < variable.ilvalue.count; i++) {
-        int64_t left = variable.ilvalue.integers[i];
-        for(size_t j = 0; j < list_expr.value.integer_list_value.count; j++) {
-            int64_t right = list_expr.value.integer_list_value.integers[j];
-            if(left == right) {
-                return true;
-            }
+    int64_t* a;
+    size_t a_count;
+    int64_t* b;
+    size_t b_count;
+    if(variable.ilvalue.count < list_expr.value.integer_list_value.count) {
+        a = variable.ilvalue.integers;
+        a_count = variable.ilvalue.count;
+        b = list_expr.value.integer_list_value.integers;
+        b_count = list_expr.value.integer_list_value.count;
+    }
+    else {
+        b = variable.ilvalue.integers;
+        b_count = variable.ilvalue.count;
+        a = list_expr.value.integer_list_value.integers;
+        a_count = list_expr.value.integer_list_value.count;
+    }
+    for(size_t i = 0; i < a_count; i++) {
+        bool found = binary_search(b, 0, b_count, a[i]);
+        if(found) {
+            return true;
         }
     }
     return false;

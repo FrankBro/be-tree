@@ -2074,6 +2074,25 @@ void betree_search_with_event(const struct config* config,
     free(preds);
 }
 
+void sort_event_lists(struct event* event)
+{
+    for(size_t i = 0; i < event->pred_count; i++) {
+        struct pred* pred = event->preds[i];
+        if(pred->value.value_type == VALUE_IL) {
+            qsort(pred->value.ilvalue.integers,
+              pred->value.ilvalue.count,
+              sizeof(*pred->value.ilvalue.integers),
+              icmpfunc);
+        }
+        else if(pred->value.value_type == VALUE_SL) {
+            qsort(pred->value.slvalue.strings,
+              pred->value.slvalue.count,
+              sizeof(*pred->value.slvalue.strings),
+              scmpfunc);
+        }
+    }
+}
+
 struct event* make_event_from_string(const struct config* config, const char* event_str)
 {
     struct event* event;
@@ -2086,6 +2105,7 @@ struct event* make_event_from_string(const struct config* config, const char* ev
         fprintf(stderr, "Failed to validate event: %s\n", event_str);
         abort();
     }
+    sort_event_lists(event);
     return event;
 }
 
