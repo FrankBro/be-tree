@@ -1,2 +1,4 @@
+before_install:
+  - sudo apt-get install -y valgrind libgsl-dev
 language: C
 script: make all
