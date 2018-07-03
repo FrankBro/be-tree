@@ -8,8 +8,8 @@ struct ast_node;
 typedef uint64_t betree_pred_t;
 
 struct memoize {
-    uint64_t* pass;
-    uint64_t* fail;
+    uint64_t* evaluated;
+    uint64_t* result;
 };
 
 void set_bit(uint64_t A[], uint64_t k);

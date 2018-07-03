@@ -310,25 +310,19 @@ int test_bit_logic()
     struct memoize memoize = make_memoize(pred_count);
     for(size_t i = 0; i < pred_count; i++) {
         if(i % 2 == 0) {
-            set_bit(memoize.pass, i);
-        }
-        else {
-            set_bit(memoize.fail, i);
+            set_bit(memoize.result, i);
         }
         for(size_t j = 0; j < pred_count; j++) {
             if(j <= i) {
                 if(j % 2 == 0) {
-                    mu_assert(test_bit(memoize.pass, j), "even, pass for %zu, at %zu", j, i);
-                    mu_assert(!test_bit(memoize.fail, j), "even, fail for %zu, at %zu", j, i);
+                    mu_assert(test_bit(memoize.result, j), "even, pass for %zu, at %zu", j, i);
                 }
                 else {
-                    mu_assert(!test_bit(memoize.pass, j), "odd, pass for %zu, at %zu", j, i);
-                    mu_assert(test_bit(memoize.fail, j), "odd, fail for %zu, at %zu", j, i);
+                    mu_assert(!test_bit(memoize.result, j), "odd, pass for %zu, at %zu", j, i);
                 }
             }
             else {
-                mu_assert(!test_bit(memoize.pass, j), "new, pass for %zu, at %zu", j, i);
-                mu_assert(!test_bit(memoize.fail, j), "new, fail for %zu, at %zu", j, i);
+                mu_assert(!test_bit(memoize.result, j), "new, pass for %zu, at %zu", j, i);
             }
         }
     }

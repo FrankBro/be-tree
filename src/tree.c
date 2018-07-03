@@ -2017,16 +2017,16 @@ struct memoize make_memoize(size_t pred_count)
 {
     size_t count = pred_count / 64 + 1;
     struct memoize memoize = {
-        .pass = calloc(count, sizeof(*memoize.pass)),
-        .fail = calloc(count, sizeof(*memoize.fail)),
+        .evaluated = calloc(count, sizeof(*memoize.evaluated)),
+        .result = calloc(count, sizeof(*memoize.result)),
     };
     return memoize;
 }
 
 void free_memoize(struct memoize memoize)
 {
-    free(memoize.pass);
-    free(memoize.fail);
+    free(memoize.evaluated);
+    free(memoize.result);
 }
 
 void init_undefined(const struct config* config, const struct event* event, uint64_t* undefined)

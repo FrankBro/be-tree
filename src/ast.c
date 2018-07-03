@@ -988,26 +988,19 @@ bool match_bool_expr(
     }
 }
 
-void report_memoized(struct report* report)
-{
-    if(report != NULL) {
-        report->memoized++;
-    }
-}
-
 bool MATCH_NODE_DEBUG = false;
 
 void print_memoize(const struct memoize* memoize, size_t pred_count)
 {
-    printf("DEBUG: Pass ");
+    printf("DEBUG: Evaluated ");
     for(size_t i = 0; i < pred_count; i++) {
-        bool result = test_bit(memoize->pass, i);
+        bool result = test_bit(memoize->evaluated, i);
         printf("%d", result);
     }
     printf("\n");
-    printf("DEBUG: Fail ");
+    printf("DEBUG: Result ");
     for(size_t i = 0; i < pred_count; i++) {
-        bool result = test_bit(memoize->fail, i);
+        bool result = test_bit(memoize->result, i);
         printf("%d", result);
     }
     printf("\n");
@@ -1020,11 +1013,13 @@ static bool match_node_inner(const struct config* config, const struct pred** pr
         const char* memoize_status;
         /*print_memoize(memoize, config->pred_count);*/
         if(memoize != NULL) {
-            if(test_bit(memoize->pass, node->id)) {
-                memoize_status = "PASS";
-            }
-            else if(test_bit(memoize->fail, node->id)) {
-                memoize_status = "FAIL";
+            if(test_bit(memoize->evaluated, node->id)) {
+                if(test_bit(memoize->result, node->id)) {
+                    memoize_status = "PASS";
+                }
+                else {
+                    memoize_status = "FAIL";
+                }
             }
             else {
                 memoize_status = "NOPE";
@@ -1038,13 +1033,16 @@ static bool match_node_inner(const struct config* config, const struct pred** pr
         free((char*)expr);
     }
     if(memoize != NULL) {
-        if(test_bit(memoize->pass, node->id)) {
-            report_memoized(report);
-            return true;
-        }
-        if(test_bit(memoize->fail, node->id)) {
-            report_memoized(report);
-            return false;
+        if(test_bit(memoize->evaluated, node->id)) {
+            if(report != NULL) {
+                report->memoized++;
+            }
+            if(test_bit(memoize->result, node->id)) {
+                return true;
+            }
+            else {
+                return false;
+            }
         }
     }
     bool result;
@@ -1079,11 +1077,9 @@ static bool match_node_inner(const struct config* config, const struct pred** pr
         }
     }
     if(memoize != NULL) {
+        set_bit(memoize->evaluated, node->id);
         if(result) {
-            set_bit(memoize->pass, node->id);
-        }
-        else {
-            set_bit(memoize->fail, node->id);
+            set_bit(memoize->result, node->id);
         }
     }
     return result;
