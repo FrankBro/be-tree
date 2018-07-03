@@ -5,6 +5,6 @@ cache: packages
 addons:
   apt:
     packages:
-      - libgsl-dev
+      - libgsl0-dev
       - valgrind
 script: make all
