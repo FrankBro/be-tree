@@ -1,4 +1,10 @@
-before_install:
-  - sudo apt-get install -y valgrind libgsl-dev
 language: C
+sudo: required
+dist: trusty
+cache: packages
+addons:
+  apt:
+    packages:
+      - libgsl-dev
+      - valgrind
 script: make all
