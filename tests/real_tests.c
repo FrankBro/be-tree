@@ -426,7 +426,7 @@ int main(int argc, char** argv)
 
     /*MATCH_NODE_DEBUG = true;*/
 
-    FILE* fOut = fopen("real_test_output", "w");
+    /*FILE* fOut = fopen("real_test_output", "w");*/
 
     CALLGRIND_START_INSTRUMENTATION;
 
@@ -460,7 +460,7 @@ int main(int argc, char** argv)
     CALLGRIND_STOP_INSTRUMENTATION;
     CALLGRIND_DUMP_STATS;
 
-    fclose(fOut);
+    /*fclose(fOut);*/
 
     double evaluated_average = (double)evaluated_sum / (double)MAX_EVENTS;
     double matched_average = (double)matched_sum / (double)MAX_EVENTS;
