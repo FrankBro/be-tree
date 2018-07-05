@@ -41,6 +41,9 @@ dot:
 	# dot -Tpng betree.dot -o betree.png
 	dot -Tsvg betree.dot -o betree.svg
 
+neato:
+	neato -Tsvg betree.dot -o betree.svg
+
 ################################################################################
 # Binaries
 ################################################################################
