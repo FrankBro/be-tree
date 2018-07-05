@@ -111,6 +111,7 @@ struct string_map {
 struct config {
     uint64_t lnode_max_cap;
     uint64_t partition_min_size;
+    uint64_t max_domain_for_split;
     bool abort_on_error;
     size_t attr_domain_count;
     struct attr_domain** attr_domains;

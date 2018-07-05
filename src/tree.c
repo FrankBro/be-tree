@@ -739,21 +739,23 @@ bool is_attr_used_in_parent_lnode(betree_var_t variable_id, const struct lnode* 
     return is_attr_used_in_parent_cnode(variable_id, lnode->parent);
 }
 
-bool splitable_attr_domain(const struct attr_domain* attr_domain)
+bool splitable_attr_domain(const struct config* config, const struct attr_domain* attr_domain)
 {
     switch(attr_domain->bound.value_type) {
         case VALUE_I:
+            return ((uint64_t)llabs(attr_domain->bound.imax - attr_domain->bound.imin)) < config->max_domain_for_split;
         case VALUE_F:
+            return ((uint64_t)fabs(attr_domain->bound.fmax - attr_domain->bound.fmin)) < config->max_domain_for_split;
         case VALUE_B:
             return true;
         case VALUE_S:
-            return attr_domain->bound.is_string_bounded;
-        case VALUE_FREQUENCY:
+            return (attr_domain->bound.smax - attr_domain->bound.smin) < config->max_domain_for_split;
         case VALUE_IL:
-            return attr_domain->bound.is_integer_list_bounded;
+            return ((uint64_t)llabs(attr_domain->bound.ilmax - attr_domain->bound.ilmin)) < config->max_domain_for_split;
         case VALUE_SL:
-            return attr_domain->bound.is_string_list_bounded;
+            return (attr_domain->bound.slmax - attr_domain->bound.slmin) < config->max_domain_for_split;
         case VALUE_SEGMENTS:
+        case VALUE_FREQUENCY:
             return false;
         default:
             switch_default_error("Invalid bound value type");
@@ -772,7 +774,7 @@ bool get_next_highest_score_unused_attr(
             struct attr_var current_attr_var = sub->attr_vars[j];
             betree_var_t current_variable_id = current_attr_var.var;
             const struct attr_domain* attr_domain = get_attr_domain(config, current_variable_id);
-            if(splitable_attr_domain(attr_domain)
+            if(splitable_attr_domain(config, attr_domain)
                 && !is_attr_used_in_parent_lnode(current_variable_id, lnode)) {
                 size_t current_count = count_attr_in_lnode(current_variable_id, lnode);
                 if(current_count > highest_count) {
@@ -1777,6 +1779,7 @@ struct config* make_config(uint64_t lnode_max_cap, uint64_t partition_min_size)
     config->attr_to_ids = NULL;
     config->lnode_max_cap = lnode_max_cap;
     config->partition_min_size = partition_min_size;
+    config->max_domain_for_split = 1000;
     config->string_map_count = 0;
     config->string_maps = NULL;
     config->pred_map = make_pred_map();
@@ -1891,6 +1894,8 @@ void add_attr_domain_s(struct config* config, const char* attr, bool allow_undef
 {
     struct value_bound bound = { .value_type = VALUE_S };
     bound.is_string_bounded = false;
+    bound.smin = 0;
+    bound.smax = (size_t)-1;
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
@@ -1906,6 +1911,8 @@ void add_attr_domain_bounded_s(struct config* config, const char* attr, bool all
 void add_attr_domain_il(struct config* config, const char* attr, bool allow_undefined)
 {
     struct value_bound bound = { .value_type = VALUE_IL };
+    bound.ilmin = INT64_MIN;
+    bound.ilmax = INT64_MAX;
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
