@@ -103,7 +103,7 @@ size_t read_betree_exprs(struct betree* tree)
     size_t count = 0;
     while(fgets(line, sizeof(line), f)) {
         if(!betree_insert(tree, count, line)) {
-            printf("Can't insert expr: %s\n", line);
+            printf("Can't insert expr %zu: %s\n", count, line);
             abort();
         }
         count++;

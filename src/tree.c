@@ -165,13 +165,67 @@ bool is_event_enclosed(const struct config* config, const struct pred** preds, c
         case VALUE_B:
             return cdir->bound.bmin <= pred->value.bvalue && cdir->bound.bmax >= pred->value.bvalue;
         case VALUE_I:
-            return cdir->bound.imin <= pred->value.ivalue && cdir->bound.imax >= pred->value.ivalue;
+            if(pred->value.value_type == VALUE_I) {
+                return cdir->bound.imin <= pred->value.ivalue && cdir->bound.imax >= pred->value.ivalue;
+            }
+            else if(pred->value.value_type == VALUE_IL) {
+                if(pred->value.ilvalue.count != 0) {
+                    return cdir->bound.imin <= pred->value.ilvalue.integers[0] && cdir->bound.imax >= pred->value.ilvalue.integers[pred->value.ilvalue.count-1];
+                }
+                else {
+                    return true;
+                }
+            }
+            else {
+                abort();
+            }
         case VALUE_F:
             return cdir->bound.fmin <= pred->value.fvalue && cdir->bound.fmax >= pred->value.fvalue;
         case VALUE_S:
-            return cdir->bound.smin <= pred->value.svalue.str && cdir->bound.smax >= pred->value.svalue.str;
+            if(pred->value.value_type == VALUE_S) {
+                return cdir->bound.smin <= pred->value.svalue.str && cdir->bound.smax >= pred->value.svalue.str;
+            }
+            else if(pred->value.value_type == VALUE_SL) {
+                if(pred->value.slvalue.count != 0) {
+                    return cdir->bound.smin <= pred->value.slvalue.strings[0].str && cdir->bound.smax >= pred->value.slvalue.strings[pred->value.slvalue.count-1].str;
+                }
+                else {
+                    return true;
+                }
+            }
+            else {
+                abort();
+            }
         case VALUE_IL:
+            if(pred->value.value_type == VALUE_I) {
+                return cdir->bound.ilmin <= pred->value.ivalue && cdir->bound.ilmax >= pred->value.ivalue;
+            }
+            else if(pred->value.value_type == VALUE_IL) {
+                if(pred->value.ilvalue.count != 0) {
+                    return cdir->bound.ilmin <= pred->value.ilvalue.integers[0] && cdir->bound.ilmax >= pred->value.ilvalue.integers[pred->value.ilvalue.count-1];
+                }
+                else {
+                    return true;
+                }
+            }
+            else {
+                abort();
+            }
         case VALUE_SL:
+            if(pred->value.value_type == VALUE_S) {
+                return cdir->bound.slmin <= pred->value.svalue.str && cdir->bound.slmax >= pred->value.svalue.str;
+            }
+            else if(pred->value.value_type == VALUE_SL) {
+                if(pred->value.slvalue.count != 0) {
+                    return cdir->bound.slmin <= pred->value.slvalue.strings[0].str && cdir->bound.slmax >= pred->value.slvalue.strings[pred->value.slvalue.count-1].str;
+                }
+                else {
+                    return true;
+                }
+            }
+            else {
+                abort();
+            }
         case VALUE_SEGMENTS:
         case VALUE_FREQUENCY:
             return true;
@@ -217,16 +271,10 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
                     return cdir->bound.smin <= bound.smin && cdir->bound.smax >= bound.smax;
                 }
                 case(VALUE_IL): {
-                    fprintf(stderr,
-                        "%s a integer list value cdir should never happen for now\n",
-                        __func__);
-                    abort();
+                    return cdir->bound.ilmin <= bound.ilmin && cdir->bound.ilmax >= bound.ilmax;
                 }
                 case(VALUE_SL): {
-                    fprintf(stderr,
-                        "%s a string list value cdir should never happen for now\n",
-                        __func__);
-                    abort();
+                    return cdir->bound.slmin <= bound.slmin && cdir->bound.slmax >= bound.slmax;
                 }
                 case(VALUE_SEGMENTS): {
                     fprintf(
@@ -257,7 +305,7 @@ void search_cdir(const struct config* config,
     match_be_tree(config, preds, cdir->cnode, report, memoize, undefined);
     if(is_event_enclosed(config, preds, cdir->lchild))
         search_cdir(config, preds, cdir->lchild, report, memoize, undefined);
-    else if(is_event_enclosed(config, preds, cdir->rchild))
+    if(is_event_enclosed(config, preds, cdir->rchild))
         search_cdir(config, preds, cdir->rchild, report, memoize, undefined);
 }
 
@@ -702,7 +750,9 @@ bool splitable_attr_domain(const struct attr_domain* attr_domain)
             return attr_domain->bound.is_string_bounded;
         case VALUE_FREQUENCY:
         case VALUE_IL:
+            return attr_domain->bound.is_integer_list_bounded;
         case VALUE_SL:
+            return attr_domain->bound.is_string_list_bounded;
         case VALUE_SEGMENTS:
             return false;
         default:
@@ -810,12 +860,10 @@ bool is_atomic(const struct cdir* cdir)
             return cdir->bound.smin == cdir->bound.smax;
         }
         case(VALUE_IL): {
-            fprintf(stderr, "%s a integer list value cdir should never happen for now\n", __func__);
-            abort();
+            return cdir->bound.ilmin == cdir->bound.ilmax;
         }
         case(VALUE_SL): {
-            fprintf(stderr, "%s a string list value cdir should never happen for now\n", __func__);
-            abort();
+            return cdir->bound.slmin == cdir->bound.slmax;
         }
         case(VALUE_SEGMENTS): {
             fprintf(stderr, "%s a segments value cdir should never happen for now\n", __func__);
@@ -958,12 +1006,56 @@ struct value_bounds split_value_bound(struct value_bound bound)
             break;
         }
         case(VALUE_IL): {
-            fprintf(stderr, "%s a integer list value cdir should never happen for now\n", __func__);
-            abort();
+            lbound.is_integer_list_bounded = true;
+            rbound.is_integer_list_bounded = true;
+            int64_t start = bound.ilmin, end = bound.ilmax;
+            lbound.ilmin = start;
+            rbound.ilmax = end;
+            if(llabs(end - start) > 2) {
+                int64_t middle = start + (end - start) / 2;
+                lbound.ilmax = middle;
+                rbound.ilmin = middle;
+            }
+            else if(llabs(end - start) == 2) {
+                int64_t middle = start + 1;
+                lbound.ilmax = middle;
+                rbound.ilmin = middle;
+            }
+            else if(llabs(end - start) == 1) {
+                lbound.ilmax = start;
+                rbound.ilmin = end;
+            }
+            else {
+                fprintf(stderr, "%s trying to split an unsplitable bound\n", __func__);
+                abort();
+            }
+            break;
         }
         case(VALUE_SL): {
-            fprintf(stderr, "%s a string list value cdir should never happen for now\n", __func__);
-            abort();
+            lbound.is_string_list_bounded = true;
+            rbound.is_string_list_bounded = true;
+            size_t start = bound.slmin, end = bound.slmax;
+            lbound.slmin = start;
+            rbound.slmax = end;
+            if(end - start > 2) {
+                size_t middle = start + (end - start) / 2;
+                lbound.slmax = middle;
+                rbound.slmin = middle;
+            }
+            else if(end - start == 2) {
+                int64_t middle = start + 1;
+                lbound.slmax = middle;
+                rbound.slmin = middle;
+            }
+            else if(end - start == 1) {
+                lbound.slmax = start;
+                rbound.slmin = end;
+            }
+            else {
+                fprintf(stderr, "%s trying to split an unsplitable bound\n", __func__);
+                abort();
+            }
+            break;
         }
         case(VALUE_SEGMENTS): {
             fprintf(stderr, "%s a segment value cdir should never happen for now\n", __func__);
@@ -1817,9 +1909,27 @@ void add_attr_domain_il(struct config* config, const char* attr, bool allow_unde
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
+void add_attr_domain_bounded_il(struct config* config, const char* attr, int64_t min, int64_t max, bool allow_undefined)
+{
+    struct value_bound bound = { .value_type = VALUE_IL };
+    bound.is_integer_list_bounded = true;
+    bound.ilmin = min;
+    bound.ilmax = max;
+    add_attr_domain(config, attr, bound, allow_undefined);
+}
+
 void add_attr_domain_sl(struct config* config, const char* attr, bool allow_undefined)
 {
     struct value_bound bound = { .value_type = VALUE_SL };
+    add_attr_domain(config, attr, bound, allow_undefined);
+}
+
+void add_attr_domain_bounded_sl(struct config* config, const char* attr, bool allow_undefined, size_t max)
+{
+    struct value_bound bound = { .value_type = VALUE_SL };
+    bound.is_string_list_bounded = true;
+    bound.slmin = 0;
+    bound.slmax = max - 1;
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
@@ -2074,6 +2184,25 @@ void betree_search_with_event(const struct config* config,
     free(preds);
 }
 
+void sort_event_lists(struct event* event)
+{
+    for(size_t i = 0; i < event->pred_count; i++) {
+        struct pred* pred = event->preds[i];
+        if(pred->value.value_type == VALUE_IL) {
+            qsort(pred->value.ilvalue.integers,
+              pred->value.ilvalue.count,
+              sizeof(*pred->value.ilvalue.integers),
+              icmpfunc);
+        }
+        else if(pred->value.value_type == VALUE_SL) {
+            qsort(pred->value.slvalue.strings,
+              pred->value.slvalue.count,
+              sizeof(*pred->value.slvalue.strings),
+              scmpfunc);
+        }
+    }
+}
+
 struct event* make_event_from_string(const struct config* config, const char* event_str)
 {
     struct event* event;
@@ -2086,6 +2215,7 @@ struct event* make_event_from_string(const struct config* config, const char* ev
         fprintf(stderr, "Failed to validate event: %s\n", event_str);
         abort();
     }
+    sort_event_lists(event);
     return event;
 }
 

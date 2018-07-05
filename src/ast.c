@@ -1102,9 +1102,291 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
     bool was_touched_value = *was_touched;
     switch(node->type) {
         case AST_TYPE_SPECIAL_EXPR: 
-        case AST_TYPE_LIST_EXPR:
-        case AST_TYPE_SET_EXPR:
             return;
+        case AST_TYPE_LIST_EXPR:
+            if(domain->attr_var.var != node->list_expr.attr_var.var) {
+                return;
+            }
+            if(!list_value_matches(node->list_expr.value.value_type, domain->bound.value_type)) {
+                invalid_expr("Domain and expr type mismatch");
+                return;
+            }
+            switch(node->list_expr.op) {
+                case AST_LIST_ONE_OF:
+                case AST_LIST_ALL_OF:
+                    if(domain->attr_var.var != node->list_expr.attr_var.var) {
+                        return;
+                    }
+                    if(domain->bound.value_type == VALUE_IL && node->list_expr.value.value_type == AST_LIST_VALUE_INTEGER_LIST) {
+                        if(is_reversed) {
+                            bound->ilmin = domain->bound.ilmin;
+                            bound->ilmax = domain->bound.ilmax;
+                        }
+                        else {
+                            if(node->list_expr.value.integer_list_value.count != 0) {
+                                bound->ilmin = d64min(bound->ilmin, node->list_expr.value.integer_list_value.integers[0]);
+                                bound->ilmax = d64max(bound->ilmax, node->list_expr.value.integer_list_value.integers[node->list_expr.value.integer_list_value.count-1]);
+                            }
+                            else {
+                                return;
+                            }
+                        }
+                        *was_touched = true;
+                        return;
+                    }
+                    else if(domain->bound.value_type == VALUE_SL && node->list_expr.value.value_type == AST_LIST_VALUE_STRING_LIST) {
+                        if(is_reversed) {
+                            bound->slmin = domain->bound.slmin;
+                            bound->slmax = domain->bound.slmax;
+                        }
+                        else {
+                            if(node->list_expr.value.string_list_value.count != 0) {
+                                bound->slmin = smin(bound->slmin, node->list_expr.value.string_list_value.strings[0].str);
+                                bound->slmax = smax(bound->slmax, node->list_expr.value.string_list_value.strings[node->list_expr.value.string_list_value.count-1].str);
+                            }
+                            else {
+                                return;
+                            }
+                        }
+                        *was_touched = true;
+                        return;
+                    }
+                    else {
+                        invalid_expr("Domain and expr type mismatch");
+                        return;
+                    }
+                case AST_LIST_NONE_OF:
+                    if(domain->bound.value_type == VALUE_IL && node->list_expr.value.value_type == AST_LIST_VALUE_INTEGER_LIST) {
+                        if(is_reversed) {
+                            if(node->list_expr.value.integer_list_value.count != 0) {
+                                bound->ilmin = d64min(bound->ilmin, node->list_expr.value.integer_list_value.integers[0]);
+                                bound->ilmax = d64max(bound->ilmax, node->list_expr.value.integer_list_value.integers[node->list_expr.value.integer_list_value.count-1]);
+                            }
+                            else {
+                                return;
+                            }
+                        }
+                        else {
+                            bound->ilmin = domain->bound.ilmin;
+                            bound->ilmax = domain->bound.ilmax;
+                        }
+                        *was_touched = true;
+                        return;
+                    }
+                    else if(domain->bound.value_type == VALUE_SL && node->list_expr.value.value_type == AST_LIST_VALUE_STRING_LIST) {
+                        if(is_reversed) {
+                            if(node->list_expr.value.string_list_value.count != 0) {
+                                bound->slmin = smin(bound->slmin, node->list_expr.value.string_list_value.strings[0].str);
+                                bound->slmax = smax(bound->slmax, node->list_expr.value.string_list_value.strings[node->list_expr.value.string_list_value.count-1].str);
+                            }
+                            else {
+                                return;
+                            }
+                        }
+                        else {
+                            bound->slmin = domain->bound.slmin;
+                            bound->slmax = domain->bound.slmax;
+                        }
+                        *was_touched = true;
+                        return;
+                    }
+                    else {
+                        invalid_expr("Domain and expr type mismatch");
+                        return;
+                    }
+                default:
+                    switch_default_error("Invalid set operation");
+                    return;
+
+            }
+        case AST_TYPE_SET_EXPR:
+            switch(node->set_expr.op) {
+                case AST_SET_IN:
+                    if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
+                        if(domain->attr_var.var != node->set_expr.left_value.variable_value.var) {
+                            return;
+                        }
+                        if(domain->bound.value_type == VALUE_I && node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST) {
+                            if(is_reversed) {
+                                bound->imin = domain->bound.imin;
+                                bound->imax = domain->bound.imax;
+                            }
+                            else {
+                                if(node->set_expr.right_value.integer_list_value.count != 0) {
+                                    bound->imin = d64min(bound->imin, node->set_expr.right_value.integer_list_value.integers[0]);
+                                    bound->imax = d64max(bound->imax, node->set_expr.right_value.integer_list_value.integers[node->set_expr.right_value.integer_list_value.count-1]);
+                                }
+                                else {
+                                    return;
+                                }
+                            }
+                            *was_touched = true;
+                            return;
+                        }
+                        else if(domain->bound.value_type == VALUE_S && node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
+                            if(is_reversed) {
+                                bound->smin = domain->bound.smin;
+                                bound->smax = domain->bound.smax;
+                            }
+                            else {
+                                if(node->set_expr.right_value.string_list_value.count != 0) {
+                                    bound->smin = smin(bound->smin, node->set_expr.right_value.string_list_value.strings[0].str);
+                                    bound->smax = smax(bound->smax, node->set_expr.right_value.string_list_value.strings[node->set_expr.right_value.string_list_value.count-1].str);
+                                }
+                                else {
+                                    return;
+                                }
+                            }
+                            *was_touched = true;
+                            return;
+                        }
+                        else {
+                            invalid_expr("Domain and expr type mismatch");
+                            return;
+                        }
+                    }
+                    else if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
+                        if(domain->attr_var.var != node->set_expr.right_value.variable_value.var) {
+                            return;
+                        }
+                        if(domain->bound.value_type == VALUE_IL && node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_INTEGER) {
+                            if(is_reversed) {
+                                bound->ilmin = domain->bound.ilmin;
+                                bound->ilmax = domain->bound.ilmax;
+                            }
+                            else {
+                                if(node->set_expr.right_value.integer_list_value.count != 0) {
+                                    bound->ilmin = d64min(bound->ilmin, node->set_expr.left_value.integer_value);
+                                    bound->ilmax = d64max(bound->ilmax, node->set_expr.left_value.integer_value);
+                                }
+                                else {
+                                    return;
+                                }
+                            }
+                            *was_touched = true;
+                            return;
+                        }
+                        else if(domain->bound.value_type == VALUE_SL && node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_STRING) {
+                            if(is_reversed) {
+                                bound->slmin = domain->bound.slmin;
+                                bound->slmax = domain->bound.slmax;
+                            }
+                            else {
+                                if(node->set_expr.right_value.string_list_value.count != 0) {
+                                    bound->slmin = smin(bound->slmin, node->set_expr.left_value.string_value.str);
+                                    bound->slmax = smax(bound->slmax, node->set_expr.left_value.string_value.str);
+                                }
+                                else {
+                                    return;
+                                }
+                            }
+                            *was_touched = true;
+                            return;
+                        }
+                        else {
+                            invalid_expr("Domain and expr type mismatch");
+                            return;
+                        }
+                    }
+                    else {
+                        invalid_expr("Domain and expr type mismatch");
+                        return;
+                    }
+                case AST_SET_NOT_IN:
+                    if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
+                        if(domain->attr_var.var != node->set_expr.left_value.variable_value.var) {
+                            return;
+                        }
+                        if(domain->bound.value_type == VALUE_I && node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST) {
+                            if(is_reversed) {
+                                if(node->set_expr.right_value.integer_list_value.count != 0) {
+                                    bound->imin = d64min(bound->imin, node->set_expr.right_value.integer_list_value.integers[0]);
+                                    bound->imax = d64max(bound->imax, node->set_expr.right_value.integer_list_value.integers[node->set_expr.right_value.integer_list_value.count-1]);
+                                }
+                                else {
+                                    return;
+                                }
+                            }
+                            else {
+                                bound->imin = domain->bound.imin;
+                                bound->imax = domain->bound.imax;
+                            }
+                            *was_touched = true;
+                            return;
+                        }
+                        else if(domain->bound.value_type == VALUE_S && node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
+                            if(is_reversed) {
+                                if(node->set_expr.right_value.string_list_value.count != 0) {
+                                    bound->smin = smin(bound->smin, node->set_expr.right_value.string_list_value.strings[0].str);
+                                    bound->smax = smax(bound->smax, node->set_expr.right_value.string_list_value.strings[node->set_expr.right_value.string_list_value.count-1].str);
+                                }
+                                else {
+                                    return;
+                                }
+                            }
+                            else {
+                                bound->smin = domain->bound.smin;
+                                bound->smax = domain->bound.smax;
+                            }
+                            *was_touched = true;
+                            return;
+                        }
+                        else {
+                            invalid_expr("Domain and expr type mismatch");
+                            return;
+                        }
+                    }
+                    else if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
+                        if(domain->attr_var.var != node->set_expr.right_value.variable_value.var) {
+                            return;
+                        }
+                        if(domain->bound.value_type == VALUE_IL && node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_INTEGER) {
+                            if(is_reversed) {
+                                if(node->set_expr.right_value.integer_list_value.count != 0) {
+                                    bound->ilmin = d64min(bound->ilmin, node->set_expr.left_value.integer_value);
+                                    bound->ilmax = d64max(bound->ilmax, node->set_expr.left_value.integer_value);
+                                }
+                                else {
+                                    return;
+                                }
+                            }
+                            else {
+                                bound->ilmin = domain->bound.ilmin;
+                                bound->ilmax = domain->bound.ilmax;
+                            }
+                            *was_touched = true;
+                            return;
+                        }
+                        else if(domain->bound.value_type == VALUE_SL && node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_STRING) {
+                            if(is_reversed) {
+                                if(node->set_expr.right_value.string_list_value.count != 0) {
+                                    bound->slmin = smin(bound->slmin, node->set_expr.left_value.string_value.str);
+                                    bound->slmax = smax(bound->slmax, node->set_expr.left_value.string_value.str);
+                                }
+                                else {
+                                    return;
+                                }
+                            }
+                            else {
+                                bound->slmin = domain->bound.slmin;
+                                bound->slmax = domain->bound.slmax;
+                            }
+                            *was_touched = true;
+                            return;
+                        }
+                        else {
+                            invalid_expr("Domain and expr type mismatch");
+                            return;
+                        }
+                    }
+                    else {
+                        invalid_expr("Domain and expr type mismatch");
+                        return;
+                    }
+                default:
+                    switch_default_error("Invalid set operation");
+                    return;
+            }
         case AST_TYPE_BOOL_EXPR:
             switch(node->bool_expr.op) {
                 case AST_BOOL_VARIABLE:
@@ -1387,9 +1669,32 @@ struct value_bound get_variable_bound(const struct attr_domain* domain, const st
                 bound.smax = domain->bound.smin;
                 break;
             }
-            __attribute__ ((fallthrough));
+            else {
+                fprintf(stderr, "Invalid domain type to get a bound\n");
+                abort();
+            }
         case VALUE_IL:
+            if(domain->bound.is_integer_list_bounded) {
+                bound.value_type = VALUE_IL;
+                bound.ilmin = domain->bound.ilmax;
+                bound.ilmax = domain->bound.ilmin;
+                break;
+            }
+            else {
+                fprintf(stderr, "Invalid domain type to get a bound\n");
+                abort();
+            }
         case VALUE_SL:
+            if(domain->bound.is_string_list_bounded) {
+                bound.value_type = VALUE_SL;
+                bound.slmin = domain->bound.slmax;
+                bound.slmax = domain->bound.slmin;
+                break;
+            }
+            else {
+                fprintf(stderr, "Invalid domain type to get a bound\n");
+                abort();
+            }
         case VALUE_SEGMENTS:
         case VALUE_FREQUENCY:
         default:
@@ -1416,7 +1721,13 @@ struct value_bound get_variable_bound(const struct attr_domain* domain, const st
                 bound.smax = domain->bound.smax;
                 break;
             case VALUE_IL:
+                bound.ilmin = domain->bound.ilmin;
+                bound.ilmax = domain->bound.ilmax;
+                break;
             case VALUE_SL:
+                bound.slmin = domain->bound.slmin;
+                bound.slmax = domain->bound.slmax;
+                break;
             case VALUE_SEGMENTS:
             case VALUE_FREQUENCY:
             default:
@@ -2048,37 +2359,83 @@ bool all_variables_in_config(const struct config* config, const struct ast_node*
     }
 }
 
-bool str_valid(const struct config* config, const char* attr, const char* string)
+static size_t get_attr_string_bound(const struct config* config, const char* attr)
 {
-    size_t bound = 0;
     for(size_t i = 0; i < config->attr_domain_count; i++) {
         if(strcmp(attr, config->attr_domains[i]->attr_var.attr) == 0) {
-            betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_TYPE_MISMATCH, config->attr_domains[i]->bound.value_type == VALUE_S);
+            betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_TYPE_MISMATCH, 
+              config->attr_domains[i]->bound.value_type == VALUE_S
+              || config->attr_domains[i]->bound.value_type == VALUE_SL);
             if(config->attr_domains[i]->bound.is_string_bounded == false) {
-                return true;
+                return (size_t)-1;
             }
             else {
-                bound = config->attr_domains[i]->bound.smax;
-                break;
+                return config->attr_domains[i]->bound.smax;
             }
         }
     }
-    if(config->string_map_count == 0) {
+    return (size_t)-1;
+}
+
+static struct string_map* get_string_map_for_attr(const struct config* config, const char* attr)
+{
+    for(size_t i = 0; i < config->string_map_count; i++) {
+        struct string_map* string_map = &config->string_maps[i];
+        if(strcmp(attr, string_map->attr_var.attr) == 0) {
+            return string_map;
+        }
+    }
+    return NULL;
+}
+
+static bool str_valid(const struct config* config, const char* attr, const char* string)
+{
+    size_t bound = get_attr_string_bound(config, attr);
+    if(bound == (size_t)-1) {
         return true;
     }
-    for(size_t i = 0; i < config->string_map_count; i++) {
-        struct string_map string_map = config->string_maps[i];
-        if(strcmp(attr, string_map.attr_var.attr) == 0) {
-            size_t j;
-            for(j = 0; j < string_map.string_value_count; j++) {
-                if(strcmp(string, string_map.string_values[j]) == 0) {
-                    return true;
-                }
+    struct string_map* string_map = get_string_map_for_attr(config, attr);
+    size_t space_left = string_map == NULL ? bound : bound - string_map->string_value_count + 1;
+    if(string_map != NULL) {
+        for(size_t j = 0; j < string_map->string_value_count; j++) {
+            if(strcmp(string, string_map->string_values[j]) == 0) {
+                return true;
             }
-            return j <= bound;
         }
     }
-    return false;
+    bool within_bound = space_left > 0;
+    if(within_bound == false) {
+        fprintf(stderr, "For attr '%s', string '%s' could not fit within the bound %zu\n", attr, string, bound);
+    }
+    return within_bound;
+}
+
+static bool strs_valid(const struct config* config, const char* attr, const struct string_list_value* strings)
+{
+    size_t bound = get_attr_string_bound(config, attr);
+    if(bound == (size_t)-1) {
+        return true;
+    }
+    struct string_map* string_map = get_string_map_for_attr(config, attr);
+    size_t space_left = string_map == NULL ? bound : bound - string_map->string_value_count + 1;
+    size_t found = 0;
+    if(string_map != NULL) {
+        for(size_t i = 0; i < strings->count; i++) {
+            const char* string = strings->strings[i].string;
+            for(size_t j = 0; j < string_map->string_value_count; j++) {
+                if(strcmp(string, string_map->string_values[j]) == 0) {
+                    found++;
+                    break;
+                }
+            }
+        }
+    }
+    size_t needed = strings->count - found;
+    bool within_bound = space_left >= needed;
+    if(within_bound == false) {
+        fprintf(stderr, "For attr '%s', not all strings could not fit within the bound %zu\n", attr, bound);
+    }
+    return within_bound;
 }
 
 bool all_bounded_strings_valid(const struct config* config, const struct ast_node* node)
@@ -2094,42 +2451,36 @@ bool all_bounded_strings_valid(const struct config* config, const struct ast_nod
         case AST_TYPE_BOOL_EXPR:
             switch(node->bool_expr.op) {
                 case AST_BOOL_OR:
-                case AST_BOOL_AND:
-                    return all_variables_in_config(config, node->bool_expr.binary.lhs) && all_variables_in_config(config, node->bool_expr.binary.rhs);
+                case AST_BOOL_AND: {
+                    bool lhs = all_bounded_strings_valid(config, node->bool_expr.binary.lhs);
+                    if(lhs == false) {
+                        return false;
+                    }
+                    return all_bounded_strings_valid(config, node->bool_expr.binary.rhs);
+                }
                 case AST_BOOL_NOT:
-                    return all_variables_in_config(config, node->bool_expr.unary.expr);
+                    return all_bounded_strings_valid(config, node->bool_expr.unary.expr);
                 case AST_BOOL_VARIABLE:
-                    return var_exists(config, node->bool_expr.variable.attr);
+                    return true;
                 default:
                     switch_default_error("Invalid bool expr op");
                     return false;
             }
         case AST_TYPE_SET_EXPR:
-            if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
-                return var_exists(config, node->set_expr.left_value.variable_value.attr);
+            if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE && node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
+                return strs_valid(config, node->set_expr.left_value.variable_value.attr, &node->set_expr.right_value.string_list_value);
             }
-            if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
-                return var_exists(config, node->set_expr.right_value.variable_value.attr);
+            if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE && node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_STRING) {
+                return str_valid(config, node->set_expr.right_value.variable_value.attr, node->set_expr.left_value.string_value.string);
             }
-            fprintf(stderr, "Invalid set expr");
-            abort();
-            return false;
+            return true;
         case AST_TYPE_LIST_EXPR:
-            return var_exists(config, node->list_expr.attr_var.attr);
-        case AST_TYPE_SPECIAL_EXPR:
-            switch(node->special_expr.type) {
-                case AST_SPECIAL_FREQUENCY:
-                    return var_exists(config, node->special_expr.frequency.attr_var.attr);
-                case AST_SPECIAL_SEGMENT:
-                    return var_exists(config, node->special_expr.segment.attr_var.attr);
-                case AST_SPECIAL_GEO:
-                    return true;
-                case AST_SPECIAL_STRING:
-                    return var_exists(config, node->special_expr.string.attr_var.attr);
-                default:
-                    switch_default_error("Invalid special expr type");
-                    return false;
+            if(node->list_expr.value.value_type == AST_LIST_VALUE_STRING_LIST) {
+                return strs_valid(config, node->list_expr.attr_var.attr, &node->list_expr.value.string_list_value);
             }
+            return true;
+        case AST_TYPE_SPECIAL_EXPR:
+            return true;
         default:
             switch_default_error("Invalid node type");
             return false;

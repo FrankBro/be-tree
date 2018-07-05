@@ -28,6 +28,22 @@ struct value_bound get_integer_events_bound(betree_var_t var, struct event** eve
     return bound;
 }
 
+struct value_bound get_integer_exprs_bound(const struct attr_domain* domain, struct ast_node** exprs, size_t expr_count) 
+{
+    struct value_bound bound = { .imin = INT64_MAX, .imax = INT64_MIN };
+    for(size_t i = 0; i < expr_count; i++) {
+        struct ast_node* expr = exprs[i];
+        struct value_bound expr_bound = get_variable_bound(domain, expr);
+        if(expr_bound.imin < bound.imin) {
+            bound.imin = expr_bound.imin;
+        }
+        if(expr_bound.imax > bound.imax) {
+            bound.imax = expr_bound.imax;
+        }
+    }
+    return bound;
+}
+
 struct value_bound get_integer_list_events_bound(betree_var_t var, struct event** events, size_t event_count) 
 {
     struct value_bound bound = { .is_integer_list_bounded = true, .ilmin = INT64_MAX, .ilmax = INT64_MIN };
@@ -73,6 +89,22 @@ struct value_bound get_float_events_bound(betree_var_t var, struct event** event
     return bound;
 }
 
+struct value_bound get_float_exprs_bound(const struct attr_domain* domain, struct ast_node** exprs, size_t expr_count) 
+{
+    struct value_bound bound = { .fmin = DBL_MAX, .fmax = -DBL_MAX };
+    for(size_t i = 0; i < expr_count; i++) {
+        struct ast_node* expr = exprs[i];
+        struct value_bound expr_bound = get_variable_bound(domain, expr);
+        if(expr_bound.fmin < bound.fmin) {
+            bound.fmin = expr_bound.fmin;
+        }
+        if(expr_bound.fmax > bound.fmax) {
+            bound.fmax = expr_bound.fmax;
+        }
+    }
+    return bound;
+}
+
 struct value_bound get_string_events_bound(betree_var_t var, struct event** events, size_t event_count)
 {
     struct value_bound bound = { .is_string_bounded = true, .smin = -1, .smax = 0 };
@@ -89,6 +121,22 @@ struct value_bound get_string_events_bound(betree_var_t var, struct event** even
                 }
                 break;
             }
+        }
+    }
+    return bound;
+}
+
+struct value_bound get_string_exprs_bound(const struct attr_domain* domain, struct ast_node** exprs, size_t expr_count) 
+{
+    struct value_bound bound = { .is_string_bounded = true, .smin = -1, .smax = 0 };
+    for(size_t i = 0; i < expr_count; i++) {
+        struct ast_node* expr = exprs[i];
+        struct value_bound expr_bound = get_variable_bound(domain, expr);
+        if(expr_bound.smin < bound.smin) {
+            bound.smin = expr_bound.smin;
+        }
+        if(expr_bound.smax > bound.smax) {
+            bound.smax = expr_bound.smax;
         }
     }
     return bound;
@@ -366,6 +414,33 @@ void read_betree_defs(struct betree* tree)
     fclose(f);
 }
 
+size_t extract_exprs_cnode(struct cnode* cnode, struct ast_node** exprs, size_t count);
+
+size_t extract_exprs_cdir(struct cdir* cdir, struct ast_node** exprs, size_t count)
+{
+    count = extract_exprs_cnode(cdir->cnode, exprs, count);
+    if(cdir->lchild != NULL) {
+        count = extract_exprs_cdir(cdir->lchild, exprs, count);
+    }
+    if(cdir->rchild != NULL) {
+        count = extract_exprs_cdir(cdir->rchild, exprs, count);
+    }
+    return count;
+}
+
+size_t extract_exprs_cnode(struct cnode* cnode, struct ast_node** exprs, size_t count)
+{
+    for(size_t i = 0; i < cnode->lnode->sub_count; i++) {
+        exprs[count + i] = (struct ast_node*)cnode->lnode->subs[i]->expr;
+    }
+    count += cnode->lnode->sub_count;
+    if(cnode->pdir != NULL) {
+        for(size_t i = 0; i < cnode->pdir->pnode_count; i++) {
+            count = extract_exprs_cdir(cnode->pdir->pnodes[i]->cdir, exprs,  count);
+        }
+    }
+    return count;
+}
 
 int main(int argc, char** argv)
 {
@@ -375,7 +450,7 @@ int main(int argc, char** argv)
     struct betree* tree = betree_make();
     read_betree_defs(tree);
     
-    read_betree_exprs(tree);
+    size_t expr_count = read_betree_exprs(tree);
 
     extract_operations(tree);
 
@@ -387,19 +462,25 @@ int main(int argc, char** argv)
         parsed_events[i] = make_event_from_string(tree->config, events.events[i]);
     }
 
+    struct ast_node* parsed_exprs[expr_count];
+    extract_exprs_cnode(tree->cnode, parsed_exprs, 0);
+
     for(size_t i = 0; i < tree->config->attr_domain_count; i++) {
         const struct attr_domain* attr_domain = tree->config->attr_domains[i];
         if(attr_domain->bound.value_type == VALUE_I) {
-            struct value_bound bound = get_integer_events_bound(attr_domain->attr_var.var, parsed_events, event_count);
-            printf("    i, %s: [%ld, %ld]\n", attr_domain->attr_var.attr, bound.imin, bound.imax);
+            struct value_bound events_bound = get_integer_events_bound(attr_domain->attr_var.var, parsed_events, event_count);
+            struct value_bound exprs_bound = get_integer_exprs_bound(attr_domain, parsed_exprs, expr_count);
+            printf("    i, %s: expr: [%ld, %ld], event: [%ld, %ld]\n", attr_domain->attr_var.attr, exprs_bound.imin, exprs_bound.imax, events_bound.imin, events_bound.imax);
         }
         else if(attr_domain->bound.value_type == VALUE_F) {
-            struct value_bound bound = get_float_events_bound(attr_domain->attr_var.var, parsed_events, event_count);
-            printf("    f, %s: [%.2f, %.2f]\n", attr_domain->attr_var.attr, bound.fmin, bound.fmax);
+            struct value_bound events_bound = get_float_events_bound(attr_domain->attr_var.var, parsed_events, event_count);
+            struct value_bound exprs_bound = get_float_exprs_bound(attr_domain, parsed_exprs, expr_count);
+            printf("    f, %s: expr: [%.2f, %.2f], event: [%.2f, %.2f]\n", attr_domain->attr_var.attr, exprs_bound.fmin, exprs_bound.fmax, events_bound.fmin, events_bound.fmax);
         }
         else if(attr_domain->bound.value_type == VALUE_S) {
-            struct value_bound bound = get_string_events_bound(attr_domain->attr_var.var, parsed_events, event_count);
-            printf("    s, %s: %zu values\n", attr_domain->attr_var.attr, bound.smax);
+            struct value_bound events_bound = get_string_events_bound(attr_domain->attr_var.var, parsed_events, event_count);
+            struct value_bound exprs_bound = get_string_exprs_bound(attr_domain, parsed_exprs, expr_count);
+            printf("    s, %s: expr: %zu, event: %zu values\n", attr_domain->attr_var.attr, exprs_bound.smax, events_bound.smax);
         }
         else if(attr_domain->bound.value_type == VALUE_IL) {
             struct value_bound bound = get_integer_list_events_bound(attr_domain->attr_var.var, parsed_events, event_count);

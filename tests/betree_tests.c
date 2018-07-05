@@ -995,7 +995,7 @@ int test_splitable_string_domain()
         mu_assert(tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->sub_count == 2, "rchild has 2 subs");
 
         struct report* report = make_report();
-        betree_search(tree, "{\"s\": \"2\"}", report);
+        betree_search(tree, "{\"s\": \"1\"}", report);
 
         mu_assert(report->matched == 1, "matched 1");
         mu_assert(report->evaluated == 3, "only had to evaluate lchild");
@@ -1133,7 +1133,6 @@ int test_bug_cases()
     struct report* report = make_report();
     betree_search(tree, "{\"b\": true, \"i\": 9}", report);
     mu_assert(report->matched == 1, "correct match");
-    write_dot_file_tree(tree);
 
     free_report(report);
     betree_free(tree);
@@ -1151,6 +1150,100 @@ int test_null_report()
     betree_search(tree, "{\"i\": 1}", NULL);
 
     betree_free(tree);
+    return 0;
+}
+
+int test_splitable_integer_list_domain()
+{
+    {
+        struct betree* tree = betree_make();
+        add_attr_domain_bounded_il(tree->config, "il", 0, 10, false);
+
+        mu_assert(betree_insert(tree, 0, "1 in il"), "");
+        mu_assert(betree_insert(tree, 1, "2 in il"), "");
+        mu_assert(betree_insert(tree, 2, "3 in il"), "");
+        mu_assert(betree_insert(tree, 3, "6 in il"), "");
+        mu_assert(betree_insert(tree, 4, "7 in il"), "");
+
+        mu_assert(tree->cnode->lnode->sub_count == 0, "first lnode empty");
+        mu_assert(tree->cnode->pdir->pnode_count == 1, "has a pnode");
+        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 0, "second lnode empty");
+        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->sub_count == 3, "lchild has 3 subs");
+        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->sub_count == 2, "rchild has 2 subs");
+
+        struct report* report = make_report();
+        betree_search(tree, "{\"il\": [2]}", report);
+
+        mu_assert(report->matched == 1, "matched 1");
+        mu_assert(report->evaluated == 3, "only had to evaluate lchild");
+
+        betree_free(tree);
+        free_report(report);
+    }
+
+    return 0;
+}
+
+int test_splitable_string_list_domain()
+{
+    {
+        struct betree* tree = betree_make();
+        add_attr_domain_bounded_sl(tree->config, "sl", false, 5);
+
+        mu_assert(betree_insert(tree, 0, "\"0\" in sl"), "");
+        mu_assert(betree_insert(tree, 1, "\"1\" in sl"), "");
+        mu_assert(betree_insert(tree, 2, "\"2\" in sl"), "");
+        mu_assert(betree_insert(tree, 3, "\"3\" in sl"), "");
+        mu_assert(betree_insert(tree, 4, "\"4\" in sl"), "");
+
+        mu_assert(!betree_insert(tree, 5, "\"5\" in sl"), "can't insert another string value");
+
+        mu_assert(tree->cnode->lnode->sub_count == 0, "first lnode empty");
+        mu_assert(tree->cnode->pdir->pnode_count == 1, "has a pnode");
+        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 0, "second lnode empty");
+        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->sub_count == 3, "lchild has 3 subs");
+        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->sub_count == 2, "rchild has 2 subs");
+
+        struct report* report = make_report();
+        betree_search(tree, "{\"sl\": [\"1\"]}", report);
+
+        mu_assert(report->matched == 1, "matched 1");
+        mu_assert(report->evaluated == 3, "only had to evaluate lchild");
+
+        betree_free(tree);
+        free_report(report);
+    }
+
+    return 0;
+}
+
+int test_set_bug_cdir()
+{
+    struct betree* tree = betree_make();
+    add_attr_domain_bounded_s(tree->config, "s", false, 4);
+
+    mu_assert(betree_insert(tree, 0, "s = \"a\""), "");
+    mu_assert(betree_insert(tree, 1, "s = \"b\""), "");
+    mu_assert(betree_insert(tree, 2, "s = \"c\""), "");
+    mu_assert(betree_insert(tree, 3, "s = \"d\""), "");
+    mu_assert(betree_insert(tree, 4, "s in (\"b\", \"c\", \"d\")"), "");
+
+    mu_assert(tree->cnode->lnode->sub_count == 0, "first lnode empty");
+    mu_assert(tree->cnode->pdir->pnode_count == 1, "has a pnode");
+    mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 0, "second lnode empty");
+    mu_assert(tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->sub_count == 2, "lchild has 2 subs");
+    mu_assert(tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->sub_count == 3, "rchild has 3 subs");
+
+    struct report* report = make_report();
+    betree_search(tree, "{\"s\": \"c\"}", report);
+
+    mu_assert(report->matched == 2, "matched 2");
+    mu_assert(report->evaluated == 3, "only had to evaluate lchild");
+
+    write_dot_file_tree(tree);
+
+    betree_free(tree);
+    free_report(report);
     return 0;
 }
 
@@ -1186,6 +1279,9 @@ int all_tests()
     mu_run_test(test_insert_all);
     mu_run_test(test_bug_cases);
     mu_run_test(test_null_report);
+    mu_run_test(test_splitable_integer_list_domain);
+    mu_run_test(test_splitable_string_list_domain);
+    mu_run_test(test_set_bug_cdir);
 
     return 0;
 }

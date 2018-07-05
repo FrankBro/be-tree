@@ -136,7 +136,9 @@ void add_attr_domain_b(
 void add_attr_domain_s(struct config* config, const char* attr, bool allow_undefined);
 void add_attr_domain_bounded_s(struct config* config, const char* attr, bool allow_undefined, size_t max);
 void add_attr_domain_il(struct config* config, const char* attr, bool allow_undefined);
+void add_attr_domain_bounded_il(struct config* config, const char* attr, int64_t min, int64_t max, bool allow_undefined);
 void add_attr_domain_sl(struct config* config, const char* attr, bool allow_undefined);
+void add_attr_domain_bounded_sl(struct config* config, const char* attr, bool allow_undefined, size_t max);
 void add_attr_domain_segments(struct config* config, const char* attr, bool allow_undefined);
 void add_attr_domain_frequency(struct config* config, const char* attr, bool allow_undefined);
 const struct attr_domain* get_attr_domain(const struct config* config, betree_var_t variable_id);
