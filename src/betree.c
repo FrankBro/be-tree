@@ -192,10 +192,28 @@ void betree_add_domain(struct betree* betree, char* domain)
         }
     }
     else if(strcmp(type, "integer list") == 0) {
-        add_attr_domain_il(config, name, allow_undefined);
+        int64_t min = INT64_MIN, max = INT64_MAX;
+        if(min_str != NULL) {
+            min = strtoll(min_str, NULL, 10);
+        }
+        if(max_str != NULL) {
+            max = strtoll(max_str, NULL, 10);
+        }
+        if(min_str != NULL && max_str != NULL) {
+            add_attr_domain_bounded_il(config, name, min, max, allow_undefined);
+        }
+        else {
+            add_attr_domain_il(config, name, allow_undefined);
+        }
     }
     else if(strcmp(type, "string list") == 0) {
-        add_attr_domain_sl(config, name, allow_undefined);
+        if(min_str != NULL) {
+            size_t max = atoi(min_str);
+            add_attr_domain_bounded_sl(config, name, allow_undefined, max);
+        }
+        else {
+            add_attr_domain_sl(config, name, allow_undefined);
+        }
     }
     else {
         fprintf(stderr, "Unknown definition type");
