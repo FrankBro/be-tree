@@ -1663,38 +1663,20 @@ struct value_bound get_variable_bound(const struct attr_domain* domain, const st
             bound.fmax = domain->bound.fmin;
             break;
         case VALUE_S:
-            if(domain->bound.is_string_bounded) {
-                bound.value_type = VALUE_S;
-                bound.smin = domain->bound.smax;
-                bound.smax = domain->bound.smin;
-                break;
-            }
-            else {
-                fprintf(stderr, "Invalid domain type to get a bound\n");
-                abort();
-            }
+            bound.value_type = VALUE_S;
+            bound.smin = domain->bound.smax;
+            bound.smax = domain->bound.smin;
+            break;
         case VALUE_IL:
-            if(domain->bound.is_integer_list_bounded) {
-                bound.value_type = VALUE_IL;
-                bound.ilmin = domain->bound.ilmax;
-                bound.ilmax = domain->bound.ilmin;
-                break;
-            }
-            else {
-                fprintf(stderr, "Invalid domain type to get a bound\n");
-                abort();
-            }
+            bound.value_type = VALUE_IL;
+            bound.ilmin = domain->bound.ilmax;
+            bound.ilmax = domain->bound.ilmin;
+            break;
         case VALUE_SL:
-            if(domain->bound.is_string_list_bounded) {
-                bound.value_type = VALUE_SL;
-                bound.slmin = domain->bound.slmax;
-                bound.slmax = domain->bound.slmin;
-                break;
-            }
-            else {
-                fprintf(stderr, "Invalid domain type to get a bound\n");
-                abort();
-            }
+            bound.value_type = VALUE_SL;
+            bound.slmin = domain->bound.slmax;
+            bound.slmax = domain->bound.slmin;
+            break;
         case VALUE_SEGMENTS:
         case VALUE_FREQUENCY:
         default:
