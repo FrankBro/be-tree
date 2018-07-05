@@ -58,12 +58,12 @@ void print_cdir(const struct config* config, const struct cdir* cdir, uint64_t l
             break;
         }
         case(VALUE_IL): {
-            fprintf(stderr, "%s a integer list value cdir should never happen for now", __func__);
-            abort();
+            printf(" cdir [%" PRIu64 ", %" PRIu64 "]", cdir->bound.ilmin, cdir->bound.ilmax);
+            break;
         }
         case(VALUE_SL): {
-            fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
-            abort();
+            printf(" cdir [%zu , %zu]", cdir->bound.slmin, cdir->bound.slmax);
+            break;
         }
         case(VALUE_SEGMENTS): {
             fprintf(stderr, "%s a segments value cdir should never happen for now", __func__);
@@ -97,8 +97,7 @@ void print_pnode(const struct config* config, const struct pnode* pnode, uint64_
         return;
     }
     print_dashs(level);
-    const char* attr = get_attr_for_id(config, pnode->attr_var.var);
-    printf(" pnode %s (%f)", attr, pnode->score);
+    printf(" pnode %s (%f)", pnode->attr_var.attr, pnode->score);
     if(pnode->cdir != NULL) {
         printf("\n");
         print_cdir(config, pnode->cdir, level + 1);
@@ -173,8 +172,7 @@ const char* get_path_pnode(const struct config* config, const struct pnode* pnod
 {
     char* name;
     const char* parent_path = get_path_cnode(config, pnode->parent->parent);
-    const char* attr = get_attr_for_id(config, pnode->attr_var.var);
-    const char* escaped_attr = escape_name(attr);
+    const char* escaped_attr = escape_name(pnode->attr_var.attr);
     asprintf(&name, "%s_%s", parent_path, escaped_attr);
     free((char*)parent_path);
     free((char*)escaped_attr);
@@ -228,12 +226,12 @@ const char* get_path_cdir(const struct config* config, const struct cdir* cdir, 
             break;
         }
         case(VALUE_IL): {
-            fprintf(stderr, "%s a integer list value cdir should never happen for now", __func__);
-            abort();
+            asprintf(&name, "%s_%" PRIu64 "_%" PRIu64, parent_path, cdir->bound.ilmin, cdir->bound.ilmax);
+            break;
         }
         case(VALUE_SL): {
-            fprintf(stderr, "%s a string list value cdir should never happen for now", __func__);
-            abort();
+            asprintf(&name, "%s_%zu_%zu", parent_path, cdir->bound.slmin, cdir->bound.slmax);
+            break;
         }
         case(VALUE_SEGMENTS): {
             fprintf(stderr, "%s a segments value cdir should never happen for now", __func__);
@@ -405,16 +403,22 @@ void write_dot_file_cdir_td(FILE* f,
                     break;
                 }
                 case(VALUE_IL): {
-                    fprintf(stderr,
-                        "%s a integer list value cdir should never happen for now",
-                        __func__);
-                    abort();
+                    fprintf(f,
+                        "<td colspan=\"%" PRIu64 "\" port=\"%s\">[%" PRIu64 ", %" PRIu64 "]</td>\n",
+                        colspan,
+                        name,
+                        cdir->bound.ilmin,
+                        cdir->bound.ilmax);
+                    break;
                 }
                 case(VALUE_SL): {
-                    fprintf(stderr,
-                        "%s a string list value cdir should never happen for now",
-                        __func__);
-                    abort();
+                    fprintf(f,
+                        "<td colspan=\"%" PRIu64 "\" port=\"%s\">[%zu, %zu]</td>\n",
+                        colspan,
+                        name,
+                        cdir->bound.slmin,
+                        cdir->bound.slmax);
+                    break;
                 }
                 case(VALUE_SEGMENTS): {
                     fprintf(
@@ -530,12 +534,11 @@ void write_dot_file_pnode_names(
     FILE* f, const struct config* config, const struct pnode* pnode, uint64_t level)
 {
     const char* name = get_name_pnode(config, pnode);
-    const char* attr = get_attr_for_id(config, pnode->attr_var.var);
     print_spaces(f, level);
     fprintf(f,
         "\"%s\" [label=\"%s\", color=cyan2, fillcolor=cyan2, style=filled, shape=record]\n",
         name,
-        attr);
+        pnode->attr_var.attr);
     print_spaces(f, level);
     fprintf(f,
         "\"%s_fake\" [label=\"p-node\", color=cyan2, fillcolor=cyan2, style=filled, shape=circle, "
@@ -553,12 +556,11 @@ void write_dot_file_pdir_inner_names(
     for(size_t i = 0; i < pdir->pnode_count; i++) {
         const struct pnode* pnode = pdir->pnodes[i];
         const char* name = get_name_pnode(config, pnode);
-        const char* attr = get_attr_for_id(config, pnode->attr_var.var);
         print_spaces(f, level);
         fprintf(f,
             "\"%s\" [label=\"%s\", color=cyan2, fillcolor=cyan2, style=filled, shape=record]\n",
             name,
-            attr);
+            pnode->attr_var.attr);
         free((char*)name);
     }
 }
