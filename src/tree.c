@@ -39,12 +39,6 @@ enum short_circuit_e try_short_circuit(const struct short_circuit* short_circuit
 
 bool match_sub(const struct config* config, const struct pred** preds, const struct sub* sub, struct report* report, struct memoize* memoize, const uint64_t* undefined)
 {
-    if(sub == NULL) {
-        return false;
-    }
-    if(report != NULL) {
-        report->evaluated++;
-    }
     enum short_circuit_e short_circuit = try_short_circuit(&sub->short_circuit, undefined);
     if(short_circuit != SHORT_CIRCUIT_NONE) {
         if(report != NULL) {
@@ -95,6 +89,9 @@ void check_sub(const struct config* config,
                 report->matched++;
             }
         }
+    }
+    if(report != NULL) {
+        report->evaluated += lnode->sub_count;
     }
 }
 
