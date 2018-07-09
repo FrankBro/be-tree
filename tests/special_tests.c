@@ -31,11 +31,15 @@ frequency(
     }
     int64_t usec = 1000 * 1000;
     const char* type_value = frequency_type_to_string(type);
-    asprintf(&expr, "%swithin_frequency_cap(\"%s\", \"%s\", %" PRId64 ", %" PRId64 ")", pre, type_value, ns, value, length);
+    if(asprintf(&expr, "%swithin_frequency_cap(\"%s\", \"%s\", %" PRId64 ", %" PRId64 ")", pre, type_value, ns, value, length) < 0) {
+        abort();
+    }
     betree_insert(tree, 1, expr);
     char* event_str;
     const char* cap_type_value = frequency_type_to_string(cap_type);
-    asprintf(&event_str, "{\"now\": %ld, \"frequency_caps\": [[\"%s\", %u, \"%s\", %ld, %d]]}", now, cap_type_value, cap_id, cap_ns, timestamp * usec, cap_value);
+    if(asprintf(&event_str, "{\"now\": %ld, \"frequency_caps\": [[\"%s\", %u, \"%s\", %ld, %d]]}", now, cap_type_value, cap_id, cap_ns, timestamp * usec, cap_value) < 0) {
+        abort();
+    }
     struct report* report = make_report();
     betree_search(tree, event_str, report);
     bool result = report->matched == 1;
@@ -219,10 +223,14 @@ segment(bool has_not, enum segment_function_type func_type,
             break;
     }
     int64_t usec = 1000 * 1000;
-    asprintf(&expr, "%s%s(%s%" PRId64 ", %" PRId64 ")", pre, func, var, id, seconds);
+    if(asprintf(&expr, "%s%s(%s%" PRId64 ", %" PRId64 ")", pre, func, var, id, seconds) < 0) {
+        abort();
+    }
     betree_insert(tree, 1, expr);
     char* event_str;
-    asprintf(&event_str, "{\"now\": 40, \"seg_a\": [[1, %ld]], \"seg_b\": [[1, %ld]], \"segments_with_timestamp\": [[%ld, %ld]]}", 30 * usec, 10 * usec, segment_id, segment_seconds * usec);
+    if(asprintf(&event_str, "{\"now\": 40, \"seg_a\": [[1, %ld]], \"seg_b\": [[1, %ld]], \"segments_with_timestamp\": [[%ld, %ld]]}", 30 * usec, 10 * usec, segment_id, segment_seconds * usec) < 0) {
+        abort();
+    }
     struct report* report = make_report();
     betree_search(tree, event_str, report);
     bool result = report->matched == 1;
@@ -286,10 +294,14 @@ static bool geo(bool has_not, const char* latitude, const char* longitude, const
     else {
         pre = "";
     }
-    asprintf(&expr, "%sgeo_within_radius(%s, %s, %s)", pre, latitude, longitude, radius);
+    if(asprintf(&expr, "%sgeo_within_radius(%s, %s, %s)", pre, latitude, longitude, radius) < 0) {
+        abort();
+    }
     betree_insert(tree, 1, expr);
     char* event_str;
-    asprintf(&event_str, "{\"latitude\": %.1f, \"longitude\": %.1f}", latitude_value, longitude_value);
+    if(asprintf(&event_str, "{\"latitude\": %.1f, \"longitude\": %.1f}", latitude_value, longitude_value) < 0) {
+        abort();
+    }
     struct report* report = make_report();
     betree_search(tree, event_str, report);
     bool result = report->matched == 1;
@@ -327,11 +339,15 @@ static bool contains(bool has_not, const char* attr, bool allow_undefined, const
     else {
         pre = "";
     }
-    asprintf(&expr, "%scontains(%s, \"%s\")", pre, attr, pattern);
+    if(asprintf(&expr, "%scontains(%s, \"%s\")", pre, attr, pattern) < 0) {
+        abort();
+    }
     betree_insert(tree, 1, expr);
     const char* event_attr = allow_undefined ? "a" : attr;
     char* event_str;
-    asprintf(&event_str, "{\"%s\": \"%s\"}", event_attr, value);
+    if(asprintf(&event_str, "{\"%s\": \"%s\"}", event_attr, value) < 0) {
+        abort();
+    }
     struct report* report = make_report();
     betree_search(tree, event_str, report);
     bool result = report->matched == 1;
@@ -379,11 +395,15 @@ static bool starts_with(bool has_not, const char* attr, bool allow_undefined, co
     else {
         pre = "";
     }
-    asprintf(&expr, "%sstarts_with(%s, \"%s\")", pre, attr, pattern);
+    if(asprintf(&expr, "%sstarts_with(%s, \"%s\")", pre, attr, pattern) < 0) {
+        abort();
+    }
     betree_insert(tree, 1, expr);
     const char* event_attr = allow_undefined ? "a" : attr;
     char* event_str;
-    asprintf(&event_str, "{\"%s\": \"%s\"}", event_attr, value);
+    if(asprintf(&event_str, "{\"%s\": \"%s\"}", event_attr, value) < 0) {
+        abort();
+    }
     struct report* report = make_report();
     betree_search(tree, event_str, report);
     bool result = report->matched == 1;
@@ -426,11 +446,15 @@ static bool ends_with(bool has_not, const char* attr, bool allow_undefined, cons
     else {
         pre = "";
     }
-    asprintf(&expr, "%sends_with(%s, \"%s\")", pre, attr, pattern);
+    if(asprintf(&expr, "%sends_with(%s, \"%s\")", pre, attr, pattern) < 0) {
+        abort();
+    }
     betree_insert(tree, 1, expr);
     const char* event_attr = allow_undefined ? "a" : attr;
     char* event_str;
-    asprintf(&event_str, "{\"%s\": \"%s\"}", event_attr, value);
+    if(asprintf(&event_str, "{\"%s\": \"%s\"}", event_attr, value) < 0) {
+        abort();
+    }
     struct report* report = make_report();
     betree_search(tree, event_str, report);
     bool result = report->matched == 1;

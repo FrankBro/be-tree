@@ -361,7 +361,9 @@ int test_large_cdir_split()
 
     for(size_t i = 0; i < 100; i++) {
         char* expr;
-        asprintf(&expr, "a = %zu", i);
+        if(asprintf(&expr, "a = %zu", i) < 0) {
+            abort();
+        }
         mu_assert(betree_insert(tree, i, expr), "");
         free(expr);
     }
@@ -454,7 +456,9 @@ int test_float()
     for(size_t i = 0; i < 4; i++) {
         double value = i < 3 ? 0. : 7.;
         char* expr;
-        asprintf(&expr, "a = %.1f", value);
+        if(asprintf(&expr, "a = %.1f", value) < 0) {
+            abort();
+        }
         mu_assert(betree_insert(tree, i, expr), "");
         free(expr);
     }
@@ -543,7 +547,9 @@ int test_negative_int()
     for(size_t i = 0; i < 4; i++) {
         int64_t value = i < 3 ? -6 : -12;
         char* expr;
-        asprintf(&expr, "a = %ld", value);
+        if(asprintf(&expr, "a = %ld", value) < 0) {
+            abort();
+        }
         mu_assert(betree_insert(tree, i, expr), "");
         free(expr);
     }
@@ -575,7 +581,9 @@ int test_negative_float()
     for(size_t i = 0; i < 4; i++) {
         double value = i < 3 ? -6. : -12.;
         char* expr;
-        asprintf(&expr, "a = %.1f", value);
+        if(asprintf(&expr, "a = %.1f", value) < 0) {
+            abort();
+        }
         mu_assert(betree_insert(tree, i, expr), "");
         free(expr);
     }

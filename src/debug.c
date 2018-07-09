@@ -173,7 +173,9 @@ const char* get_path_pnode(const struct config* config, const struct pnode* pnod
     char* name;
     const char* parent_path = get_path_cnode(config, pnode->parent->parent);
     const char* escaped_attr = escape_name(pnode->attr_var.attr);
-    asprintf(&name, "%s_%s", parent_path, escaped_attr);
+    if(asprintf(&name, "%s_%s", parent_path, escaped_attr) < 0) {
+        abort();
+    }
     free((char*)parent_path);
     free((char*)escaped_attr);
     return name;
@@ -208,29 +210,41 @@ const char* get_path_cdir(const struct config* config, const struct cdir* cdir, 
     char* name;
     switch(cdir->bound.value_type) {
         case(VALUE_I): {
-            asprintf(&name, "%s_%" PRIu64 "_%" PRIu64, parent_path, cdir->bound.imin, cdir->bound.imax);
+            if(asprintf(&name, "%s_%" PRIu64 "_%" PRIu64, parent_path, cdir->bound.imin, cdir->bound.imax) < 0) {
+                abort();
+            }
             break;
         }
         case(VALUE_F): {
-            asprintf(&name, "%s_%.0f_%.0f", parent_path, cdir->bound.fmin, cdir->bound.fmax);
+            if(asprintf(&name, "%s_%.0f_%.0f", parent_path, cdir->bound.fmin, cdir->bound.fmax) < 0) {
+                abort();
+            }
             break;
         }
         case(VALUE_B): {
             const char* min = cdir->bound.bmin ? "true" : "false";
             const char* max = cdir->bound.bmax ? "true" : "false";
-            asprintf(&name, "%s_%s_%s", parent_path, min, max);
+            if(asprintf(&name, "%s_%s_%s", parent_path, min, max) < 0) {
+                abort();
+            }
             break;
         }
         case(VALUE_S): {
-            asprintf(&name, "%s_%zu_%zu", parent_path, cdir->bound.smin, cdir->bound.smax);
+            if(asprintf(&name, "%s_%zu_%zu", parent_path, cdir->bound.smin, cdir->bound.smax) < 0) {
+                abort();
+            }
             break;
         }
         case(VALUE_IL): {
-            asprintf(&name, "%s_%" PRIu64 "_%" PRIu64, parent_path, cdir->bound.ilmin, cdir->bound.ilmax);
+            if(asprintf(&name, "%s_%" PRIu64 "_%" PRIu64, parent_path, cdir->bound.ilmin, cdir->bound.ilmax) < 0) {
+                abort();
+            }
             break;
         }
         case(VALUE_SL): {
-            asprintf(&name, "%s_%zu_%zu", parent_path, cdir->bound.slmin, cdir->bound.slmax);
+            if(asprintf(&name, "%s_%zu_%zu", parent_path, cdir->bound.slmin, cdir->bound.slmax) < 0) {
+                abort();
+            }
             break;
         }
         case(VALUE_SEGMENTS): {
@@ -261,7 +275,9 @@ const char* get_name_pnode(const struct config* config, const struct pnode* pnod
 {
     char* name;
     const char* path = get_path_pnode(config, pnode);
-    asprintf(&name, "pnode_%s", path);
+    if(asprintf(&name, "pnode_%s", path) < 0) {
+        abort();
+    }
     free((char*)path);
     return name;
 }
@@ -270,7 +286,9 @@ const char* get_name_cdir(const struct config* config, const struct cdir* cdir)
 {
     char* name;
     const char* path = get_path_cdir(config, cdir, true);
-    asprintf(&name, "cdir_%s", path);
+    if(asprintf(&name, "cdir_%s", path) < 0) {
+        abort();
+    }
     free((char*)path);
     return name;
 }
@@ -283,7 +301,9 @@ const char* get_name_cnode(const struct config* config, const struct cnode* cnod
     else {
         char* name;
         const char* path = get_path_cnode(config, cnode);
-        asprintf(&name, "cnode_%s", path);
+        if(asprintf(&name, "cnode_%s", path) < 0) {
+            abort();
+        }
         free((char*)path);
         return name;
     }
@@ -293,7 +313,9 @@ const char* get_name_lnode(const struct config* config, const struct lnode* lnod
 {
     char* name;
     const char* path = get_path_cnode(config, lnode->parent);
-    asprintf(&name, "lnode_%s", path);
+    if(asprintf(&name, "lnode_%s", path) < 0) {
+        abort();
+    }
     free((char*)path);
     return name;
 }
@@ -302,7 +324,9 @@ const char* get_name_pdir(const struct config* config, const struct pdir* pdir)
 {
     char* name;
     const char* path = get_path_cnode(config, pdir->parent);
-    asprintf(&name, "pdir_%s", path);
+    if(asprintf(&name, "pdir_%s", path) < 0) {
+        abort();
+    }
     free((char*)path);
     return name;
 }

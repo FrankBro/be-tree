@@ -27,7 +27,9 @@ int test_cdir_split()
 
     for(size_t i = 0; i < COUNT; i++) {
         char* expr;
-        asprintf(&expr, "a = %zu", i);
+        if(asprintf(&expr, "a = %zu", i) < 0) {
+            abort();
+        }
         betree_insert(tree, i + 1, expr);
         free(expr);
     }
@@ -66,7 +68,9 @@ int test_pdir_split()
 
     for(size_t i = 0; i < COUNT; i++) {
         char* name;
-        asprintf(&name, "a%zu", i);
+        if(asprintf(&name, "a%zu", i) < 0) {
+            abort();
+        }
         add_attr_domain_i(tree->config, name, 0, 10, true);
         free(name);
     }
@@ -79,7 +83,9 @@ int test_pdir_split()
 
     for(size_t i = 0; i < COUNT; i++) {
         char* expr;
-        asprintf(&expr, "a%zu = 0", i);
+        if(asprintf(&expr, "a%zu = 0", i) < 0) {
+            abort();
+        }
         betree_insert(tree, i + 1, expr);
         free(expr);
     }

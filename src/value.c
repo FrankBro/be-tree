@@ -33,11 +33,15 @@ const char* integer_list_value_to_string(struct integer_list_value list)
     for(size_t i = 0; i < list.count; i++) {
         char* new_string;
         if(i != 0) {
-            asprintf(&new_string, "%s, %ld", string, list.integers[i]);
+            if(asprintf(&new_string, "%s, %ld", string, list.integers[i]) < 0) {
+                abort();
+            }
             free(string);
         }
         else {
-            asprintf(&new_string, "%ld", list.integers[i]);
+            if(asprintf(&new_string, "%ld", list.integers[i]) < 0) {
+                abort();
+            }
         }
         string = new_string;
     }
@@ -72,11 +76,15 @@ const char* string_list_value_to_string(struct string_list_value list)
     for(size_t i = 0; i < list.count; i++) {
         char* new_string;
         if(i != 0) {
-            asprintf(&new_string, "%s, \"%s\"", string, list.strings[i].string);
+            if(asprintf(&new_string, "%s, \"%s\"", string, list.strings[i].string) < 0) {
+                abort();
+            }
             free(string);
         }
         else {
-            asprintf(&new_string, "\"%s\"", list.strings[i].string);
+            if(asprintf(&new_string, "\"%s\"", list.strings[i].string) < 0) {
+                abort();
+            }
         }
         string = new_string;
     }

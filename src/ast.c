@@ -477,7 +477,7 @@ bool match_special_expr(
                         return false;
                     }
                     else {
-                        uint32_t id;
+                        uint32_t id = 20;
                         switch(special_expr.frequency.type) {
                             case FREQUENCY_TYPE_ADVERTISER:
                             case FREQUENCY_TYPE_ADVERTISERIP:

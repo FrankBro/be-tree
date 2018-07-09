@@ -87,7 +87,7 @@ const struct ast_node* make_binary_expr(size_t attr_min, size_t attr_max, int64_
  
 const struct ast_node* generate_expr(size_t complexity, size_t attr_min, size_t attr_max, int64_t value_min, int64_t value_max)
 {
-    struct ast_node* last_combi_node;
+    struct ast_node* last_combi_node = NULL;
     for(size_t j = 0; j < complexity; j++) {
         struct ast_node* bin_node = (struct ast_node*)make_binary_expr(attr_min, attr_max, value_min, value_max);
 
