@@ -31,3 +31,5 @@ output.txt
 read_disk_log
 
 tags
+domains.txt
+perf.md
