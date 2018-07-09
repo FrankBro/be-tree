@@ -244,18 +244,7 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
     for(size_t i = 0; i < sub->attr_var_count; i++) {
         betree_var_t variable_id = sub->attr_vars[i].var;
         if(variable_id == cdir->attr_var.var) {
-            const struct attr_domain* attr_domain = NULL;
-            for(size_t j = 0; j < config->attr_domain_count; j++) {
-                const struct attr_domain* current_attr_domain = config->attr_domains[j];
-                if(current_attr_domain->attr_var.var == variable_id) {
-                    attr_domain = current_attr_domain;
-                    break;
-                }
-            }
-            if(attr_domain == NULL) {
-                fprintf(stderr, "cannot find variable_id %" PRIu64 " in attr_domains\n", variable_id);
-                abort();
-            }
+            const struct attr_domain* attr_domain = get_attr_domain(config, variable_id);
             struct value_bound bound = get_variable_bound(attr_domain, sub->expr);
             switch(attr_domain->bound.value_type) {
                 case(VALUE_I): {
