@@ -610,13 +610,38 @@ bool match_special_expr(
 
 static bool match_not_all_of_int(struct value variable, struct ast_list_expr list_expr)
 {
-    for(size_t i = 0; i < variable.ilvalue.count; i++) {
-        int64_t left = variable.ilvalue.integers[i];
-        for(size_t j = 0; j < list_expr.value.integer_list_value.count; j++) {
-            int64_t right = list_expr.value.integer_list_value.integers[j];
-            if(left == right) {
-                return true;
-            }
+    int64_t* xs;
+    size_t x_count;
+    int64_t* ys;
+    size_t y_count;
+    if(variable.ilvalue.count < list_expr.value.integer_list_value.count) {
+        xs = variable.ilvalue.integers;
+        x_count = variable.ilvalue.count;
+        ys = list_expr.value.integer_list_value.integers;
+        y_count = list_expr.value.integer_list_value.count;
+    }
+    else {
+        ys = variable.ilvalue.integers;
+        y_count = variable.ilvalue.count;
+        xs = list_expr.value.integer_list_value.integers;
+        x_count = list_expr.value.integer_list_value.count;
+    }
+    size_t i = 0, j = 0;
+    while(i < x_count && j < y_count) {
+        int64_t x = xs[i];
+        int64_t y = ys[j];
+        if(x == y) {
+            return true;
+        }
+        if(y < x) {
+            j++;
+        }
+        else if(x < y) {
+            i++;
+        }
+        else {
+            i++;
+            j++;
         }
     }
     return false;
@@ -1094,6 +1119,46 @@ bool match_node(const struct config* config, const struct pred** preds, const st
     return match_node_inner(config, preds, node, memoize, report);
 }
 
+struct value_bound copy_value_bound(struct value_bound* bound)
+{
+    struct value_bound copy;
+    copy.value_type = bound->value_type;
+    switch(bound->value_type) {
+        case VALUE_B:
+            copy.bmin = bound->bmin;
+            copy.bmax = bound->bmax;
+            break;
+        case VALUE_I:
+            copy.imin = bound->imin;
+            copy.imax = bound->imax;
+            break;
+        case VALUE_F:
+            copy.fmin = bound->fmin;
+            copy.fmax = bound->fmax;
+            break;
+        case VALUE_S:
+            copy.is_string_bounded = bound->is_string_bounded;
+            copy.smin = bound->smin;
+            copy.smax = bound->smax;
+            break;
+        case VALUE_IL:
+            copy.is_integer_list_bounded = bound->is_integer_list_bounded;
+            copy.ilmin = bound->ilmin;
+            copy.ilmax = bound->ilmax;
+            break;
+        case VALUE_SL:
+            copy.is_string_list_bounded = bound->is_string_list_bounded;
+            copy.slmin = bound->slmin;
+            copy.slmax = bound->slmax;
+            break;
+        case VALUE_SEGMENTS:
+        case VALUE_FREQUENCY:
+        default:
+            break;
+    }
+    return copy;
+}
+
 static void get_variable_bound_inner(const struct attr_domain* domain, const struct ast_node* node, struct value_bound* bound, bool is_reversed, bool* was_touched)
 {
     if(node == NULL) {
@@ -1197,7 +1262,6 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                 default:
                     switch_default_error("Invalid set operation");
                     return;
-
             }
         case AST_TYPE_SET_EXPR:
             switch(node->set_expr.op) {
@@ -1414,8 +1478,48 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                 case AST_BOOL_NOT:
                     get_variable_bound_inner(domain, node->bool_expr.unary.expr, bound, !is_reversed, was_touched);
                     return;
-                case AST_BOOL_OR:
+                case AST_BOOL_OR: {
+                    struct value_bound lbound = copy_value_bound(bound);
+                    bool l_touched = false;
+                    struct value_bound rbound = copy_value_bound(bound);
+                    bool r_touched = false;
+                    get_variable_bound_inner(domain, node->bool_expr.binary.lhs, &lbound, is_reversed, &l_touched);
+                    get_variable_bound_inner(domain, node->bool_expr.binary.rhs, &rbound, is_reversed, &r_touched);
+                    if(l_touched == true && r_touched == true) {
+                        *was_touched = true;
+                        switch(bound->value_type) {
+                            case VALUE_B:
+                                bound->bmin = bound->bmin && lbound.bmin && rbound.bmax;
+                                bound->bmax = bound->bmax || lbound.bmax || rbound.bmax;
+                                break;
+                            case VALUE_I:
+                                bound->imin = d64min(bound->imin, d64min(lbound.imin, rbound.imin));
+                                bound->imax = d64max(bound->imax, d64max(lbound.imax, rbound.imax));
+                                break;
+                            case VALUE_F:
+                                bound->fmin = fmin(bound->fmin, fmin(lbound.fmin, rbound.fmin));
+                                bound->fmax = fmax(bound->fmax, fmax(lbound.fmax, rbound.fmax));
+                                break;
+                            case VALUE_S:
+                                bound->smin = smin(bound->smin, smin(lbound.smin, rbound.smin));
+                                bound->smax = smax(bound->smax, smax(lbound.smax, rbound.smax));
+                                break;
+                            case VALUE_IL:
+                                bound->ilmin = d64min(bound->ilmin, d64min(lbound.ilmin, rbound.ilmin));
+                                bound->ilmax = d64max(bound->ilmax, d64max(lbound.ilmax, rbound.ilmax));
+                                break;
+                            case VALUE_SL:
+                                bound->slmin = smin(bound->slmin, smin(lbound.slmin, rbound.slmin));
+                                bound->slmax = smax(bound->slmax, smax(lbound.slmax, rbound.slmax));
+                                break;
+                            case VALUE_SEGMENTS:
+                            case VALUE_FREQUENCY:
+                            default:
+                                break;
+                        }
+                    }
                     return;
+                }
                 case AST_BOOL_AND:
                     get_variable_bound_inner(domain, node->bool_expr.binary.lhs, bound, is_reversed, was_touched);
                     get_variable_bound_inner(domain, node->bool_expr.binary.rhs, bound, is_reversed, was_touched);
