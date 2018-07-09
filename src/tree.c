@@ -22,15 +22,14 @@ enum short_circuit_e {
     SHORT_CIRCUIT_NONE
 };
 
-enum short_circuit_e try_short_circuit(const struct config* config, struct short_circuit short_circuit, const uint64_t* undefined)
+enum short_circuit_e try_short_circuit(const struct short_circuit* short_circuit, const uint64_t* undefined)
 {
-    size_t count = config->attr_domain_count / 64 + 1;
-    for(size_t i = 0; i < count; i++) {
-        bool pass = short_circuit.pass[i] & undefined[i];
+    for(size_t i = 0; i < short_circuit->count; i++) {
+        bool pass = short_circuit->pass[i] & undefined[i];
         if(pass) {
             return SHORT_CIRCUIT_PASS;
         }
-        bool fail = short_circuit.fail[i] & undefined[i];
+        bool fail = short_circuit->fail[i] & undefined[i];
         if(fail) {
             return SHORT_CIRCUIT_FAIL;
         }
@@ -46,7 +45,7 @@ bool match_sub(const struct config* config, const struct pred** preds, const str
     if(report != NULL) {
         report->evaluated++;
     }
-    enum short_circuit_e short_circuit = try_short_circuit(config, sub->short_circuit, undefined);
+    enum short_circuit_e short_circuit = try_short_circuit(&sub->short_circuit, undefined);
     if(short_circuit != SHORT_CIRCUIT_NONE) {
         if(report != NULL) {
             report->shorted++;
@@ -1679,6 +1678,7 @@ struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* ex
     assign_variable_id(config, expr);
     fill_pred(sub, sub->expr);
     size_t count = config->attr_domain_count / 64 + 1;
+    sub->short_circuit.count = count;
     sub->short_circuit.pass = calloc(count, sizeof(*sub->short_circuit.pass));
     sub->short_circuit.fail = calloc(count, sizeof(*sub->short_circuit.fail));
     fill_short_circuit(config, sub);

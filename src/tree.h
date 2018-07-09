@@ -21,6 +21,7 @@ struct pred {
 };
 
 struct short_circuit {
+    size_t count;
     uint64_t* pass;
     uint64_t* fail;
 };
