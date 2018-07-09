@@ -358,24 +358,54 @@ static void invalid_expr(const char* msg)
     abort();
 }
 
-bool integer_in_integer_list(int64_t integer, struct integer_list_value list)
+bool d64binary_search(int64_t arr[], int min, int max, int64_t to_find)
 {
-    for(size_t i = 0; i < list.count; i++) {
-        if(list.integers[i] == integer) {
+   if(max >= min)
+   {
+        int mid = min + (max - min)/2;
+
+        if (arr[mid] == to_find) {
             return true;
         }
-    }
-    return false;
+
+        if (arr[mid] > to_find) {
+            return d64binary_search(arr, min, mid-1, to_find);
+        }
+
+        return d64binary_search(arr, mid+1, max, to_find);
+   }
+
+   return false;
+}
+
+bool sbinary_search(struct string_value arr[], int min, int max, betree_str_t to_find)
+{
+   if(max >= min)
+   {
+        int mid = min + (max - min)/2;
+
+        if (arr[mid].str == to_find) {
+            return true;
+        }
+
+        if (arr[mid].str > to_find) {
+            return sbinary_search(arr, min, mid-1, to_find);
+        }
+
+        return sbinary_search(arr, mid+1, max, to_find);
+   }
+
+   return false;
+}
+
+bool integer_in_integer_list(int64_t integer, struct integer_list_value list)
+{
+    return d64binary_search(list.integers, 0, list.count, integer);
 }
 
 bool string_in_string_list(struct string_value string, struct string_list_value list)
 {
-    for(size_t i = 0; i < list.count; i++) {
-        if(list.strings[i].var == string.var && list.strings[i].str == string.str) {
-            return true;
-        }
-    }
-    return false;
+    return sbinary_search(list.strings, 0, list.count, string.str);
 }
 
 bool numeric_compare_value_matches(enum ast_numeric_compare_value_e a, enum value_e b)
