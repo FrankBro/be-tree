@@ -1240,8 +1240,6 @@ int test_set_bug_cdir()
     mu_assert(report->matched == 2, "matched 2");
     mu_assert(report->evaluated == 3, "only had to evaluate lchild");
 
-    write_dot_file_tree(tree);
-
     betree_free(tree);
     free_report(report);
     return 0;
