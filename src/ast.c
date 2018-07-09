@@ -647,16 +647,40 @@ static bool match_not_all_of_int(struct value variable, struct ast_list_expr lis
     return false;
 }
 
-static bool match_not_all_of_string(const struct config* config, struct value variable, struct ast_list_expr list_expr)
+static bool match_not_all_of_string(struct value variable, struct ast_list_expr list_expr)
 {
-    for(size_t i = 0; i < variable.slvalue.count; i++) {
-        struct string_value left = variable.slvalue.strings[i];
-        for(size_t j = 0; j < list_expr.value.string_list_value.count; j++) {
-            struct string_value right = list_expr.value.string_list_value.strings[j];
-            betree_assert(config->abort_on_error, ERROR_STRING_VAR_MISMATCH, left.var == right.var);
-            if(left.str == right.str) {
-                return true;
-            }
+    struct string_value* xs;
+    size_t x_count;
+    struct string_value* ys;
+    size_t y_count;
+    if(variable.slvalue.count < list_expr.value.integer_list_value.count) {
+        xs = variable.slvalue.strings;
+        x_count = variable.slvalue.count;
+        ys = list_expr.value.string_list_value.strings;
+        y_count = list_expr.value.integer_list_value.count;
+    }
+    else {
+        ys = variable.slvalue.strings;
+        y_count = variable.slvalue.count;
+        xs = list_expr.value.string_list_value.strings;
+        x_count = list_expr.value.integer_list_value.count;
+    }
+    size_t i = 0, j = 0;
+    while(i < x_count && j < y_count) {
+        struct string_value* x = &xs[i];
+        struct string_value* y = &ys[j];
+        if(x->str == y->str) {
+            return true;
+        }
+        if(y->str < x->str) {
+            j++;
+        }
+        else if(x->str < y->str) {
+            i++;
+        }
+        else {
+            i++;
+            j++;
         }
     }
     return false;
@@ -716,7 +740,7 @@ bool match_list_expr(
                     result = match_not_all_of_int(variable, list_expr);
                     break;
                 case AST_LIST_VALUE_STRING_LIST: {
-                    result = match_not_all_of_string(config, variable, list_expr);
+                    result = match_not_all_of_string(variable, list_expr);
                     break;
                 }
                 default: {
