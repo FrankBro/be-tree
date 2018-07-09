@@ -76,27 +76,58 @@ uint64_t score_node(struct ast_node* node)
 {
     switch(node->type) {
         case AST_TYPE_NUMERIC_COMPARE_EXPR:
+            // instant
             return 1;
         case AST_TYPE_EQUALITY_EXPR:
+            // instant
             return 1;
         case AST_TYPE_BOOL_EXPR:
             switch(node->bool_expr.op) {
                 case AST_BOOL_OR:
                 case AST_BOOL_AND:
+                    // lhs + rhs
                     return score_node(node->bool_expr.binary.lhs) + score_node(node->bool_expr.binary.rhs);
                 case AST_BOOL_NOT:
+                    // expr
                     return score_node(node->bool_expr.unary.expr);
                 case AST_BOOL_VARIABLE:
+                    // instant
                     return 1;
                 default:
                     abort();
             }
         case AST_TYPE_SET_EXPR:
+            // depend on constant length
             return 5;
         case AST_TYPE_LIST_EXPR:
-            return 10;
+            // depend on constant and variable length
+            switch(node->list_expr.op) {
+                case AST_LIST_ONE_OF:
+                    return 10;
+                case AST_LIST_NONE_OF:
+                    return 10;
+                case AST_LIST_ALL_OF:
+                    return 10;
+                default:
+                    abort();
+            }
         case AST_TYPE_SPECIAL_EXPR:
-            return 20;
+            switch (node->special_expr.type) {
+                case AST_SPECIAL_FREQUENCY:
+                    // depend on variable length
+                    return 20;
+                case AST_SPECIAL_SEGMENT:
+                    // depend on variable length
+                    return 20;
+                case AST_SPECIAL_GEO:
+                    // instant
+                    return 20;
+                case AST_SPECIAL_STRING:
+                    // depend on constant and variable length
+                    return 20;
+                default:
+                    abort();
+            }
         default:
             abort();
     }
