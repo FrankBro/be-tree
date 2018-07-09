@@ -633,15 +633,11 @@ static bool match_not_all_of_int(struct value variable, struct ast_list_expr lis
         if(x == y) {
             return true;
         }
-        if(y < x) {
+        else if(y < x) {
             j++;
-        }
-        else if(x < y) {
-            i++;
         }
         else {
             i++;
-            j++;
         }
     }
     return false;
@@ -672,15 +668,11 @@ static bool match_not_all_of_string(struct value variable, struct ast_list_expr 
         if(x->str == y->str) {
             return true;
         }
-        if(y->str < x->str) {
+        else if(y->str < x->str) {
             j++;
-        }
-        else if(x->str < y->str) {
-            i++;
         }
         else {
             i++;
-            j++;
         }
     }
     return false;
@@ -688,37 +680,70 @@ static bool match_not_all_of_string(struct value variable, struct ast_list_expr 
 
 static bool match_all_of_int(struct value variable, struct ast_list_expr list_expr)
 {
-    size_t count = 0, target_count = 0;
-    target_count = list_expr.value.integer_list_value.count;
-    for(size_t i = 0; i < target_count; i++) {
-        int64_t right = list_expr.value.integer_list_value.integers[i];
-        for(size_t j = 0; j < variable.ilvalue.count; j++) {
-            int64_t left = variable.ilvalue.integers[j];
-            if(left == right) {
-                count++;
-                break;
+    int64_t* xs = list_expr.value.integer_list_value.integers;
+    size_t x_count = list_expr.value.integer_list_value.count;
+    int64_t* ys = variable.ilvalue.integers;
+    size_t y_count = variable.ilvalue.count;
+    if(x_count <= y_count) {
+        size_t i = 0, j = 0;
+        while(i < y_count && j < x_count) {
+            int64_t x = xs[j];
+            int64_t y = ys[i];
+            if(y < x) {
+                i++;
+            }
+            else if(x == y) {
+                i++;
+                j++;
+            }
+            else {
+                return false;
             }
         }
+        if(j < x_count) {
+            return false;
+        }
+        else {
+            return true;
+        }
     }
-    return count == target_count;
+    else {
+        return false;
+    }
 }
 
-static bool match_all_of_string(const struct config* config, struct value variable, struct ast_list_expr list_expr)
+static bool match_all_of_string(struct value variable, struct ast_list_expr list_expr)
 {
-    size_t count = 0, target_count = 0;
-    target_count = list_expr.value.string_list_value.count;
-    for(size_t i = 0; i < target_count; i++) {
-        struct string_value right = list_expr.value.string_list_value.strings[i];
-        for(size_t j = 0; j < variable.slvalue.count; j++) {
-            struct string_value left = variable.slvalue.strings[j];
-            betree_assert(config->abort_on_error, ERROR_STRING_VAR_MISMATCH, left.var == right.var);
-            if(left.str == right.str) {
-                count++;
-                break;
+    struct string_value* xs = list_expr.value.string_list_value.strings;
+    size_t x_count = list_expr.value.string_list_value.count;
+    struct string_value* ys = variable.slvalue.strings;
+    size_t y_count = variable.slvalue.count;
+    if(x_count <= y_count) {
+        size_t i = 0, j = 0;
+        while(i < y_count && j < x_count) {
+            struct string_value* x = &xs[j];
+            struct string_value* y = &ys[i];
+            if(y->str < x->str) {
+                i++;
+            }
+            else if(x->str == y->str) {
+                i++;
+                j++;
+            }
+            else {
+                return false;
             }
         }
+        if(j < x_count) {
+            return false;
+        }
+        else {
+            return true;
+        }
     }
-    return count == target_count;
+    else {
+        return false;
+    }
 }
 
 bool match_list_expr(
@@ -766,7 +791,7 @@ bool match_list_expr(
                 case AST_LIST_VALUE_INTEGER_LIST:
                     return match_all_of_int(variable, list_expr);
                 case AST_LIST_VALUE_STRING_LIST:
-                    return match_all_of_string(config, variable, list_expr);
+                    return match_all_of_string(variable, list_expr);
                 default: {
                     switch_default_error("Invalid list value type");
                     return false;
