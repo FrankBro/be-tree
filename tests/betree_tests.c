@@ -437,8 +437,10 @@ int test_allow_undefined()
     struct report* report = make_report();
     betree_search(tree, "{\"b\": 0}", report);
 
-    mu_assert(tree->cnode->lnode->sub_count == 1 && tree->cnode->pdir != NULL && tree->cnode->pdir->pnode_count == 1
-            && tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3,
+    mu_assert(tree->cnode->lnode->sub_count == 2 && 
+      tree->cnode->pdir != NULL && 
+      tree->cnode->pdir->pnode_count == 1 && 
+      tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 2,
         "Structure is what is expected");
     mu_assert(report->matched == 1, "Found the sub in the lower lnode");
 

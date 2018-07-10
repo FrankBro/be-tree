@@ -443,13 +443,30 @@ static double get_attr_domain_score(const struct attr_domain* attr_domain)
     return bound_score;
 }
 
-void update_partition_score(const struct config* config, struct pnode* pnode)
+static double get_score(const struct config* config, betree_var_t var, size_t count)
 {
-    size_t count = count_attr_in_cdir(pnode->attr_var.var, pnode->cdir);
-    const struct attr_domain* attr_domain = get_attr_domain(config, pnode->attr_var.var);
+    const struct attr_domain* attr_domain = get_attr_domain(config, var);
     betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_MISSING, attr_domain != NULL);
     double attr_domain_score = get_attr_domain_score(attr_domain);
-    pnode->score = (double)count * attr_domain_score;
+    double score = (double)count * attr_domain_score;
+    return score;
+}
+
+static double get_pnode_score(const struct config* config, struct pnode* pnode)
+{
+    size_t count = count_attr_in_cdir(pnode->attr_var.var, pnode->cdir);
+    return get_score(config, pnode->attr_var.var, count);
+}
+
+static double get_lnode_score(const struct config* config, const struct lnode* lnode, betree_var_t var)
+{
+    size_t count = count_attr_in_lnode(var, lnode);
+    return get_score(config, var, count);
+}
+
+void update_partition_score(const struct config* config, struct pnode* pnode)
+{
+    pnode->score = get_pnode_score(config, pnode);
 }
 
 bool insert_be_tree(
@@ -789,7 +806,8 @@ bool splitable_attr_domain(const struct config* config, const struct attr_domain
 bool get_next_highest_score_unused_attr(
     const struct config* config, const struct lnode* lnode, struct attr_var* attr_var)
 {
-    size_t highest_count = 0;
+    bool found = false;
+    double highest_score = 0;
     struct attr_var highest_attr_var;
     for(size_t i = 0; i < lnode->sub_count; i++) {
         const struct sub* sub = lnode->subs[i];
@@ -799,15 +817,16 @@ bool get_next_highest_score_unused_attr(
             const struct attr_domain* attr_domain = get_attr_domain(config, current_variable_id);
             if(splitable_attr_domain(config, attr_domain)
                 && !is_attr_used_in_parent_lnode(current_variable_id, lnode)) {
-                size_t current_count = count_attr_in_lnode(current_variable_id, lnode);
-                if(current_count > highest_count) {
-                    highest_count = current_count;
+                double current_score = get_lnode_score(config, lnode, current_variable_id);
+                found = true;
+                if(current_score > highest_score) {
+                    highest_score = current_score;
                     highest_attr_var = current_attr_var;
                 }
             }
         }
     }
-    if(highest_count == 0) {
+    if(found == false) {
         return false;
     }
     else {
