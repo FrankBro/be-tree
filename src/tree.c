@@ -176,11 +176,11 @@ bool is_event_enclosed(const struct config* config, const struct pred** preds, c
             }
         case VALUE_IL:
             if(pred->value.value_type == VALUE_I) {
-                return cdir->bound.ilmin <= pred->value.ivalue && cdir->bound.ilmax >= pred->value.ivalue;
+                return cdir->bound.imin <= pred->value.ivalue && cdir->bound.imax >= pred->value.ivalue;
             }
             else if(pred->value.value_type == VALUE_IL) {
                 if(pred->value.ilvalue.count != 0) {
-                    return cdir->bound.ilmin <= pred->value.ilvalue.integers[0] && cdir->bound.ilmax >= pred->value.ilvalue.integers[pred->value.ilvalue.count-1];
+                    return cdir->bound.imin <= pred->value.ilvalue.integers[0] && cdir->bound.imax >= pred->value.ilvalue.integers[pred->value.ilvalue.count-1];
                 }
                 else {
                     return true;
@@ -191,11 +191,11 @@ bool is_event_enclosed(const struct config* config, const struct pred** preds, c
             }
         case VALUE_SL:
             if(pred->value.value_type == VALUE_S) {
-                return cdir->bound.slmin <= pred->value.svalue.str && cdir->bound.slmax >= pred->value.svalue.str;
+                return cdir->bound.smin <= pred->value.svalue.str && cdir->bound.smax >= pred->value.svalue.str;
             }
             else if(pred->value.value_type == VALUE_SL) {
                 if(pred->value.slvalue.count != 0) {
-                    return cdir->bound.slmin <= pred->value.slvalue.strings[0].str && cdir->bound.slmax >= pred->value.slvalue.strings[pred->value.slvalue.count-1].str;
+                    return cdir->bound.smin <= pred->value.slvalue.strings[0].str && cdir->bound.smax >= pred->value.slvalue.strings[pred->value.slvalue.count-1].str;
                 }
                 else {
                     return true;
@@ -225,24 +225,18 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
             const struct attr_domain* attr_domain = get_attr_domain(config, variable_id);
             struct value_bound bound = get_variable_bound(attr_domain, sub->expr);
             switch(attr_domain->bound.value_type) {
-                case(VALUE_I): {
+                case(VALUE_I):
+                case(VALUE_IL):
                     return cdir->bound.imin <= bound.imin && cdir->bound.imax >= bound.imax;
-                }
                 case(VALUE_F): {
                     return cdir->bound.fmin <= bound.fmin && cdir->bound.fmax >= bound.fmax;
                 }
                 case(VALUE_B): {
                     return cdir->bound.bmin <= bound.bmin && cdir->bound.bmax >= bound.bmax;
                 }
-                case(VALUE_S): {
+                case(VALUE_S):
+                case(VALUE_SL):
                     return cdir->bound.smin <= bound.smin && cdir->bound.smax >= bound.smax;
-                }
-                case(VALUE_IL): {
-                    return cdir->bound.ilmin <= bound.ilmin && cdir->bound.ilmax >= bound.ilmax;
-                }
-                case(VALUE_SL): {
-                    return cdir->bound.slmin <= bound.slmin && cdir->bound.slmax >= bound.slmax;
-                }
                 case(VALUE_SEGMENTS): {
                     fprintf(
                         stderr, "%s a segments value cdir should never happen for now\n", __func__);
@@ -381,6 +375,7 @@ static size_t domain_bound_diff(const struct attr_domain* attr_domain)
         case VALUE_B:
             return ((size_t)b->bmax) - ((size_t)b->bmin);
         case VALUE_I:
+        case VALUE_IL:
             if(b->imin == INT64_MIN && b->imax == INT64_MAX) {
                 return SIZE_MAX;
             }
@@ -395,16 +390,8 @@ static size_t domain_bound_diff(const struct attr_domain* attr_domain)
                 return (size_t)(fabs(b->fmax - b->fmin));
             }
         case VALUE_S:
-            return b->smax - b->smin;
-        case VALUE_IL:
-            if(b->ilmin == INT64_MIN && b->ilmax == INT64_MAX) {
-                return SIZE_MAX;
-            }
-            else {
-                return (size_t)(llabs(b->ilmax - b->ilmin));
-            }
         case VALUE_SL:
-            return b->slmax - b->slmin;
+            return b->smax - b->smin;
         case VALUE_SEGMENTS:
         case VALUE_FREQUENCY:
         default:
@@ -760,17 +747,15 @@ bool splitable_attr_domain(const struct config* config, const struct attr_domain
 {
     switch(attr_domain->bound.value_type) {
         case VALUE_I:
+        case VALUE_IL:
             return ((uint64_t)llabs(attr_domain->bound.imax - attr_domain->bound.imin)) < config->max_domain_for_split;
         case VALUE_F:
             return ((uint64_t)fabs(attr_domain->bound.fmax - attr_domain->bound.fmin)) < config->max_domain_for_split;
         case VALUE_B:
             return true;
         case VALUE_S:
-            return (attr_domain->bound.smax - attr_domain->bound.smin) < config->max_domain_for_split;
-        case VALUE_IL:
-            return ((uint64_t)llabs(attr_domain->bound.ilmax - attr_domain->bound.ilmin)) < config->max_domain_for_split;
         case VALUE_SL:
-            return (attr_domain->bound.slmax - attr_domain->bound.slmin) < config->max_domain_for_split;
+            return (attr_domain->bound.smax - attr_domain->bound.smin) < config->max_domain_for_split;
         case VALUE_SEGMENTS:
         case VALUE_FREQUENCY:
             return false;
@@ -868,24 +853,18 @@ void space_partitioning(const struct config* config, struct cnode* cnode)
 bool is_atomic(const struct cdir* cdir)
 {
     switch(cdir->bound.value_type) {
-        case(VALUE_I): {
+        case(VALUE_I):
+        case(VALUE_IL):
             return cdir->bound.imin == cdir->bound.imax;
-        }
         case(VALUE_F): {
             return feq(cdir->bound.fmin, cdir->bound.fmax);
         }
         case(VALUE_B): {
             return cdir->bound.bmin == cdir->bound.bmax;
         }
-        case(VALUE_S): {
+        case(VALUE_S):
+        case(VALUE_SL):
             return cdir->bound.smin == cdir->bound.smax;
-        }
-        case(VALUE_IL): {
-            return cdir->bound.ilmin == cdir->bound.ilmax;
-        }
-        case(VALUE_SL): {
-            return cdir->bound.slmin == cdir->bound.slmax;
-        }
         case(VALUE_SEGMENTS): {
             fprintf(stderr, "%s a segments value cdir should never happen for now\n", __func__);
             abort();
@@ -938,7 +917,8 @@ struct value_bounds split_value_bound(struct value_bound bound)
     struct value_bound lbound = { .value_type = bound.value_type };
     struct value_bound rbound = { .value_type = bound.value_type };
     switch(bound.value_type) {
-        case(VALUE_I): {
+        case(VALUE_I):
+        case(VALUE_IL): {
             int64_t start = bound.imin, end = bound.imax;
             lbound.imin = start;
             rbound.imax = end;
@@ -1000,7 +980,8 @@ struct value_bounds split_value_bound(struct value_bound bound)
             }
             break;
         }
-        case(VALUE_S): {
+        case(VALUE_S):
+        case(VALUE_SL): {
             size_t start = bound.smin, end = bound.smax;
             lbound.smin = start;
             rbound.smax = end;
@@ -1017,54 +998,6 @@ struct value_bounds split_value_bound(struct value_bound bound)
             else if(end - start == 1) {
                 lbound.smax = start;
                 rbound.smin = end;
-            }
-            else {
-                fprintf(stderr, "%s trying to split an unsplitable bound\n", __func__);
-                abort();
-            }
-            break;
-        }
-        case(VALUE_IL): {
-            int64_t start = bound.ilmin, end = bound.ilmax;
-            lbound.ilmin = start;
-            rbound.ilmax = end;
-            if(llabs(end - start) > 2) {
-                int64_t middle = start + (end - start) / 2;
-                lbound.ilmax = middle;
-                rbound.ilmin = middle;
-            }
-            else if(llabs(end - start) == 2) {
-                int64_t middle = start + 1;
-                lbound.ilmax = middle;
-                rbound.ilmin = middle;
-            }
-            else if(llabs(end - start) == 1) {
-                lbound.ilmax = start;
-                rbound.ilmin = end;
-            }
-            else {
-                fprintf(stderr, "%s trying to split an unsplitable bound\n", __func__);
-                abort();
-            }
-            break;
-        }
-        case(VALUE_SL): {
-            size_t start = bound.slmin, end = bound.slmax;
-            lbound.slmin = start;
-            rbound.slmax = end;
-            if(end - start > 2) {
-                size_t middle = start + (end - start) / 2;
-                lbound.slmax = middle;
-                rbound.slmin = middle;
-            }
-            else if(end - start == 2) {
-                int64_t middle = start + 1;
-                lbound.slmax = middle;
-                rbound.slmin = middle;
-            }
-            else if(end - start == 1) {
-                lbound.slmax = start;
-                rbound.slmin = end;
             }
             else {
                 fprintf(stderr, "%s trying to split an unsplitable bound\n", __func__);
@@ -1929,7 +1862,7 @@ void add_attr_domain_il(struct config* config, const char* attr, bool allow_unde
 
 void add_attr_domain_bounded_il(struct config* config, const char* attr, bool allow_undefined, int64_t min, int64_t max)
 {
-    struct value_bound bound = { .value_type = VALUE_IL, .ilmin = min, .ilmax = max };
+    struct value_bound bound = { .value_type = VALUE_IL, .imin = min, .imax = max };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
@@ -1940,7 +1873,7 @@ void add_attr_domain_sl(struct config* config, const char* attr, bool allow_unde
 
 void add_attr_domain_bounded_sl(struct config* config, const char* attr, bool allow_undefined, size_t max)
 {
-    struct value_bound bound = { .value_type = VALUE_SL, .slmin = 0, .slmax = max - 1 };
+    struct value_bound bound = { .value_type = VALUE_SL, .smin = 0, .smax = max - 1 };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 

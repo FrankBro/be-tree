@@ -102,14 +102,6 @@ struct value_bound {
             size_t smin;
             size_t smax;
         };
-        struct {
-            int64_t ilmin;
-            int64_t ilmax;
-        };
-        struct {
-            size_t slmin;
-            size_t slmax;
-        };
     };
 };
 

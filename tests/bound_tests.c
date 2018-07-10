@@ -46,9 +46,9 @@ bool match_integer(struct config* config, const char* expr, int64_t min, int64_t
 bool match_integer_list(struct config* config, const char* expr, int64_t min, int64_t max)
 {
     struct value_bound bound = get_bound(config, expr);
-    bool result = bound.value_type == VALUE_IL && bound.ilmin == min && bound.ilmax == max;
+    bool result = bound.value_type == VALUE_IL && bound.imin == min && bound.imax == max;
     if(!result) {
-        fprintf(stderr, "Min: Expected %ld, Got %ld. Max: Expected %ld, Got %ld\n", min, bound.ilmin, max, bound.ilmax);
+        fprintf(stderr, "Min: Expected %ld, Got %ld. Max: Expected %ld, Got %ld\n", min, bound.imin, max, bound.imax);
     }
     return result;
 }
@@ -76,9 +76,9 @@ bool match_string(struct config* config, const char* expr, size_t min, size_t ma
 bool match_string_list(struct config* config, const char* expr, size_t min, size_t max)
 {
     struct value_bound bound = get_bound(config, expr);
-    bool result = bound.value_type == VALUE_SL && bound.slmin == min && bound.slmax == max;
+    bool result = bound.value_type == VALUE_SL && bound.smin == min && bound.smax == max;
     if(!result) {
-        fprintf(stderr, "Min: Expected %zu, Got %zu. Max: Expected %zu, Got %zu\n", min, bound.slmin, max, bound.slmax);
+        fprintf(stderr, "Min: Expected %zu, Got %zu. Max: Expected %zu, Got %zu\n", min, bound.smin, max, bound.smax);
     }
     return result;
 }

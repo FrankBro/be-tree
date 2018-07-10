@@ -39,10 +39,10 @@ void print_cdir(const struct config* config, const struct cdir* cdir, uint64_t l
     }
     print_dashs(level);
     switch(cdir->bound.value_type) {
-        case(VALUE_I): {
+        case(VALUE_I): 
+        case(VALUE_IL): 
             printf(" cdir [%" PRIu64 ", %" PRIu64 "]", cdir->bound.imin, cdir->bound.imax);
             break;
-        }
         case(VALUE_F): {
             printf(" cdir [%.2f, %.2f]", cdir->bound.fmin, cdir->bound.fmax);
             break;
@@ -53,18 +53,10 @@ void print_cdir(const struct config* config, const struct cdir* cdir, uint64_t l
             printf(" cdir [%s, %s]", min, max);
             break;
         }
-        case(VALUE_S): {
+        case(VALUE_S):
+        case(VALUE_SL):
             printf(" cdir [%zu , %zu]", cdir->bound.smin, cdir->bound.smax);
             break;
-        }
-        case(VALUE_IL): {
-            printf(" cdir [%" PRIu64 ", %" PRIu64 "]", cdir->bound.ilmin, cdir->bound.ilmax);
-            break;
-        }
-        case(VALUE_SL): {
-            printf(" cdir [%zu , %zu]", cdir->bound.slmin, cdir->bound.slmax);
-            break;
-        }
         case(VALUE_SEGMENTS): {
             fprintf(stderr, "%s a segments value cdir should never happen for now", __func__);
             abort();
@@ -209,12 +201,12 @@ const char* get_path_cdir(const struct config* config, const struct cdir* cdir, 
     }
     char* name;
     switch(cdir->bound.value_type) {
-        case(VALUE_I): {
+        case(VALUE_I):
+        case(VALUE_IL):
             if(asprintf(&name, "%s_%" PRIu64 "_%" PRIu64, parent_path, cdir->bound.imin, cdir->bound.imax) < 0) {
                 abort();
             }
             break;
-        }
         case(VALUE_F): {
             if(asprintf(&name, "%s_%.0f_%.0f", parent_path, cdir->bound.fmin, cdir->bound.fmax) < 0) {
                 abort();
@@ -229,24 +221,12 @@ const char* get_path_cdir(const struct config* config, const struct cdir* cdir, 
             }
             break;
         }
-        case(VALUE_S): {
+        case(VALUE_S):
+        case(VALUE_SL):
             if(asprintf(&name, "%s_%zu_%zu", parent_path, cdir->bound.smin, cdir->bound.smax) < 0) {
                 abort();
             }
             break;
-        }
-        case(VALUE_IL): {
-            if(asprintf(&name, "%s_%" PRIu64 "_%" PRIu64, parent_path, cdir->bound.ilmin, cdir->bound.ilmax) < 0) {
-                abort();
-            }
-            break;
-        }
-        case(VALUE_SL): {
-            if(asprintf(&name, "%s_%zu_%zu", parent_path, cdir->bound.slmin, cdir->bound.slmax) < 0) {
-                abort();
-            }
-            break;
-        }
         case(VALUE_SEGMENTS): {
             fprintf(stderr, "%s a segments value cdir should never happen for now", __func__);
             abort();
@@ -388,7 +368,8 @@ void write_dot_file_cdir_td(FILE* f,
         else {
             const char* name = get_name_cdir(config, cdir);
             switch(cdir->bound.value_type) {
-                case(VALUE_I): {
+                case(VALUE_I):
+                case(VALUE_IL):
                     fprintf(f,
                         "<td colspan=\"%" PRIu64 "\" port=\"%s\">[%" PRIu64 ", %" PRIu64 "]</td>\n",
                         colspan,
@@ -396,7 +377,6 @@ void write_dot_file_cdir_td(FILE* f,
                         cdir->bound.imin,
                         cdir->bound.imax);
                     break;
-                }
                 case(VALUE_F): {
                     fprintf(f,
                         "<td colspan=\"%" PRIu64 "\" port=\"%s\">[%.0f, %.0f]</td>\n",
@@ -417,7 +397,8 @@ void write_dot_file_cdir_td(FILE* f,
                         max);
                     break;
                 }
-                case(VALUE_S): {
+                case(VALUE_S):
+                case(VALUE_SL):
                     fprintf(f,
                         "<td colspan=\"%" PRIu64 "\" port=\"%s\">[%zu, %zu]</td>\n",
                         colspan,
@@ -425,25 +406,6 @@ void write_dot_file_cdir_td(FILE* f,
                         cdir->bound.smin,
                         cdir->bound.smax);
                     break;
-                }
-                case(VALUE_IL): {
-                    fprintf(f,
-                        "<td colspan=\"%" PRIu64 "\" port=\"%s\">[%" PRIu64 ", %" PRIu64 "]</td>\n",
-                        colspan,
-                        name,
-                        cdir->bound.ilmin,
-                        cdir->bound.ilmax);
-                    break;
-                }
-                case(VALUE_SL): {
-                    fprintf(f,
-                        "<td colspan=\"%" PRIu64 "\" port=\"%s\">[%zu, %zu]</td>\n",
-                        colspan,
-                        name,
-                        cdir->bound.slmin,
-                        cdir->bound.slmax);
-                    break;
-                }
                 case(VALUE_SEGMENTS): {
                     fprintf(
                         stderr, "%s a segment value cdir should never happen for now", __func__);

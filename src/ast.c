@@ -1237,6 +1237,7 @@ struct value_bound copy_value_bound(struct value_bound* bound)
             copy.bmax = bound->bmax;
             break;
         case VALUE_I:
+        case VALUE_IL:
             copy.imin = bound->imin;
             copy.imax = bound->imax;
             break;
@@ -1245,16 +1246,9 @@ struct value_bound copy_value_bound(struct value_bound* bound)
             copy.fmax = bound->fmax;
             break;
         case VALUE_S:
+        case VALUE_SL:
             copy.smin = bound->smin;
             copy.smax = bound->smax;
-            break;
-        case VALUE_IL:
-            copy.ilmin = bound->ilmin;
-            copy.ilmax = bound->ilmax;
-            break;
-        case VALUE_SL:
-            copy.slmin = bound->slmin;
-            copy.slmax = bound->slmax;
             break;
         case VALUE_SEGMENTS:
         case VALUE_FREQUENCY:
@@ -1289,13 +1283,13 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                     }
                     if(domain->bound.value_type == VALUE_IL && node->list_expr.value.value_type == AST_LIST_VALUE_INTEGER_LIST) {
                         if(is_reversed) {
-                            bound->ilmin = domain->bound.ilmin;
-                            bound->ilmax = domain->bound.ilmax;
+                            bound->imin = domain->bound.imin;
+                            bound->imax = domain->bound.imax;
                         }
                         else {
                             if(node->list_expr.value.integer_list_value.count != 0) {
-                                bound->ilmin = d64min(bound->ilmin, node->list_expr.value.integer_list_value.integers[0]);
-                                bound->ilmax = d64max(bound->ilmax, node->list_expr.value.integer_list_value.integers[node->list_expr.value.integer_list_value.count-1]);
+                                bound->imin = d64min(bound->imin, node->list_expr.value.integer_list_value.integers[0]);
+                                bound->imax = d64max(bound->imax, node->list_expr.value.integer_list_value.integers[node->list_expr.value.integer_list_value.count-1]);
                             }
                             else {
                                 return;
@@ -1306,13 +1300,13 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                     }
                     else if(domain->bound.value_type == VALUE_SL && node->list_expr.value.value_type == AST_LIST_VALUE_STRING_LIST) {
                         if(is_reversed) {
-                            bound->slmin = domain->bound.slmin;
-                            bound->slmax = domain->bound.slmax;
+                            bound->smin = domain->bound.smin;
+                            bound->smax = domain->bound.smax;
                         }
                         else {
                             if(node->list_expr.value.string_list_value.count != 0) {
-                                bound->slmin = smin(bound->slmin, node->list_expr.value.string_list_value.strings[0].str);
-                                bound->slmax = smax(bound->slmax, node->list_expr.value.string_list_value.strings[node->list_expr.value.string_list_value.count-1].str);
+                                bound->smin = smin(bound->smin, node->list_expr.value.string_list_value.strings[0].str);
+                                bound->smax = smax(bound->smax, node->list_expr.value.string_list_value.strings[node->list_expr.value.string_list_value.count-1].str);
                             }
                             else {
                                 return;
@@ -1329,16 +1323,16 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                     if(domain->bound.value_type == VALUE_IL && node->list_expr.value.value_type == AST_LIST_VALUE_INTEGER_LIST) {
                         if(is_reversed) {
                             if(node->list_expr.value.integer_list_value.count != 0) {
-                                bound->ilmin = d64min(bound->ilmin, node->list_expr.value.integer_list_value.integers[0]);
-                                bound->ilmax = d64max(bound->ilmax, node->list_expr.value.integer_list_value.integers[node->list_expr.value.integer_list_value.count-1]);
+                                bound->imin = d64min(bound->imin, node->list_expr.value.integer_list_value.integers[0]);
+                                bound->imax = d64max(bound->imax, node->list_expr.value.integer_list_value.integers[node->list_expr.value.integer_list_value.count-1]);
                             }
                             else {
                                 return;
                             }
                         }
                         else {
-                            bound->ilmin = domain->bound.ilmin;
-                            bound->ilmax = domain->bound.ilmax;
+                            bound->imin = domain->bound.imin;
+                            bound->imax = domain->bound.imax;
                         }
                         *was_touched = true;
                         return;
@@ -1346,16 +1340,16 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                     else if(domain->bound.value_type == VALUE_SL && node->list_expr.value.value_type == AST_LIST_VALUE_STRING_LIST) {
                         if(is_reversed) {
                             if(node->list_expr.value.string_list_value.count != 0) {
-                                bound->slmin = smin(bound->slmin, node->list_expr.value.string_list_value.strings[0].str);
-                                bound->slmax = smax(bound->slmax, node->list_expr.value.string_list_value.strings[node->list_expr.value.string_list_value.count-1].str);
+                                bound->smin = smin(bound->smin, node->list_expr.value.string_list_value.strings[0].str);
+                                bound->smax = smax(bound->smax, node->list_expr.value.string_list_value.strings[node->list_expr.value.string_list_value.count-1].str);
                             }
                             else {
                                 return;
                             }
                         }
                         else {
-                            bound->slmin = domain->bound.slmin;
-                            bound->slmax = domain->bound.slmax;
+                            bound->smin = domain->bound.smin;
+                            bound->smax = domain->bound.smax;
                         }
                         *was_touched = true;
                         return;
@@ -1420,13 +1414,13 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                         }
                         if(domain->bound.value_type == VALUE_IL && node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_INTEGER) {
                             if(is_reversed) {
-                                bound->ilmin = domain->bound.ilmin;
-                                bound->ilmax = domain->bound.ilmax;
+                                bound->imin = domain->bound.imin;
+                                bound->imax = domain->bound.imax;
                             }
                             else {
                                 if(node->set_expr.right_value.integer_list_value.count != 0) {
-                                    bound->ilmin = d64min(bound->ilmin, node->set_expr.left_value.integer_value);
-                                    bound->ilmax = d64max(bound->ilmax, node->set_expr.left_value.integer_value);
+                                    bound->imin = d64min(bound->imin, node->set_expr.left_value.integer_value);
+                                    bound->imax = d64max(bound->imax, node->set_expr.left_value.integer_value);
                                 }
                                 else {
                                     return;
@@ -1437,13 +1431,13 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                         }
                         else if(domain->bound.value_type == VALUE_SL && node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_STRING) {
                             if(is_reversed) {
-                                bound->slmin = domain->bound.slmin;
-                                bound->slmax = domain->bound.slmax;
+                                bound->smin = domain->bound.smin;
+                                bound->smax = domain->bound.smax;
                             }
                             else {
                                 if(node->set_expr.right_value.string_list_value.count != 0) {
-                                    bound->slmin = smin(bound->slmin, node->set_expr.left_value.string_value.str);
-                                    bound->slmax = smax(bound->slmax, node->set_expr.left_value.string_value.str);
+                                    bound->smin = smin(bound->smin, node->set_expr.left_value.string_value.str);
+                                    bound->smax = smax(bound->smax, node->set_expr.left_value.string_value.str);
                                 }
                                 else {
                                     return;
@@ -1512,16 +1506,16 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                         if(domain->bound.value_type == VALUE_IL && node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_INTEGER) {
                             if(is_reversed) {
                                 if(node->set_expr.right_value.integer_list_value.count != 0) {
-                                    bound->ilmin = d64min(bound->ilmin, node->set_expr.left_value.integer_value);
-                                    bound->ilmax = d64max(bound->ilmax, node->set_expr.left_value.integer_value);
+                                    bound->imin = d64min(bound->imin, node->set_expr.left_value.integer_value);
+                                    bound->imax = d64max(bound->imax, node->set_expr.left_value.integer_value);
                                 }
                                 else {
                                     return;
                                 }
                             }
                             else {
-                                bound->ilmin = domain->bound.ilmin;
-                                bound->ilmax = domain->bound.ilmax;
+                                bound->imin = domain->bound.imin;
+                                bound->imax = domain->bound.imax;
                             }
                             *was_touched = true;
                             return;
@@ -1529,16 +1523,16 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                         else if(domain->bound.value_type == VALUE_SL && node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_STRING) {
                             if(is_reversed) {
                                 if(node->set_expr.right_value.string_list_value.count != 0) {
-                                    bound->slmin = smin(bound->slmin, node->set_expr.left_value.string_value.str);
-                                    bound->slmax = smax(bound->slmax, node->set_expr.left_value.string_value.str);
+                                    bound->smin = smin(bound->smin, node->set_expr.left_value.string_value.str);
+                                    bound->smax = smax(bound->smax, node->set_expr.left_value.string_value.str);
                                 }
                                 else {
                                     return;
                                 }
                             }
                             else {
-                                bound->slmin = domain->bound.slmin;
-                                bound->slmax = domain->bound.slmax;
+                                bound->smin = domain->bound.smin;
+                                bound->smax = domain->bound.smax;
                             }
                             *was_touched = true;
                             return;
@@ -1598,6 +1592,7 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                                 bound->bmax = bound->bmax || lbound.bmax || rbound.bmax;
                                 break;
                             case VALUE_I:
+                            case VALUE_IL:
                                 bound->imin = d64min(bound->imin, d64min(lbound.imin, rbound.imin));
                                 bound->imax = d64max(bound->imax, d64max(lbound.imax, rbound.imax));
                                 break;
@@ -1606,16 +1601,9 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                                 bound->fmax = fmax(bound->fmax, fmax(lbound.fmax, rbound.fmax));
                                 break;
                             case VALUE_S:
+                            case VALUE_SL:
                                 bound->smin = smin(bound->smin, smin(lbound.smin, rbound.smin));
                                 bound->smax = smax(bound->smax, smax(lbound.smax, rbound.smax));
-                                break;
-                            case VALUE_IL:
-                                bound->ilmin = d64min(bound->ilmin, d64min(lbound.ilmin, rbound.ilmin));
-                                bound->ilmax = d64max(bound->ilmax, d64max(lbound.ilmax, rbound.ilmax));
-                                break;
-                            case VALUE_SL:
-                                bound->slmin = smin(bound->slmin, smin(lbound.slmin, rbound.slmin));
-                                bound->slmax = smax(bound->slmax, smax(lbound.slmax, rbound.slmax));
                                 break;
                             case VALUE_SEGMENTS:
                             case VALUE_FREQUENCY:
@@ -1854,37 +1842,25 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
 struct value_bound get_variable_bound(const struct attr_domain* domain, const struct ast_node* node)
 {
     bool was_touched = false;
-    struct value_bound bound;
+    struct value_bound bound = { .value_type = domain->bound.value_type };
     switch(domain->bound.value_type) {
         case VALUE_B:
-            bound.value_type = VALUE_B;
             bound.bmin = domain->bound.bmax;
             bound.bmax = domain->bound.bmin;
             break;
         case VALUE_I:
-            bound.value_type = VALUE_I;
+        case VALUE_IL:
             bound.imin = domain->bound.imax;
             bound.imax = domain->bound.imin;
             break;
         case VALUE_F:
-            bound.value_type = VALUE_F;
             bound.fmin = domain->bound.fmax;
             bound.fmax = domain->bound.fmin;
             break;
         case VALUE_S:
-            bound.value_type = VALUE_S;
+        case VALUE_SL:
             bound.smin = domain->bound.smax;
             bound.smax = domain->bound.smin;
-            break;
-        case VALUE_IL:
-            bound.value_type = VALUE_IL;
-            bound.ilmin = domain->bound.ilmax;
-            bound.ilmax = domain->bound.ilmin;
-            break;
-        case VALUE_SL:
-            bound.value_type = VALUE_SL;
-            bound.slmin = domain->bound.slmax;
-            bound.slmax = domain->bound.slmin;
             break;
         case VALUE_SEGMENTS:
         case VALUE_FREQUENCY:
@@ -1900,6 +1876,7 @@ struct value_bound get_variable_bound(const struct attr_domain* domain, const st
                 bound.bmax = domain->bound.bmax;
                 break;
             case VALUE_I:
+            case VALUE_IL:
                 bound.imin = domain->bound.imin;
                 bound.imax = domain->bound.imax;
                 break;
@@ -1908,16 +1885,9 @@ struct value_bound get_variable_bound(const struct attr_domain* domain, const st
                 bound.fmax = domain->bound.fmax;
                 break;
             case VALUE_S:
+            case VALUE_SL:
                 bound.smin = domain->bound.smin;
                 bound.smax = domain->bound.smax;
-                break;
-            case VALUE_IL:
-                bound.ilmin = domain->bound.ilmin;
-                bound.ilmax = domain->bound.ilmax;
-                break;
-            case VALUE_SL:
-                bound.slmin = domain->bound.slmin;
-                bound.slmax = domain->bound.slmax;
                 break;
             case VALUE_SEGMENTS:
             case VALUE_FREQUENCY:
