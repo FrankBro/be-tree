@@ -2154,24 +2154,17 @@ void free_memoize(struct memoize memoize)
     free(memoize.fail);
 }
 
-void init_undefined(const struct config* config, const struct event* event, uint64_t* undefined)
+uint64_t* make_undefined(const struct config* config, const struct event* event)
 {
-    for(size_t i = 0; i < config->attr_domain_count; i++) {
-        const struct attr_domain* attr_domain = config->attr_domains[i];
-        if(attr_domain->allow_undefined) {
-            bool found = false;
-            for(size_t j = 0; j < event->pred_count; j++) {
-                const struct pred* pred = event->preds[j];
-                if(attr_domain->attr_var.var == pred->attr_var.var) {
-                    found = true;
-                    break;
-                }
-            }
-            if(!found) {
-                set_bit(undefined, i);
-            }
-        }
+    size_t count = config->attr_domain_count / 64 + 1;
+    uint64_t* undefined = calloc(count, sizeof(*undefined));
+    for(size_t i = 0; i < count; i++) {
+        undefined[i] = UINT64_MAX;
     }
+    for(size_t i = 0; i < event->pred_count; i++) {
+        clear_bit(undefined, event->preds[i]->attr_var.var);
+    }
+    return undefined;
 }
 
 struct pred** make_environment(const struct config* config, const struct event* event)
@@ -2188,8 +2181,7 @@ void betree_search_with_event(const struct config* config,
     const struct cnode* cnode,
     struct report* report)
 {
-    uint64_t* undefined = calloc(config->attr_domain_count, sizeof(*undefined));
-    init_undefined(config, event, undefined);
+    uint64_t* undefined = make_undefined(config, event);
     struct memoize memoize = make_memoize(config->pred_map->pred_count);
     const struct pred** preds = (const struct pred**)make_environment(config, event);
     struct subs_to_eval subs;
