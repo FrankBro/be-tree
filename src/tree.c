@@ -119,12 +119,8 @@ void match_be_tree(const struct config* config,
         for(size_t i = 0; i < cnode->pdir->pnode_count; i++) {
             struct pnode* pnode = cnode->pdir->pnodes[i];
             const struct attr_domain* attr_domain = get_attr_domain(config, pnode->attr_var.var);
-            if(attr_domain == NULL) {
-                fprintf(stderr, "Could not find attr_domain for attr '%s'\n", pnode->attr_var.attr);
-                abort();
-            }
-            if(attr_domain->allow_undefined
-                || event_contains_variable(preds, pnode->attr_var.var)) {
+            betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_MISSING, attr_domain != NULL);
+            if(attr_domain->allow_undefined || event_contains_variable(preds, pnode->attr_var.var)) {
                 search_cdir(config, preds, pnode->cdir, subs);
             }
         }
