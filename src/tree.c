@@ -119,7 +119,6 @@ void match_be_tree(const struct config* config,
         for(size_t i = 0; i < cnode->pdir->pnode_count; i++) {
             struct pnode* pnode = cnode->pdir->pnodes[i];
             const struct attr_domain* attr_domain = get_attr_domain(config, pnode->attr_var.var);
-            betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_MISSING, attr_domain != NULL);
             if(attr_domain->allow_undefined || event_contains_variable(preds, pnode->attr_var.var)) {
                 search_cdir(config, preds, pnode->cdir, subs);
             }
@@ -127,82 +126,37 @@ void match_be_tree(const struct config* config,
     }
 }
 
-bool is_event_enclosed(const struct config* config, const struct pred** preds, const struct cdir* cdir)
+bool is_event_enclosed(const struct pred** preds, const struct cdir* cdir)
 {
     if(cdir == NULL) {
         return false;
     }
     const struct pred* pred = preds[cdir->attr_var.var];
     if(pred == NULL) {
-        return false;
+        return true;
     }
-    const struct attr_domain* attr_domain = get_attr_domain(config, cdir->attr_var.var);
-    betree_assert(config->abort_on_error, ERROR_UNDEFINED_ATTR_DOMAIN, attr_domain != NULL);
-    betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_TYPE_MISMATCH, attr_domain->bound.value_type == pred->value.value_type);
-    switch(attr_domain->bound.value_type) {
+    switch(pred->value.value_type) {
         case VALUE_B:
             return cdir->bound.bmin <= pred->value.bvalue && cdir->bound.bmax >= pred->value.bvalue;
         case VALUE_I:
-            if(pred->value.value_type == VALUE_I) {
-                return cdir->bound.imin <= pred->value.ivalue && cdir->bound.imax >= pred->value.ivalue;
-            }
-            else if(pred->value.value_type == VALUE_IL) {
-                if(pred->value.ilvalue.count != 0) {
-                    return cdir->bound.imin <= pred->value.ilvalue.integers[0] && cdir->bound.imax >= pred->value.ilvalue.integers[pred->value.ilvalue.count-1];
-                }
-                else {
-                    return true;
-                }
-            }
-            else {
-                abort();
-            }
+            return cdir->bound.imin <= pred->value.ivalue && cdir->bound.imax >= pred->value.ivalue;
         case VALUE_F:
             return cdir->bound.fmin <= pred->value.fvalue && cdir->bound.fmax >= pred->value.fvalue;
         case VALUE_S:
-            if(pred->value.value_type == VALUE_S) {
-                return cdir->bound.smin <= pred->value.svalue.str && cdir->bound.smax >= pred->value.svalue.str;
-            }
-            else if(pred->value.value_type == VALUE_SL) {
-                if(pred->value.slvalue.count != 0) {
-                    return cdir->bound.smin <= pred->value.slvalue.strings[0].str && cdir->bound.smax >= pred->value.slvalue.strings[pred->value.slvalue.count-1].str;
-                }
-                else {
-                    return true;
-                }
-            }
-            else {
-                abort();
-            }
+            return cdir->bound.smin <= pred->value.svalue.str && cdir->bound.smax >= pred->value.svalue.str;
         case VALUE_IL:
-            if(pred->value.value_type == VALUE_I) {
-                return cdir->bound.imin <= pred->value.ivalue && cdir->bound.imax >= pred->value.ivalue;
-            }
-            else if(pred->value.value_type == VALUE_IL) {
-                if(pred->value.ilvalue.count != 0) {
-                    return cdir->bound.imin <= pred->value.ilvalue.integers[0] && cdir->bound.imax >= pred->value.ilvalue.integers[pred->value.ilvalue.count-1];
-                }
-                else {
-                    return true;
-                }
+            if(pred->value.ilvalue.count != 0) {
+                return cdir->bound.imin <= pred->value.ilvalue.integers[0] && cdir->bound.imax >= pred->value.ilvalue.integers[pred->value.ilvalue.count-1];
             }
             else {
-                abort();
+                return true;
             }
         case VALUE_SL:
-            if(pred->value.value_type == VALUE_S) {
-                return cdir->bound.smin <= pred->value.svalue.str && cdir->bound.smax >= pred->value.svalue.str;
-            }
-            else if(pred->value.value_type == VALUE_SL) {
-                if(pred->value.slvalue.count != 0) {
-                    return cdir->bound.smin <= pred->value.slvalue.strings[0].str && cdir->bound.smax >= pred->value.slvalue.strings[pred->value.slvalue.count-1].str;
-                }
-                else {
-                    return true;
-                }
+            if(pred->value.slvalue.count != 0) {
+                return cdir->bound.smin <= pred->value.slvalue.strings[0].str && cdir->bound.smax >= pred->value.slvalue.strings[pred->value.slvalue.count-1].str;
             }
             else {
-                abort();
+                return true;
             }
         case VALUE_SEGMENTS:
         case VALUE_FREQUENCY:
@@ -259,10 +213,12 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
 void search_cdir(const struct config* config, const struct pred** preds, struct cdir* cdir, struct subs_to_eval* subs)
 {
     match_be_tree(config, preds, cdir->cnode, subs);
-    if(is_event_enclosed(config, preds, cdir->lchild))
+    if(is_event_enclosed(preds, cdir->lchild)) {
         search_cdir(config, preds, cdir->lchild, subs);
-    if(is_event_enclosed(config, preds, cdir->rchild))
+    }
+    if(is_event_enclosed(preds, cdir->rchild)) {
         search_cdir(config, preds, cdir->rchild, subs);
+    }
 }
 
 bool is_used_cnode(betree_var_t variable_id, const struct cnode* cnode);

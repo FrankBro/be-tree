@@ -1255,6 +1255,57 @@ int test_set_bug_cdir()
     return 0;
 }
 
+int test_undefined_cdir_search()
+{
+    struct betree* tree = betree_make_with_parameters(1, 1);
+    add_attr_domain_b(tree->config, "b", true);
+    add_attr_domain_bounded_i(tree->config, "i", true, 0, 10);
+
+    const char* event = "{\"i\": 0}";
+
+    mu_assert(betree_insert(tree, 0, "not b && i = 0"), "");
+
+    struct report* report;
+    report = make_report();
+
+    betree_search(tree, event, report);
+
+    mu_assert(report->evaluated == 1 &&
+      report->matched == 1, "true because false on undef, then not");
+
+    free_report(report);
+    report = make_report();
+
+    mu_assert(betree_insert(tree, 1, "not b && i = 10"), "");
+
+    write_dot_file_tree(tree);
+
+    mu_assert(tree->cnode->lnode->sub_count == 0 &&
+      tree->cnode->pdir != NULL &&
+      tree->cnode->pdir->pnode_count == 1 &&
+      strcmp(tree->cnode->pdir->pnodes[0]->attr_var.attr, "b") == 0 &&
+      tree->cnode->pdir->pnodes[0]->cdir != NULL &&
+      tree->cnode->pdir->pnodes[0]->cdir->lchild != NULL &&
+      tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir != NULL &&
+      tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir->pnode_count == 1 &&
+      strcmp(tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir->pnodes[0]->attr_var.attr, "i") == 0 &&
+      tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir->pnodes[0]->cdir != NULL &&
+      tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir->pnodes[0]->cdir->lchild != NULL &&
+      tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir == NULL &&
+      tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->sub_count == 1, 
+      "expected structure, split on b, all went in lchild for only false, first then i and split into lchild/rchild");
+
+    betree_search(tree, event, report);
+
+    mu_assert(report->evaluated == 1 &&
+      report->matched == 1, "still true");
+
+    free_report(report);
+    betree_free(tree);
+
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_sub_has_attribute);
@@ -1290,6 +1341,7 @@ int all_tests()
     mu_run_test(test_splitable_integer_list_domain);
     mu_run_test(test_splitable_string_list_domain);
     mu_run_test(test_set_bug_cdir);
+    mu_run_test(test_undefined_cdir_search);
 
     return 0;
 }
