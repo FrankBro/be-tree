@@ -16,6 +16,31 @@
 #include "tree.h"
 #include "utils.h"
 
+struct subs_to_eval {
+    struct sub** subs;
+    size_t capacity;
+    size_t count;
+};
+
+void init_subs_to_eval(struct subs_to_eval* subs)
+{
+    size_t init = 10;
+    subs->subs = malloc(init * sizeof(*subs->subs));
+    subs->capacity = init;
+    subs->count = 0;
+}
+
+void add_sub_to_eval(struct sub* sub, struct subs_to_eval* subs)
+{
+	if (subs->capacity == subs->count) {
+		subs->capacity *= 2;
+		subs->subs = realloc(subs->subs, sizeof(*subs->subs) * subs->capacity);
+	}
+
+	subs->subs[subs->count] = sub;
+	subs->count++;
+}
+
 enum short_circuit_e {
     SHORT_CIRCUIT_PASS,
     SHORT_CIRCUIT_FAIL,
@@ -45,9 +70,6 @@ bool match_sub(const struct config* config, const struct pred** preds, const str
             report->shorted++;
         }
         if(short_circuit == SHORT_CIRCUIT_PASS) {
-            if(report != NULL) {
-                report->matched++;
-            }
             return true;
         }
         else if(short_circuit == SHORT_CIRCUIT_FAIL) {
@@ -58,40 +80,11 @@ bool match_sub(const struct config* config, const struct pred** preds, const str
     return result;
 }
 
-void check_sub(const struct config* config,
-    const struct pred** preds,
-    const struct lnode* lnode,
-    struct report* report, 
-    struct memoize* memoize,
-    const uint64_t* undefined)
+void check_sub(const struct lnode* lnode, struct subs_to_eval* subs)
 {
     for(size_t i = 0; i < lnode->sub_count; i++) {
-        const struct sub* sub = lnode->subs[i];
-        if(match_sub(config, preds, sub, report, memoize, undefined) == true) {
-            if(report != NULL) {
-                if(report->matched == 0) {
-                    report->subs = calloc(1, sizeof(*report->subs));
-                    if(report->subs == NULL) {
-                        fprintf(stderr, "%s calloc failed\n", __func__);
-                        abort();
-                    }
-                }
-                else {
-                    betree_sub_t* subs = realloc(report->subs,
-                        sizeof(*report->subs) * (report->matched + 1));
-                    if(subs == NULL) {
-                        fprintf(stderr, "%s realloc failed\n", __func__);
-                        abort();
-                    }
-                    report->subs = subs;
-                }
-                report->subs[report->matched] = sub->id;
-                report->matched++;
-            }
-        }
-    }
-    if(report != NULL) {
-        report->evaluated += lnode->sub_count;
+        struct sub* sub = lnode->subs[i];
+        add_sub_to_eval(sub, subs);
     }
 }
 
@@ -109,12 +102,7 @@ struct pnode* search_pdir(betree_var_t variable_id, const struct pdir* pdir)
     return NULL;
 }
 
-void search_cdir(const struct config* config,
-    const struct pred** preds,
-    struct cdir* cdir,
-    struct report* report, 
-    struct memoize* memoize,
-    const uint64_t* undefined);
+void search_cdir(const struct config* config, const struct pred** preds, struct cdir* cdir, struct subs_to_eval* subs);
 
 bool event_contains_variable(const struct pred** preds, betree_var_t variable_id)
 {
@@ -124,11 +112,9 @@ bool event_contains_variable(const struct pred** preds, betree_var_t variable_id
 void match_be_tree(const struct config* config,
     const struct pred** preds,
     const struct cnode* cnode,
-    struct report* report, 
-    struct memoize* memoize,
-    const uint64_t* undefined)
+    struct subs_to_eval* subs)
 {
-    check_sub(config, preds, cnode->lnode, report, memoize, undefined);
+    check_sub(cnode->lnode, subs);
     if(cnode->pdir != NULL) {
         for(size_t i = 0; i < cnode->pdir->pnode_count; i++) {
             struct pnode* pnode = cnode->pdir->pnodes[i];
@@ -139,7 +125,7 @@ void match_be_tree(const struct config* config,
             }
             if(attr_domain->allow_undefined
                 || event_contains_variable(preds, pnode->attr_var.var)) {
-                search_cdir(config, preds, pnode->cdir, report, memoize, undefined);
+                search_cdir(config, preds, pnode->cdir, subs);
             }
         }
     }
@@ -280,18 +266,13 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
     return false;
 }
 
-void search_cdir(const struct config* config,
-    const struct pred** preds,
-    struct cdir* cdir,
-    struct report* report, 
-    struct memoize* memoize,
-    const uint64_t* undefined)
+void search_cdir(const struct config* config, const struct pred** preds, struct cdir* cdir, struct subs_to_eval* subs)
 {
-    match_be_tree(config, preds, cdir->cnode, report, memoize, undefined);
+    match_be_tree(config, preds, cdir->cnode, subs);
     if(is_event_enclosed(config, preds, cdir->lchild))
-        search_cdir(config, preds, cdir->lchild, report, memoize, undefined);
+        search_cdir(config, preds, cdir->lchild, subs);
     if(is_event_enclosed(config, preds, cdir->rchild))
-        search_cdir(config, preds, cdir->rchild, report, memoize, undefined);
+        search_cdir(config, preds, cdir->rchild, subs);
 }
 
 bool is_used_cnode(betree_var_t variable_id, const struct cnode* cnode);
@@ -2210,8 +2191,22 @@ void betree_search_with_event(const struct config* config,
     uint64_t* undefined = calloc(config->attr_domain_count, sizeof(*undefined));
     init_undefined(config, event, undefined);
     struct memoize memoize = make_memoize(config->pred_map->pred_count);
-    struct pred** preds = make_environment(config, event);
-    match_be_tree(config, (const struct pred**)preds, cnode, report, &memoize, undefined);
+    const struct pred** preds = (const struct pred**)make_environment(config, event);
+    struct subs_to_eval subs;
+    init_subs_to_eval(&subs);
+    match_be_tree(config, preds, cnode, &subs);
+    if(report != NULL) {
+        report->subs = malloc(sizeof(*report->subs) * subs.count);
+        report->evaluated = subs.count;
+        for(size_t i = 0; i < subs.count; i++) {
+            const struct sub* sub = subs.subs[i];
+            if(match_sub(config, preds, sub, report, &memoize, undefined) == true) {
+                report->subs[report->matched] = sub->id;
+                report->matched++;
+            }
+        }
+    }
+    free(subs.subs);
     free_memoize(memoize);
     free(undefined);
     free_event(event);
