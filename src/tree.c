@@ -410,7 +410,7 @@ void update_partition_score(const struct config* config, struct pnode* pnode)
         abort();
     }
     uint64_t loss = attr_domain->allow_undefined ? 1.0 : 0.0;
-    loss += attr_domain->bound.value_type == VALUE_S && !attr_domain->bound.is_string_bounded ? 2.0 : 0.0;
+    /*loss += attr_domain->bound.value_type == VALUE_S && !attr_domain->bound.is_string_bounded ? 2.0 : 0.0;*/
     pnode->score = (1.0 - alpha) * (float)gain - alpha * (float)loss;
 }
 
@@ -967,8 +967,6 @@ struct value_bounds split_value_bound(struct value_bound bound)
             break;
         }
         case(VALUE_S): {
-            lbound.is_string_bounded = true;
-            rbound.is_string_bounded = true;
             size_t start = bound.smin, end = bound.smax;
             lbound.smin = start;
             rbound.smax = end;
@@ -993,8 +991,6 @@ struct value_bounds split_value_bound(struct value_bound bound)
             break;
         }
         case(VALUE_IL): {
-            lbound.is_integer_list_bounded = true;
-            rbound.is_integer_list_bounded = true;
             int64_t start = bound.ilmin, end = bound.ilmax;
             lbound.ilmin = start;
             rbound.ilmax = end;
@@ -1019,8 +1015,6 @@ struct value_bounds split_value_bound(struct value_bound bound)
             break;
         }
         case(VALUE_SL): {
-            lbound.is_string_list_bounded = true;
-            rbound.is_string_list_bounded = true;
             size_t start = bound.slmin, end = bound.slmax;
             lbound.slmin = start;
             rbound.slmax = end;
@@ -1855,22 +1849,29 @@ void add_attr_domain(
     config->attr_domain_count++;
 }
 
-void add_attr_domain_i(
-    struct config* config, const char* attr, int64_t min, int64_t max, bool allow_undefined)
+void add_attr_domain_bounded_i(struct config* config, const char* attr, bool allow_undefined, int64_t min, int64_t max)
 {
     struct value_bound bound = { .value_type = VALUE_I, .imin = min, .imax = max };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
-void add_attr_domain_f(
-    struct config* config, const char* attr, double min, double max, bool allow_undefined)
+void add_attr_domain_i(struct config* config, const char* attr, bool allow_undefined)
+{
+    add_attr_domain_bounded_i(config, attr, allow_undefined, INT64_MIN, INT64_MAX);
+}
+
+void add_attr_domain_bounded_f(struct config* config, const char* attr, bool allow_undefined, double min, double max)
 {
     struct value_bound bound = { .value_type = VALUE_F, .fmin = min, .fmax = max };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
-void add_attr_domain_b(
-    struct config* config, const char* attr, bool allow_undefined)
+void add_attr_domain_f(struct config* config, const char* attr, bool allow_undefined)
+{
+    add_attr_domain_bounded_f(config, attr, allow_undefined, -DBL_MAX, DBL_MAX);
+}
+
+void add_attr_domain_b(struct config* config, const char* attr, bool allow_undefined)
 {
     struct value_bound bound = { .value_type = VALUE_B, .bmin = false, .bmax = true };
     add_attr_domain(config, attr, bound, allow_undefined);
@@ -1878,51 +1879,34 @@ void add_attr_domain_b(
 
 void add_attr_domain_s(struct config* config, const char* attr, bool allow_undefined)
 {
-    struct value_bound bound = { .value_type = VALUE_S };
-    bound.is_string_bounded = false;
-    bound.smin = 0;
-    bound.smax = (size_t)-1;
-    add_attr_domain(config, attr, bound, allow_undefined);
+    add_attr_domain_bounded_s(config, attr, allow_undefined, SIZE_MAX);
 }
 
 void add_attr_domain_bounded_s(struct config* config, const char* attr, bool allow_undefined, size_t max)
 {
-    struct value_bound bound = { .value_type = VALUE_S };
-    bound.is_string_bounded = true;
-    bound.smin = 0;
-    bound.smax = max - 1;
+    struct value_bound bound = { .value_type = VALUE_S, .smin = 0, .smax = max - 1 };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
 void add_attr_domain_il(struct config* config, const char* attr, bool allow_undefined)
 {
-    struct value_bound bound = { .value_type = VALUE_IL };
-    bound.ilmin = INT64_MIN;
-    bound.ilmax = INT64_MAX;
-    add_attr_domain(config, attr, bound, allow_undefined);
+    add_attr_domain_bounded_il(config, attr, allow_undefined, INT64_MIN, INT64_MAX);
 }
 
-void add_attr_domain_bounded_il(struct config* config, const char* attr, int64_t min, int64_t max, bool allow_undefined)
+void add_attr_domain_bounded_il(struct config* config, const char* attr, bool allow_undefined, int64_t min, int64_t max)
 {
-    struct value_bound bound = { .value_type = VALUE_IL };
-    bound.is_integer_list_bounded = true;
-    bound.ilmin = min;
-    bound.ilmax = max;
+    struct value_bound bound = { .value_type = VALUE_IL, .ilmin = min, .ilmax = max };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
 void add_attr_domain_sl(struct config* config, const char* attr, bool allow_undefined)
 {
-    struct value_bound bound = { .value_type = VALUE_SL };
-    add_attr_domain(config, attr, bound, allow_undefined);
+    add_attr_domain_bounded_sl(config, attr, allow_undefined, SIZE_MAX);
 }
 
 void add_attr_domain_bounded_sl(struct config* config, const char* attr, bool allow_undefined, size_t max)
 {
-    struct value_bound bound = { .value_type = VALUE_SL };
-    bound.is_string_list_bounded = true;
-    bound.slmin = 0;
-    bound.slmax = max - 1;
+    struct value_bound bound = { .value_type = VALUE_SL, .slmin = 0, .slmax = max - 1 };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
@@ -2085,7 +2069,7 @@ betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, 
     const struct attr_domain* attr_domain = get_attr_domain(config, attr_var.var);
     betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_TYPE_MISMATCH, attr_domain != NULL && 
         (attr_domain->bound.value_type == VALUE_S || attr_domain->bound.value_type == VALUE_SL || attr_domain->bound.value_type == VALUE_FREQUENCY));
-    if(attr_domain->bound.is_string_bounded && attr_domain->bound.smax + 1 == string_map->string_value_count) {
+    if(attr_domain->bound.smax + 1 == string_map->string_value_count) {
         free(copy);
         return UINT64_MAX;
     }

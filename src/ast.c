@@ -1245,17 +1245,14 @@ struct value_bound copy_value_bound(struct value_bound* bound)
             copy.fmax = bound->fmax;
             break;
         case VALUE_S:
-            copy.is_string_bounded = bound->is_string_bounded;
             copy.smin = bound->smin;
             copy.smax = bound->smax;
             break;
         case VALUE_IL:
-            copy.is_integer_list_bounded = bound->is_integer_list_bounded;
             copy.ilmin = bound->ilmin;
             copy.ilmax = bound->ilmax;
             break;
         case VALUE_SL:
-            copy.is_string_list_bounded = bound->is_string_list_bounded;
             copy.slmin = bound->slmin;
             copy.slmax = bound->slmax;
             break;
@@ -2560,14 +2557,10 @@ static size_t get_attr_string_bound(const struct config* config, const char* att
             betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_TYPE_MISMATCH, 
               config->attr_domains[i]->bound.value_type == VALUE_S
               || config->attr_domains[i]->bound.value_type == VALUE_SL);
-            if(config->attr_domains[i]->bound.is_string_bounded == false) {
-                return (size_t)-1;
-            }
-            else {
-                return config->attr_domains[i]->bound.smax;
-            }
+            return config->attr_domains[i]->bound.smax;
         }
     }
+    betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_MISSING, false);
     return (size_t)-1;
 }
 
@@ -2585,9 +2578,6 @@ static struct string_map* get_string_map_for_attr(const struct config* config, c
 static bool str_valid(const struct config* config, const char* attr, const char* string)
 {
     size_t bound = get_attr_string_bound(config, attr);
-    if(bound == (size_t)-1) {
-        return true;
-    }
     struct string_map* string_map = get_string_map_for_attr(config, attr);
     size_t space_left = string_map == NULL ? bound : bound - string_map->string_value_count + 1;
     if(string_map != NULL) {

@@ -127,22 +127,22 @@ struct config {
 struct config* make_config(uint64_t lnode_max_cap, uint64_t partition_min_size);
 struct config* make_default_config();
 void free_config(struct config* config);
-void add_attr_domain(
-    struct config* config, const char* attr, struct value_bound bound, bool allow_undefined);
-void add_attr_domain_i(
-    struct config* config, const char* attr, int64_t min, int64_t max, bool allow_undefined);
-void add_attr_domain_f(
-    struct config* config, const char* attr, double min, double max, bool allow_undefined);
-void add_attr_domain_b(
-    struct config* config, const char* attr, bool allow_undefined);
+
+void add_attr_domain(struct config* config, const char* attr, struct value_bound bound, bool allow_undefined);
+void add_attr_domain_i(struct config* config, const char* attr, bool allow_undefined);
+void add_attr_domain_f(struct config* config, const char* attr, bool allow_undefined);
+void add_attr_domain_b(struct config* config, const char* attr, bool allow_undefined);
 void add_attr_domain_s(struct config* config, const char* attr, bool allow_undefined);
-void add_attr_domain_bounded_s(struct config* config, const char* attr, bool allow_undefined, size_t max);
 void add_attr_domain_il(struct config* config, const char* attr, bool allow_undefined);
-void add_attr_domain_bounded_il(struct config* config, const char* attr, int64_t min, int64_t max, bool allow_undefined);
 void add_attr_domain_sl(struct config* config, const char* attr, bool allow_undefined);
-void add_attr_domain_bounded_sl(struct config* config, const char* attr, bool allow_undefined, size_t max);
 void add_attr_domain_segments(struct config* config, const char* attr, bool allow_undefined);
 void add_attr_domain_frequency(struct config* config, const char* attr, bool allow_undefined);
+
+void add_attr_domain_bounded_i(struct config* config, const char* attr, bool allow_undefined, int64_t min, int64_t max);
+void add_attr_domain_bounded_f(struct config* config, const char* attr, bool allow_undefined, double min, double max);
+void add_attr_domain_bounded_s(struct config* config, const char* attr, bool allow_undefined, size_t max);
+void add_attr_domain_bounded_il(struct config* config, const char* attr, bool allow_undefined, int64_t min, int64_t max);
+void add_attr_domain_bounded_sl(struct config* config, const char* attr, bool allow_undefined, size_t max);
 const struct attr_domain* get_attr_domain(const struct config* config, betree_var_t variable_id);
 bool is_variable_allow_undefined(const struct config* config, const betree_var_t variable_id);
 

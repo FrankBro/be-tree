@@ -46,7 +46,7 @@ struct value_bound get_integer_exprs_bound(const struct attr_domain* domain, str
 
 struct value_bound get_integer_list_events_bound(betree_var_t var, struct event** events, size_t event_count) 
 {
-    struct value_bound bound = { .is_integer_list_bounded = true, .ilmin = INT64_MAX, .ilmax = INT64_MIN };
+    struct value_bound bound = { .ilmin = INT64_MAX, .ilmax = INT64_MIN };
     for(size_t i = 0; i < event_count; i++) {
         struct event* event = events[i];
         for(size_t j = 0; j < event->pred_count; j++) {
@@ -70,7 +70,7 @@ struct value_bound get_integer_list_events_bound(betree_var_t var, struct event*
 
 struct value_bound get_integer_list_exprs_bound(const struct attr_domain* domain, struct ast_node** exprs, size_t expr_count) 
 {
-    struct value_bound bound = { .is_integer_list_bounded = true, .ilmin = INT64_MAX, .ilmax = INT64_MIN };
+    struct value_bound bound = { .ilmin = INT64_MAX, .ilmax = INT64_MIN };
     for(size_t i = 0; i < expr_count; i++) {
         struct ast_node* expr = exprs[i];
         struct value_bound expr_bound = get_variable_bound(domain, expr);
@@ -123,7 +123,7 @@ struct value_bound get_float_exprs_bound(const struct attr_domain* domain, struc
 
 struct value_bound get_string_events_bound(betree_var_t var, struct event** events, size_t event_count)
 {
-    struct value_bound bound = { .is_string_bounded = true, .smin = -1, .smax = 0 };
+    struct value_bound bound = { .smin = -1, .smax = 0 };
     for(size_t i = 0; i < event_count; i++) {
         struct event* event = events[i];
         for(size_t j = 0; j < event->pred_count; j++) {
@@ -144,7 +144,7 @@ struct value_bound get_string_events_bound(betree_var_t var, struct event** even
 
 struct value_bound get_string_exprs_bound(const struct attr_domain* domain, struct ast_node** exprs, size_t expr_count) 
 {
-    struct value_bound bound = { .is_string_bounded = true, .smin = -1, .smax = 0 };
+    struct value_bound bound = { .smin = -1, .smax = 0 };
     for(size_t i = 0; i < expr_count; i++) {
         struct ast_node* expr = exprs[i];
         struct value_bound expr_bound = get_variable_bound(domain, expr);
@@ -160,7 +160,7 @@ struct value_bound get_string_exprs_bound(const struct attr_domain* domain, stru
 
 struct value_bound get_string_list_events_bound(betree_var_t var, struct event** events, size_t event_count)
 {
-    struct value_bound bound = { .is_string_list_bounded = true, .slmin = -1, .slmax = 0 };
+    struct value_bound bound = { .slmin = -1, .slmax = 0 };
     for(size_t i = 0; i < event_count; i++) {
         struct event* event = events[i];
         for(size_t j = 0; j < event->pred_count; j++) {
@@ -184,7 +184,7 @@ struct value_bound get_string_list_events_bound(betree_var_t var, struct event**
 
 struct value_bound get_string_list_exprs_bound(const struct attr_domain* domain, struct ast_node** exprs, size_t expr_count) 
 {
-    struct value_bound bound = { .is_string_list_bounded = true, .slmin = -1, .slmax = 0 };
+    struct value_bound bound = { .slmin = -1, .slmax = 0 };
     for(size_t i = 0; i < expr_count; i++) {
         struct ast_node* expr = exprs[i];
         struct value_bound expr_bound = get_variable_bound(domain, expr);

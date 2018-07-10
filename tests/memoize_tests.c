@@ -77,7 +77,7 @@ bool test_same2(size_t memoized, const char* expr_a, const char* expr_b, const c
 int test_numeric_compare_integer()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "i", 0, 10, false);
+    add_attr_domain_bounded_i(tree->config, "i", false, 0, 10);
 
     mu_assert(test_same("i > 1", "{\"i\": 2}", tree), "integer gt");
     mu_assert(test_same("i >= 1", "{\"i\": 2}", tree), "integer ge");
@@ -92,7 +92,7 @@ int test_numeric_compare_integer()
 int test_numeric_compare_float()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_f(tree->config, "f", 0., 10., false);
+    add_attr_domain_bounded_f(tree->config, "f", false, 0., 10.);
 
     mu_assert(test_same("f > 1.", "{\"f\": 2.}", tree), "float gt");
     mu_assert(test_same("f >= 1.", "{\"f\": 2.}", tree), "float ge");
@@ -107,7 +107,7 @@ int test_numeric_compare_float()
 int test_equality_integer()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "i", 0, 10, false);
+    add_attr_domain_bounded_i(tree->config, "i", false, 0, 10);
 
     mu_assert(test_same("i = 1", "{\"i\": 1}", tree), "integer eq");
     mu_assert(test_same("i <> 1", "{\"i\": 0}", tree), "integer ne");
@@ -120,7 +120,7 @@ int test_equality_integer()
 int test_equality_float()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_f(tree->config, "f", 0., 10., false);
+    add_attr_domain_bounded_f(tree->config, "f", false, 0., 10.);
 
     mu_assert(test_same("f = 1.", "{\"f\": 1.}", tree), "float eq");
     mu_assert(test_same("f <> 1.", "{\"f\": 0.}", tree), "float ne");
@@ -146,7 +146,7 @@ int test_equality_string()
 int test_set_var_integer()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "i", 0, 10, false);
+    add_attr_domain_bounded_i(tree->config, "i", false, 0, 10);
 
     mu_assert(test_same("i in (1,2)", "{\"i\": 1}", tree), "integer set var in");
     mu_assert(test_same("i not in (1,2)", "{\"i\": 3}", tree), "integer set var not in");
@@ -271,7 +271,7 @@ int test_bool()
 {
     struct betree* tree = betree_make();
     add_attr_domain_b(tree->config, "b", true);
-    add_attr_domain_i(tree->config, "i", 0, 10, true);
+    add_attr_domain_bounded_i(tree->config, "i", true, 0, 10);
 
     mu_assert(test_same("b", "{\"b\": true}", tree), "bool var");
     mu_assert(test_same("not b", "{\"b\": false}", tree), "bool not");
@@ -288,7 +288,7 @@ int test_bool()
 int test_sub()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "i", 0, 10, true);
+    add_attr_domain_bounded_i(tree->config, "i", true, 0, 10);
     add_attr_domain_b(tree->config, "b", true);
     add_attr_domain_il(tree->config, "il", true);
     add_attr_domain_sl(tree->config, "sl", true);

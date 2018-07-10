@@ -29,7 +29,7 @@ struct ast_node* parse_and_assign(const char* expr, struct config* config)
 int test_numeric_compare_integer()
 {
     struct config* config = make_default_config();
-    add_attr_domain_i(config, "i", 0, 10, false);
+    add_attr_domain_bounded_i(config, "i", false, 0, 10);
 
     {
         struct ast_node* a = parse_and_assign("i > 12345", config);
@@ -68,7 +68,7 @@ int test_numeric_compare_integer()
 int test_numeric_compare_float()
 {
     struct config* config = make_default_config();
-    add_attr_domain_f(config, "f", 0., 10., false);
+    add_attr_domain_bounded_f(config, "f", false, 0., 10.);
 
     {
         struct ast_node* a = parse_and_assign("f > 12345.", config);
@@ -107,8 +107,8 @@ int test_numeric_compare_float()
 int test_numeric_compare_wrong()
 {
     struct config* config = make_default_config();
-    add_attr_domain_i(config, "i", 0, 10, false);
-    add_attr_domain_i(config, "i2", 0, 10, false);
+    add_attr_domain_bounded_i(config, "i", false, 0, 10);
+    add_attr_domain_bounded_i(config, "i2", false, 0, 10);
 
     {
         struct ast_node* a = parse_and_assign("i > 12345", config);
@@ -147,7 +147,7 @@ int test_numeric_compare_wrong()
 int test_equality_integer()
 {
     struct config* config = make_default_config();
-    add_attr_domain_i(config, "i", 0, 10, false);
+    add_attr_domain_bounded_i(config, "i", false, 0, 10);
 
     {
         struct ast_node* a = parse_and_assign("i = 12345", config);
@@ -172,7 +172,7 @@ int test_equality_integer()
 int test_equality_float()
 {
     struct config* config = make_default_config();
-    add_attr_domain_f(config, "f", 0., 10., false);
+    add_attr_domain_bounded_f(config, "f", false, 0., 10.);
 
     {
         struct ast_node* a = parse_and_assign("f = 12345.", config);
@@ -222,8 +222,8 @@ int test_equality_string()
 int test_equality_wrong()
 {
     struct config* config = make_default_config();
-    add_attr_domain_i(config, "i", 0, 10, false);
-    add_attr_domain_i(config, "i2", 0, 10, false);
+    add_attr_domain_bounded_i(config, "i", false, 0, 10);
+    add_attr_domain_bounded_i(config, "i2", false, 0, 10);
 
     {
         struct ast_node* a = parse_and_assign("i = 12345", config);
@@ -262,7 +262,7 @@ int test_equality_wrong()
 int test_set_var_integer()
 {
     struct config* config = make_default_config();
-    add_attr_domain_i(config, "i", 0, 10, false);
+    add_attr_domain_bounded_i(config, "i", false, 0, 10);
 
     {
         struct ast_node* a = parse_and_assign("i in (1,2)", config);
@@ -312,8 +312,8 @@ int test_set_var_string()
 int test_set_var_wrong()
 {
     struct config* config = make_default_config();
-    add_attr_domain_i(config, "i", 0, 10, false);
-    add_attr_domain_i(config, "i2", 0, 10, false);
+    add_attr_domain_bounded_i(config, "i", false, 0, 10);
+    add_attr_domain_bounded_i(config, "i2", false, 0, 10);
 
     {
         config->abort_on_error = false;
@@ -764,7 +764,7 @@ int test_bool()
 {
     struct config* config = make_default_config();
     add_attr_domain_b(config, "b", false);
-    add_attr_domain_i(config, "i", 0, 10, false);
+    add_attr_domain_bounded_i(config, "i", false, 0, 10);
 
     {
         struct ast_node* a = parse_and_assign("b", config);
@@ -819,7 +819,7 @@ int test_bool_wrong()
     struct config* config = make_default_config();
     add_attr_domain_b(config, "b", false);
     add_attr_domain_b(config, "b2", false);
-    add_attr_domain_i(config, "i", 0, 10, false);
+    add_attr_domain_bounded_i(config, "i", false, 0, 10);
 
     {
         struct ast_node* a = parse_and_assign("b", config);

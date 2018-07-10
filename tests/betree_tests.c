@@ -15,7 +15,7 @@ int event_parse(const char* text, struct event** event);
 int test_sub_has_attribute()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "a", 0, 10, false);
+    add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);
     
     mu_assert(betree_insert(tree, 0, "a = 0"), "");
 
@@ -58,7 +58,7 @@ bool report_has_sub1(struct report* report, betree_sub_t sub1)
 int test_remove_sub()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "a", 0, 10, false);
+    add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);
 
     mu_assert(betree_insert(tree, 0, "a = 0"), "");
     mu_assert(cnode_has_sub1(tree->cnode, 0), "lnode has one sub and it matches");
@@ -81,7 +81,7 @@ int test_remove_sub()
 int test_match_single_cnode()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "a", 0, 10, false);
+    add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);
 
     betree_sub_t sub_id = 0;
 
@@ -126,8 +126,8 @@ bool cdir_has_attr(struct config* config, const char* attr, const struct cdir* c
 int test_insert_first_split()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "a", 0, 10, false);
-    add_attr_domain_i(tree->config, "b", 0, 10, false);
+    add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);
+    add_attr_domain_bounded_i(tree->config, "b", false, 0, 10);
 
     mu_assert(betree_insert(tree, 0, "a = 0"), "");
     mu_assert(betree_insert(tree, 1, "a = 1"), "");
@@ -168,9 +168,9 @@ bool test_cnode_has_pnodes(struct config* config, const struct cnode* cnode, siz
 int test_pdir_split_twice()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "a", 0, 10, false);
-    add_attr_domain_i(tree->config, "b", 0, 10, false);
-    add_attr_domain_i(tree->config, "c", 0, 10, false);
+    add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);
+    add_attr_domain_bounded_i(tree->config, "b", false, 0, 10);
+    add_attr_domain_bounded_i(tree->config, "c", false, 0, 10);
 
     mu_assert(betree_insert(tree, 1, "a = 0"), "");
     mu_assert(betree_insert(tree, 2, "a = 0"), "");
@@ -220,8 +220,8 @@ int test_pdir_split_twice()
 int test_cdir_split_twice()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "a", 0, 10, false);
-    add_attr_domain_i(tree->config, "b", 0, 10, false);
+    add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);
+    add_attr_domain_bounded_i(tree->config, "b", false, 0, 10);
 
     mu_assert(betree_insert(tree, 1, "a = 2"), "");
     mu_assert(betree_insert(tree, 2, "a = 2"), "");
@@ -269,7 +269,7 @@ int test_cdir_split_twice()
 int test_remove_sub_in_tree()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "a", 0, 10, false);
+    add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);
 
     mu_assert(betree_insert(tree, 0, "a = 0"), "");
 
@@ -288,8 +288,8 @@ int test_remove_sub_in_tree()
 int test_remove_sub_in_tree_with_delete()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "a", 0, 10, false);
-    add_attr_domain_i(tree->config, "b", 0, 10, false);
+    add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);
+    add_attr_domain_bounded_i(tree->config, "b", false, 0, 10);
 
     mu_assert(betree_insert(tree, 1, "a = 0"), "");
     mu_assert(betree_insert(tree, 2, "a = 0"), "");
@@ -315,8 +315,8 @@ extern bool MATCH_NODE_DEBUG;
 int test_match_deeper()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "a", 0, 0, false);
-    add_attr_domain_i(tree->config, "b", 0, 1, false);
+    add_attr_domain_bounded_i(tree->config, "a", false, 0, 0);
+    add_attr_domain_bounded_i(tree->config, "b", false, 0, 1);
 
     mu_assert(betree_insert(tree, 1, "a = 0 and b = 0"), "");
     mu_assert(betree_insert(tree, 2, "a = 1"), "");
@@ -357,7 +357,7 @@ int test_match_deeper()
 int test_large_cdir_split()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "a", 0, 10000, false);
+    add_attr_domain_bounded_i(tree->config, "a", false, 0, 10000);
 
     for(size_t i = 0; i < 100; i++) {
         char* expr;
@@ -383,9 +383,9 @@ int test_min_partition()
     size_t lnode_max_cap = 3;
     // With 0
     struct betree* tree = betree_make_with_parameters(lnode_max_cap, 0);;
-    add_attr_domain_i(tree->config, "a", 0, 10, false);
-    add_attr_domain_i(tree->config, "b", 0, 10, false);
-    add_attr_domain_i(tree->config, "c", 0, 10, false);
+    add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);
+    add_attr_domain_bounded_i(tree->config, "b", false, 0, 10);
+    add_attr_domain_bounded_i(tree->config, "c", false, 0, 10);
 
     mu_assert(betree_insert(tree, 0, "a = 0"), "");
     mu_assert(betree_insert(tree, 1, "a = 0"), "");
@@ -402,9 +402,9 @@ int test_min_partition()
 
     // With 3
     tree = betree_make_with_parameters(lnode_max_cap, 3);;
-    add_attr_domain_i(tree->config, "a", 0, 10, false);
-    add_attr_domain_i(tree->config, "b", 0, 10, false);
-    add_attr_domain_i(tree->config, "c", 0, 10, false);
+    add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);
+    add_attr_domain_bounded_i(tree->config, "b", false, 0, 10);
+    add_attr_domain_bounded_i(tree->config, "c", false, 0, 10);
 
     mu_assert(betree_insert(tree, 0, "a = 0"), "");
     mu_assert(betree_insert(tree, 1, "a = 0"), "");
@@ -426,8 +426,8 @@ int test_allow_undefined()
 
     // With allow undefined
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "a", 0, 10, true);
-    add_attr_domain_i(tree->config, "b", 0, 10, false);
+    add_attr_domain_bounded_i(tree->config, "a", true, 0, 10);
+    add_attr_domain_bounded_i(tree->config, "b", false, 0, 10);
 
     for(size_t i = 0; i < expr_count; i++) {
         const char* expr = exprs[i];
@@ -451,7 +451,7 @@ int test_allow_undefined()
 int test_float()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_f(tree->config, "a", 0., 10., false);
+    add_attr_domain_bounded_f(tree->config, "a", false, 0., 10.);
 
     for(size_t i = 0; i < 4; i++) {
         double value = i < 3 ? 0. : 7.;
@@ -542,7 +542,7 @@ int test_negative_int()
     int64_t min = -10;
     int64_t max = -4;
     int64_t mid = (min + max) / 2;
-    add_attr_domain_i(tree->config, "a", min, max, false);
+    add_attr_domain_bounded_i(tree->config, "a", false, min, max);
 
     for(size_t i = 0; i < 4; i++) {
         int64_t value = i < 3 ? -6 : -12;
@@ -576,7 +576,7 @@ int test_negative_float()
     double min = -10.;
     double max = -4.;
     double mid = ceil((min + max) / 2.);
-    add_attr_domain_f(tree->config, "a", min, max, false);
+    add_attr_domain_bounded_f(tree->config, "a", false, min, max);
 
     for(size_t i = 0; i < 4; i++) {
         double value = i < 3 ? -6. : -12.;
@@ -615,7 +615,7 @@ void empty_tree(struct betree* tree)
 int test_integer_set()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "a", 0, 10, false);
+    add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);
 
     {
         mu_assert(betree_insert(tree, 0, "a in (1, 2, 0)"), "");
@@ -1046,7 +1046,7 @@ int test_not_domain_changing()
 {
     struct betree* tree = betree_make();
     tree->config->lnode_max_cap = 1;
-    add_attr_domain_i(tree->config, "i", 0, 10, false);
+    add_attr_domain_bounded_i(tree->config, "i", false, 0, 10);
 
     {
         mu_assert(betree_insert(tree, 1, "not (i > 2)"), "");
@@ -1103,8 +1103,8 @@ int test_not_domain_changing()
 int test_insert_all()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "i1", 0, 10, true);
-    add_attr_domain_i(tree->config, "i2", 0, 10, true);
+    add_attr_domain_bounded_i(tree->config, "i1", true, 0, 10);
+    add_attr_domain_bounded_i(tree->config, "i2", true, 0, 10);
 
     const char* exprs[3] = {
         "i1 = 0 || i1 = 2",
@@ -1132,7 +1132,7 @@ int test_bug_cases()
 {
     struct betree* tree = betree_make_with_parameters(1, 0);
     add_attr_domain_b(tree->config, "b", false);
-    add_attr_domain_i(tree->config, "i", 0, 10, true);
+    add_attr_domain_bounded_i(tree->config, "i", true, 0, 10);
 
     mu_assert(betree_insert(tree, 0, "not b || i > 8"), "");
     mu_assert(betree_insert(tree, 1, "not b"), "");
@@ -1150,7 +1150,7 @@ int test_bug_cases()
 int test_null_report()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "i", 0, 10, false);
+    add_attr_domain_bounded_i(tree->config, "i", false, 0, 10);
 
     mu_assert(betree_insert(tree, 0, "i = 0"), "");
 
@@ -1165,7 +1165,7 @@ int test_splitable_integer_list_domain()
 {
     {
         struct betree* tree = betree_make();
-        add_attr_domain_bounded_il(tree->config, "il", 0, 10, false);
+        add_attr_domain_bounded_il(tree->config, "il", false, 0, 10);
 
         mu_assert(betree_insert(tree, 0, "1 in il"), "");
         mu_assert(betree_insert(tree, 1, "2 in il"), "");

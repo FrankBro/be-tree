@@ -18,7 +18,7 @@ frequency(
     enum frequency_type_e cap_type, uint32_t cap_id, const char* cap_ns, uint32_t cap_value, int64_t timestamp)
 {
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "now", 0, 10, false);
+    add_attr_domain_bounded_i(tree->config, "now", false, 0, 10);
     const char* frequency_attr = "frequency_caps";
     add_attr_domain_frequency(tree->config, frequency_attr, false);
     char* expr;
@@ -183,7 +183,7 @@ segment(bool has_not, enum segment_function_type func_type,
     int64_t segment_id, int64_t segment_seconds)
 {
     struct betree* tree = betree_make();
-    add_attr_domain_i(tree->config, "now", 0.0, 10.0, false);
+    add_attr_domain_bounded_i(tree->config, "now", false, 0.0, 10.0);
     add_attr_domain_segments(tree->config, "seg_a", false);
     add_attr_domain_segments(tree->config, "seg_b", false);
     add_attr_domain_segments(tree->config, "segments_with_timestamp", false);
@@ -284,8 +284,8 @@ int test_segment()
 static bool geo(bool has_not, const char* latitude, const char* longitude, const char* radius, double latitude_value, double longitude_value)
 {
     struct betree* tree = betree_make();
-    add_attr_domain_f(tree->config, "latitude", 0.0, 10.0, false);
-    add_attr_domain_f(tree->config, "longitude", 0.0, 10.0, false);
+    add_attr_domain_bounded_f(tree->config, "latitude", false, 0.0, 10.0);
+    add_attr_domain_bounded_f(tree->config, "longitude", false, 0.0, 10.0);
     char* expr;
     const char* pre;
     if(has_not) {

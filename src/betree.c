@@ -161,7 +161,7 @@ void betree_add_domain(struct betree* betree, char* domain)
         if(max_str != NULL) {
             max = strtoll(max_str, NULL, 10);
         }
-        add_attr_domain_i(config, name, min, max, allow_undefined);
+        add_attr_domain_bounded_i(config, name, allow_undefined, min, max);
     }
     else if(strcmp(type, "float") == 0) {
         double min = -DBL_MAX, max = DBL_MAX;
@@ -171,7 +171,7 @@ void betree_add_domain(struct betree* betree, char* domain)
         if(max_str != NULL) {
             max = atof(max_str);
         }
-        add_attr_domain_i(config, name, min, max, allow_undefined);
+        add_attr_domain_bounded_f(config, name, allow_undefined, min, max);
     }
     else if(strcmp(type, "boolean") == 0) {
         add_attr_domain_b(config, name, allow_undefined);
@@ -200,7 +200,7 @@ void betree_add_domain(struct betree* betree, char* domain)
             max = strtoll(max_str, NULL, 10);
         }
         if(min_str != NULL && max_str != NULL) {
-            add_attr_domain_bounded_il(config, name, min, max, allow_undefined);
+            add_attr_domain_bounded_il(config, name, allow_undefined, min, max);
         }
         else {
             add_attr_domain_il(config, name, allow_undefined);

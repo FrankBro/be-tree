@@ -187,3 +187,4 @@ enum frequency_type_e get_type_from_string(const char* stype)
         abort();
     }
 }
+

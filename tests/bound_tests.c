@@ -106,7 +106,7 @@ int test_integer_bounds()
     struct betree* tree = betree_make();
     int64_t min = -10;
     int64_t max = 10;
-    add_attr_domain_i(tree->config, "i", min, max, false);
+    add_attr_domain_bounded_i(tree->config, "i", false, min, max);
     add_attr_domain_b(tree->config, "wrong", true);
 
     mu_assert(match_integer(tree->config, "i = 1", 1, 1), "eq");
@@ -144,7 +144,7 @@ int test_float_bounds()
     double min = -10.;
     double max = 10.;
     double change = __DBL_EPSILON__;
-    add_attr_domain_f(tree->config, "f", min, max, false);
+    add_attr_domain_bounded_f(tree->config, "f", false, min, max);
     add_attr_domain_b(tree->config, "wrong", true);
 
     mu_assert(match_float(tree->config, "f = 1.", 1., 1.), "eq");
@@ -208,7 +208,7 @@ int test_integer_list_bounds()
     struct betree* tree = betree_make();
     int64_t min = -10;
     int64_t max = 10;
-    add_attr_domain_bounded_il(tree->config, "il", min, max, false);
+    add_attr_domain_bounded_il(tree->config, "il", false, min, max);
     add_attr_domain_b(tree->config, "wrong", true);
 
     mu_assert(match_integer_list(tree->config, "1 in il", 1, 1), "in");

@@ -12,7 +12,7 @@ int test_integer()
 {
     struct betree* tree = betree_make();
     tree->config->lnode_max_cap = 1;
-    add_attr_domain_i(tree->config, "a", 0, 10, false);
+    add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);
 
     {
         struct report* report = make_report();
@@ -32,7 +32,7 @@ int test_float()
 {
     struct betree* tree = betree_make();
     tree->config->lnode_max_cap = 1;
-    add_attr_domain_f(tree->config, "f", 0., 10., false);
+    add_attr_domain_bounded_f(tree->config, "f", false, 0., 10.);
 
     {
         struct report* report = make_report();
