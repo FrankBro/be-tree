@@ -397,21 +397,59 @@ size_t count_attr_in_cdir(betree_var_t variable_id, const struct cdir* cdir)
     return count;
 }
 
+static size_t domain_bound_diff(const struct attr_domain* attr_domain)
+{
+    const struct value_bound* b = &attr_domain->bound;
+    switch(b->value_type) {
+        case VALUE_B:
+            return ((size_t)b->bmax) - ((size_t)b->bmin);
+        case VALUE_I:
+            if(b->imin == INT64_MIN && b->imax == INT64_MAX) {
+                return SIZE_MAX;
+            }
+            else {
+                return (size_t)(llabs(b->imax - b->imin));
+            }
+        case VALUE_F:
+            if(feq(b->fmin, -DBL_MAX) && feq(b->fmax, DBL_MAX)) {
+                return SIZE_MAX;
+            }
+            else {
+                return (size_t)(fabs(b->fmax - b->fmin));
+            }
+        case VALUE_S:
+            return b->smax - b->smin;
+        case VALUE_IL:
+            if(b->ilmin == INT64_MIN && b->ilmax == INT64_MAX) {
+                return SIZE_MAX;
+            }
+            else {
+                return (size_t)(llabs(b->ilmax - b->ilmin));
+            }
+        case VALUE_SL:
+            return b->slmax - b->slmin;
+        case VALUE_SEGMENTS:
+        case VALUE_FREQUENCY:
+        default:
+            abort();
+    }
+}
+
+static double get_attr_domain_score(const struct attr_domain* attr_domain)
+{
+    size_t diff = domain_bound_diff(attr_domain);
+    double num = attr_domain->allow_undefined ? 1. : 10.;
+    double bound_score = num / (double) diff;
+    return bound_score;
+}
+
 void update_partition_score(const struct config* config, struct pnode* pnode)
 {
-    // TODO: Wutdo
-    float alpha = 0.5;
-    size_t gain = count_attr_in_cdir(pnode->attr_var.var, pnode->cdir);
-    // TODO: Idk man
+    size_t count = count_attr_in_cdir(pnode->attr_var.var, pnode->cdir);
     const struct attr_domain* attr_domain = get_attr_domain(config, pnode->attr_var.var);
-    if(attr_domain == NULL) {
-        const char* attr = get_attr_for_id(config, pnode->attr_var.var);
-        fprintf(stderr, "Could not find attr_domain for attr '%s'\n", attr);
-        abort();
-    }
-    uint64_t loss = attr_domain->allow_undefined ? 1.0 : 0.0;
-    /*loss += attr_domain->bound.value_type == VALUE_S && !attr_domain->bound.is_string_bounded ? 2.0 : 0.0;*/
-    pnode->score = (1.0 - alpha) * (float)gain - alpha * (float)loss;
+    betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_MISSING, attr_domain != NULL);
+    double attr_domain_score = get_attr_domain_score(attr_domain);
+    pnode->score = (double)count * attr_domain_score;
 }
 
 bool insert_be_tree(
