@@ -60,44 +60,43 @@ void add_predicate(struct pred_map* map, struct pred_container* container, struc
     add_predicate_to_map(map, clone);
 }
 
+static void match_or_insert(struct pred_map* pred_map, struct pred_container* container, struct ast_node* node)
+{
+    for(size_t i = 0; i < container->count; i++) {
+        if(eq_expr(node, container->preds[i])) {
+            node->id = container->preds[i]->id;
+            return;
+        }
+    }
+    add_predicate(pred_map, container, node);
+}
+
+static void fast_match_or_insert(struct pred_map* pred_map, struct pred_container* container, struct ast_node* node)
+{
+    for(size_t i = 0; i < container->count; i++) {
+        if(fast_eq_expr(node, container->preds[i])) {
+            node->id = container->preds[i]->id;
+            return;
+        }
+    }
+    add_predicate(pred_map, container, node);
+}
+
 void assign_numeric_compare_pred(struct pred_map* pred_map, struct ast_numeric_compare_expr* typed, struct ast_node* node)
 {
+    struct pred_numeric_compare_map* m = &pred_map->numeric_compare_map;
     switch(typed->op) {
-        case AST_NUMERIC_COMPARE_LT:
-            for(size_t i = 0; i < pred_map->numeric_compare_map.lt_preds.count; i++) {
-                if(eq_expr(node, pred_map->numeric_compare_map.lt_preds.preds[i])) {
-                    node->id = pred_map->numeric_compare_map.lt_preds.preds[i]->id;
-                    return;
-                }
-            }
-            add_predicate(pred_map, &pred_map->numeric_compare_map.lt_preds, node);
+        case AST_NUMERIC_COMPARE_LT: 
+            match_or_insert(pred_map, &m->lt_preds, node); 
             break;
-        case AST_NUMERIC_COMPARE_LE:
-            for(size_t i = 0; i < pred_map->numeric_compare_map.le_preds.count; i++) {
-                if(eq_expr(node, pred_map->numeric_compare_map.le_preds.preds[i])) {
-                    node->id = pred_map->numeric_compare_map.le_preds.preds[i]->id;
-                    return;
-                }
-            }
-            add_predicate(pred_map, &pred_map->numeric_compare_map.le_preds, node);
+        case AST_NUMERIC_COMPARE_LE: 
+            match_or_insert(pred_map, &m->le_preds, node); 
             break;
-        case AST_NUMERIC_COMPARE_GT:
-            for(size_t i = 0; i < pred_map->numeric_compare_map.gt_preds.count; i++) {
-                if(eq_expr(node, pred_map->numeric_compare_map.gt_preds.preds[i])) {
-                    node->id = pred_map->numeric_compare_map.gt_preds.preds[i]->id;
-                    return;
-                }
-            }
-            add_predicate(pred_map, &pred_map->numeric_compare_map.gt_preds, node);
+        case AST_NUMERIC_COMPARE_GT: 
+            match_or_insert(pred_map, &m->gt_preds, node); 
             break;
-        case AST_NUMERIC_COMPARE_GE:
-            for(size_t i = 0; i < pred_map->numeric_compare_map.ge_preds.count; i++) {
-                if(eq_expr(node, pred_map->numeric_compare_map.ge_preds.preds[i])) {
-                    node->id = pred_map->numeric_compare_map.ge_preds.preds[i]->id;
-                    return;
-                }
-            }
-            add_predicate(pred_map, &pred_map->numeric_compare_map.ge_preds, node);
+        case AST_NUMERIC_COMPARE_GE: 
+            match_or_insert(pred_map, &m->ge_preds, node); 
             break;
         default:
             switch_default_error("Invalid numeric compare op");
@@ -107,24 +106,13 @@ void assign_numeric_compare_pred(struct pred_map* pred_map, struct ast_numeric_c
 
 void assign_equality_pred(struct pred_map* pred_map, struct ast_equality_expr* typed, struct ast_node* node)
 {
+    struct pred_equality_map* m = &pred_map->equality_map;
     switch(typed->op) {
-        case AST_EQUALITY_EQ:
-            for(size_t i = 0; i < pred_map->equality_map.eq_preds.count; i++) {
-                if(eq_expr(node, pred_map->equality_map.eq_preds.preds[i])) {
-                    node->id = pred_map->equality_map.eq_preds.preds[i]->id;
-                    return;
-                }
-            }
-            add_predicate(pred_map, &pred_map->equality_map.eq_preds, node);
+        case AST_EQUALITY_EQ: 
+            match_or_insert(pred_map, &m->eq_preds, node); 
             break;
-        case AST_EQUALITY_NE:
-            for(size_t i = 0; i < pred_map->equality_map.ne_preds.count; i++) {
-                if(eq_expr(node, pred_map->equality_map.ne_preds.preds[i])) {
-                    node->id = pred_map->equality_map.ne_preds.preds[i]->id;
-                    return;
-                }
-            }
-            add_predicate(pred_map, &pred_map->equality_map.ne_preds, node);
+        case AST_EQUALITY_NE: 
+            match_or_insert(pred_map, &m->ne_preds, node); 
             break;
         default:
             switch_default_error("Invalid equality op");
@@ -135,42 +123,19 @@ void assign_equality_pred(struct pred_map* pred_map, struct ast_equality_expr* t
 // BIG assumption, the inner expressions have been assigned a pred. So we save a bunch of time for "and", "or" and "not"
 void assign_bool_pred(struct pred_map* pred_map, struct ast_bool_expr* typed, struct ast_node* node)
 {
+    struct pred_bool_map* m = &pred_map->bool_map;
     switch(typed->op) {
-        case AST_BOOL_NOT:
-            for(size_t i = 0; i < pred_map->bool_map.not_preds.count; i++) {
-                if(fast_eq_expr(node, pred_map->bool_map.not_preds.preds[i])) {
-                    node->id = pred_map->bool_map.not_preds.preds[i]->id;
-                    return;
-                }
-            }
-            add_predicate(pred_map, &pred_map->bool_map.not_preds, node);
+        case AST_BOOL_NOT: 
+            fast_match_or_insert(pred_map, &m->not_preds, node); 
             break;
-        case AST_BOOL_OR:
-            for(size_t i = 0; i < pred_map->bool_map.or_preds.count; i++) {
-                if(fast_eq_expr(node, pred_map->bool_map.or_preds.preds[i])) {
-                    node->id = pred_map->bool_map.or_preds.preds[i]->id;
-                    return;
-                }
-            }
-            add_predicate(pred_map, &pred_map->bool_map.or_preds, node);
+        case AST_BOOL_OR:  
+            fast_match_or_insert(pred_map, &m->or_preds, node); 
             break;
-        case AST_BOOL_AND:
-            for(size_t i = 0; i < pred_map->bool_map.and_preds.count; i++) {
-                if(fast_eq_expr(node, pred_map->bool_map.and_preds.preds[i])) {
-                    node->id = pred_map->bool_map.and_preds.preds[i]->id;
-                    return;
-                }
-            }
-            add_predicate(pred_map, &pred_map->bool_map.and_preds, node);
+        case AST_BOOL_AND: 
+            fast_match_or_insert(pred_map, &m->and_preds, node); 
             break;
-        case AST_BOOL_VARIABLE:
-            for(size_t i = 0; i < pred_map->bool_map.var_preds.count; i++) {
-                if(eq_expr(node, pred_map->bool_map.var_preds.preds[i])) {
-                    node->id = pred_map->bool_map.var_preds.preds[i]->id;
-                    return;
-                }
-            }
-            add_predicate(pred_map, &pred_map->bool_map.var_preds, node);
+        case AST_BOOL_VARIABLE: 
+            match_or_insert(pred_map, &m->var_preds, node); 
             break;
         default:
             switch_default_error("Invalid bool op");
@@ -180,24 +145,13 @@ void assign_bool_pred(struct pred_map* pred_map, struct ast_bool_expr* typed, st
 
 void assign_set_pred(struct pred_map* pred_map, struct ast_set_expr* typed, struct ast_node* node)
 {
+    struct pred_set_map* m = &pred_map->set_map;
     switch(typed->op) {
-        case AST_SET_NOT_IN:
-            for(size_t i = 0; i < pred_map->set_map.not_in_preds.count; i++) {
-                if(eq_expr(node, pred_map->set_map.not_in_preds.preds[i])) {
-                    node->id = pred_map->set_map.not_in_preds.preds[i]->id;
-                    return;
-                }
-            }
-            add_predicate(pred_map, &pred_map->set_map.not_in_preds, node);
+        case AST_SET_NOT_IN: 
+            match_or_insert(pred_map, &m->not_in_preds, node); 
             break;
         case AST_SET_IN:
-            for(size_t i = 0; i < pred_map->set_map.in_preds.count; i++) {
-                if(eq_expr(node, pred_map->set_map.in_preds.preds[i])) {
-                    node->id = pred_map->set_map.in_preds.preds[i]->id;
-                    return;
-                }
-            }
-            add_predicate(pred_map, &pred_map->set_map.in_preds, node);
+            match_or_insert(pred_map, &m->in_preds, node); 
             break;
         default:
             switch_default_error("Invalid set op");
@@ -207,33 +161,16 @@ void assign_set_pred(struct pred_map* pred_map, struct ast_set_expr* typed, stru
 
 void assign_list_pred(struct pred_map* pred_map, struct ast_list_expr* typed, struct ast_node* node)
 {
+    struct pred_list_map* m = &pred_map->list_map;
     switch(typed->op) {
         case AST_LIST_ALL_OF:
-            for(size_t i = 0; i < pred_map->list_map.all_of_preds.count; i++) {
-                if(eq_expr(node, pred_map->list_map.all_of_preds.preds[i])) {
-                    node->id = pred_map->list_map.all_of_preds.preds[i]->id;
-                    return;
-                }
-            }
-            add_predicate(pred_map, &pred_map->list_map.all_of_preds, node);
+            match_or_insert(pred_map, &m->all_of_preds, node); 
             break;
         case AST_LIST_ONE_OF:
-            for(size_t i = 0; i < pred_map->list_map.one_of_preds.count; i++) {
-                if(eq_expr(node, pred_map->list_map.one_of_preds.preds[i])) {
-                    node->id = pred_map->list_map.one_of_preds.preds[i]->id;
-                    return;
-                }
-            }
-            add_predicate(pred_map, &pred_map->list_map.one_of_preds, node);
+            match_or_insert(pred_map, &m->one_of_preds, node); 
             break;
-        case AST_LIST_NONE_OF:
-            for(size_t i = 0; i < pred_map->list_map.none_of_preds.count; i++) {
-                if(eq_expr(node, pred_map->list_map.none_of_preds.preds[i])) {
-                    node->id = pred_map->list_map.none_of_preds.preds[i]->id;
-                    return;
-                }
-            }
-            add_predicate(pred_map, &pred_map->list_map.none_of_preds, node);
+        case AST_LIST_NONE_OF: 
+            match_or_insert(pred_map, &m->none_of_preds, node); 
             break;
         default:
             switch_default_error("Invalid list op");
@@ -243,42 +180,19 @@ void assign_list_pred(struct pred_map* pred_map, struct ast_list_expr* typed, st
 
 void assign_special_pred(struct pred_map* pred_map, struct ast_special_expr* typed, struct ast_node* node)
 {
+    struct pred_special_map* m = &pred_map->special_map;
     switch(typed->type) {
-        case AST_SPECIAL_STRING:
-            for(size_t i = 0; i < pred_map->special_map.string_preds.count; i++) {
-                if(eq_expr(node, pred_map->special_map.string_preds.preds[i])) {
-                    node->id = pred_map->special_map.string_preds.preds[i]->id;
-                    return;
-                }
-            }
-            add_predicate(pred_map, &pred_map->special_map.string_preds, node);
+        case AST_SPECIAL_STRING: 
+            match_or_insert(pred_map, &m->string_preds, node); 
             break;
-        case AST_SPECIAL_SEGMENT:
-            for(size_t i = 0; i < pred_map->special_map.segment_preds.count; i++) {
-                if(eq_expr(node, pred_map->special_map.segment_preds.preds[i])) {
-                    node->id = pred_map->special_map.segment_preds.preds[i]->id;
-                    return;
-                }
-            }
-            add_predicate(pred_map, &pred_map->special_map.segment_preds, node);
+        case AST_SPECIAL_SEGMENT: 
+            match_or_insert(pred_map, &m->segment_preds, node); 
             break;
-        case AST_SPECIAL_GEO:
-            for(size_t i = 0; i < pred_map->special_map.geo_preds.count; i++) {
-                if(eq_expr(node, pred_map->special_map.geo_preds.preds[i])) {
-                    node->id = pred_map->special_map.geo_preds.preds[i]->id;
-                    return;
-                }
-            }
-            add_predicate(pred_map, &pred_map->special_map.geo_preds, node);
+        case AST_SPECIAL_GEO: 
+            match_or_insert(pred_map, &m->geo_preds, node); 
             break;
-        case AST_SPECIAL_FREQUENCY:
-            for(size_t i = 0; i < pred_map->special_map.frequency_preds.count; i++) {
-                if(eq_expr(node, pred_map->special_map.frequency_preds.preds[i])) {
-                    node->id = pred_map->special_map.frequency_preds.preds[i]->id;
-                    return;
-                }
-            }
-            add_predicate(pred_map, &pred_map->special_map.frequency_preds, node);
+        case AST_SPECIAL_FREQUENCY: 
+            match_or_insert(pred_map, &m->frequency_preds, node); 
             break;
         default:
             switch_default_error("Invalid list op");
