@@ -1128,8 +1128,6 @@ void report_memoized(struct report* report)
     }
 }
 
-bool MATCH_NODE_DEBUG = false;
-
 void print_memoize(const struct memoize* memoize, size_t pred_count)
 {
     printf("DEBUG: Pass ");
@@ -1148,29 +1146,7 @@ void print_memoize(const struct memoize* memoize, size_t pred_count)
 
 static bool match_node_inner(const struct config* config, const struct pred** preds, const struct ast_node* node, struct memoize* memoize, struct report* report)
 {
-    // TODO allow undefined handling?
-    if(MATCH_NODE_DEBUG) {
-        const char* memoize_status;
-        /*print_memoize(memoize, config->pred_count);*/
-        if(memoize != NULL) {
-            if(test_bit(memoize->pass, node->id)) {
-                memoize_status = "PASS";
-            }
-            else if(test_bit(memoize->fail, node->id)) {
-                memoize_status = "FAIL";
-            }
-            else {
-                memoize_status = "NOPE";
-            }
-        }
-        else {
-            memoize_status = "NOPE";
-        }
-        const char* expr = ast_to_string(node);
-        printf("DEBUG: Pred: %lu, Memoize: %s, %s\n", node->id, memoize_status, expr);
-        free((char*)expr);
-    }
-    if(memoize != NULL && node->id != UINT64_MAX) {
+    if(node->id != UINT64_MAX) {
         if(test_bit(memoize->pass, node->id)) {
             report_memoized(report);
             return true;
@@ -1211,7 +1187,7 @@ static bool match_node_inner(const struct config* config, const struct pred** pr
             return false;
         }
     }
-    if(memoize != NULL && node->id != UINT64_MAX) {
+    if(node->id != UINT64_MAX) {
         if(result) {
             set_bit(memoize->pass, node->id);
         }
