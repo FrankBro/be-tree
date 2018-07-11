@@ -52,34 +52,20 @@ void add_predicate_to_map(struct pred_map* pred_map, struct ast_node* node)
 
 extern bool MATCH_NODE_DEBUG;
 
-void add_predicate(struct pred_map* map, struct pred_container* container, struct ast_node* node)
-{
-    node->id = map->pred_count;
-    struct ast_node* clone = clone_node(node);
-    add_predicate_to_container(container, clone);
-    add_predicate_to_map(map, clone);
-}
-
 static void match_or_insert(struct pred_map* pred_map, struct pred_container* container, struct ast_node* node)
 {
     for(size_t i = 0; i < container->count; i++) {
-        if(eq_expr(node, container->preds[i])) {
-            node->id = container->preds[i]->id;
+        struct ast_node* other_node = container->preds[i];
+        if(eq_expr(node, other_node)) {
+            if(other_node->id == UINT64_MAX) {
+                other_node->id = pred_map->pred_count;
+                add_predicate_to_map(pred_map, other_node);
+            }
+            node->id = other_node->id;
             return;
         }
     }
-    add_predicate(pred_map, container, node);
-}
-
-static void fast_match_or_insert(struct pred_map* pred_map, struct pred_container* container, struct ast_node* node)
-{
-    for(size_t i = 0; i < container->count; i++) {
-        if(fast_eq_expr(node, container->preds[i])) {
-            node->id = container->preds[i]->id;
-            return;
-        }
-    }
-    add_predicate(pred_map, container, node);
+    add_predicate_to_container(container, node);
 }
 
 void assign_numeric_compare_pred(struct pred_map* pred_map, struct ast_numeric_compare_expr* typed, struct ast_node* node)
@@ -126,13 +112,13 @@ void assign_bool_pred(struct pred_map* pred_map, struct ast_bool_expr* typed, st
     struct pred_bool_map* m = &pred_map->bool_map;
     switch(typed->op) {
         case AST_BOOL_NOT: 
-            fast_match_or_insert(pred_map, &m->not_preds, node); 
+            match_or_insert(pred_map, &m->not_preds, node); 
             break;
         case AST_BOOL_OR:  
-            fast_match_or_insert(pred_map, &m->or_preds, node); 
+            match_or_insert(pred_map, &m->or_preds, node); 
             break;
         case AST_BOOL_AND: 
-            fast_match_or_insert(pred_map, &m->and_preds, node); 
+            match_or_insert(pred_map, &m->and_preds, node); 
             break;
         case AST_BOOL_VARIABLE: 
             match_or_insert(pred_map, &m->var_preds, node); 
@@ -294,9 +280,6 @@ void free_pred_map(struct pred_map* pred_map)
     free(pred_map->special_map.geo_preds.preds);
     free(pred_map->special_map.segment_preds.preds);
     free(pred_map->special_map.string_preds.preds);
-    for(size_t i = 0; i < pred_map->pred_count; i++) {
-        free_ast_node(pred_map->preds[i]);
-    }
     free(pred_map->preds);
     free(pred_map);
 }

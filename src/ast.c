@@ -1170,7 +1170,7 @@ static bool match_node_inner(const struct config* config, const struct pred** pr
         printf("DEBUG: Pred: %lu, Memoize: %s, %s\n", node->id, memoize_status, expr);
         free((char*)expr);
     }
-    if(memoize != NULL) {
+    if(memoize != NULL && node->id != UINT64_MAX) {
         if(test_bit(memoize->pass, node->id)) {
             report_memoized(report);
             return true;
@@ -1211,7 +1211,7 @@ static bool match_node_inner(const struct config* config, const struct pred** pr
             return false;
         }
     }
-    if(memoize != NULL) {
+    if(memoize != NULL && node->id != UINT64_MAX) {
         if(result) {
             set_bit(memoize->pass, node->id);
         }
