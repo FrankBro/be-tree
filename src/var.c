@@ -3,133 +3,94 @@
 #include "error.h"
 #include "utils.h"
 
-enum variable_state_e get_variable(const struct config* config,
-    betree_var_t variable_id,
-    const struct pred** preds,
-    struct value* value)
+bool get_variable(betree_var_t var, const struct pred** preds, struct value* value)
 {
-    const struct pred* pred = preds[variable_id];
+    const struct pred* pred = preds[var];
     if(pred != NULL) {
         *value = pred->value;
-        return VARIABLE_DEFINED;
+        return true;
     }
-    bool allow_undefined = is_variable_allow_undefined(config, variable_id);
-    if(allow_undefined) {
-        return VARIABLE_UNDEFINED;
-    }
-    else {
-        return VARIABLE_MISSING;
-    }
+    return false;
 }
 
-enum variable_state_e get_float_var(
-    const struct config* config, betree_var_t var, const struct pred** preds, double* ret)
+bool get_float_var(betree_var_t var, const struct pred** preds, double* ret)
 {
-    struct value value;
-    enum variable_state_e state = get_variable(config, var, preds, &value);
-    if(state == VARIABLE_DEFINED) {
-        betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, value.value_type == VALUE_F);
-        *ret = value.fvalue;
+    const struct pred* pred = preds[var];
+    if(pred != NULL) {
+        *ret = pred->value.fvalue;
+        return true;
     }
-    return state;
+    return false;
 }
 
-enum variable_state_e get_string_var(const struct config* config,
-    betree_var_t var,
-    const struct pred** preds,
-    struct string_value* ret)
+bool get_string_var(betree_var_t var, const struct pred** preds, struct string_value* ret)
 {
-    struct value value;
-    enum variable_state_e state = get_variable(config, var, preds, &value);
-    if(state == VARIABLE_DEFINED) {
-        betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, value.value_type == VALUE_S);
-        *ret = value.svalue;
+    const struct pred* pred = preds[var];
+    if(pred != NULL) {
+        *ret = pred->value.svalue;
+        return true;
     }
-    return state;
+    return false;
 }
 
-enum variable_state_e get_integer_var(
-    const struct config* config, betree_var_t var, const struct pred** preds, int64_t* ret)
+bool get_integer_var(betree_var_t var, const struct pred** preds, int64_t* ret)
 {
-    struct value value;
-    enum variable_state_e state = get_variable(config, var, preds, &value);
-    if(state == VARIABLE_DEFINED) {
-        betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, value.value_type == VALUE_I);
-        *ret = value.ivalue;
+    const struct pred* pred = preds[var];
+    if(pred != NULL) {
+        *ret = pred->value.ivalue;
+        return true;
     }
-    return state;
+    return false;
 }
 
-enum variable_state_e get_bool_var(
-    const struct config* config, betree_var_t var, const struct pred** preds, bool* ret)
+bool get_bool_var(betree_var_t var, const struct pred** preds, bool* ret)
 {
-    struct value value;
-    enum variable_state_e state = get_variable(config, var, preds, &value);
-    if(state == VARIABLE_DEFINED) {
-        betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, value.value_type == VALUE_B);
-        *ret = value.bvalue;
+    const struct pred* pred = preds[var];
+    if(pred != NULL) {
+        *ret = pred->value.bvalue;
+        return true;
     }
-    return state;
+    return false;
 }
 
-enum variable_state_e get_integer_list_var(const struct config* config,
-    betree_var_t var,
-    const struct pred** preds,
-    struct integer_list_value* ret)
+bool get_integer_list_var(betree_var_t var, const struct pred** preds, struct integer_list_value* ret)
 {
-    struct value value;
-    enum variable_state_e state = get_variable(config, var, preds, &value);
-    if(state == VARIABLE_DEFINED) {
-        betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, 
-            is_empty_list(value) || value.value_type == VALUE_IL);
-        *ret = value.ilvalue;
+    const struct pred* pred = preds[var];
+    if(pred != NULL) {
+        *ret = pred->value.ilvalue;
+        return true;
     }
-    return state;
+    return false;
 }
 
-enum variable_state_e get_string_list_var(const struct config* config,
-    betree_var_t var,
-    const struct pred** preds,
-    struct string_list_value* ret)
+bool get_string_list_var(betree_var_t var, const struct pred** preds, struct string_list_value* ret)
 {
-    struct value value;
-    enum variable_state_e state = get_variable(config, var, preds, &value);
-    if(state == VARIABLE_DEFINED) {
-        betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, 
-            is_empty_list(value) || value.value_type == VALUE_SL);
-        *ret = value.slvalue;
+    const struct pred* pred = preds[var];
+    if(pred != NULL) {
+        *ret = pred->value.slvalue;
+        return true;
     }
-    return state;
+    return false;
 }
 
-enum variable_state_e get_segments_var(const struct config* config,
-    betree_var_t var,
-    const struct pred** preds,
-    struct segments_list* ret)
+bool get_segments_var(betree_var_t var, const struct pred** preds, struct segments_list* ret)
 {
-    struct value value;
-    enum variable_state_e state = get_variable(config, var, preds, &value);
-    if(state == VARIABLE_DEFINED) {
-        betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, 
-            is_empty_list(value) || value.value_type == VALUE_SEGMENTS);
-        *ret = value.segments_value;
+    const struct pred* pred = preds[var];
+    if(pred != NULL) {
+        *ret = pred->value.segments_value;
+        return true;
     }
-    return state;
+    return false;
 }
 
-enum variable_state_e get_frequency_var(const struct config* config,
-    betree_var_t var,
-    const struct pred** preds,
-    struct frequency_caps_list* ret)
+bool get_frequency_var(betree_var_t var, const struct pred** preds, struct frequency_caps_list* ret)
 {
-    struct value value;
-    enum variable_state_e state = get_variable(config, var, preds, &value);
-    if(state == VARIABLE_DEFINED) {
-        betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, 
-            is_empty_list(value) || value.value_type == VALUE_FREQUENCY);
-        *ret = value.frequency_value;
+    const struct pred* pred = preds[var];
+    if(pred != NULL) {
+        *ret = pred->value.frequency_value;
+        return true;
     }
-    return state;
+    return false;
 }
 
 bool is_empty_list(struct value value)

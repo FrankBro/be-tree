@@ -8,8 +8,7 @@
 #include "special.h"
 #include "utils.h"
 
-bool within_frequency_caps(const struct config* config,
-    const struct frequency_caps_list* caps,
+bool within_frequency_caps(const struct frequency_caps_list* caps,
     enum frequency_type_e type,
     uint32_t id,
     const struct string_value namespace,
@@ -18,7 +17,6 @@ bool within_frequency_caps(const struct config* config,
     int64_t now)
 {
     for(size_t i = 0; i < caps->size; i++) {
-        betree_assert(config->abort_on_error, ERROR_STRING_VAR_MISMATCH, caps->content[i].namespace.var == namespace.var);
         if(caps->content[i].id == id && 
             caps->content[i].namespace.str == namespace.str &&
             caps->content[i].type == type) {

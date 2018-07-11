@@ -516,148 +516,118 @@ const char* frequency_type_to_string(enum frequency_type_e type)
     return string;
 }
 
-bool match_special_expr(
-    const struct config* config, const struct pred** preds, const struct ast_special_expr special_expr)
+bool match_special_expr(const struct pred** preds, const struct ast_special_expr special_expr)
 {
     switch(special_expr.type) {
         case AST_SPECIAL_FREQUENCY: {
             switch(special_expr.frequency.op) {
                 case AST_SPECIAL_WITHINFREQUENCYCAP: {
-                    int64_t now;
-                    enum variable_state_e state = get_integer_var(config, special_expr.frequency.now.var, preds, &now);
-                    betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
-                    if(state == VARIABLE_UNDEFINED) {
-                        return false;
-                    }
+                    const struct ast_special_frequency* f = &special_expr.frequency;
                     struct frequency_caps_list caps;
-                    enum variable_state_e caps_state = get_frequency_var(config, special_expr.frequency.attr_var.var, preds, &caps);
-                    betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
-                    if(caps_state == VARIABLE_UNDEFINED) {
+                    bool is_caps_defined = get_frequency_var(f->attr_var.var, preds, &caps);
+                    if(is_caps_defined == false) {
                         return false;
                     }
-                    else {
-                        uint32_t id = 20;
-                        switch(special_expr.frequency.type) {
-                            case FREQUENCY_TYPE_ADVERTISER:
-                            case FREQUENCY_TYPE_ADVERTISERIP:
-                                // id = ADVERTISER_ID;
-                                id = 20;
-                                break;
-                            case FREQUENCY_TYPE_CAMPAIGN:
-                            case FREQUENCY_TYPE_CAMPAIGNIP:
-                                // id = CAMPAIGN_ID;
-                                id = 30;
-                                break;
-                            case FREQUENCY_TYPE_FLIGHT:
-                            case FREQUENCY_TYPE_FLIGHTIP:
-                                // id = FLIGHT_ID;
-                                id = 10;
-                                break;
-                            case FREQUENCY_TYPE_PRODUCT:
-                            case FREQUENCY_TYPE_PRODUCTIP:
-                                // id = PRODUCT_ID;
-                                id = 40;
-                                break;
-                            default:
-                                switch_default_error("Invalid frequency type");
-                                break;
-                        }
-                        return within_frequency_caps(config,
-                            &caps,
-                            special_expr.frequency.type,
-                            id,
-                            special_expr.frequency.ns,
-                            special_expr.frequency.value,
-                            special_expr.frequency.length,
-                            now);
+                    int64_t now;
+                    bool is_now_defined = get_integer_var(f->now.var, preds, &now);
+                    if(is_now_defined == false) {
+                        return false;
                     }
+                    uint32_t id = 20;
+                    switch(special_expr.frequency.type) {
+                        case FREQUENCY_TYPE_ADVERTISER:
+                        case FREQUENCY_TYPE_ADVERTISERIP:
+                            // id = ADVERTISER_ID;
+                            id = 20;
+                            break;
+                        case FREQUENCY_TYPE_CAMPAIGN:
+                        case FREQUENCY_TYPE_CAMPAIGNIP:
+                            // id = CAMPAIGN_ID;
+                            id = 30;
+                            break;
+                        case FREQUENCY_TYPE_FLIGHT:
+                        case FREQUENCY_TYPE_FLIGHTIP:
+                            // id = FLIGHT_ID;
+                            id = 10;
+                            break;
+                        case FREQUENCY_TYPE_PRODUCT:
+                        case FREQUENCY_TYPE_PRODUCTIP:
+                            // id = PRODUCT_ID;
+                            id = 40;
+                            break;
+                        default:
+                            switch_default_error("Invalid frequency type");
+                            break;
+                    }
+                    return within_frequency_caps(&caps, f->type, id, f->ns, f->value, f->length, now);
                 }
-                default: {
+                default:
                     switch_default_error("Invalid frequency operation");
                     return false;
-                }
             }
         }
         case AST_SPECIAL_SEGMENT: {
-            int64_t now;
-            enum variable_state_e now_state = get_integer_var(config, special_expr.segment.now.var, preds, &now);
-            betree_assert(config->abort_on_error, ERROR_VAR_MISSING, now_state != VARIABLE_MISSING);
+            const struct ast_special_segment* s = &special_expr.segment;
             struct segments_list segments;
-            enum variable_state_e segments_state
-                = get_segments_var(config, special_expr.segment.attr_var.var, preds, &segments);
-            betree_assert(config->abort_on_error, ERROR_VAR_MISSING, segments_state != VARIABLE_MISSING);
-            if(now_state == VARIABLE_UNDEFINED || segments_state == VARIABLE_UNDEFINED) {
+            bool is_segment_defined = get_segments_var(s->attr_var.var, preds, &segments);
+            if(is_segment_defined == false) {
+                return false;
+            }
+            int64_t now;
+            bool is_now_defined = get_integer_var(s->now.var, preds, &now);
+            if(is_now_defined == false) {
                 return false;
             }
             switch(special_expr.segment.op) {
-                case AST_SPECIAL_SEGMENTWITHIN: {
-                    return segment_within(special_expr.segment.segment_id,
-                        special_expr.segment.seconds,
-                        &segments,
-                        now);
-                }
-                case AST_SPECIAL_SEGMENTBEFORE: {
-                    return segment_before(special_expr.segment.segment_id,
-                        special_expr.segment.seconds,
-                        &segments,
-                        now);
-                }
-                default: {
+                case AST_SPECIAL_SEGMENTWITHIN:
+                    return segment_within(s->segment_id, s->seconds, &segments, now);
+                case AST_SPECIAL_SEGMENTBEFORE:
+                    return segment_before(s->segment_id, s->seconds, &segments, now);
+                default:
                     switch_default_error("Invalid segment operation");
                     return false;
-                }
             }
         }
         case AST_SPECIAL_GEO: {
             switch(special_expr.geo.op) {
                 case AST_SPECIAL_GEOWITHINRADIUS: {
+                    const struct ast_special_geo* g = &special_expr.geo;
                     double latitude_var, longitude_var;
-                    enum variable_state_e latitude_var_state
-                        = get_float_var(config, special_expr.geo.latitude_var.var, preds, &latitude_var);
-                    enum variable_state_e longitude_var_state
-                        = get_float_var(config, special_expr.geo.longitude_var.var, preds, &longitude_var);
-                    betree_assert(config->abort_on_error, ERROR_VAR_MISSING, latitude_var_state != VARIABLE_MISSING);
-                    betree_assert(config->abort_on_error, ERROR_VAR_MISSING, longitude_var_state != VARIABLE_MISSING);
-                    if(latitude_var_state == VARIABLE_UNDEFINED
-                        || longitude_var_state == VARIABLE_UNDEFINED) {
+                    bool is_latitude_defined = get_float_var(g->latitude_var.var, preds, &latitude_var);
+                    bool is_longitude_defined = get_float_var(g->longitude_var.var, preds, &longitude_var);
+                    if(is_latitude_defined == false
+                        || is_longitude_defined == false) {
                         return false;
                     }
-                    double latitude_cst = get_geo_value_as_float(special_expr.geo.latitude);
-                    double longitude_cst = get_geo_value_as_float(special_expr.geo.longitude);
-                    double radius_cst = get_geo_value_as_float(special_expr.geo.radius);
+                    double latitude_cst = get_geo_value_as_float(g->latitude);
+                    double longitude_cst = get_geo_value_as_float(g->longitude);
+                    double radius_cst = get_geo_value_as_float(g->radius);
 
-                    return geo_within_radius(
-                        latitude_cst, longitude_cst, latitude_var, longitude_var, radius_cst);
+                    return geo_within_radius( latitude_cst, longitude_cst, latitude_var, longitude_var, radius_cst);
                 }
-                default: {
+                default:
                     switch_default_error("Invalid geo operation");
                     return false;
-                }
             }
             return false;
         }
         case AST_SPECIAL_STRING: {
+            const struct ast_special_string* s = &special_expr.string;
             struct string_value value;
-            enum variable_state_e state
-                = get_string_var(config, special_expr.string.attr_var.var, preds, &value);
-            betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
-            if(state == VARIABLE_UNDEFINED) {
+            bool is_string_defined = get_string_var(s->attr_var.var, preds, &value);
+            if(is_string_defined == false) {
                 return false;
             }
-            switch(special_expr.string.op) {
-                case AST_SPECIAL_CONTAINS: {
-                    return contains(value.string, special_expr.string.pattern);
-                }
-                case AST_SPECIAL_STARTSWITH: {
-                    return starts_with(value.string, special_expr.string.pattern);
-                }
-                case AST_SPECIAL_ENDSWITH: {
-                    return ends_with(value.string, special_expr.string.pattern);
-                }
-                default: {
+            switch(s->op) {
+                case AST_SPECIAL_CONTAINS:
+                    return contains(value.string, s->pattern);
+                case AST_SPECIAL_STARTSWITH:
+                    return starts_with(value.string, s->pattern);
+                case AST_SPECIAL_ENDSWITH:
+                    return ends_with(value.string, s->pattern);
+                default:
                     switch_default_error("Invalid string operation");
                     return false;
-                }
             }
             return false;
         }
@@ -805,16 +775,13 @@ static bool match_all_of_string(struct value variable, struct ast_list_expr list
     }
 }
 
-bool match_list_expr(
-    const struct config* config, const struct pred** preds, const struct ast_list_expr list_expr)
+bool match_list_expr(const struct pred** preds, const struct ast_list_expr list_expr)
 {
     struct value variable;
-    enum variable_state_e state = get_variable(config, list_expr.attr_var.var, preds, &variable);
-    betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
-    if(state == VARIABLE_UNDEFINED) {
+    bool is_variable_defined = get_variable(list_expr.attr_var.var, preds, &variable);
+    if(is_variable_defined == false) {
         return false;
     }
-    betree_assert(config->abort_on_error, ERROR_LIST_TYPE_MISMATCH, list_value_matches(list_expr.value.value_type, variable.value_type));
     switch(list_expr.op) {
         case AST_LIST_ONE_OF:
         case AST_LIST_NONE_OF: {
@@ -864,8 +831,7 @@ bool match_list_expr(
     }
 }
 
-bool match_set_expr(
-    const struct config* config, const struct pred** preds, const struct ast_set_expr set_expr)
+bool match_set_expr(const struct pred** preds, const struct ast_set_expr set_expr)
 {
     struct set_left_value left = set_expr.left_value;
     struct set_right_value right = set_expr.right_value;
@@ -873,10 +839,8 @@ bool match_set_expr(
     if(left.value_type == AST_SET_LEFT_VALUE_INTEGER
         && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
         struct integer_list_value variable;
-        enum variable_state_e state
-            = get_integer_list_var(config, right.variable_value.var, preds, &variable);
-        betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
-        if(state == VARIABLE_UNDEFINED) {
+        bool is_variable_defined = get_integer_list_var(right.variable_value.var, preds, &variable);
+        if(is_variable_defined == false) {
             return false;
         }
         is_in = integer_in_integer_list(left.integer_value, variable);
@@ -884,10 +848,8 @@ bool match_set_expr(
     else if(left.value_type == AST_SET_LEFT_VALUE_STRING
         && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
         struct string_list_value variable;
-        enum variable_state_e state
-            = get_string_list_var(config, right.variable_value.var, preds, &variable);
-        betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
-        if(state == VARIABLE_UNDEFINED) {
+        bool is_variable_defined = get_string_list_var(right.variable_value.var, preds, &variable);
+        if(is_variable_defined == false) {
             return false;
         }
         is_in = string_in_string_list(left.string_value, variable);
@@ -895,10 +857,8 @@ bool match_set_expr(
     else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE
         && right.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST) {
         int64_t variable;
-        enum variable_state_e state
-            = get_integer_var(config, left.variable_value.var, preds, &variable);
-        betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
-        if(state == VARIABLE_UNDEFINED) {
+        bool is_variable_defined = get_integer_var(left.variable_value.var, preds, &variable);
+        if(is_variable_defined == false) {
             return false;
         }
         is_in = integer_in_integer_list(variable, right.integer_list_value);
@@ -906,10 +866,8 @@ bool match_set_expr(
     else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE
         && right.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
         struct string_value variable;
-        enum variable_state_e state
-            = get_string_var(config, left.variable_value.var, preds, &variable);
-        betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
-        if(state == VARIABLE_UNDEFINED) {
+        bool is_variable_defined = get_string_var(left.variable_value.var, preds, &variable);
+        if(is_variable_defined == false) {
             return false;
         }
         is_in = string_in_string_list(variable, right.string_list_value);
@@ -932,18 +890,13 @@ bool match_set_expr(
     }
 }
 
-bool match_numeric_compare_expr(const struct config* config,
-    const struct pred** preds,
-    const struct ast_numeric_compare_expr numeric_compare_expr)
+bool match_numeric_compare_expr(const struct pred** preds, const struct ast_numeric_compare_expr numeric_compare_expr) 
 {
     struct value variable;
-    enum variable_state_e state
-        = get_variable(config, numeric_compare_expr.attr_var.var, preds, &variable);
-    betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
-    if(state == VARIABLE_UNDEFINED) {
+    bool is_variable_defined = get_variable(numeric_compare_expr.attr_var.var, preds, &variable);
+    if(is_variable_defined == false) {
         return false;
     }
-    betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, numeric_compare_value_matches(numeric_compare_expr.value.value_type, variable.value_type));
     switch(numeric_compare_expr.op) {
         case AST_NUMERIC_COMPARE_LT: {
             switch(numeric_compare_expr.value.value_type) {
@@ -1016,18 +969,13 @@ bool match_numeric_compare_expr(const struct config* config,
     }
 }
 
-bool match_equality_expr(const struct config* config,
-    const struct pred** preds,
-    const struct ast_equality_expr equality_expr)
+bool match_equality_expr(const struct pred** preds, const struct ast_equality_expr equality_expr)
 {
     struct value variable;
-    enum variable_state_e state
-        = get_variable(config, equality_expr.attr_var.var, preds, &variable);
-    betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
-    if(state == VARIABLE_UNDEFINED) {
+    bool is_variable_defined = get_variable(equality_expr.attr_var.var, preds, &variable);
+    if(is_variable_defined == false) {
         return false;
     }
-    betree_assert(config->abort_on_error, ERROR_VALUE_TYPE_MISMATCH, equality_value_matches(equality_expr.value.value_type, variable.value_type));
     switch(equality_expr.op) {
         case AST_EQUALITY_EQ: {
             switch(equality_expr.value.value_type) {
@@ -1040,7 +988,6 @@ bool match_equality_expr(const struct config* config,
                     return result;
                 }
                 case AST_EQUALITY_VALUE_STRING: {
-                    betree_assert(config->abort_on_error, ERROR_STRING_VAR_MISMATCH, variable.svalue.var == equality_expr.value.string_value.var);
                     bool result = variable.svalue.str == equality_expr.value.string_value.str;
                     return result;
                 }
@@ -1061,7 +1008,6 @@ bool match_equality_expr(const struct config* config,
                     return result;
                 }
                 case AST_EQUALITY_VALUE_STRING: {
-                    betree_assert(config->abort_on_error, ERROR_STRING_VAR_MISMATCH, variable.svalue.var == equality_expr.value.string_value.var);
                     bool result = variable.svalue.str != equality_expr.value.string_value.str;
                     return result;
                 }
@@ -1080,8 +1026,7 @@ bool match_equality_expr(const struct config* config,
 
 static bool match_node_inner(const struct config* config, const struct pred** preds, const struct ast_node* node, struct memoize* memoize, struct report* report);
 
-bool match_bool_expr(
-    const struct config* config, const struct pred** preds, const struct ast_bool_expr bool_expr, struct memoize* memoize, struct report* report)
+bool match_bool_expr(const struct config* config, const struct pred** preds, const struct ast_bool_expr bool_expr, struct memoize* memoize, struct report* report)
 {
     switch(bool_expr.op) {
         case AST_BOOL_AND: {
@@ -1106,10 +1051,8 @@ bool match_bool_expr(
         }
         case AST_BOOL_VARIABLE: {
             bool value;
-            enum variable_state_e state
-                = get_bool_var(config, bool_expr.variable.var, preds, &value);
-            betree_assert(config->abort_on_error, ERROR_VAR_MISSING, state != VARIABLE_MISSING);
-            if(state == VARIABLE_UNDEFINED) {
+            bool is_variable_defined = get_bool_var(bool_expr.variable.var, preds, &value);
+            if(is_variable_defined == false) {
                 return false;
             }
             return value;
@@ -1159,7 +1102,7 @@ static bool match_node_inner(const struct config* config, const struct pred** pr
     bool result;
     switch(node->type) {
         case AST_TYPE_SPECIAL_EXPR: {
-            result = match_special_expr(config, preds, node->special_expr);
+            result = match_special_expr(preds, node->special_expr);
             break;
         }
         case AST_TYPE_BOOL_EXPR: {
@@ -1167,19 +1110,19 @@ static bool match_node_inner(const struct config* config, const struct pred** pr
             break;
         }
         case AST_TYPE_LIST_EXPR: {
-            result = match_list_expr(config, preds, node->list_expr);
+            result = match_list_expr(preds, node->list_expr);
             break;
         }
         case AST_TYPE_SET_EXPR: {
-            result = match_set_expr(config, preds, node->set_expr);
+            result = match_set_expr(preds, node->set_expr);
             break;
         }
         case AST_TYPE_NUMERIC_COMPARE_EXPR: {
-            result = match_numeric_compare_expr(config, preds, node->numeric_compare_expr);
+            result = match_numeric_compare_expr(preds, node->numeric_compare_expr);
             break;
         }
         case AST_TYPE_EQUALITY_EXPR: {
-            result = match_equality_expr(config, preds, node->equality_expr);
+            result = match_equality_expr(preds, node->equality_expr);
             break;
         }
         default: {

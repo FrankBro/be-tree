@@ -6,8 +6,7 @@
 
 #include "tree.h"
 
-bool within_frequency_caps(const struct config* config,
-    const struct frequency_caps_list* caps,
+bool within_frequency_caps(const struct frequency_caps_list* caps,
     enum frequency_type_e type,
     uint32_t id,
     const struct string_value namespace,
