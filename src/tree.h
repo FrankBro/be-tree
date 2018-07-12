@@ -28,15 +28,16 @@ struct short_circuit {
 
 struct sub {
     betree_sub_t id;
-    size_t attr_var_count;
-    struct attr_var* attr_vars;
+    struct {
+        size_t attr_var_count;
+        struct attr_var* attr_vars;
+    };
     const struct ast_node* expr;
     struct short_circuit short_circuit;
 };
 
 struct event {
     size_t pred_count;
-    // TODO Make const
     struct pred** preds;
 };
 
@@ -44,9 +45,10 @@ struct cnode;
 
 struct lnode {
     struct cnode* parent;
-    size_t sub_count;
-    // TODO Make const
-    struct sub** subs;
+    struct {
+        size_t sub_count;
+        struct sub** subs;
+    };
     size_t max;
 };
 
@@ -90,8 +92,10 @@ struct cdir {
 
 struct pdir {
     struct cnode* parent;
-    size_t pnode_count;
-    struct pnode** pnodes;
+    struct {
+        size_t pnode_count;
+        struct pnode** pnodes;
+    };
 };
 
 struct attr_domain {
@@ -105,8 +109,10 @@ struct pred_map;
 
 struct string_map {
     struct attr_var attr_var;
-    size_t string_value_count;
-    char** string_values;
+    struct {
+        size_t string_value_count;
+        char** string_values;
+    };
 };
 
 struct config {
@@ -114,13 +120,18 @@ struct config {
     uint64_t partition_min_size;
     uint64_t max_domain_for_split;
     bool abort_on_error;
-    size_t attr_domain_count;
-    struct attr_domain** attr_domains;
-    size_t attr_to_id_count;
-    // TODO Make const
-    size_t string_map_count;
-    struct string_map* string_maps;
-    char** attr_to_ids;
+    struct {
+        size_t attr_domain_count;
+        struct attr_domain** attr_domains;
+    };
+    struct {
+        size_t attr_to_id_count;
+        char** attr_to_ids;
+    };
+    struct {
+        size_t string_map_count;
+        struct string_map* string_maps;
+    };
     struct pred_map* pred_map;
 };
 
@@ -201,3 +212,4 @@ void betree_search_with_event(const struct config* config,
 
 bool insert_be_tree(
     const struct config* config, const struct sub* sub, struct cnode* cnode, struct cdir* cdir);
+
