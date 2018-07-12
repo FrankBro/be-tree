@@ -2450,7 +2450,7 @@ static size_t get_attr_string_bound(const struct config* config, const char* att
         }
     }
     betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_MISSING, false);
-    return (size_t)-1;
+    return SIZE_MAX;
 }
 
 static struct string_map* get_string_map_for_attr(const struct config* config, const char* attr)
@@ -2486,7 +2486,7 @@ static bool str_valid(const struct config* config, const char* attr, const char*
 static bool strs_valid(const struct config* config, const char* attr, const struct string_list_value* strings)
 {
     size_t bound = get_attr_string_bound(config, attr);
-    if(bound == (size_t)-1) {
+    if(bound == SIZE_MAX) {
         return true;
     }
     struct string_map* string_map = get_string_map_for_attr(config, attr);

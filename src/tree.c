@@ -2130,7 +2130,7 @@ struct attr_var make_attr_var(const char* attr, struct config* config)
     struct attr_var attr_var;
     attr_var.attr = attr == NULL ? NULL : strdup(attr);
     if(config == NULL) {
-        attr_var.var = -1ULL;
+        attr_var.var = INVALID_VAR;
     }
     else {
         attr_var.var = get_id_for_attr(config, attr);
@@ -2177,7 +2177,7 @@ void fill_event(const struct config* config, struct event* event)
 {
     for(size_t i = 0; i < event->pred_count; i++) {
         struct pred* pred = event->preds[i];
-        if(pred->attr_var.var == -1ULL) {
+        if(pred->attr_var.var == INVALID_VAR) {
             betree_var_t var = try_get_id_for_attr(config, pred->attr_var.attr);
             if(var == UINT64_MAX) {
                 fprintf(stderr, "Cannot find variable %s in config, aborting", pred->attr_var.attr);
@@ -2193,7 +2193,7 @@ void fill_event(const struct config* config, struct event* event)
             case VALUE_SEGMENTS:
                 break;
             case VALUE_S: {
-                if(pred->value.svalue.str == -1ULL) {
+                if(pred->value.svalue.str == INVALID_STR) {
                     betree_str_t str = try_get_id_for_string(config, pred->attr_var, pred->value.svalue.string);
                     pred->value.svalue.var = pred->attr_var.var;
                     pred->value.svalue.str = str;
@@ -2202,7 +2202,7 @@ void fill_event(const struct config* config, struct event* event)
             }
             case VALUE_SL: {
                 for(size_t j = 0; j < pred->value.slvalue.count; j++) {
-                    if(pred->value.slvalue.strings[j].str == -1ULL) {
+                    if(pred->value.slvalue.strings[j].str == INVALID_STR) {
                         betree_str_t str
                             = try_get_id_for_string(config, pred->attr_var, pred->value.slvalue.strings[j].string);
                         pred->value.slvalue.strings[j].var = pred->attr_var.var;
@@ -2213,7 +2213,7 @@ void fill_event(const struct config* config, struct event* event)
             }
             case VALUE_FREQUENCY: {
                 for(size_t j = 0; j < pred->value.frequency_value.size; j++) {
-                    if(pred->value.frequency_value.content[j].namespace.str == -1ULL) {
+                    if(pred->value.frequency_value.content[j].namespace.str == INVALID_STR) {
                         betree_str_t str = try_get_id_for_string(
                             config, pred->attr_var, pred->value.frequency_value.content[j].namespace.string);
                         pred->value.frequency_value.content[j].namespace.var = pred->attr_var.var;

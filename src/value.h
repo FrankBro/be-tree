@@ -16,7 +16,9 @@ enum value_e {
 };
 
 typedef uint64_t betree_var_t;
+betree_var_t INVALID_VAR = UINT64_MAX;
 typedef uint64_t betree_str_t;
+betree_str_t INVALID_STR = UINT64_MAX;
 
 struct string_value {
     const char* string;

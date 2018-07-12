@@ -95,7 +95,7 @@ pred_loop           : pred                                  { $$ = make_event();
                     | pred_loop EVENT_COMMA pred            { add_pred($3, $1); $$ = $1; }
 ;       
 
-pred                : EVENT_STRING EVENT_COLON value        { $$ = make_pred($1, -1ULL, $3); free($1); }
+pred                : EVENT_STRING EVENT_COLON value        { $$ = make_pred($1, INVALID_VAR, $3); free($1); }
                     | EVENT_STRING EVENT_COLON EVENT_NULL   { $$ = NULL; free($1); }
 ;
 
@@ -120,7 +120,7 @@ float               : EVENT_FLOAT                           { $$ = $1; }
                     | EVENT_MINUS EVENT_FLOAT               { $$ = - $2; }
 ;       
 
-string              : EVENT_STRING                          { $$.string = strdup($1); $$.str = -1ULL; free($1); }
+string              : EVENT_STRING                          { $$.string = strdup($1); $$.str = INVALID_STR; free($1); }
 
 integer_list_value  : EVENT_LSQUARE integer_list_loop EVENT_RSQUARE       
                                                             { $$ = $2; }
