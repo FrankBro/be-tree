@@ -6,6 +6,7 @@
 #include "ast.h"
 #include "betree.h"
 #include "debug.h"
+#include "hashmap.h"
 #include "minunit.h"
 #include "utils.h"
 
@@ -53,29 +54,6 @@ bool report_has_sub0(struct report* report)
 bool report_has_sub1(struct report* report, betree_sub_t sub1)
 {
     return report != NULL && report->matched == 1 && report->subs[0] == sub1;
-}
-
-int test_remove_sub()
-{
-    struct betree* tree = betree_make();
-    add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);
-
-    mu_assert(betree_insert(tree, 0, "a = 0"), "");
-    mu_assert(cnode_has_sub1(tree->cnode, 0), "lnode has one sub and it matches");
-
-    mu_assert(betree_delete(tree, 0), "");
-    mu_assert(cnode_has_sub0(tree->cnode), "lnode no longer has any subs");
-
-    mu_assert(betree_insert(tree, 0, "a = 0"), "");
-    mu_assert(betree_insert(tree, 1, "a = 1"), "");
-    mu_assert(betree_insert(tree, 2, "a = 2"), "");
-    mu_assert(cnode_has_sub3(tree->cnode, 0, 1, 2), "lnode has three subs and they match");
-
-    mu_assert(betree_delete(tree, 1), "");
-    mu_assert(cnode_has_sub2(tree->cnode, 0, 2), "lnode no longer has sub2");
-
-    betree_free(tree);
-    return 0;
 }
 
 int test_match_single_cnode()
@@ -606,11 +584,14 @@ int test_negative_float()
     return 0;
 }
 
+
 void empty_tree(struct betree* tree)
 {
     if(tree->cnode != NULL) {
         free_cnode(tree->cnode);
         tree->cnode = make_cnode(tree->config, NULL);
+        free_pred_map(tree->config->pred_map);
+        tree->config->pred_map = make_pred_map();
     }
 }
 
@@ -1309,7 +1290,6 @@ int test_undefined_cdir_search()
 int all_tests()
 {
     mu_run_test(test_sub_has_attribute);
-    mu_run_test(test_remove_sub);
     mu_run_test(test_match_single_cnode);
     mu_run_test(test_insert_first_split);
     mu_run_test(test_pdir_split_twice);
