@@ -29,7 +29,6 @@
 
 %union {
     char *string;
-    bool boolean_value;
     int64_t integer_value;
     double float_value;
     struct integer_list_value integer_list_value;
@@ -58,14 +57,12 @@
 %token<token> TCONTAINS TSTARTSWITH TENDSWITH 
 
 %token<string> TSTRING TIDENTIFIER
-%token<boolean_value> TTRUE TFALSE
 %token<integer_value> TINTEGER
 %token<float_value> TFLOAT
 
 %type<node> expr num_comp_expr eq_expr set_expr list_expr bool_expr
 %type<node> special_expr s_frequency_expr s_segment_expr s_geo_expr s_string_expr
 %type<string> ident
-%type<value> boolean
 
 %type<integer_value> integer
 %type<float_value> float
@@ -93,10 +90,6 @@
 program             : expr                                  { root = $1; }
 
 ident               : TIDENTIFIER                           { $$ = $1; }
-
-boolean             : TTRUE                                 { $$.value_type = VALUE_B; $$.bvalue = true; }
-                    | TFALSE                                { $$.value_type = VALUE_B; $$.bvalue = false; }
-;
 
 integer             : TINTEGER                              { $$ = $1; }
                     | TMINUS TINTEGER                       { $$ = - $2; }

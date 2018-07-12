@@ -59,8 +59,6 @@
 "||"                        return TOKEN(TOR);
 "or"                        return TOKEN(TOR);
 "not"                       return TOKEN(TNOT);
-"true"                      return TOKEN(TTRUE);
-"false"                     return TOKEN(TFALSE);
 \"(\\.|[^"\\])*\"           SAVE_STRING; return TSTRING;
 \'(\\.|[^'\\])*\'           SAVE_STRING; return TSTRING;
 [a-zA-Z_][a-zA-Z0-9_-]*     SAVE_IDENTIFIER; return TIDENTIFIER;

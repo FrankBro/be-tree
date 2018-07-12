@@ -1071,22 +1071,6 @@ static void report_memoized(struct report* report)
     }
 }
 
-static void print_memoize(const struct memoize* memoize, size_t pred_count)
-{
-    printf("DEBUG: Pass ");
-    for(size_t i = 0; i < pred_count; i++) {
-        bool result = test_bit(memoize->pass, i);
-        printf("%d", result);
-    }
-    printf("\n");
-    printf("DEBUG: Fail ");
-    for(size_t i = 0; i < pred_count; i++) {
-        bool result = test_bit(memoize->fail, i);
-        printf("%d", result);
-    }
-    printf("\n");
-}
-
 static bool match_node_inner(const struct config* config, const struct pred** preds, const struct ast_node* node, struct memoize* memoize, struct report* report)
 {
     if(node->id != UINT64_MAX) {

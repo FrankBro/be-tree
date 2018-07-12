@@ -461,8 +461,10 @@ static void write_dot_file_cdir_cnode_names(
     }
 }
 
+/*
 static void write_dot_file_cdir_cdir_ranks(
     FILE* f, const struct config* config, const struct cdir* cdir, uint64_t level);
+*/
 
 static size_t depth_of_cdir(const struct cdir* cdir)
 {
@@ -687,6 +689,7 @@ static void write_dot_file_cdir_cnode_ranks(
     }
 }
 
+/*
 struct cdir_acc {
     size_t count;
     struct cdir** cdirs;
@@ -754,6 +757,7 @@ static void write_dot_file_cdir_cdir_ranks(
         }
     }
 }
+*/
 
 static void write_dot_file_cnode_ranks(
     FILE* f, const struct config* config, const struct cnode* cnode, uint64_t level);
@@ -877,64 +881,6 @@ static void gather_subs_cnode(const struct cnode* cnode, struct gathered_subs* g
         gather_subs_pdir(cnode->pdir, gatherer);
     }
 }
-
-static int compare_subs(const void* a, const void* b)
-{
-    struct sub* sub_a = *(struct sub**)a;
-    struct sub* sub_b = *(struct sub**)b;
-
-    if(sub_a->id == sub_b->id)
-        return 0;
-    else if(sub_a->id < sub_b->id)
-        return -1;
-    else
-        return 1;
-}
-
-static const char* escape_label(const char* input)
-{
-    // Worst case scenario allocation
-    size_t len = strlen(input);
-    char* escaped = calloc(len * 2 + 1, sizeof(*escaped));
-    if(escaped == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
-        abort();
-    }
-    size_t j = 0;
-    for(size_t i = 0; i < len; i++) {
-        if(input[i] == '<' || input[i] == '|' || input[i] == '>') {
-            escaped[j] = '\\';
-            j++;
-        }
-        escaped[j] = input[i];
-        j++;
-    }
-    escaped[j] = '\0';
-    return escaped;
-}
-
-// void write_dot_file_root_subs(FILE* f, const struct cnode* cnode, uint64_t level)
-// {
-//     print_spaces(f, level);
-//     fprintf(f, "subgraph \"clustersubs\" {\n");
-//     level++;
-//     print_spaces(f, level);
-//     fprintf(f, "color=lightblue1; fillcolor=lightblue1; style=filled; label=\"Subs\";
-//     fontsize=20; fontname=\"Verdana\"\n"); struct gathered_subs gatherer = { .count = 0, .subs =
-//     NULL }; gather_subs_cnode(cnode, &gatherer); qsort(gatherer.subs, gatherer.count,
-//     sizeof(struct sub*), compare_subs); for(size_t i = 0; i < gatherer.count; i++) {
-//         const struct sub* sub = gatherer.subs[i];
-//         const char* expr = ast_to_string(sub->expr);
-//         const char* escaped = escape_label(expr);
-//         print_spaces(f, level);
-//         fprintf(f, "\"sub_%llu\" [label=\"%s\", color=lightblue1, fillcolor=lightblue1,
-//         style=filled, shape=record]\n", sub->id, escaped); free((char*)expr);
-//         free((char*)escaped);
-//     }
-//     level--;
-//     print_spaces(f, level);
-//     fprintf(f, "}\n");
-// }
 
 void write_dot_file(const struct config* config, const struct cnode* root)
 {

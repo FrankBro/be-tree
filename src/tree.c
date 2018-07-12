@@ -2010,19 +2010,6 @@ bool is_variable_allow_undefined(const struct config* config, const betree_var_t
 int parse(const char* text, struct ast_node** node);
 int event_parse(const char* text, struct event** event);
 
-static bool betree_can_insert(const struct config* config, betree_sub_t id, const char* expr, struct cnode* cnode)
-{
-    (void)id;
-    (void)cnode;
-    struct ast_node* node;
-    if(parse(expr, &node)) {
-        return false;
-    }
-    bool var = all_variables_in_config(config, node);
-    bool str = all_bounded_strings_valid(config, node);
-    return var && str;
-}
-
 struct memoize make_memoize(size_t pred_count)
 {
     size_t count = pred_count / 64 + 1;
@@ -2062,7 +2049,7 @@ static struct pred** make_environment(const struct config* config, const struct 
 }
 
 void betree_search_with_event(const struct config* config,
-    struct event* event,
+    const struct event* event,
     const struct cnode* cnode,
     struct report* report)
 {
@@ -2086,7 +2073,6 @@ void betree_search_with_event(const struct config* config,
     free(subs.subs);
     free_memoize(memoize);
     free(undefined);
-    free_event(event);
     free(preds);
 }
 

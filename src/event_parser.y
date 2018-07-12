@@ -63,6 +63,7 @@
 %type<float_value> float
 %token<string> EVENT_STRING
 %type<string_value> string
+%type<integer_list_value> empty_list_value
 %type<integer_list_value> integer_list_value integer_list_loop
 %type<string_list_value> string_list_value string_list_loop
 %type<segments_list_value> segments_value segments_loop
@@ -76,9 +77,8 @@
 
 %start program
 
-%printer { fprintf(yyoutput, "%lld", $$); } <integer>
+
 %printer { fprintf(yyoutput, "%lld", $$); } <integer_value>
-%printer { fprintf(yyoutput, "%.2f", $$); } <float>
 %printer { fprintf(yyoutput, "%.2f", $$); } <float_value>
 %printer { fprintf(yyoutput, "%s", $$); } <string>
 %printer { fprintf(yyoutput, "%s", $$.string); } <string_value>
@@ -103,6 +103,7 @@ value               : boolean                               { $$.value_type = VA
                     | integer                               { $$.value_type = VALUE_I; $$.ivalue = $1; }
                     | float                                 { $$.value_type = VALUE_F; $$.fvalue = $1; }
                     | string                                { $$.value_type = VALUE_S; $$.svalue = $1; }
+                    | empty_list_value                      { $$.value_type = VALUE_IL; $$.ilvalue = $1; }
                     | integer_list_value                    { $$.value_type = VALUE_IL; $$.ilvalue = $1; }
                     | string_list_value                     { $$.value_type = VALUE_SL; $$.slvalue = $1; }
                     | segments_value                        { $$.value_type = VALUE_SEGMENTS; $$.segments_value = $1; }
@@ -122,10 +123,10 @@ float               : EVENT_FLOAT                           { $$ = $1; }
 
 string              : EVENT_STRING                          { $$.string = strdup($1); $$.str = INVALID_STR; free($1); }
 
+empty_list_value    : EVENT_LSQUARE EVENT_RSQUARE           { $$.count = 0; $$.integers = NULL; }
+
 integer_list_value  : EVENT_LSQUARE integer_list_loop EVENT_RSQUARE       
                                                             { $$ = $2; }
-                    | EVENT_LSQUARE EVENT_RSQUARE           { $$.count = 0; $$.integers = NULL; }
-;
 
 integer_list_loop   : integer                               { $$.count = 0; $$.integers = NULL; add_integer_list_value($1, &$$); }
                     | integer_list_loop EVENT_COMMA integer { add_integer_list_value($3, &$1); $$ = $1; }
@@ -133,8 +134,6 @@ integer_list_loop   : integer                               { $$.count = 0; $$.i
 
 string_list_value   : EVENT_LSQUARE string_list_loop EVENT_RSQUARE        
                                                             { $$ = $2; }
-                    | EVENT_LSQUARE EVENT_RSQUARE           { $$.count = 0; $$.strings = NULL; }
-;
 
 string_list_loop    : string                                { $$.count = 0; $$.strings = NULL; add_string_list_value($1, &$$); }
                     | string_list_loop EVENT_COMMA string   { add_string_list_value($3, &$1); $$ = $1; }
@@ -142,8 +141,6 @@ string_list_loop    : string                                { $$.count = 0; $$.s
 
 segments_value      : EVENT_LSQUARE segments_loop EVENT_RSQUARE           
                                                             { $$ = $2; }
-                    | EVENT_LSQUARE EVENT_RSQUARE           { $$.size = 0; $$.content = NULL; }
-;
 
 segments_loop       : segment_value                         { $$.size = 0; $$.content = NULL; add_segment($1, &$$); }
                     | segments_loop EVENT_COMMA segment_value        
@@ -155,8 +152,6 @@ segment_value       : EVENT_LSQUARE integer EVENT_COMMA integer EVENT_RSQUARE
 
 frequencies_value   : EVENT_LSQUARE frequencies_loop EVENT_RSQUARE
                                                             { $$ = $2; }
-                    | EVENT_LSQUARE EVENT_RSQUARE           { $$.size = 0; $$.content = NULL; }
-;
 
 frequencies_loop    : frequency_value                       { $$.size = 0; $$.content = NULL; add_frequency($1, &$$); }
                     | frequencies_loop EVENT_COMMA frequency_value  

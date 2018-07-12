@@ -195,7 +195,7 @@ bool betree_delete_inner(struct config* config, struct sub* sub, struct cnode* c
 struct sub* find_sub_id(betree_sub_t id, struct cnode* cnode);
 
 void betree_search_with_event(const struct config* config,
-    struct event* event,
+    const struct event* event,
     const struct cnode* cnode,
     struct report* report);
 

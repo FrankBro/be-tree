@@ -90,6 +90,7 @@ void betree_search(const struct betree* tree, const char* event_str, struct repo
 {
     struct event* event = make_event_from_string(tree->config, event_str);
     betree_search_with_event(tree->config, event, tree->cnode, report);
+    free_event(event);
 }
 
 struct report* make_report()
