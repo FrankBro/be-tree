@@ -4,7 +4,7 @@
 #include "printer.h"
 #include "utils.h"
 
-const char* compare_value_to_string(struct compare_value value)
+static const char* compare_value_to_string(struct compare_value value)
 {
     char* expr;
     switch(value.value_type) {
@@ -25,7 +25,7 @@ const char* compare_value_to_string(struct compare_value value)
     return expr;
 }
 
-const char* compare_op_to_string(enum ast_compare_e op)
+static const char* compare_op_to_string(enum ast_compare_e op)
 {
     switch(op) {
         case AST_COMPARE_LT:
@@ -42,7 +42,7 @@ const char* compare_op_to_string(enum ast_compare_e op)
     }
 }
 
-const char* equality_value_to_string(struct equality_value value)
+static const char* equality_value_to_string(struct equality_value value)
 {
     char* expr;
     switch(value.value_type) {
@@ -68,7 +68,7 @@ const char* equality_value_to_string(struct equality_value value)
     return expr;
 }
 
-const char* equality_op_to_string(enum ast_equality_e op)
+static const char* equality_op_to_string(enum ast_equality_e op)
 {
     switch(op) {
         case AST_EQUALITY_EQ:
@@ -81,7 +81,7 @@ const char* equality_op_to_string(enum ast_equality_e op)
     }
 }
 
-const char* set_left_value_to_string(struct set_left_value value)
+static const char* set_left_value_to_string(struct set_left_value value)
 {
     char* expr;
     switch(value.value_type) {
@@ -107,7 +107,7 @@ const char* set_left_value_to_string(struct set_left_value value)
     return expr;
 }
 
-const char* set_right_value_to_string(struct set_right_value value)
+static const char* set_right_value_to_string(struct set_right_value value)
 {
     char* expr;
     switch(value.value_type) {
@@ -139,7 +139,7 @@ const char* set_right_value_to_string(struct set_right_value value)
     return expr;
 }
 
-const char* set_op_to_string(enum ast_set_e op)
+static const char* set_op_to_string(enum ast_set_e op)
 {
     switch(op) {
         case AST_SET_IN:
@@ -152,7 +152,7 @@ const char* set_op_to_string(enum ast_set_e op)
     }
 }
 
-const char* list_value_to_string(struct list_value value)
+static const char* list_value_to_string(struct list_value value)
 {
     char* list;
     switch(value.value_type) {
@@ -180,7 +180,7 @@ const char* list_value_to_string(struct list_value value)
     return list;
 }
 
-const char* list_op_to_string(enum ast_list_e op)
+static const char* list_op_to_string(enum ast_list_e op)
 {
     switch(op) {
         case AST_LIST_ONE_OF: {

@@ -4,13 +4,13 @@
 #include "clone.h"
 #include "utils.h"
 
-struct attr_var clone_attr_var(struct attr_var orig)
+static struct attr_var clone_attr_var(struct attr_var orig)
 {
     struct attr_var clone = { .attr = strdup(orig.attr), .var = orig.var };
     return clone;
 }
 
-struct compare_value clone_compare_value(struct compare_value orig)
+static struct compare_value clone_compare_value(struct compare_value orig)
 {
     struct compare_value clone = { .value_type = orig.value_type };
     switch(orig.value_type) {
@@ -27,7 +27,7 @@ struct compare_value clone_compare_value(struct compare_value orig)
     return clone;
 }
 
-struct ast_node* clone_compare(betree_pred_t id, struct ast_compare_expr orig)
+static struct ast_node* clone_compare(betree_pred_t id, struct ast_compare_expr orig)
 {
     struct ast_node* clone = ast_node_create();
     clone->id = id;
@@ -38,13 +38,13 @@ struct ast_node* clone_compare(betree_pred_t id, struct ast_compare_expr orig)
     return clone;
 }
 
-struct string_value clone_string_value(struct string_value orig)
+static struct string_value clone_string_value(struct string_value orig)
 {
     struct string_value clone = { .string = strdup(orig.string), .var = orig.var, .str = orig.str };
     return clone;
 }
 
-struct equality_value clone_equality_value(struct equality_value orig)
+static struct equality_value clone_equality_value(struct equality_value orig)
 {
     struct equality_value clone = { .value_type = orig.value_type };
     switch(orig.value_type) {
@@ -64,7 +64,7 @@ struct equality_value clone_equality_value(struct equality_value orig)
     return clone;
 }
 
-struct ast_node* clone_equality(betree_pred_t id, struct ast_equality_expr orig)
+static struct ast_node* clone_equality(betree_pred_t id, struct ast_equality_expr orig)
 {
     struct ast_node* clone = ast_node_create();
     clone->id = id;
@@ -77,7 +77,7 @@ struct ast_node* clone_equality(betree_pred_t id, struct ast_equality_expr orig)
 
 struct ast_node* clone_node(const struct ast_node* node);
 
-struct ast_node* clone_bool(betree_pred_t id, struct ast_bool_expr orig)
+static struct ast_node* clone_bool(betree_pred_t id, struct ast_bool_expr orig)
 {
     struct ast_node* clone = ast_node_create();
     clone->id = id;
@@ -107,7 +107,7 @@ struct ast_node* clone_bool(betree_pred_t id, struct ast_bool_expr orig)
     return clone;
 }
 
-struct set_left_value clone_set_left_value(struct set_left_value orig)
+static struct set_left_value clone_set_left_value(struct set_left_value orig)
 {
     struct set_left_value clone = { .value_type = orig.value_type };
     switch(orig.value_type) {
@@ -127,7 +127,7 @@ struct set_left_value clone_set_left_value(struct set_left_value orig)
     return clone;
 }
 
-struct integer_list_value clone_integer_list(struct integer_list_value list)
+static struct integer_list_value clone_integer_list(struct integer_list_value list)
 {
     struct integer_list_value clone = { .count = 0, .integers = NULL };
     for(size_t i = 0; i < list.count; i++) {
@@ -136,7 +136,7 @@ struct integer_list_value clone_integer_list(struct integer_list_value list)
     return clone;
 }
 
-struct string_list_value clone_string_list(struct string_list_value list)
+static struct string_list_value clone_string_list(struct string_list_value list)
 {
     struct string_list_value clone = { .count = 0, .strings = NULL };
     for(size_t i = 0; i < list.count; i++) {
@@ -146,7 +146,7 @@ struct string_list_value clone_string_list(struct string_list_value list)
     return clone;
 }
 
-struct set_right_value clone_set_right_value(struct set_right_value orig)
+static struct set_right_value clone_set_right_value(struct set_right_value orig)
 {
     struct set_right_value clone = { .value_type = orig.value_type };
     switch(orig.value_type) {
@@ -166,7 +166,7 @@ struct set_right_value clone_set_right_value(struct set_right_value orig)
     return clone;
 }
 
-struct ast_node* clone_set(betree_pred_t id, struct ast_set_expr orig)
+static struct ast_node* clone_set(betree_pred_t id, struct ast_set_expr orig)
 {
     struct ast_node* clone = ast_node_create();
     clone->id = id;
@@ -177,7 +177,7 @@ struct ast_node* clone_set(betree_pred_t id, struct ast_set_expr orig)
     return clone;
 }
 
-struct list_value clone_list_value(struct list_value orig)
+static struct list_value clone_list_value(struct list_value orig)
 {
     struct list_value clone = { .value_type = orig.value_type };
     switch(orig.value_type) {
@@ -194,7 +194,7 @@ struct list_value clone_list_value(struct list_value orig)
     return clone;
 }
 
-struct ast_node* clone_list(betree_pred_t id, struct ast_list_expr orig)
+static struct ast_node* clone_list(betree_pred_t id, struct ast_list_expr orig)
 {
     struct ast_node* clone = ast_node_create();
     clone->id = id;
@@ -205,7 +205,7 @@ struct ast_node* clone_list(betree_pred_t id, struct ast_list_expr orig)
     return clone;
 }
 
-struct ast_node* clone_special(betree_pred_t id, struct ast_special_expr orig)
+static struct ast_node* clone_special(betree_pred_t id, struct ast_special_expr orig)
 {
     struct ast_node* clone = ast_node_create();
     clone->id = id;

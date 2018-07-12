@@ -22,7 +22,7 @@ struct subs_to_eval {
     size_t count;
 };
 
-void init_subs_to_eval(struct subs_to_eval* subs)
+static void init_subs_to_eval(struct subs_to_eval* subs)
 {
     size_t init = 10;
     subs->subs = malloc(init * sizeof(*subs->subs));
@@ -30,7 +30,7 @@ void init_subs_to_eval(struct subs_to_eval* subs)
     subs->count = 0;
 }
 
-void add_sub_to_eval(struct sub* sub, struct subs_to_eval* subs)
+static void add_sub_to_eval(struct sub* sub, struct subs_to_eval* subs)
 {
 	if (subs->capacity == subs->count) {
 		subs->capacity *= 2;
@@ -47,7 +47,7 @@ enum short_circuit_e {
     SHORT_CIRCUIT_NONE
 };
 
-enum short_circuit_e try_short_circuit(const struct short_circuit* short_circuit, const uint64_t* undefined)
+static enum short_circuit_e try_short_circuit(const struct short_circuit* short_circuit, const uint64_t* undefined)
 {
     for(size_t i = 0; i < short_circuit->count; i++) {
         bool pass = short_circuit->pass[i] & undefined[i];
@@ -62,7 +62,7 @@ enum short_circuit_e try_short_circuit(const struct short_circuit* short_circuit
     return SHORT_CIRCUIT_NONE;
 }
 
-bool match_sub(const struct config* config, const struct pred** preds, const struct sub* sub, struct report* report, struct memoize* memoize, const uint64_t* undefined)
+static bool match_sub(const struct config* config, const struct pred** preds, const struct sub* sub, struct report* report, struct memoize* memoize, const uint64_t* undefined)
 {
     enum short_circuit_e short_circuit = try_short_circuit(&sub->short_circuit, undefined);
     if(short_circuit != SHORT_CIRCUIT_NONE) {
@@ -80,7 +80,7 @@ bool match_sub(const struct config* config, const struct pred** preds, const str
     return result;
 }
 
-void check_sub(const struct lnode* lnode, struct subs_to_eval* subs)
+static void check_sub(const struct lnode* lnode, struct subs_to_eval* subs)
 {
     for(size_t i = 0; i < lnode->sub_count; i++) {
         struct sub* sub = lnode->subs[i];
@@ -88,7 +88,7 @@ void check_sub(const struct lnode* lnode, struct subs_to_eval* subs)
     }
 }
 
-struct pnode* search_pdir(betree_var_t variable_id, const struct pdir* pdir)
+static struct pnode* search_pdir(betree_var_t variable_id, const struct pdir* pdir)
 {
     if(pdir == NULL) {
         return NULL;
@@ -102,9 +102,9 @@ struct pnode* search_pdir(betree_var_t variable_id, const struct pdir* pdir)
     return NULL;
 }
 
-void search_cdir(const struct config* config, const struct pred** preds, struct cdir* cdir, struct subs_to_eval* subs);
+static void search_cdir(const struct config* config, const struct pred** preds, struct cdir* cdir, struct subs_to_eval* subs);
 
-bool event_contains_variable(const struct pred** preds, betree_var_t variable_id)
+static bool event_contains_variable(const struct pred** preds, betree_var_t variable_id)
 {
     return preds[variable_id] != NULL;
 }
@@ -126,7 +126,7 @@ void match_be_tree(const struct config* config,
     }
 }
 
-bool is_event_enclosed(const struct pred** preds, const struct cdir* cdir)
+static bool is_event_enclosed(const struct pred** preds, const struct cdir* cdir)
 {
     if(cdir == NULL) {
         return false;
@@ -210,7 +210,7 @@ bool sub_is_enclosed(const struct config* config, const struct sub* sub, const s
     return false;
 }
 
-void search_cdir(const struct config* config, const struct pred** preds, struct cdir* cdir, struct subs_to_eval* subs)
+static void search_cdir(const struct config* config, const struct pred** preds, struct cdir* cdir, struct subs_to_eval* subs)
 {
     match_be_tree(config, preds, cdir->cnode, subs);
     if(is_event_enclosed(preds, cdir->lchild)) {
@@ -221,9 +221,9 @@ void search_cdir(const struct config* config, const struct pred** preds, struct 
     }
 }
 
-bool is_used_cnode(betree_var_t variable_id, const struct cnode* cnode);
+static bool is_used_cnode(betree_var_t variable_id, const struct cnode* cnode);
 
-bool is_used_pdir(betree_var_t variable_id, const struct pdir* pdir)
+static bool is_used_pdir(betree_var_t variable_id, const struct pdir* pdir)
 {
     if(pdir == NULL || pdir->parent == NULL) {
         return false;
@@ -231,7 +231,7 @@ bool is_used_pdir(betree_var_t variable_id, const struct pdir* pdir)
     return is_used_cnode(variable_id, pdir->parent);
 }
 
-bool is_used_pnode(betree_var_t variable_id, const struct pnode* pnode)
+static bool is_used_pnode(betree_var_t variable_id, const struct pnode* pnode)
 {
     if(pnode == NULL || pnode->parent == NULL) {
         return false;
@@ -242,7 +242,7 @@ bool is_used_pnode(betree_var_t variable_id, const struct pnode* pnode)
     return is_used_pdir(variable_id, pnode->parent);
 }
 
-bool is_used_cdir(betree_var_t variable_id, const struct cdir* cdir)
+static bool is_used_cdir(betree_var_t variable_id, const struct cdir* cdir)
 {
     if(cdir == NULL) {
         return false;
@@ -264,7 +264,7 @@ bool is_used_cdir(betree_var_t variable_id, const struct cdir* cdir)
     }
 }
 
-bool is_used_cnode(betree_var_t variable_id, const struct cnode* cnode)
+static bool is_used_cnode(betree_var_t variable_id, const struct cnode* cnode)
 {
     if(cnode == NULL) {
         return false;
@@ -275,7 +275,7 @@ bool is_used_cnode(betree_var_t variable_id, const struct cnode* cnode)
     return is_used_cdir(variable_id, cnode->parent);
 }
 
-void insert_sub(const struct sub* sub, struct lnode* lnode)
+static void insert_sub(const struct sub* sub, struct lnode* lnode)
 {
     if(lnode->sub_count == 0) {
         lnode->subs = calloc(1, sizeof(*lnode->subs));
@@ -296,7 +296,7 @@ void insert_sub(const struct sub* sub, struct lnode* lnode)
     lnode->sub_count++;
 }
 
-bool is_root(const struct cnode* cnode)
+static bool is_root(const struct cnode* cnode)
 {
     if(cnode == NULL) {
         return false;
@@ -304,13 +304,13 @@ bool is_root(const struct cnode* cnode)
     return cnode->parent == NULL;
 }
 
-void space_partitioning(const struct config* config, struct cnode* cnode);
-void space_clustering(const struct config* config, struct cdir* cdir);
-struct cdir* insert_cdir(const struct config* config, const struct sub* sub, struct cdir* cdir);
+static void space_partitioning(const struct config* config, struct cnode* cnode);
+static void space_clustering(const struct config* config, struct cdir* cdir);
+static struct cdir* insert_cdir(const struct config* config, const struct sub* sub, struct cdir* cdir);
 
-size_t count_attr_in_lnode(betree_var_t variable_id, const struct lnode* lnode);
+static size_t count_attr_in_lnode(betree_var_t variable_id, const struct lnode* lnode);
 
-size_t count_attr_in_cdir(betree_var_t variable_id, const struct cdir* cdir)
+static size_t count_attr_in_cdir(betree_var_t variable_id, const struct cdir* cdir)
 {
     if(cdir == NULL) {
         return 0;
@@ -384,7 +384,7 @@ static double get_lnode_score(const struct config* config, const struct lnode* l
     return get_score(config, var, count);
 }
 
-void update_partition_score(const struct config* config, struct pnode* pnode)
+static void update_partition_score(const struct config* config, struct pnode* pnode)
 {
     pnode->score = get_pnode_score(config, pnode);
 }
@@ -431,12 +431,12 @@ bool insert_be_tree(
     return true;
 }
 
-bool is_leaf(const struct cdir* cdir)
+static bool is_leaf(const struct cdir* cdir)
 {
     return cdir->lchild == NULL && cdir->rchild == NULL;
 }
 
-struct cdir* insert_cdir(const struct config* config, const struct sub* sub, struct cdir* cdir)
+static struct cdir* insert_cdir(const struct config* config, const struct sub* sub, struct cdir* cdir)
 {
     if(is_leaf(cdir)) {
         return cdir;
@@ -452,7 +452,7 @@ struct cdir* insert_cdir(const struct config* config, const struct sub* sub, str
     }
 }
 
-bool is_overflowed(const struct lnode* lnode)
+static bool is_overflowed(const struct lnode* lnode)
 {
     return lnode->sub_count > lnode->max;
 }
@@ -473,7 +473,7 @@ bool sub_has_attribute_str(struct config* config, const struct sub* sub, const c
     return sub_has_attribute(sub, variable_id);
 }
 
-bool remove_sub(betree_sub_t sub, struct lnode* lnode)
+static bool remove_sub(betree_sub_t sub, struct lnode* lnode)
 {
     for(size_t i = 0; i < lnode->sub_count; i++) {
         const struct sub* lnode_sub = lnode->subs[i];
@@ -500,7 +500,7 @@ bool remove_sub(betree_sub_t sub, struct lnode* lnode)
     return false;
 }
 
-void move(const struct sub* sub, struct lnode* origin, struct lnode* destination)
+static void move(const struct sub* sub, struct lnode* origin, struct lnode* destination)
 {
     bool isFound = remove_sub(sub->id, origin);
     if(!isFound) {
@@ -527,7 +527,7 @@ void move(const struct sub* sub, struct lnode* origin, struct lnode* destination
     destination->sub_count++;
 }
 
-struct cdir* create_cdir(const struct config* config,
+static struct cdir* create_cdir(const struct config* config,
     const char* attr,
     betree_var_t variable_id,
     struct value_bound bound)
@@ -546,7 +546,7 @@ struct cdir* create_cdir(const struct config* config,
     return cdir;
 }
 
-struct cdir* create_cdir_with_cdir_parent(
+static struct cdir* create_cdir_with_cdir_parent(
     const struct config* config, struct cdir* parent, struct value_bound bound)
 {
     struct cdir* cdir = create_cdir(config, parent->attr_var.attr, parent->attr_var.var, bound);
@@ -555,7 +555,7 @@ struct cdir* create_cdir_with_cdir_parent(
     return cdir;
 }
 
-struct cdir* create_cdir_with_pnode_parent(
+static struct cdir* create_cdir_with_pnode_parent(
     const struct config* config, struct pnode* parent, struct value_bound bound)
 {
     struct cdir* cdir = create_cdir(config, parent->attr_var.attr, parent->attr_var.var, bound);
@@ -630,7 +630,7 @@ struct pnode* create_pdir(
     return pnode;
 }
 
-size_t count_attr_in_lnode(betree_var_t variable_id, const struct lnode* lnode)
+static size_t count_attr_in_lnode(betree_var_t variable_id, const struct lnode* lnode)
 {
     size_t count = 0;
     if(lnode == NULL) {
@@ -652,14 +652,14 @@ size_t count_attr_in_lnode(betree_var_t variable_id, const struct lnode* lnode)
     return count;
 }
 
-bool is_attr_used_in_parent_cnode(betree_var_t variable_id, const struct cnode* cnode);
+static bool is_attr_used_in_parent_cnode(betree_var_t variable_id, const struct cnode* cnode);
 
-bool is_attr_used_in_parent_pdir(betree_var_t variable_id, const struct pdir* pdir)
+static bool is_attr_used_in_parent_pdir(betree_var_t variable_id, const struct pdir* pdir)
 {
     return is_attr_used_in_parent_cnode(variable_id, pdir->parent);
 }
 
-bool is_attr_used_in_parent_pnode(betree_var_t variable_id, const struct pnode* pnode)
+static bool is_attr_used_in_parent_pnode(betree_var_t variable_id, const struct pnode* pnode)
 {
     if(pnode->attr_var.var == variable_id) {
         return true;
@@ -667,7 +667,7 @@ bool is_attr_used_in_parent_pnode(betree_var_t variable_id, const struct pnode* 
     return is_attr_used_in_parent_pdir(variable_id, pnode->parent);
 }
 
-bool is_attr_used_in_parent_cdir(betree_var_t variable_id, const struct cdir* cdir)
+static bool is_attr_used_in_parent_cdir(betree_var_t variable_id, const struct cdir* cdir)
 {
     if(cdir->attr_var.var == variable_id) {
         return true;
@@ -686,7 +686,7 @@ bool is_attr_used_in_parent_cdir(betree_var_t variable_id, const struct cdir* cd
     }
 }
 
-bool is_attr_used_in_parent_cnode(betree_var_t variable_id, const struct cnode* cnode)
+static bool is_attr_used_in_parent_cnode(betree_var_t variable_id, const struct cnode* cnode)
 {
     if(is_root(cnode)) {
         return false;
@@ -694,12 +694,12 @@ bool is_attr_used_in_parent_cnode(betree_var_t variable_id, const struct cnode* 
     return is_attr_used_in_parent_cdir(variable_id, cnode->parent);
 }
 
-bool is_attr_used_in_parent_lnode(betree_var_t variable_id, const struct lnode* lnode)
+static bool is_attr_used_in_parent_lnode(betree_var_t variable_id, const struct lnode* lnode)
 {
     return is_attr_used_in_parent_cnode(variable_id, lnode->parent);
 }
 
-bool splitable_attr_domain(const struct config* config, const struct attr_domain* attr_domain)
+static bool splitable_attr_domain(const struct config* config, const struct attr_domain* attr_domain)
 {
     switch(attr_domain->bound.value_type) {
         case VALUE_I:
@@ -721,7 +721,7 @@ bool splitable_attr_domain(const struct config* config, const struct attr_domain
     }
 }
 
-bool get_next_highest_score_unused_attr(
+static bool get_next_highest_score_unused_attr(
     const struct config* config, const struct lnode* lnode, struct attr_var* attr_var)
 {
     bool found = false;
@@ -753,7 +753,7 @@ bool get_next_highest_score_unused_attr(
     }
 }
 
-void update_cluster_capacity(const struct config* config, struct lnode* lnode)
+static void update_cluster_capacity(const struct config* config, struct lnode* lnode)
 {
     if(lnode == NULL) {
         return;
@@ -765,7 +765,7 @@ void update_cluster_capacity(const struct config* config, struct lnode* lnode)
     lnode->max = max;
 }
 
-size_t count_subs_with_variable(const struct sub** subs, size_t sub_count, betree_var_t variable_id)
+static size_t count_subs_with_variable(const struct sub** subs, size_t sub_count, betree_var_t variable_id)
 {
     size_t count = 0;
     for(size_t i = 0; i < sub_count; i++) {
@@ -777,7 +777,7 @@ size_t count_subs_with_variable(const struct sub** subs, size_t sub_count, betre
     return count;
 }
 
-void space_partitioning(const struct config* config, struct cnode* cnode)
+static void space_partitioning(const struct config* config, struct cnode* cnode)
 {
     struct lnode* lnode = cnode->lnode;
     while(is_overflowed(lnode) == true) {
@@ -806,7 +806,7 @@ void space_partitioning(const struct config* config, struct cnode* cnode)
     update_cluster_capacity(config, lnode);
 }
 
-bool is_atomic(const struct cdir* cdir)
+static bool is_atomic(const struct cdir* cdir)
 {
     switch(cdir->bound.value_type) {
         case(VALUE_I):
@@ -868,7 +868,7 @@ struct value_bounds {
     struct value_bound rbound;
 };
 
-struct value_bounds split_value_bound(struct value_bound bound)
+static struct value_bounds split_value_bound(struct value_bound bound)
 {
     struct value_bound lbound = { .value_type = bound.value_type };
     struct value_bound rbound = { .value_type = bound.value_type };
@@ -977,7 +977,7 @@ struct value_bounds split_value_bound(struct value_bound bound)
     return bounds;
 }
 
-void space_clustering(const struct config* config, struct cdir* cdir)
+static void space_clustering(const struct config* config, struct cdir* cdir)
 {
     if(cdir == NULL || cdir->cnode == NULL) {
         return;
@@ -1011,43 +1011,43 @@ void space_clustering(const struct config* config, struct cdir* cdir)
     update_cluster_capacity(config, lnode);
 }
 
-bool search_delete_cdir(struct config* config, struct sub* sub, struct cdir* cdir);
+static bool search_delete_cdir(struct config* config, struct sub* sub, struct cdir* cdir);
 
-bool delete_sub_from_leaf(betree_sub_t sub, struct lnode* lnode)
+static bool delete_sub_from_leaf(betree_sub_t sub, struct lnode* lnode)
 {
     return remove_sub(sub, lnode);
 }
 
-bool is_lnode_empty(const struct lnode* lnode)
+static bool is_lnode_empty(const struct lnode* lnode)
 {
     return lnode == NULL || lnode->sub_count == 0;
 }
 
-bool is_pdir_empty(const struct pdir* pdir)
+static bool is_pdir_empty(const struct pdir* pdir)
 {
     return pdir == NULL || pdir->pnode_count == 0;
 }
 
-bool is_cnode_empty(const struct cnode* cnode)
+static bool is_cnode_empty(const struct cnode* cnode)
 {
     return cnode == NULL || (is_lnode_empty(cnode->lnode) && is_pdir_empty(cnode->pdir));
 }
 
-bool is_cdir_empty(const struct cdir* cdir)
+static bool is_cdir_empty(const struct cdir* cdir)
 {
     return cdir == NULL
         || (is_cnode_empty(cdir->cnode) && is_cdir_empty(cdir->lchild)
                && is_cdir_empty(cdir->rchild));
 }
 
-bool is_pnode_empty(const struct pnode* pnode)
+static bool is_pnode_empty(const struct pnode* pnode)
 {
     return pnode == NULL || (is_cdir_empty(pnode->cdir));
 }
 
-void free_pnode(struct pnode* pnode);
+static void free_pnode(struct pnode* pnode);
 
-void free_pdir(struct pdir* pdir)
+static void free_pdir(struct pdir* pdir)
 {
     if(pdir == NULL) {
         return;
@@ -1061,7 +1061,7 @@ void free_pdir(struct pdir* pdir)
     free(pdir);
 }
 
-void free_value(struct value value)
+static void free_value(struct value value)
 {
     switch(value.value_type) {
         case VALUE_IL: {
@@ -1100,7 +1100,7 @@ void free_value(struct value value)
     }
 }
 
-void free_pred(struct pred* pred)
+static void free_pred(struct pred* pred)
 {
     if(pred == NULL) {
         return;
@@ -1167,7 +1167,7 @@ void free_cnode(struct cnode* cnode)
     free(cnode);
 }
 
-void free_cdir(struct cdir* cdir)
+static void free_cdir(struct cdir* cdir)
 {
     if(cdir == NULL) {
         return;
@@ -1182,7 +1182,7 @@ void free_cdir(struct cdir* cdir)
     free(cdir);
 }
 
-void try_remove_pnode_from_parent(const struct pnode* pnode)
+static void try_remove_pnode_from_parent(const struct pnode* pnode)
 {
     struct pdir* pdir = pnode->parent;
     for(size_t i = 0; i < pdir->pnode_count; i++) {
@@ -1208,7 +1208,7 @@ void try_remove_pnode_from_parent(const struct pnode* pnode)
     }
 }
 
-void free_pnode(struct pnode* pnode)
+static void free_pnode(struct pnode* pnode)
 {
     if(pnode == NULL) {
         return;
@@ -1258,7 +1258,7 @@ bool betree_delete_inner(struct config* config, struct sub* sub, struct cnode* c
     return isFound;
 }
 
-struct sub* find_sub_id_cdir(betree_sub_t id, struct cdir* cdir)
+static struct sub* find_sub_id_cdir(betree_sub_t id, struct cdir* cdir)
 {
     if(cdir == NULL) {
         return NULL;
@@ -1299,17 +1299,17 @@ struct sub* find_sub_id(betree_sub_t id, struct cnode* cnode)
     return NULL;
 }
 
-bool is_empty(struct cdir* cdir)
+static bool is_empty(struct cdir* cdir)
 {
     return is_cdir_empty(cdir);
 }
 
-void remove_bucket(struct cdir* cdir)
+static void remove_bucket(struct cdir* cdir)
 {
     free_cdir(cdir);
 }
 
-void try_remove_cdir_from_parent(struct cdir* cdir)
+static void try_remove_cdir_from_parent(struct cdir* cdir)
 {
     switch(cdir->parent_type) {
         case CNODE_PARENT_CDIR: {
@@ -1331,7 +1331,7 @@ void try_remove_cdir_from_parent(struct cdir* cdir)
     }
 }
 
-bool search_delete_cdir(struct config* config, struct sub* sub, struct cdir* cdir)
+static bool search_delete_cdir(struct config* config, struct sub* sub, struct cdir* cdir)
 {
     bool isFound = false;
     if(sub_is_enclosed(config, sub, cdir->lchild)) {
@@ -1373,7 +1373,7 @@ struct pred* make_pred(const char* attr, betree_var_t variable_id, struct value 
     return pred;
 }
 
-void fill_pred_attr_var(struct sub* sub, struct attr_var attr_var)
+static void fill_pred_attr_var(struct sub* sub, struct attr_var attr_var)
 {
     bool is_found = false;
     for(size_t i = 0; i < sub->attr_var_count; i++) {
@@ -1490,7 +1490,7 @@ struct sub* make_empty_sub(betree_sub_t id)
     return sub;
 }
 
-enum short_circuit_e short_circuit_for_attr_var(betree_var_t id, bool inverted, struct attr_var attr_var) {
+static enum short_circuit_e short_circuit_for_attr_var(betree_var_t id, bool inverted, struct attr_var attr_var) {
     if(id == attr_var.var) {
         if(inverted) {
             return SHORT_CIRCUIT_PASS;
@@ -1504,7 +1504,7 @@ enum short_circuit_e short_circuit_for_attr_var(betree_var_t id, bool inverted, 
     }
 }
 
-enum short_circuit_e short_circuit_for_node(betree_var_t id, bool inverted, const struct ast_node* node) {
+static enum short_circuit_e short_circuit_for_node(betree_var_t id, bool inverted, const struct ast_node* node) {
     switch(node->type) {
         case AST_TYPE_COMPARE_EXPR: 
             return short_circuit_for_attr_var(id, inverted, node->compare_expr.attr_var);
@@ -1569,7 +1569,7 @@ enum short_circuit_e short_circuit_for_node(betree_var_t id, bool inverted, cons
     return SHORT_CIRCUIT_NONE;
 }
 
-void fill_short_circuit(struct config* config, struct sub* sub)
+static void fill_short_circuit(struct config* config, struct sub* sub)
 {
     for(size_t i = 0; i < config->attr_domain_count; i++) {
         struct attr_domain* attr_domain = config->attr_domains[i];
@@ -1903,7 +1903,7 @@ void event_to_string(const struct event* event, char* buffer)
     buffer[length] = '\0';
 }
 
-void add_string_map(struct attr_var attr_var, struct config* config)
+static void add_string_map(struct attr_var attr_var, struct config* config)
 {
     if(config->string_map_count == 0) {
         config->string_maps = calloc(1, sizeof(*config->string_maps));
@@ -1928,7 +1928,7 @@ void add_string_map(struct attr_var attr_var, struct config* config)
     config->string_map_count++;
 }
 
-void add_to_string_map(struct string_map* string_map, char* copy)
+static void add_to_string_map(struct string_map* string_map, char* copy)
 {
     if(string_map->string_value_count == 0) {
         string_map->string_values = calloc(1, sizeof(*string_map->string_values));
@@ -2010,7 +2010,7 @@ bool is_variable_allow_undefined(const struct config* config, const betree_var_t
 int parse(const char* text, struct ast_node** node);
 int event_parse(const char* text, struct event** event);
 
-bool betree_can_insert(const struct config* config, betree_sub_t id, const char* expr, struct cnode* cnode)
+static bool betree_can_insert(const struct config* config, betree_sub_t id, const char* expr, struct cnode* cnode)
 {
     (void)id;
     (void)cnode;
@@ -2039,7 +2039,7 @@ void free_memoize(struct memoize memoize)
     free(memoize.fail);
 }
 
-uint64_t* make_undefined(const struct config* config, const struct event* event)
+static uint64_t* make_undefined(const struct config* config, const struct event* event)
 {
     size_t count = config->attr_domain_count / 64 + 1;
     uint64_t* undefined = calloc(count, sizeof(*undefined));
@@ -2052,7 +2052,7 @@ uint64_t* make_undefined(const struct config* config, const struct event* event)
     return undefined;
 }
 
-struct pred** make_environment(const struct config* config, const struct event* event)
+static struct pred** make_environment(const struct config* config, const struct event* event)
 {
     struct pred** preds = calloc(config->attr_domain_count, sizeof(*preds));
     for(size_t i = 0; i < event->pred_count; i++) {
@@ -2090,7 +2090,7 @@ void betree_search_with_event(const struct config* config,
     free(preds);
 }
 
-void sort_event_lists(struct event* event)
+static void sort_event_lists(struct event* event)
 {
     for(size_t i = 0; i < event->pred_count; i++) {
         struct pred* pred = event->preds[i];

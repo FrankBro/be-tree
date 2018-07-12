@@ -6,7 +6,7 @@
 #include "printer.h"
 #include "utils.h"
 
-void add_predicate_to_container(struct pred_container* container, struct ast_node* node)
+static void add_predicate_to_container(struct pred_container* container, struct ast_node* node)
 {
     if(container->count == 0) {
         container->preds = calloc(1, sizeof(*container->preds));
@@ -28,7 +28,7 @@ void add_predicate_to_container(struct pred_container* container, struct ast_nod
     container->count++;
 }
 
-void add_predicate_to_map(struct pred_map* pred_map, struct ast_node* node)
+static void add_predicate_to_map(struct pred_map* pred_map, struct ast_node* node)
 {
     if(pred_map->pred_count == 0) {
         pred_map->preds = calloc(1, sizeof(*pred_map->preds));
@@ -68,7 +68,7 @@ static void match_or_insert(struct pred_map* pred_map, struct pred_container* co
     add_predicate_to_container(container, node);
 }
 
-void assign_compare_pred(struct pred_map* pred_map, struct ast_compare_expr* typed, struct ast_node* node)
+static void assign_compare_pred(struct pred_map* pred_map, struct ast_compare_expr* typed, struct ast_node* node)
 {
     struct pred_compare_map* m = &pred_map->compare_map;
     switch(typed->op) {
@@ -90,7 +90,7 @@ void assign_compare_pred(struct pred_map* pred_map, struct ast_compare_expr* typ
     }
 }
 
-void assign_equality_pred(struct pred_map* pred_map, struct ast_equality_expr* typed, struct ast_node* node)
+static void assign_equality_pred(struct pred_map* pred_map, struct ast_equality_expr* typed, struct ast_node* node)
 {
     struct pred_equality_map* m = &pred_map->equality_map;
     switch(typed->op) {
@@ -107,7 +107,8 @@ void assign_equality_pred(struct pred_map* pred_map, struct ast_equality_expr* t
 }
 
 // BIG assumption, the inner expressions have been assigned a pred. So we save a bunch of time for "and", "or" and "not"
-void assign_bool_pred(struct pred_map* pred_map, struct ast_bool_expr* typed, struct ast_node* node)
+// not anymore but should redo it to improve insert time
+static void assign_bool_pred(struct pred_map* pred_map, struct ast_bool_expr* typed, struct ast_node* node)
 {
     struct pred_bool_map* m = &pred_map->bool_map;
     switch(typed->op) {
@@ -129,7 +130,7 @@ void assign_bool_pred(struct pred_map* pred_map, struct ast_bool_expr* typed, st
     }
 }
 
-void assign_set_pred(struct pred_map* pred_map, struct ast_set_expr* typed, struct ast_node* node)
+static void assign_set_pred(struct pred_map* pred_map, struct ast_set_expr* typed, struct ast_node* node)
 {
     struct pred_set_map* m = &pred_map->set_map;
     switch(typed->op) {
@@ -145,7 +146,7 @@ void assign_set_pred(struct pred_map* pred_map, struct ast_set_expr* typed, stru
     }
 }
 
-void assign_list_pred(struct pred_map* pred_map, struct ast_list_expr* typed, struct ast_node* node)
+static void assign_list_pred(struct pred_map* pred_map, struct ast_list_expr* typed, struct ast_node* node)
 {
     struct pred_list_map* m = &pred_map->list_map;
     switch(typed->op) {
@@ -164,7 +165,7 @@ void assign_list_pred(struct pred_map* pred_map, struct ast_list_expr* typed, st
     }
 }
 
-void assign_special_pred(struct pred_map* pred_map, struct ast_special_expr* typed, struct ast_node* node)
+static void assign_special_pred(struct pred_map* pred_map, struct ast_special_expr* typed, struct ast_node* node)
 {
     struct pred_special_map* m = &pred_map->special_map;
     switch(typed->type) {
@@ -222,7 +223,7 @@ void assign_pred(struct pred_map* pred_map, struct ast_node* node)
     }
 }
 
-void init_pred_container(struct pred_container* container)
+static void init_pred_container(struct pred_container* container)
 {
     container->count = 0;
     container->preds = NULL;

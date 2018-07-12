@@ -72,7 +72,7 @@ struct ast_node* ast_bool_expr_unary_create(struct ast_node* expr)
     return node;
 }
 
-uint64_t score_node(struct ast_node* node)
+static uint64_t score_node(struct ast_node* node)
 {
     switch(node->type) {
         case AST_TYPE_COMPARE_EXPR:
@@ -248,7 +248,7 @@ struct ast_node* ast_special_string_create(
     return node;
 }
 
-void free_special_expr(struct ast_special_expr special_expr)
+static void free_special_expr(struct ast_special_expr special_expr)
 {
     switch(special_expr.type) {
         case AST_SPECIAL_FREQUENCY:
@@ -273,7 +273,7 @@ void free_special_expr(struct ast_special_expr special_expr)
     }
 }
 
-void free_set_expr(struct ast_set_expr set_expr)
+static void free_set_expr(struct ast_set_expr set_expr)
 {
     switch(set_expr.left_value.value_type) {
         case AST_SET_LEFT_VALUE_INTEGER: {
@@ -313,7 +313,7 @@ void free_set_expr(struct ast_set_expr set_expr)
     }
 }
 
-void free_list_expr(struct ast_list_expr list_expr)
+static void free_list_expr(struct ast_list_expr list_expr)
 {
     switch(list_expr.value.value_type) {
         case AST_LIST_VALUE_INTEGER_LIST: {
@@ -427,36 +427,36 @@ bool sbinary_search(struct string_value arr[], size_t count, betree_str_t to_fin
     return false;
 }
 
-bool integer_in_integer_list(int64_t integer, struct integer_list_value list)
+static bool integer_in_integer_list(int64_t integer, struct integer_list_value list)
 {
     return d64binary_search(list.integers, list.count, integer);
 }
 
-bool string_in_string_list(struct string_value string, struct string_list_value list)
+static bool string_in_string_list(struct string_value string, struct string_list_value list)
 {
     return sbinary_search(list.strings, list.count, string.str);
 }
 
-bool compare_value_matches(enum ast_compare_value_e a, enum value_e b)
+static bool compare_value_matches(enum ast_compare_value_e a, enum value_e b)
 {
     return (a == AST_COMPARE_VALUE_INTEGER && b == VALUE_I)
         || (a == AST_COMPARE_VALUE_FLOAT && b == VALUE_F);
 }
 
-bool equality_value_matches(enum ast_equality_value_e a, enum value_e b)
+static bool equality_value_matches(enum ast_equality_value_e a, enum value_e b)
 {
     return (a == AST_EQUALITY_VALUE_INTEGER && b == VALUE_I)
         || (a == AST_EQUALITY_VALUE_FLOAT && b == VALUE_F)
         || (a == AST_EQUALITY_VALUE_STRING && b == VALUE_S);
 }
 
-bool list_value_matches(enum ast_list_value_e a, enum value_e b)
+static bool list_value_matches(enum ast_list_value_e a, enum value_e b)
 {
     return (a == AST_LIST_VALUE_INTEGER_LIST && b == VALUE_IL)
         || (a == AST_LIST_VALUE_STRING_LIST && b == VALUE_SL);
 }
 
-double get_geo_value_as_float(const struct special_geo_value value)
+static double get_geo_value_as_float(const struct special_geo_value value)
 {
     switch(value.value_type) {
         case AST_SPECIAL_GEO_VALUE_INTEGER: {
@@ -516,7 +516,7 @@ const char* frequency_type_to_string(enum frequency_type_e type)
     return string;
 }
 
-bool match_special_expr(const struct pred** preds, const struct ast_special_expr special_expr)
+static bool match_special_expr(const struct pred** preds, const struct ast_special_expr special_expr)
 {
     switch(special_expr.type) {
         case AST_SPECIAL_FREQUENCY: {
@@ -775,7 +775,7 @@ static bool match_all_of_string(struct value variable, struct ast_list_expr list
     }
 }
 
-bool match_list_expr(const struct pred** preds, const struct ast_list_expr list_expr)
+static bool match_list_expr(const struct pred** preds, const struct ast_list_expr list_expr)
 {
     struct value variable;
     bool is_variable_defined = get_variable(list_expr.attr_var.var, preds, &variable);
@@ -831,7 +831,7 @@ bool match_list_expr(const struct pred** preds, const struct ast_list_expr list_
     }
 }
 
-bool match_set_expr(const struct pred** preds, const struct ast_set_expr set_expr)
+static bool match_set_expr(const struct pred** preds, const struct ast_set_expr set_expr)
 {
     struct set_left_value left = set_expr.left_value;
     struct set_right_value right = set_expr.right_value;
@@ -890,7 +890,7 @@ bool match_set_expr(const struct pred** preds, const struct ast_set_expr set_exp
     }
 }
 
-bool match_compare_expr(const struct pred** preds, const struct ast_compare_expr compare_expr) 
+static bool match_compare_expr(const struct pred** preds, const struct ast_compare_expr compare_expr) 
 {
     struct value variable;
     bool is_variable_defined = get_variable(compare_expr.attr_var.var, preds, &variable);
@@ -969,7 +969,7 @@ bool match_compare_expr(const struct pred** preds, const struct ast_compare_expr
     }
 }
 
-bool match_equality_expr(const struct pred** preds, const struct ast_equality_expr equality_expr)
+static bool match_equality_expr(const struct pred** preds, const struct ast_equality_expr equality_expr)
 {
     struct value variable;
     bool is_variable_defined = get_variable(equality_expr.attr_var.var, preds, &variable);
@@ -1026,7 +1026,7 @@ bool match_equality_expr(const struct pred** preds, const struct ast_equality_ex
 
 static bool match_node_inner(const struct config* config, const struct pred** preds, const struct ast_node* node, struct memoize* memoize, struct report* report);
 
-bool match_bool_expr(const struct config* config, const struct pred** preds, const struct ast_bool_expr bool_expr, struct memoize* memoize, struct report* report)
+static bool match_bool_expr(const struct config* config, const struct pred** preds, const struct ast_bool_expr bool_expr, struct memoize* memoize, struct report* report)
 {
     switch(bool_expr.op) {
         case AST_BOOL_AND: {
@@ -1064,14 +1064,14 @@ bool match_bool_expr(const struct config* config, const struct pred** preds, con
     }
 }
 
-void report_memoized(struct report* report)
+static void report_memoized(struct report* report)
 {
     if(report != NULL) {
         report->memoized++;
     }
 }
 
-void print_memoize(const struct memoize* memoize, size_t pred_count)
+static void print_memoize(const struct memoize* memoize, size_t pred_count)
 {
     printf("DEBUG: Pass ");
     for(size_t i = 0; i < pred_count; i++) {
@@ -1146,7 +1146,7 @@ bool match_node(const struct config* config, const struct pred** preds, const st
     return match_node_inner(config, preds, node, memoize, report);
 }
 
-struct value_bound copy_value_bound(struct value_bound* bound)
+static struct value_bound copy_value_bound(struct value_bound* bound)
 {
     struct value_bound copy;
     copy.value_type = bound->value_type;
@@ -2032,7 +2032,7 @@ void assign_str_id(struct config* config, struct ast_node* node)
     }
 }
 
-bool eq_compare_value(struct compare_value a, struct compare_value b)
+static bool eq_compare_value(struct compare_value a, struct compare_value b)
 {
     if(a.value_type != b.value_type) {
         return false;
@@ -2048,7 +2048,7 @@ bool eq_compare_value(struct compare_value a, struct compare_value b)
     }
 }
 
-bool eq_equality_value(struct equality_value a, struct equality_value b)
+static bool eq_equality_value(struct equality_value a, struct equality_value b)
 {
     if(a.value_type != b.value_type) {
         return false;
@@ -2066,7 +2066,7 @@ bool eq_equality_value(struct equality_value a, struct equality_value b)
     }
 }
 
-bool eq_bool_expr(struct ast_bool_expr a, struct ast_bool_expr b)
+static bool eq_bool_expr(struct ast_bool_expr a, struct ast_bool_expr b)
 {
     if(a.op != b.op) {
         return false;
@@ -2085,7 +2085,7 @@ bool eq_bool_expr(struct ast_bool_expr a, struct ast_bool_expr b)
     }
 }
 
-bool eq_set_left_value(struct set_left_value a, struct set_left_value b)
+static bool eq_set_left_value(struct set_left_value a, struct set_left_value b)
 {
     if(a.value_type != b.value_type) {
         return false;
@@ -2103,7 +2103,7 @@ bool eq_set_left_value(struct set_left_value a, struct set_left_value b)
     }
 }
 
-bool eq_integer_list(struct integer_list_value a, struct integer_list_value b)
+static bool eq_integer_list(struct integer_list_value a, struct integer_list_value b)
 {
     if(a.count != b.count) {
         return false;
@@ -2116,7 +2116,7 @@ bool eq_integer_list(struct integer_list_value a, struct integer_list_value b)
     return true;
 }
 
-bool eq_string_list(struct string_list_value a, struct string_list_value b)
+static bool eq_string_list(struct string_list_value a, struct string_list_value b)
 {
     if(a.count != b.count) {
         return false;
@@ -2129,7 +2129,7 @@ bool eq_string_list(struct string_list_value a, struct string_list_value b)
     return true;
 }
 
-bool eq_set_right_value(struct set_right_value a, struct set_right_value b)
+static bool eq_set_right_value(struct set_right_value a, struct set_right_value b)
 {
     if(a.value_type != b.value_type) {
         return false;
@@ -2147,7 +2147,7 @@ bool eq_set_right_value(struct set_right_value a, struct set_right_value b)
     }
 }
 
-bool eq_set_expr(struct ast_set_expr a, struct ast_set_expr b)
+static bool eq_set_expr(struct ast_set_expr a, struct ast_set_expr b)
 {
     if(a.op != b.op) {
         return false;
@@ -2155,7 +2155,7 @@ bool eq_set_expr(struct ast_set_expr a, struct ast_set_expr b)
     return eq_set_left_value(a.left_value, b.left_value) && eq_set_right_value(a.right_value, b.right_value);
 }
 
-bool eq_list_value(struct list_value a, struct list_value b)
+static bool eq_list_value(struct list_value a, struct list_value b)
 {
     if(a.value_type != b.value_type) {
         return false;
@@ -2171,7 +2171,7 @@ bool eq_list_value(struct list_value a, struct list_value b)
     }
 }
 
-bool eq_list_expr(struct ast_list_expr a, struct ast_list_expr b)
+static bool eq_list_expr(struct ast_list_expr a, struct ast_list_expr b)
 {
     if(a.op != b.op) {
         return false;
@@ -2179,7 +2179,7 @@ bool eq_list_expr(struct ast_list_expr a, struct ast_list_expr b)
     return a.attr_var.var == b.attr_var.var && eq_list_value(a.value, b.value);
 }
 
-bool eq_geo_value(struct special_geo_value a, struct special_geo_value b)
+static bool eq_geo_value(struct special_geo_value a, struct special_geo_value b)
 {
     if(a.value_type != b.value_type) {
         return false;
@@ -2195,7 +2195,7 @@ bool eq_geo_value(struct special_geo_value a, struct special_geo_value b)
     }
 }
 
-bool eq_special_expr(struct ast_special_expr a, struct ast_special_expr b)
+static bool eq_special_expr(struct ast_special_expr a, struct ast_special_expr b)
 {
     if(a.type != b.type) {
         return false;
