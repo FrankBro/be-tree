@@ -4,6 +4,7 @@
 #include "ast.h"
 #include "betree.h"
 #include "minunit.h"
+#include "tree.h"
 
 int parse(const char* text, struct ast_node** node);
 int event_parse(const char* text, struct event** event);

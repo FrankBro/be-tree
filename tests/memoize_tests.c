@@ -8,6 +8,7 @@
 #include "parser.h"
 #include "memoize.h"
 #include "minunit.h"
+#include "tree.h"
 #include "utils.h"
 #include "value.h"
 #include "var.h"

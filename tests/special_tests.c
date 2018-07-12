@@ -4,8 +4,10 @@
 #include <string.h>
 
 #include "ast.h"
+#include "betree.h"
 #include "parser.h"
 #include "minunit.h"
+#include "tree.h"
 #include "utils.h"
 
 int parse(const char *text, struct ast_node **node);

@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include "betree.h"
+#include "config.h"
 #include "memoize.h"
 #include "value.h"
 #include "var.h"

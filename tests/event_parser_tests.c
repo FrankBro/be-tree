@@ -4,6 +4,7 @@
 
 #include "ast.h"
 #include "minunit.h"
+#include "tree.h"
 #include "utils.h"
 #include "var.h"
 

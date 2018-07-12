@@ -1,7 +1,8 @@
 #pragma once
 
-#include "ast.h"
-#include "memoize.h"
+#include <stddef.h>
+
+struct ast_node;
 
 struct pred_container {
     size_t count;

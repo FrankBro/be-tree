@@ -1,7 +1,8 @@
-#include "var.h"
 #include "betree.h"
 #include "error.h"
+#include "tree.h"
 #include "utils.h"
+#include "var.h"
 
 bool get_variable(betree_var_t var, const struct pred** preds, struct value* value)
 {

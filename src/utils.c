@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "betree.h"
+#include "value.h"
 #include "utils.h"
 
 bool bmin(bool a, bool b)

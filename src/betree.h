@@ -4,9 +4,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "memoize.h"
-#include "value.h"
-
 typedef uint64_t betree_sub_t;
 
 struct betree;

@@ -1,6 +1,16 @@
 #pragma once
 
-#include "tree.h"
+#include <stdbool.h>
+#include <stdint.h>
+
+#include "value.h"
+
+struct pred;
+
+struct attr_var {
+    const char* attr;
+    betree_var_t var;
+};
 
 bool get_variable(betree_var_t var, const struct pred** preds, struct value* value);
 bool get_float_var(betree_var_t var, const struct pred** preds, double* ret);

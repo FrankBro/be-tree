@@ -6,6 +6,7 @@
     #include "ast.h"
     #include "betree.h"
     #include "event_parser.h"
+    #include "tree.h"
     #include "value.h"
     struct event *root;
     extern int zzlex();

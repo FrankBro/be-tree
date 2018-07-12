@@ -4,6 +4,7 @@
 
 #include "ast.h"
 #include "betree.h"
+#include "tree.h"
 #include "utils.h"
 
 #define SEP_DASH "------------------------------------------------------"
