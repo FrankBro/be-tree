@@ -7,33 +7,33 @@
 #include "value.h"
 #include "var.h"
 
-// Numeric comparison (<, <=, >, >=)
+// Comparison (<, <=, >, >=)
 // Work on integer and float
 
-enum ast_numeric_compare_e {
-    AST_NUMERIC_COMPARE_LT,
-    AST_NUMERIC_COMPARE_LE,
-    AST_NUMERIC_COMPARE_GT,
-    AST_NUMERIC_COMPARE_GE,
+enum ast_compare_e {
+    AST_COMPARE_LT,
+    AST_COMPARE_LE,
+    AST_COMPARE_GT,
+    AST_COMPARE_GE,
 };
 
-enum ast_numeric_compare_value_e {
-    AST_NUMERIC_COMPARE_VALUE_INTEGER,
-    AST_NUMERIC_COMPARE_VALUE_FLOAT,
+enum ast_compare_value_e {
+    AST_COMPARE_VALUE_INTEGER,
+    AST_COMPARE_VALUE_FLOAT,
 };
 
-struct numeric_compare_value {
-    enum ast_numeric_compare_value_e value_type;
+struct compare_value {
+    enum ast_compare_value_e value_type;
     union {
         int64_t integer_value;
         double float_value;
     };
 };
 
-struct ast_numeric_compare_expr {
-    enum ast_numeric_compare_e op;
+struct ast_compare_expr {
+    enum ast_compare_e op;
     struct attr_var attr_var;
-    struct numeric_compare_value value;
+    struct compare_value value;
 };
 
 // Equality (=, <>)
@@ -258,7 +258,7 @@ struct ast_special_expr {
 // Expression
 
 enum ast_node_type_e {
-    AST_TYPE_NUMERIC_COMPARE_EXPR,
+    AST_TYPE_COMPARE_EXPR,
     AST_TYPE_EQUALITY_EXPR,
     AST_TYPE_BOOL_EXPR,
     AST_TYPE_SET_EXPR,
@@ -270,7 +270,7 @@ struct ast_node {
     betree_pred_t id;
     enum ast_node_type_e type;
     union {
-        struct ast_numeric_compare_expr numeric_compare_expr;
+        struct ast_compare_expr compare_expr;
         struct ast_equality_expr equality_expr;
         struct ast_bool_expr bool_expr;
         struct ast_set_expr set_expr;
@@ -280,8 +280,8 @@ struct ast_node {
 };
 
 struct ast_node* ast_node_create();
-struct ast_node* ast_numeric_compare_expr_create(
-    enum ast_numeric_compare_e op, const char* name, struct numeric_compare_value value);
+struct ast_node* ast_compare_expr_create(
+    enum ast_compare_e op, const char* name, struct compare_value value);
 struct ast_node* ast_equality_expr_create(
     enum ast_equality_e op, const char* name, struct equality_value value);
 struct ast_node* ast_set_expr_create(

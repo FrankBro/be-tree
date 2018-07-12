@@ -4,40 +4,40 @@
 #include "printer.h"
 #include "utils.h"
 
-const char* numeric_compare_value_to_string(struct numeric_compare_value value)
+const char* compare_value_to_string(struct compare_value value)
 {
     char* expr;
     switch(value.value_type) {
-        case AST_NUMERIC_COMPARE_VALUE_INTEGER:
+        case AST_COMPARE_VALUE_INTEGER:
             if(asprintf(&expr, "%ld", value.integer_value) < 0) {
                 abort();
             }
             break;
-        case AST_NUMERIC_COMPARE_VALUE_FLOAT:
+        case AST_COMPARE_VALUE_FLOAT:
             if(asprintf(&expr, "%.2f", value.float_value) < 0) {
                 abort();
             }
             break;
         default:
-            switch_default_error("Invalid numeric compare value type");
+            switch_default_error("Invalid compare value type");
             break;
     }
     return expr;
 }
 
-const char* numeric_compare_op_to_string(enum ast_numeric_compare_e op)
+const char* compare_op_to_string(enum ast_compare_e op)
 {
     switch(op) {
-        case AST_NUMERIC_COMPARE_LT:
+        case AST_COMPARE_LT:
             return "<";
-        case AST_NUMERIC_COMPARE_LE:
+        case AST_COMPARE_LE:
             return "<=";
-        case AST_NUMERIC_COMPARE_GT:
+        case AST_COMPARE_GT:
             return ">";
-        case AST_NUMERIC_COMPARE_GE:
+        case AST_COMPARE_GE:
             return ">=";
         default:
-            switch_default_error("Invalid numeric compare operation");
+            switch_default_error("Invalid compare operation");
             return NULL;
     }
 }
@@ -278,10 +278,10 @@ char* ast_to_string(const struct ast_node* node)
             free((char*)value);
             return expr;
         }
-        case(AST_TYPE_NUMERIC_COMPARE_EXPR): {
-            const char* value = numeric_compare_value_to_string(node->numeric_compare_expr.value);
-            const char* op = numeric_compare_op_to_string(node->numeric_compare_expr.op);
-            if(asprintf(&expr, "%s %s %s", node->numeric_compare_expr.attr_var.attr, op, value) < 0) {
+        case(AST_TYPE_COMPARE_EXPR): {
+            const char* value = compare_value_to_string(node->compare_expr.value);
+            const char* op = compare_op_to_string(node->compare_expr.op);
+            if(asprintf(&expr, "%s %s %s", node->compare_expr.attr_var.attr, op, value) < 0) {
                 abort();
             }
             free((char*)value);

@@ -68,24 +68,24 @@ static void match_or_insert(struct pred_map* pred_map, struct pred_container* co
     add_predicate_to_container(container, node);
 }
 
-void assign_numeric_compare_pred(struct pred_map* pred_map, struct ast_numeric_compare_expr* typed, struct ast_node* node)
+void assign_compare_pred(struct pred_map* pred_map, struct ast_compare_expr* typed, struct ast_node* node)
 {
-    struct pred_numeric_compare_map* m = &pred_map->numeric_compare_map;
+    struct pred_compare_map* m = &pred_map->compare_map;
     switch(typed->op) {
-        case AST_NUMERIC_COMPARE_LT: 
+        case AST_COMPARE_LT: 
             match_or_insert(pred_map, &m->lt_preds, node); 
             break;
-        case AST_NUMERIC_COMPARE_LE: 
+        case AST_COMPARE_LE: 
             match_or_insert(pred_map, &m->le_preds, node); 
             break;
-        case AST_NUMERIC_COMPARE_GT: 
+        case AST_COMPARE_GT: 
             match_or_insert(pred_map, &m->gt_preds, node); 
             break;
-        case AST_NUMERIC_COMPARE_GE: 
+        case AST_COMPARE_GE: 
             match_or_insert(pred_map, &m->ge_preds, node); 
             break;
         default:
-            switch_default_error("Invalid numeric compare op");
+            switch_default_error("Invalid compare op");
             break;
     }
 }
@@ -198,8 +198,8 @@ void assign_pred(struct pred_map* pred_map, struct ast_node* node)
         }
     }
     switch(node->type) {
-        case AST_TYPE_NUMERIC_COMPARE_EXPR:
-            assign_numeric_compare_pred(pred_map, &node->numeric_compare_expr, node);
+        case AST_TYPE_COMPARE_EXPR:
+            assign_compare_pred(pred_map, &node->compare_expr, node);
             break;
         case AST_TYPE_EQUALITY_EXPR:
             assign_equality_pred(pred_map, &node->equality_expr, node);
@@ -237,10 +237,10 @@ struct pred_map* make_pred_map()
     }
     pred_map->pred_count = 0;
     pred_map->preds = NULL;
-    init_pred_container(&pred_map->numeric_compare_map.ge_preds);
-    init_pred_container(&pred_map->numeric_compare_map.gt_preds);
-    init_pred_container(&pred_map->numeric_compare_map.le_preds);
-    init_pred_container(&pred_map->numeric_compare_map.lt_preds);
+    init_pred_container(&pred_map->compare_map.ge_preds);
+    init_pred_container(&pred_map->compare_map.gt_preds);
+    init_pred_container(&pred_map->compare_map.le_preds);
+    init_pred_container(&pred_map->compare_map.lt_preds);
     init_pred_container(&pred_map->equality_map.eq_preds);
     init_pred_container(&pred_map->equality_map.ne_preds);
     init_pred_container(&pred_map->set_map.in_preds);
@@ -261,10 +261,10 @@ struct pred_map* make_pred_map()
 
 void free_pred_map(struct pred_map* pred_map)
 {
-    free(pred_map->numeric_compare_map.ge_preds.preds);
-    free(pred_map->numeric_compare_map.gt_preds.preds);
-    free(pred_map->numeric_compare_map.le_preds.preds);
-    free(pred_map->numeric_compare_map.lt_preds.preds);
+    free(pred_map->compare_map.ge_preds.preds);
+    free(pred_map->compare_map.gt_preds.preds);
+    free(pred_map->compare_map.le_preds.preds);
+    free(pred_map->compare_map.lt_preds.preds);
     free(pred_map->equality_map.eq_preds.preds);
     free(pred_map->equality_map.ne_preds.preds);
     free(pred_map->set_map.in_preds.preds);

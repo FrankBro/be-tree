@@ -36,7 +36,7 @@
     struct string_list_value string_list_value;
     struct value value;
     struct string_value string_value;
-    struct numeric_compare_value numeric_compare_value;
+    struct compare_value compare_value;
     struct equality_value equality_value;
     struct attr_var variable_value;
     struct set_left_value set_left_value;
@@ -70,7 +70,7 @@
 %type<integer_value> integer
 %type<float_value> float
 %type<string_value> string
-%type<numeric_compare_value> num_comp_value 
+%type<compare_value> num_comp_value 
 %type<equality_value> eq_value
 %type<variable_value> variable_value
 %type<set_left_value> set_left_value
@@ -129,14 +129,14 @@ expr                : TLPAREN expr TRPAREN                  { $$ = $2; }
                     | special_expr                          { $$ = $1; }
 ;       
 
-num_comp_value      : integer                               { $$.value_type = AST_NUMERIC_COMPARE_VALUE_INTEGER; $$.integer_value = $1; }
-                    | float                                 { $$.value_type = AST_NUMERIC_COMPARE_VALUE_FLOAT; $$.float_value = $1; }
+num_comp_value      : integer                               { $$.value_type = AST_COMPARE_VALUE_INTEGER; $$.integer_value = $1; }
+                    | float                                 { $$.value_type = AST_COMPARE_VALUE_FLOAT; $$.float_value = $1; }
 ;       
 
-num_comp_expr       : ident TCGT num_comp_value             { $$ = ast_numeric_compare_expr_create(AST_NUMERIC_COMPARE_GT, $1, $3); free($1); }
-                    | ident TCGE num_comp_value             { $$ = ast_numeric_compare_expr_create(AST_NUMERIC_COMPARE_GE, $1, $3); free($1); }
-                    | ident TCLT num_comp_value             { $$ = ast_numeric_compare_expr_create(AST_NUMERIC_COMPARE_LT, $1, $3); free($1); }
-                    | ident TCLE num_comp_value             { $$ = ast_numeric_compare_expr_create(AST_NUMERIC_COMPARE_LE, $1, $3); free($1); }
+num_comp_expr       : ident TCGT num_comp_value             { $$ = ast_compare_expr_create(AST_COMPARE_GT, $1, $3); free($1); }
+                    | ident TCGE num_comp_value             { $$ = ast_compare_expr_create(AST_COMPARE_GE, $1, $3); free($1); }
+                    | ident TCLT num_comp_value             { $$ = ast_compare_expr_create(AST_COMPARE_LT, $1, $3); free($1); }
+                    | ident TCLE num_comp_value             { $$ = ast_compare_expr_create(AST_COMPARE_LE, $1, $3); free($1); }
 ;       
 
 eq_value            : integer                               { $$.value_type = AST_EQUALITY_VALUE_INTEGER; $$.integer_value = $1; }

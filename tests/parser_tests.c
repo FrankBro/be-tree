@@ -9,26 +9,26 @@
 
 int parse(const char *text, struct ast_node **node);
 
-int test_all_numeric_compare()
+int test_all_compare()
 {
     struct ast_node* node = NULL;
     parse("a < 0", &node);
-    mu_assert(node->type == AST_TYPE_NUMERIC_COMPARE_EXPR && node->numeric_compare_expr.op == AST_NUMERIC_COMPARE_LT, "LT");
+    mu_assert(node->type == AST_TYPE_COMPARE_EXPR && node->compare_expr.op == AST_COMPARE_LT, "LT");
     free_ast_node(node);
     parse("a <= 0", &node);
-    mu_assert(node->type == AST_TYPE_NUMERIC_COMPARE_EXPR && node->numeric_compare_expr.op == AST_NUMERIC_COMPARE_LE, "LE");
+    mu_assert(node->type == AST_TYPE_COMPARE_EXPR && node->compare_expr.op == AST_COMPARE_LE, "LE");
     free_ast_node(node);
     parse("a > 0", &node);
-    mu_assert(node->type == AST_TYPE_NUMERIC_COMPARE_EXPR && node->numeric_compare_expr.op == AST_NUMERIC_COMPARE_GT, "GT");
+    mu_assert(node->type == AST_TYPE_COMPARE_EXPR && node->compare_expr.op == AST_COMPARE_GT, "GT");
     free_ast_node(node);
     parse("a >= 0", &node);
-    mu_assert(node->type == AST_TYPE_NUMERIC_COMPARE_EXPR && node->numeric_compare_expr.op == AST_NUMERIC_COMPARE_GE, "GE");
+    mu_assert(node->type == AST_TYPE_COMPARE_EXPR && node->compare_expr.op == AST_COMPARE_GE, "GE");
     free_ast_node(node);
     parse("a > -1", &node);
-    mu_assert(node->type == AST_TYPE_NUMERIC_COMPARE_EXPR && 
-        node->numeric_compare_expr.op == AST_NUMERIC_COMPARE_GT &&
-        node->numeric_compare_expr.value.value_type == AST_NUMERIC_COMPARE_VALUE_INTEGER &&
-        node->numeric_compare_expr.value.integer_value == -1
+    mu_assert(node->type == AST_TYPE_COMPARE_EXPR && 
+        node->compare_expr.op == AST_COMPARE_GT &&
+        node->compare_expr.value.value_type == AST_COMPARE_VALUE_INTEGER &&
+        node->compare_expr.value.integer_value == -1
     , "minus");
     free_ast_node(node);
     return 0;
@@ -438,7 +438,7 @@ int test_special()
 
 int all_tests() 
 {
-    mu_run_test(test_all_numeric_compare);
+    mu_run_test(test_all_compare);
     mu_run_test(test_all_equality);
     mu_run_test(test_paren);
     mu_run_test(test_precedence);

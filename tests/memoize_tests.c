@@ -74,7 +74,7 @@ bool test_same2(size_t memoized, const char* expr_a, const char* expr_b, const c
     return result;
 }
 
-int test_numeric_compare_integer()
+int test_compare_integer()
 {
     struct betree* tree = betree_make();
     add_attr_domain_bounded_i(tree->config, "i", false, 0, 10);
@@ -89,7 +89,7 @@ int test_numeric_compare_integer()
     return 0;
 }
 
-int test_numeric_compare_float()
+int test_compare_float()
 {
     struct betree* tree = betree_make();
     add_attr_domain_bounded_f(tree->config, "f", false, 0., 10.);
@@ -338,8 +338,8 @@ int test_bit_logic()
 
 int all_tests() 
 {
-    mu_run_test(test_numeric_compare_integer);
-    mu_run_test(test_numeric_compare_float);
+    mu_run_test(test_compare_integer);
+    mu_run_test(test_compare_float);
     mu_run_test(test_equality_integer);
     mu_run_test(test_equality_float);
     mu_run_test(test_equality_string);

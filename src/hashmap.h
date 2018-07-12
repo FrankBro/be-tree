@@ -8,7 +8,7 @@ struct pred_container {
     struct ast_node** preds;
 };
 
-struct pred_numeric_compare_map {
+struct pred_compare_map {
     struct pred_container lt_preds;
     struct pred_container le_preds;
     struct pred_container gt_preds;
@@ -46,7 +46,7 @@ struct pred_special_map {
 };
 
 struct pred_map {
-    struct pred_numeric_compare_map numeric_compare_map;
+    struct pred_compare_map compare_map;
     struct pred_equality_map equality_map;
     struct pred_bool_map bool_map;
     struct pred_set_map set_map;

@@ -28,14 +28,14 @@ struct ast_node* ast_node_create()
     return node;
 }
 
-struct ast_node* ast_numeric_compare_expr_create(
-    enum ast_numeric_compare_e op, const char* name, struct numeric_compare_value value)
+struct ast_node* ast_compare_expr_create(
+    enum ast_compare_e op, const char* name, struct compare_value value)
 {
     struct ast_node* node = ast_node_create();
-    node->type = AST_TYPE_NUMERIC_COMPARE_EXPR;
-    node->numeric_compare_expr.op = op;
-    node->numeric_compare_expr.attr_var = make_attr_var(name, NULL);
-    node->numeric_compare_expr.value = value;
+    node->type = AST_TYPE_COMPARE_EXPR;
+    node->compare_expr.op = op;
+    node->compare_expr.attr_var = make_attr_var(name, NULL);
+    node->compare_expr.value = value;
     return node;
 }
 
@@ -75,7 +75,7 @@ struct ast_node* ast_bool_expr_unary_create(struct ast_node* expr)
 uint64_t score_node(struct ast_node* node)
 {
     switch(node->type) {
-        case AST_TYPE_NUMERIC_COMPARE_EXPR:
+        case AST_TYPE_COMPARE_EXPR:
             // instant
             return 1;
         case AST_TYPE_EQUALITY_EXPR:
@@ -343,8 +343,8 @@ void free_ast_node(struct ast_node* node)
         case AST_TYPE_SPECIAL_EXPR:
             free_special_expr(node->special_expr);
             break;
-        case AST_TYPE_NUMERIC_COMPARE_EXPR:
-            free_attr_var(node->numeric_compare_expr.attr_var);
+        case AST_TYPE_COMPARE_EXPR:
+            free_attr_var(node->compare_expr.attr_var);
             break;
         case AST_TYPE_EQUALITY_EXPR:
             free_attr_var(node->equality_expr.attr_var);
@@ -437,10 +437,10 @@ bool string_in_string_list(struct string_value string, struct string_list_value 
     return sbinary_search(list.strings, list.count, string.str);
 }
 
-bool numeric_compare_value_matches(enum ast_numeric_compare_value_e a, enum value_e b)
+bool compare_value_matches(enum ast_compare_value_e a, enum value_e b)
 {
-    return (a == AST_NUMERIC_COMPARE_VALUE_INTEGER && b == VALUE_I)
-        || (a == AST_NUMERIC_COMPARE_VALUE_FLOAT && b == VALUE_F);
+    return (a == AST_COMPARE_VALUE_INTEGER && b == VALUE_I)
+        || (a == AST_COMPARE_VALUE_FLOAT && b == VALUE_F);
 }
 
 bool equality_value_matches(enum ast_equality_value_e a, enum value_e b)
@@ -890,80 +890,80 @@ bool match_set_expr(const struct pred** preds, const struct ast_set_expr set_exp
     }
 }
 
-bool match_numeric_compare_expr(const struct pred** preds, const struct ast_numeric_compare_expr numeric_compare_expr) 
+bool match_compare_expr(const struct pred** preds, const struct ast_compare_expr compare_expr) 
 {
     struct value variable;
-    bool is_variable_defined = get_variable(numeric_compare_expr.attr_var.var, preds, &variable);
+    bool is_variable_defined = get_variable(compare_expr.attr_var.var, preds, &variable);
     if(is_variable_defined == false) {
         return false;
     }
-    switch(numeric_compare_expr.op) {
-        case AST_NUMERIC_COMPARE_LT: {
-            switch(numeric_compare_expr.value.value_type) {
-                case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-                    bool result = variable.ivalue < numeric_compare_expr.value.integer_value;
+    switch(compare_expr.op) {
+        case AST_COMPARE_LT: {
+            switch(compare_expr.value.value_type) {
+                case AST_COMPARE_VALUE_INTEGER: {
+                    bool result = variable.ivalue < compare_expr.value.integer_value;
                     return result;
                 }
-                case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-                    bool result = variable.fvalue < numeric_compare_expr.value.float_value;
+                case AST_COMPARE_VALUE_FLOAT: {
+                    bool result = variable.fvalue < compare_expr.value.float_value;
                     return result;
                 }
                 default: {
-                    switch_default_error("Invalid numeric compare value type");
+                    switch_default_error("Invalid compare value type");
                     return false;
                 }
             }
         }
-        case AST_NUMERIC_COMPARE_LE: {
-            switch(numeric_compare_expr.value.value_type) {
-                case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-                    bool result = variable.ivalue <= numeric_compare_expr.value.integer_value;
+        case AST_COMPARE_LE: {
+            switch(compare_expr.value.value_type) {
+                case AST_COMPARE_VALUE_INTEGER: {
+                    bool result = variable.ivalue <= compare_expr.value.integer_value;
                     return result;
                 }
-                case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-                    bool result = variable.fvalue <= numeric_compare_expr.value.float_value;
+                case AST_COMPARE_VALUE_FLOAT: {
+                    bool result = variable.fvalue <= compare_expr.value.float_value;
                     return result;
                 }
                 default: {
-                    switch_default_error("Invalid numeric compare value type");
+                    switch_default_error("Invalid compare value type");
                     return false;
                 }
             }
         }
-        case AST_NUMERIC_COMPARE_GT: {
-            switch(numeric_compare_expr.value.value_type) {
-                case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-                    bool result = variable.ivalue > numeric_compare_expr.value.integer_value;
+        case AST_COMPARE_GT: {
+            switch(compare_expr.value.value_type) {
+                case AST_COMPARE_VALUE_INTEGER: {
+                    bool result = variable.ivalue > compare_expr.value.integer_value;
                     return result;
                 }
-                case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-                    bool result = variable.fvalue > numeric_compare_expr.value.float_value;
+                case AST_COMPARE_VALUE_FLOAT: {
+                    bool result = variable.fvalue > compare_expr.value.float_value;
                     return result;
                 }
                 default: {
-                    switch_default_error("Invalid numeric compare value type");
+                    switch_default_error("Invalid compare value type");
                     return false;
                 }
             }
         }
-        case AST_NUMERIC_COMPARE_GE: {
-            switch(numeric_compare_expr.value.value_type) {
-                case AST_NUMERIC_COMPARE_VALUE_INTEGER: {
-                    bool result = variable.ivalue >= numeric_compare_expr.value.integer_value;
+        case AST_COMPARE_GE: {
+            switch(compare_expr.value.value_type) {
+                case AST_COMPARE_VALUE_INTEGER: {
+                    bool result = variable.ivalue >= compare_expr.value.integer_value;
                     return result;
                 }
-                case AST_NUMERIC_COMPARE_VALUE_FLOAT: {
-                    bool result = variable.fvalue >= numeric_compare_expr.value.float_value;
+                case AST_COMPARE_VALUE_FLOAT: {
+                    bool result = variable.fvalue >= compare_expr.value.float_value;
                     return result;
                 }
                 default: {
-                    switch_default_error("Invalid numeric compare value type");
+                    switch_default_error("Invalid compare value type");
                     return false;
                 }
             }
         }
         default: {
-            switch_default_error("Invalid numeric compare operation");
+            switch_default_error("Invalid compare operation");
             return false;
         }
     }
@@ -1117,8 +1117,8 @@ static bool match_node_inner(const struct config* config, const struct pred** pr
             result = match_set_expr(preds, node->set_expr);
             break;
         }
-        case AST_TYPE_NUMERIC_COMPARE_EXPR: {
-            result = match_numeric_compare_expr(preds, node->numeric_compare_expr);
+        case AST_TYPE_COMPARE_EXPR: {
+            result = match_compare_expr(preds, node->compare_expr);
             break;
         }
         case AST_TYPE_EQUALITY_EXPR: {
@@ -1629,125 +1629,125 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
             }
             *was_touched = true;
             return;
-        case AST_TYPE_NUMERIC_COMPARE_EXPR:
-            if(domain->attr_var.var != node->numeric_compare_expr.attr_var.var) {
+        case AST_TYPE_COMPARE_EXPR:
+            if(domain->attr_var.var != node->compare_expr.attr_var.var) {
                 return;
             }
-            if(!numeric_compare_value_matches(node->numeric_compare_expr.value.value_type, domain->bound.value_type)) {
+            if(!compare_value_matches(node->compare_expr.value.value_type, domain->bound.value_type)) {
                 invalid_expr("Domain and expr type mismatch");
                 return;
             }
-            switch(node->numeric_compare_expr.op) {
-                case AST_NUMERIC_COMPARE_LT:
-                    switch(node->numeric_compare_expr.value.value_type) {
-                        case AST_NUMERIC_COMPARE_VALUE_INTEGER:
+            switch(node->compare_expr.op) {
+                case AST_COMPARE_LT:
+                    switch(node->compare_expr.value.value_type) {
+                        case AST_COMPARE_VALUE_INTEGER:
                             if(is_reversed) {
-                                bound->imin = d64min(bound->imin, node->numeric_compare_expr.value.integer_value);
+                                bound->imin = d64min(bound->imin, node->compare_expr.value.integer_value);
                                 bound->imax = domain->bound.imax;
                             }
                             else {
                                 bound->imin = domain->bound.imin;
-                                bound->imax = d64max(bound->imax, node->numeric_compare_expr.value.integer_value - 1);
+                                bound->imax = d64max(bound->imax, node->compare_expr.value.integer_value - 1);
                             }
                             break;
-                        case AST_NUMERIC_COMPARE_VALUE_FLOAT:
+                        case AST_COMPARE_VALUE_FLOAT:
                             if(is_reversed) {
-                                bound->fmin = fmin(bound->fmin, node->numeric_compare_expr.value.float_value);
+                                bound->fmin = fmin(bound->fmin, node->compare_expr.value.float_value);
                                 bound->fmax = domain->bound.fmax;
                             }
                             else {
                                 bound->fmin = domain->bound.fmin;
-                                bound->fmax = fmax(bound->fmax, node->numeric_compare_expr.value.float_value - __DBL_EPSILON__);
+                                bound->fmax = fmax(bound->fmax, node->compare_expr.value.float_value - __DBL_EPSILON__);
                             }
                             break;
                         default:
-                            switch_default_error("Invalid numeric compare value type");
+                            switch_default_error("Invalid compare value type");
                             break;
                     }
                     break;
-                case AST_NUMERIC_COMPARE_LE:
-                    switch(node->numeric_compare_expr.value.value_type) {
-                        case AST_NUMERIC_COMPARE_VALUE_INTEGER:
+                case AST_COMPARE_LE:
+                    switch(node->compare_expr.value.value_type) {
+                        case AST_COMPARE_VALUE_INTEGER:
                             if(is_reversed) {
-                                bound->imin = d64min(bound->imin, node->numeric_compare_expr.value.integer_value + 1);
+                                bound->imin = d64min(bound->imin, node->compare_expr.value.integer_value + 1);
                                 bound->imax = domain->bound.imax;
                             }
                             else {
                                 bound->imin = domain->bound.imin;
-                                bound->imax = d64max(bound->imax, node->numeric_compare_expr.value.integer_value);
+                                bound->imax = d64max(bound->imax, node->compare_expr.value.integer_value);
                             }
                             break;
-                        case AST_NUMERIC_COMPARE_VALUE_FLOAT:
+                        case AST_COMPARE_VALUE_FLOAT:
                             if(is_reversed) {
-                                bound->fmin = fmin(bound->fmin, node->numeric_compare_expr.value.float_value + __DBL_EPSILON__);
+                                bound->fmin = fmin(bound->fmin, node->compare_expr.value.float_value + __DBL_EPSILON__);
                                 bound->fmax = domain->bound.fmax;
                             }
                             else {
                                 bound->fmin = domain->bound.fmin;
-                                bound->fmax = fmax(bound->fmax, node->numeric_compare_expr.value.float_value);
+                                bound->fmax = fmax(bound->fmax, node->compare_expr.value.float_value);
                             }
                             break;
                         default:
-                            switch_default_error("Invalid numeric compare value type");
+                            switch_default_error("Invalid compare value type");
                             break;
                     }
                     break;
-                case AST_NUMERIC_COMPARE_GT:
-                    switch(node->numeric_compare_expr.value.value_type) {
-                        case AST_NUMERIC_COMPARE_VALUE_INTEGER:
+                case AST_COMPARE_GT:
+                    switch(node->compare_expr.value.value_type) {
+                        case AST_COMPARE_VALUE_INTEGER:
                             if(is_reversed) {
                                 bound->imin = domain->bound.imin;
-                                bound->imax = d64max(bound->imax, node->numeric_compare_expr.value.integer_value);
+                                bound->imax = d64max(bound->imax, node->compare_expr.value.integer_value);
                             }
                             else {
-                                bound->imin = d64min(bound->imin, node->numeric_compare_expr.value.integer_value + 1);
+                                bound->imin = d64min(bound->imin, node->compare_expr.value.integer_value + 1);
                                 bound->imax = domain->bound.imax;
                             }
                             break;
-                        case AST_NUMERIC_COMPARE_VALUE_FLOAT:
+                        case AST_COMPARE_VALUE_FLOAT:
                             if(is_reversed) {
                                 bound->fmin = domain->bound.fmin;
-                                bound->fmax = fmax(bound->fmax, node->numeric_compare_expr.value.float_value);
+                                bound->fmax = fmax(bound->fmax, node->compare_expr.value.float_value);
                             }
                             else {
-                                bound->fmin = fmin(bound->fmin, node->numeric_compare_expr.value.float_value + __DBL_EPSILON__);
+                                bound->fmin = fmin(bound->fmin, node->compare_expr.value.float_value + __DBL_EPSILON__);
                                 bound->fmax = domain->bound.fmax;
                             }
                             break;
                         default:
-                            switch_default_error("Invalid numeric compare value type");
+                            switch_default_error("Invalid compare value type");
                             break;
                     }
                     break;
-                case AST_NUMERIC_COMPARE_GE:
-                    switch(node->numeric_compare_expr.value.value_type) {
-                        case AST_NUMERIC_COMPARE_VALUE_INTEGER:
+                case AST_COMPARE_GE:
+                    switch(node->compare_expr.value.value_type) {
+                        case AST_COMPARE_VALUE_INTEGER:
                             if(is_reversed) {
                                 bound->imin = domain->bound.imin;
-                                bound->imax = d64max(bound->imax, node->numeric_compare_expr.value.integer_value - 1);
+                                bound->imax = d64max(bound->imax, node->compare_expr.value.integer_value - 1);
                             }
                             else {
-                                bound->imin = d64min(bound->imin, node->numeric_compare_expr.value.integer_value);
+                                bound->imin = d64min(bound->imin, node->compare_expr.value.integer_value);
                                 bound->imax = domain->bound.imax;
                             }
                             break;
-                        case AST_NUMERIC_COMPARE_VALUE_FLOAT:
+                        case AST_COMPARE_VALUE_FLOAT:
                             if(is_reversed) {
                                 bound->fmin = domain->bound.fmin;
-                                bound->fmax = fmax(bound->fmax, node->numeric_compare_expr.value.float_value - __DBL_EPSILON__);
+                                bound->fmax = fmax(bound->fmax, node->compare_expr.value.float_value - __DBL_EPSILON__);
                             }
                             else {
-                                bound->fmin = fmin(bound->fmin, node->numeric_compare_expr.value.float_value);
+                                bound->fmin = fmin(bound->fmin, node->compare_expr.value.float_value);
                                 bound->fmax = domain->bound.fmax;
                             }
                             break;
                         default:
-                            switch_default_error("Invalid numeric compare value type");
+                            switch_default_error("Invalid compare value type");
                             break;
                     }
                     break;
                 default:
-                    switch_default_error("Invalid numeric compare operation");
+                    switch_default_error("Invalid compare operation");
                     break;;
             }
             *was_touched = true;
@@ -1857,10 +1857,10 @@ void assign_variable_id(struct config* config, struct ast_node* node)
             }
             return;
         }
-        case(AST_TYPE_NUMERIC_COMPARE_EXPR): {
+        case(AST_TYPE_COMPARE_EXPR): {
             betree_var_t variable_id
-                = get_id_for_attr(config, node->numeric_compare_expr.attr_var.attr);
-            node->numeric_compare_expr.attr_var.var = variable_id;
+                = get_id_for_attr(config, node->compare_expr.attr_var.attr);
+            node->compare_expr.attr_var.var = variable_id;
             return;
         }
         case(AST_TYPE_EQUALITY_EXPR): {
@@ -1966,7 +1966,7 @@ void assign_str_id(struct config* config, struct ast_node* node)
             }
             return;
         }
-        case(AST_TYPE_NUMERIC_COMPARE_EXPR): {
+        case(AST_TYPE_COMPARE_EXPR): {
             return;
         }
         case(AST_TYPE_EQUALITY_EXPR): {
@@ -2032,18 +2032,18 @@ void assign_str_id(struct config* config, struct ast_node* node)
     }
 }
 
-bool eq_numeric_compare_value(struct numeric_compare_value a, struct numeric_compare_value b)
+bool eq_compare_value(struct compare_value a, struct compare_value b)
 {
     if(a.value_type != b.value_type) {
         return false;
     }
     switch(a.value_type) {
-        case AST_NUMERIC_COMPARE_VALUE_INTEGER:
+        case AST_COMPARE_VALUE_INTEGER:
             return a.integer_value == b.integer_value;
-        case AST_NUMERIC_COMPARE_VALUE_FLOAT:
+        case AST_COMPARE_VALUE_FLOAT:
             return feq(a.float_value, b.float_value);
         default:
-            switch_default_error("Invalid numeric compare value type");
+            switch_default_error("Invalid compare value type");
             return false;
     }
 }
@@ -2244,11 +2244,11 @@ bool eq_expr(const struct ast_node* a, const struct ast_node* b)
         return false;
     }
     switch(a->type) {
-        case AST_TYPE_NUMERIC_COMPARE_EXPR: {
+        case AST_TYPE_COMPARE_EXPR: {
             return
-                a->numeric_compare_expr.attr_var.var == b->numeric_compare_expr.attr_var.var &&
-                a->numeric_compare_expr.op == b->numeric_compare_expr.op &&
-                eq_numeric_compare_value(a->numeric_compare_expr.value, b->numeric_compare_expr.value);
+                a->compare_expr.attr_var.var == b->compare_expr.attr_var.var &&
+                a->compare_expr.op == b->compare_expr.op &&
+                eq_compare_value(a->compare_expr.value, b->compare_expr.value);
         }
         case AST_TYPE_EQUALITY_EXPR: {
             return
@@ -2301,7 +2301,7 @@ void assign_pred_id(struct config* config, struct ast_node* node)
 void sort_lists(struct ast_node* node)
 {
     switch(node->type) {
-        case AST_TYPE_NUMERIC_COMPARE_EXPR: 
+        case AST_TYPE_COMPARE_EXPR: 
         case AST_TYPE_EQUALITY_EXPR:
             return;
         case AST_TYPE_BOOL_EXPR:
@@ -2390,8 +2390,8 @@ bool var_exists(const struct config* config, const char* attr)
 bool all_variables_in_config(const struct config* config, const struct ast_node* node)
 {
     switch(node->type) {
-        case AST_TYPE_NUMERIC_COMPARE_EXPR:
-            return var_exists(config, node->numeric_compare_expr.attr_var.attr);
+        case AST_TYPE_COMPARE_EXPR:
+            return var_exists(config, node->compare_expr.attr_var.attr);
         case AST_TYPE_EQUALITY_EXPR:
             return var_exists(config, node->equality_expr.attr_var.attr);
         case AST_TYPE_BOOL_EXPR:
@@ -2514,7 +2514,7 @@ static bool strs_valid(const struct config* config, const char* attr, const stru
 bool all_bounded_strings_valid(const struct config* config, const struct ast_node* node)
 {
     switch(node->type) {
-        case AST_TYPE_NUMERIC_COMPARE_EXPR:
+        case AST_TYPE_COMPARE_EXPR:
             return true;
         case AST_TYPE_EQUALITY_EXPR:
             if(node->equality_expr.value.value_type == AST_EQUALITY_VALUE_STRING) {

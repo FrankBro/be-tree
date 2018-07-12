@@ -10,31 +10,31 @@ struct attr_var clone_attr_var(struct attr_var orig)
     return clone;
 }
 
-struct numeric_compare_value clone_numeric_compare_value(struct numeric_compare_value orig)
+struct compare_value clone_compare_value(struct compare_value orig)
 {
-    struct numeric_compare_value clone = { .value_type = orig.value_type };
+    struct compare_value clone = { .value_type = orig.value_type };
     switch(orig.value_type) {
-        case AST_NUMERIC_COMPARE_VALUE_INTEGER: 
+        case AST_COMPARE_VALUE_INTEGER: 
             clone.integer_value = orig.integer_value;
             break;
-        case AST_NUMERIC_COMPARE_VALUE_FLOAT:
+        case AST_COMPARE_VALUE_FLOAT:
             clone.float_value = orig.float_value;
             break;
         default:
-            switch_default_error("Invalid numeric compare value type");
+            switch_default_error("Invalid compare value type");
             break;
     }
     return clone;
 }
 
-struct ast_node* clone_numeric_compare(betree_pred_t id, struct ast_numeric_compare_expr orig)
+struct ast_node* clone_compare(betree_pred_t id, struct ast_compare_expr orig)
 {
     struct ast_node* clone = ast_node_create();
     clone->id = id;
-    clone->type = AST_TYPE_NUMERIC_COMPARE_EXPR;
-    clone->numeric_compare_expr.attr_var = clone_attr_var(orig.attr_var);
-    clone->numeric_compare_expr.op = orig.op;
-    clone->numeric_compare_expr.value = clone_numeric_compare_value(orig.value);
+    clone->type = AST_TYPE_COMPARE_EXPR;
+    clone->compare_expr.attr_var = clone_attr_var(orig.attr_var);
+    clone->compare_expr.op = orig.op;
+    clone->compare_expr.value = clone_compare_value(orig.value);
     return clone;
 }
 
@@ -250,8 +250,8 @@ struct ast_node* clone_node(const struct ast_node* node)
 {
     struct ast_node* clone = NULL;
     switch(node->type) {
-        case AST_TYPE_NUMERIC_COMPARE_EXPR:
-            clone = clone_numeric_compare(node->id, node->numeric_compare_expr);
+        case AST_TYPE_COMPARE_EXPR:
+            clone = clone_compare(node->id, node->compare_expr);
             break;
         case AST_TYPE_EQUALITY_EXPR:
             clone = clone_equality(node->id, node->equality_expr);

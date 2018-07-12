@@ -1447,8 +1447,8 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
             }
             return;
         }
-        case AST_TYPE_NUMERIC_COMPARE_EXPR: {
-            fill_pred_attr_var(sub, expr->numeric_compare_expr.attr_var);
+        case AST_TYPE_COMPARE_EXPR: {
+            fill_pred_attr_var(sub, expr->compare_expr.attr_var);
             return;
         }
         case AST_TYPE_EQUALITY_EXPR: {
@@ -1506,8 +1506,8 @@ enum short_circuit_e short_circuit_for_attr_var(betree_var_t id, bool inverted, 
 
 enum short_circuit_e short_circuit_for_node(betree_var_t id, bool inverted, const struct ast_node* node) {
     switch(node->type) {
-        case AST_TYPE_NUMERIC_COMPARE_EXPR: 
-            return short_circuit_for_attr_var(id, inverted, node->numeric_compare_expr.attr_var);
+        case AST_TYPE_COMPARE_EXPR: 
+            return short_circuit_for_attr_var(id, inverted, node->compare_expr.attr_var);
         case AST_TYPE_EQUALITY_EXPR: 
             return short_circuit_for_attr_var(id, inverted, node->equality_expr.attr_var);
         case AST_TYPE_BOOL_EXPR:

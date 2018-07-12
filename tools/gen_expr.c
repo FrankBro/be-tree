@@ -77,10 +77,10 @@ const struct ast_node* make_binary_expr(size_t attr_min, size_t attr_max, int64_
         binary_node = ast_equality_expr_create(op, attr, value);
     }
     else {
-        enum ast_numeric_compare_e op = random_in_range(0, 3);
+        enum ast_compare_e op = random_in_range(0, 3);
         int64_t integer_value = random_in_range(value_min, value_max);
-        struct numeric_compare_value value = { .value_type = AST_NUMERIC_COMPARE_VALUE_INTEGER, .integer_value = integer_value };
-        binary_node = ast_numeric_compare_expr_create(op, attr, value);
+        struct compare_value value = { .value_type = AST_COMPARE_VALUE_INTEGER, .integer_value = integer_value };
+        binary_node = ast_compare_expr_create(op, attr, value);
     }
     return binary_node;
 }
@@ -118,30 +118,30 @@ void write_expr(FILE* f, const struct ast_node* node)
             fprintf(stderr, "should never happen for now");
             abort();
         }
-        case(AST_TYPE_NUMERIC_COMPARE_EXPR): {
-            fprintf(f, "%s ", node->numeric_compare_expr.attr_var.attr);
-            switch(node->numeric_compare_expr.op) {
-                case AST_NUMERIC_COMPARE_LT: {
+        case(AST_TYPE_COMPARE_EXPR): {
+            fprintf(f, "%s ", node->compare_expr.attr_var.attr);
+            switch(node->compare_expr.op) {
+                case AST_COMPARE_LT: {
                     fprintf(f, "< ");
                     break;
                 }
-                case AST_NUMERIC_COMPARE_LE: {
+                case AST_COMPARE_LE: {
                     fprintf(f, "<= ");
                     break;
                 }
-                case AST_NUMERIC_COMPARE_GT: {
+                case AST_COMPARE_GT: {
                     fprintf(f, "> ");
                     break;
                 }
-                case AST_NUMERIC_COMPARE_GE: {
+                case AST_COMPARE_GE: {
                     fprintf(f, ">= ");
                     break;
                 }
                 default: {
-                    switch_default_error("Invalid numeric compare operation");
+                    switch_default_error("Invalid compare operation");
                 }
             }
-            fprintf(f, "%" PRIu64 " ", node->numeric_compare_expr.value.integer_value);
+            fprintf(f, "%" PRIu64 " ", node->compare_expr.value.integer_value);
             break;
         }
         case AST_TYPE_EQUALITY_EXPR : {

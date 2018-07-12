@@ -26,7 +26,7 @@ struct ast_node* parse_and_assign(const char* expr, struct config* config)
     return node;
 }
 
-int test_numeric_compare_integer()
+int test_compare_integer()
 {
     struct config* config = make_default_config();
     add_attr_domain_bounded_i(config, "i", false, 0, 10);
@@ -65,7 +65,7 @@ int test_numeric_compare_integer()
     return 0;
 }
 
-int test_numeric_compare_float()
+int test_compare_float()
 {
     struct config* config = make_default_config();
     add_attr_domain_bounded_f(config, "f", false, 0., 10.);
@@ -104,7 +104,7 @@ int test_numeric_compare_float()
     return 0;
 }
 
-int test_numeric_compare_wrong()
+int test_compare_wrong()
 {
     struct config* config = make_default_config();
     add_attr_domain_bounded_i(config, "i", false, 0, 10);
@@ -864,9 +864,9 @@ int test_bool_wrong()
 
 int all_tests() 
 {
-    mu_run_test(test_numeric_compare_integer);
-    mu_run_test(test_numeric_compare_float);
-    mu_run_test(test_numeric_compare_wrong);
+    mu_run_test(test_compare_integer);
+    mu_run_test(test_compare_float);
+    mu_run_test(test_compare_wrong);
     mu_run_test(test_equality_integer);
     mu_run_test(test_equality_float);
     mu_run_test(test_equality_string);
