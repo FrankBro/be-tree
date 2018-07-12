@@ -6,7 +6,7 @@
 struct ast_node;
 
 typedef uint64_t betree_pred_t;
-betree_pred_t INVALID_PRED = UINT64_MAX;
+static const betree_pred_t INVALID_PRED = UINT64_MAX;
 
 struct memoize {
     uint64_t* pass;
