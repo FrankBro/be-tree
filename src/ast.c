@@ -1064,22 +1064,15 @@ static bool match_bool_expr(const struct config* config, const struct pred** pre
     }
 }
 
-static void report_memoized(struct report* report)
-{
-    if(report != NULL) {
-        report->memoized++;
-    }
-}
-
 static bool match_node_inner(const struct config* config, const struct pred** preds, const struct ast_node* node, struct memoize* memoize, struct report* report)
 {
     if(unlikely(node->id != UINT64_MAX)) {
         if(test_bit(memoize->pass, node->id)) {
-            report_memoized(report);
+            report->memoized++;
             return true;
         }
         if(test_bit(memoize->fail, node->id)) {
-            report_memoized(report);
+            report->memoized++;
             return false;
         }
     }

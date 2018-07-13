@@ -66,9 +66,7 @@ static bool match_sub(const struct config* config, const struct pred** preds, co
 {
     enum short_circuit_e short_circuit = try_short_circuit(&sub->short_circuit, undefined);
     if(unlikely(short_circuit != SHORT_CIRCUIT_NONE)) {
-        if(report != NULL) {
-            report->shorted++;
-        }
+        report->shorted++;
         if(short_circuit == SHORT_CIRCUIT_PASS) {
             return true;
         }
@@ -1772,15 +1770,13 @@ void betree_search_with_event(const struct config* config,
     struct subs_to_eval subs;
     init_subs_to_eval(&subs);
     match_be_tree(config, preds, cnode, &subs);
-    if(likely(report != NULL)) {
-        report->subs = malloc(sizeof(*report->subs) * subs.count);
-        report->evaluated = subs.count;
-        for(size_t i = 0; i < subs.count; i++) {
-            const struct sub* sub = subs.subs[i];
-            if(match_sub(config, preds, sub, report, &memoize, undefined) == true) {
-                report->subs[report->matched] = sub->id;
-                report->matched++;
-            }
+    report->subs = malloc(sizeof(*report->subs) * subs.count);
+    report->evaluated = subs.count;
+    for(size_t i = 0; i < subs.count; i++) {
+        const struct sub* sub = subs.subs[i];
+        if(match_sub(config, preds, sub, report, &memoize, undefined) == true) {
+            report->subs[report->matched] = sub->id;
+            report->matched++;
         }
     }
     free(subs.subs);

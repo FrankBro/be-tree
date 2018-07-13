@@ -1130,20 +1130,6 @@ int test_bug_cases()
     return 0;
 }
 
-int test_null_report()
-{
-    struct betree* tree = betree_make();
-    add_attr_domain_bounded_i(tree->config, "i", false, 0, 10);
-
-    mu_assert(betree_insert(tree, 0, "i = 0"), "");
-
-    betree_search(tree, "{\"i\": 0}", NULL);
-    betree_search(tree, "{\"i\": 1}", NULL);
-
-    betree_free(tree);
-    return 0;
-}
-
 int test_splitable_integer_list_domain()
 {
     {
@@ -1317,7 +1303,6 @@ int all_tests()
     mu_run_test(test_not_domain_changing);
     mu_run_test(test_insert_all);
     mu_run_test(test_bug_cases);
-    mu_run_test(test_null_report);
     mu_run_test(test_splitable_integer_list_domain);
     mu_run_test(test_splitable_string_list_domain);
     mu_run_test(test_set_bug_cdir);
