@@ -1589,7 +1589,6 @@ struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* ex
 {
     struct sub* sub = make_empty_sub(id);
     sub->expr = expr;
-    assign_variable_id(config, expr);
     fill_pred(sub, sub->expr);
     size_t count = config->attr_domain_count / 64 + 1;
     sub->short_circuit.count = count;
