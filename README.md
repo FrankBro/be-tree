@@ -2,6 +2,30 @@
 
 ![Build Status]( https://travis-ci.org/FrankBro/be-tree.svg?branch=master "Build Status")
 
+## Overview
+
+The goal of the be-tree is to evaluate as fast as possible a large amount of boolean expressions. The biggest gain in speed comes from evaluating as little expressions as possible, based on creating a structure that splits the possible domain for each expression, memoization and short-circuiting of events not containing some attributes.
+
+The following types are supported:
+
+* Boolean
+* Integer
+* Float
+* String
+* Integer list
+* String list
+
+The expressions supported are as follow:
+
+* Comparison: `<`, `<=`, `>` and `>=`. They work on integers and floats.
+* Equality: `=` and `<>`. They work on integers, floats and strings.
+* Boolean: `and`, `or`, `not` and checking a boolean variable.
+* Set: `in` and `not in`. Two possibilities:
+    * value `in` variable. Here value is an integer or a string.
+    * variable `in` list. Here list is a list of integers or strings.
+* List: `one of`, `none of` and `all of`. They work on lists of integers or strings.
+* Special: Very specific.
+
 ## Configuring
 
 Before inserting expressions, we need to define the domains that will be used. A domain is a variable that will be present in an event. You must define:
