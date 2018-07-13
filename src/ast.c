@@ -1073,7 +1073,7 @@ static void report_memoized(struct report* report)
 
 static bool match_node_inner(const struct config* config, const struct pred** preds, const struct ast_node* node, struct memoize* memoize, struct report* report)
 {
-    if(node->id != UINT64_MAX) {
+    if(unlikely(node->id != UINT64_MAX)) {
         if(test_bit(memoize->pass, node->id)) {
             report_memoized(report);
             return true;
@@ -1114,7 +1114,7 @@ static bool match_node_inner(const struct config* config, const struct pred** pr
             return false;
         }
     }
-    if(node->id != UINT64_MAX) {
+    if(unlikely(node->id != UINT64_MAX)) {
         if(result) {
             set_bit(memoize->pass, node->id);
         }

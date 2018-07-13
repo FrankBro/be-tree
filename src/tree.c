@@ -65,7 +65,7 @@ static enum short_circuit_e try_short_circuit(const struct short_circuit* short_
 static bool match_sub(const struct config* config, const struct pred** preds, const struct sub* sub, struct report* report, struct memoize* memoize, const uint64_t* undefined)
 {
     enum short_circuit_e short_circuit = try_short_circuit(&sub->short_circuit, undefined);
-    if(short_circuit != SHORT_CIRCUIT_NONE) {
+    if(unlikely(short_circuit != SHORT_CIRCUIT_NONE)) {
         if(report != NULL) {
             report->shorted++;
         }
@@ -1772,7 +1772,7 @@ void betree_search_with_event(const struct config* config,
     struct subs_to_eval subs;
     init_subs_to_eval(&subs);
     match_be_tree(config, preds, cnode, &subs);
-    if(report != NULL) {
+    if(likely(report != NULL)) {
         report->subs = malloc(sizeof(*report->subs) * subs.count);
         report->evaluated = subs.count;
         for(size_t i = 0; i < subs.count; i++) {
@@ -1811,12 +1811,12 @@ static void sort_event_lists(struct event* event)
 struct event* make_event_from_string(const struct config* config, const char* event_str)
 {
     struct event* event;
-    if(event_parse(event_str, &event)) {
+    if(likely(event_parse(event_str, &event))) {
         fprintf(stderr, "Failed to parse event: %s\n", event_str);
         abort();
     }
     fill_event(config, event);
-    if(validate_event(config, event) == false) {
+    if(likely(validate_event(config, event) == false)) {
         fprintf(stderr, "Failed to validate event: %s\n", event_str);
         abort();
     }
