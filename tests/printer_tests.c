@@ -15,6 +15,9 @@ bool parse_and_compare(const char* expr)
     }
     char* printed = ast_to_string(node);
     bool result = strcmp(expr, printed) == 0;
+    if(result == false) {
+        printf("%s != %s\n", expr, printed);
+    }
     free(printed);
     return result;
 }
@@ -85,16 +88,42 @@ int test_list()
     return 0;
 }
 
+int test_bool()
+{
+    mu_assert(parse_and_compare("b"), "var");
+    mu_assert(parse_and_compare("(not (b))"), "not");
+    mu_assert(parse_and_compare("((b) and (b))"), "and");
+    mu_assert(parse_and_compare("((b) or (b))"), "or");
+
+    mu_assert(parse_and_compare("((i = 0) and ((not (i > 9))))"), "complex 1");
+
+    return 0;
+}
+
+int test_special()
+{
+    mu_assert(parse_and_compare("within_frequency_cap(\"flight\", \"ns\", 1, 2)"), "frequency");
+
+    mu_assert(parse_and_compare("segment_within(segment, 1, 2)"), "segment within");
+    mu_assert(parse_and_compare("segment_before(segment, 1, 2)"), "segment within");
+
+    mu_assert(parse_and_compare("geo_within_radius(1.00, 2.00, 3.00)"), "geo");
+
+    mu_assert(parse_and_compare("contains(var, \"string\")"), "contains");
+    mu_assert(parse_and_compare("starts_with(var, \"string\")"), "starts_with");
+    mu_assert(parse_and_compare("ends_with(var, \"string\")"), "ends_with");
+
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_compare);
     mu_run_test(test_equality);
     mu_run_test(test_set);
     mu_run_test(test_list);
-    /*
-    mu_run_test(test_and);
+    mu_run_test(test_bool);
     mu_run_test(test_special);
-    */
 
     return 0;
 }

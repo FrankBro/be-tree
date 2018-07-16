@@ -227,7 +227,7 @@ char* ast_to_string(const struct ast_node* node)
         case(AST_TYPE_SPECIAL_EXPR): {
             switch(node->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY:
-                    if(asprintf(&expr, "within_frequency_caps(%s, \"%s\", %ld, %zu)", 
+                    if(asprintf(&expr, "within_frequency_cap(\"%s\", \"%s\", %ld, %zu)", 
                           frequency_type_to_string(node->special_expr.frequency.type), 
                           node->special_expr.frequency.ns.string,
                           node->special_expr.frequency.value,
@@ -291,7 +291,7 @@ char* ast_to_string(const struct ast_node* node)
                 }
                 case AST_BOOL_NOT: {
                     const char* a = ast_to_string(node->bool_expr.unary.expr);
-                    if(asprintf(&expr, "not (%s)", a) < 0) {
+                    if(asprintf(&expr, "(not (%s))", a) < 0) {
                         abort();
                     }
                     free((char*)a);
