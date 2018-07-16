@@ -1024,29 +1024,29 @@ static bool match_equality_expr(const struct pred** preds, const struct ast_equa
     }
 }
 
-static bool match_node_inner(const struct config* config, const struct pred** preds, const struct ast_node* node, struct memoize* memoize, struct report* report);
+static bool match_node_inner(const struct pred** preds, const struct ast_node* node, struct memoize* memoize, struct report* report);
 
-static bool match_bool_expr(const struct config* config, const struct pred** preds, const struct ast_bool_expr bool_expr, struct memoize* memoize, struct report* report)
+static bool match_bool_expr(const struct pred** preds, const struct ast_bool_expr bool_expr, struct memoize* memoize, struct report* report)
 {
     switch(bool_expr.op) {
         case AST_BOOL_AND: {
-            bool lhs = match_node_inner(config, preds, bool_expr.binary.lhs, memoize, report);
+            bool lhs = match_node_inner(preds, bool_expr.binary.lhs, memoize, report);
             if(lhs == false) {
                 return false;
             }
-            bool rhs = match_node_inner(config, preds, bool_expr.binary.rhs, memoize, report);
+            bool rhs = match_node_inner(preds, bool_expr.binary.rhs, memoize, report);
             return rhs;
         }
         case AST_BOOL_OR: {
-            bool lhs = match_node_inner(config, preds, bool_expr.binary.lhs, memoize, report);
+            bool lhs = match_node_inner(preds, bool_expr.binary.lhs, memoize, report);
             if(lhs == true) {
                 return true;
             }
-            bool rhs = match_node_inner(config, preds, bool_expr.binary.rhs, memoize, report);
+            bool rhs = match_node_inner(preds, bool_expr.binary.rhs, memoize, report);
             return rhs;
         }
         case AST_BOOL_NOT: {
-            bool result = match_node_inner(config, preds, bool_expr.unary.expr, memoize, report);
+            bool result = match_node_inner(preds, bool_expr.unary.expr, memoize, report);
             return !result;
         }
         case AST_BOOL_VARIABLE: {
@@ -1064,7 +1064,7 @@ static bool match_bool_expr(const struct config* config, const struct pred** pre
     }
 }
 
-static bool match_node_inner(const struct config* config, const struct pred** preds, const struct ast_node* node, struct memoize* memoize, struct report* report)
+static bool match_node_inner(const struct pred** preds, const struct ast_node* node, struct memoize* memoize, struct report* report)
 {
     if(unlikely(node->id != UINT64_MAX)) {
         if(test_bit(memoize->pass, node->id)) {
@@ -1083,7 +1083,7 @@ static bool match_node_inner(const struct config* config, const struct pred** pr
             break;
         }
         case AST_TYPE_BOOL_EXPR: {
-            result = match_bool_expr(config, preds, node->bool_expr, memoize, report);
+            result = match_bool_expr(preds, node->bool_expr, memoize, report);
             break;
         }
         case AST_TYPE_LIST_EXPR: {
@@ -1118,9 +1118,9 @@ static bool match_node_inner(const struct config* config, const struct pred** pr
     return result;
 }
 
-bool match_node(const struct config* config, const struct pred** preds, const struct ast_node* node, struct memoize* memoize, struct report* report)
+bool match_node(const struct pred** preds, const struct ast_node* node, struct memoize* memoize, struct report* report)
 {
-    return match_node_inner(config, preds, node, memoize, report);
+    return match_node_inner(preds, node, memoize, report);
 }
 
 static struct value_bound copy_value_bound(struct value_bound* bound)

@@ -185,9 +185,9 @@ void add_attr_domain_frequency(struct config* config, const char* attr, bool all
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
-const struct attr_domain* get_attr_domain(const struct config* config, betree_var_t variable_id)
+const struct attr_domain* get_attr_domain(const struct attr_domain** attr_domains, betree_var_t variable_id)
 {
-    return config->attr_domains[variable_id];
+    return attr_domains[variable_id];
 }
 
 static void add_string_map(struct attr_var attr_var, struct config* config)
@@ -276,7 +276,7 @@ betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, 
         add_string_map(attr_var, config);
         string_map = &config->string_maps[config->string_map_count - 1];
     }
-    const struct attr_domain* attr_domain = get_attr_domain(config, attr_var.var);
+    const struct attr_domain* attr_domain = get_attr_domain((const struct attr_domain**)config->attr_domains, attr_var.var);
     betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_TYPE_MISMATCH, attr_domain != NULL && 
         (attr_domain->bound.value_type == VALUE_S || attr_domain->bound.value_type == VALUE_SL || attr_domain->bound.value_type == VALUE_FREQUENCY));
     if(attr_domain->bound.smax + 1 == string_map->string_value_count) {

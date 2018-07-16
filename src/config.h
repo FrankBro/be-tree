@@ -62,7 +62,7 @@ void add_attr_domain_bounded_f(struct config* config, const char* attr, bool all
 void add_attr_domain_bounded_s(struct config* config, const char* attr, bool allow_undefined, size_t max);
 void add_attr_domain_bounded_il(struct config* config, const char* attr, bool allow_undefined, int64_t min, int64_t max);
 void add_attr_domain_bounded_sl(struct config* config, const char* attr, bool allow_undefined, size_t max);
-const struct attr_domain* get_attr_domain(const struct config* config, betree_var_t variable_id);
+const struct attr_domain* get_attr_domain(const struct attr_domain** attr_domains, betree_var_t variable_id);
 bool is_variable_allow_undefined(const struct config* config, const betree_var_t variable_id);
 
 const char* get_attr_for_id(const struct config* config, betree_var_t variable_id);
