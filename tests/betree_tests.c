@@ -1273,6 +1273,20 @@ int test_undefined_cdir_search()
     return 0;
 }
 
+int test_erlang_test()
+{
+    struct betree* tree = betree_make();
+    betree_add_domain(tree, "s|string|false|1");
+    mu_assert(betree_insert(tree, 1, "s <> \"good\""), "");
+    mu_assert(false == betree_insert(tree, 2, "s <> \"bad\""), "");
+    struct report* report = make_report();
+    betree_search(tree, "{\"s\": \"diff\"}", report);
+    mu_assert(report->matched == 1 && report->evaluated == 1, "");
+    betree_free(tree);
+    free_report(report);
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_sub_has_attribute);
@@ -1307,6 +1321,7 @@ int all_tests()
     mu_run_test(test_splitable_string_list_domain);
     mu_run_test(test_set_bug_cdir);
     mu_run_test(test_undefined_cdir_search);
+    mu_run_test(test_erlang_test);
 
     return 0;
 }
