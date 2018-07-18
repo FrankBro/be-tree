@@ -145,10 +145,11 @@ void betree_free(struct betree* tree)
     free(tree);
 }
 
-void betree_add_domain(struct betree* betree, char* domain)
+void betree_add_domain(struct betree* betree, const char* domain)
 {
     struct config* config = betree->config;
-    char* line_rest = domain;
+    char* domain_copy = strdup(domain);
+    char* line_rest = domain_copy;
     const char* name = strtok_r(line_rest, "|", &line_rest);
     const char* type = strtok_r(line_rest, "|", &line_rest);
     bool allow_undefined = strcmp(strtok_r(line_rest, "|\n", &line_rest), "true") == 0;
@@ -220,5 +221,6 @@ void betree_add_domain(struct betree* betree, char* domain)
         fprintf(stderr, "Unknown definition type");
         abort();
     }
+    free(domain_copy);
 }
 
