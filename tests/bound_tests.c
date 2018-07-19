@@ -284,9 +284,14 @@ int test_complex_bounds()
     mu_assert(match_integer(tree->config, "i > 5 and i < 8", 6, 7), "and");
     mu_assert(match_integer(tree->config, "i > 5 or i > 6", 6, 10), "or");
     mu_assert(match_integer(tree->config, "(i > 5 and i < 8) or (i > 6)", 6, 10), "and or");
+    
+    mu_assert(match_integer(tree->config, "i > 5 and i > 8", 6, 10), "and");
+    mu_assert(match_integer(tree->config, "not (i > 5 and i > 8)", 0, 8), "not and");
+    mu_assert(match_integer(tree->config, "i > 5 or i > 6", 6, 10), "or");
+    mu_assert(match_integer(tree->config, "not (i > 5 or i > 6)", 0, 6), "not or");
+
     mu_assert(match_integer(tree->config, "i > 5 and b", 6, 10), "and l");
     mu_assert(match_integer(tree->config, "i > 5 or b", 0, 10), "or l");
-    
 
     return 0;
 }
