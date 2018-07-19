@@ -275,6 +275,22 @@ int test_string_list_bounds()
     return 0;
 }
 
+int test_complex_bounds()
+{
+    struct betree* tree = betree_make();
+    add_attr_domain_bounded_i(tree->config, "i", false, 0, 10);
+    add_attr_domain_b(tree->config, "b", true);
+
+    mu_assert(match_integer(tree->config, "i > 5 and i < 8", 6, 7), "and");
+    mu_assert(match_integer(tree->config, "i > 5 or i > 6", 6, 10), "or");
+    mu_assert(match_integer(tree->config, "(i > 5 and i < 8) or (i > 6)", 6, 10), "and or");
+    mu_assert(match_integer(tree->config, "i > 5 and b", 6, 10), "and l");
+    mu_assert(match_integer(tree->config, "i > 5 or b", 0, 10), "or l");
+    
+
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_bool_bounds);
@@ -283,7 +299,7 @@ int all_tests()
     mu_run_test(test_string_bounds);
     mu_run_test(test_integer_list_bounds);
     mu_run_test(test_string_list_bounds);
-    /*mu_run_test(test_complex_bounds);*/
+    mu_run_test(test_complex_bounds);
 
     return 0;
 }
