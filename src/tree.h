@@ -95,7 +95,7 @@ struct pdir {
 void free_sub(struct sub* sub);
 void free_event(struct event* event);
 
-bool sub_has_attribute(const struct sub* sub, uint64_t variable_id);
+bool sub_has_attribute(const struct sub* sub, betree_var_t variable_id);
 bool sub_has_attribute_str(struct config* config, const struct sub* sub, const char* attr);
 bool sub_is_enclosed(const struct attr_domain** attr_domains, const struct sub* sub, const struct cdir* cdir);
 
