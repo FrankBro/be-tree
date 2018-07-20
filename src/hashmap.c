@@ -57,7 +57,7 @@ static void match_or_insert(struct pred_map* pred_map, struct pred_container* co
     for(size_t i = 0; i < container->count; i++) {
         struct ast_node* other_node = container->preds[i];
         if(eq_expr(node, other_node)) {
-            if(other_node->id == UINT64_MAX) {
+            if(other_node->id == INVALID_PRED) {
                 other_node->id = pred_map->pred_count;
                 add_predicate_to_map(pred_map, other_node);
             }

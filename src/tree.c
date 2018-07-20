@@ -1627,7 +1627,7 @@ betree_var_t try_get_id_for_attr(const struct config* config, const char* attr)
         }
     }
     free(copy);
-    return UINT64_MAX;
+    return INVALID_VAR;
 }
 
 betree_var_t get_id_for_attr(struct config* config, const char* attr)
@@ -1870,7 +1870,7 @@ void fill_event(const struct config* config, struct event* event)
     for(size_t i = 0; i < event->pred_count; i++) {
         struct pred* pred = event->preds[i];
         betree_var_t var = try_get_id_for_attr(config, pred->attr_var.attr);
-        if(unlikely(var == UINT64_MAX)) {
+        if(unlikely(var == INVALID_VAR)) {
             fprintf(stderr, "Cannot find variable %s in config, aborting", pred->attr_var.attr);
             abort();
         }

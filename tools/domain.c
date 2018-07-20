@@ -132,7 +132,7 @@ struct value_bound get_string_events_bound(betree_var_t var, struct event** even
                 if(pred->value.svalue.str < bound.smin) {
                     bound.smin = pred->value.svalue.str;
                 }
-                if(pred->value.svalue.str > bound.smax && pred->value.svalue.str != UINT64_MAX) {
+                if(pred->value.svalue.str > bound.smax && pred->value.svalue.str != INVALID_STR) {
                     bound.smax = pred->value.svalue.str;
                 }
                 break;
@@ -171,7 +171,7 @@ struct value_bound get_string_list_events_bound(betree_var_t var, struct event**
                     if(value < bound.smin) {
                         bound.smin = value;
                     }
-                    if(value > bound.smax && value != UINT64_MAX) {
+                    if(value > bound.smax && value != INVALID_STR) {
                         bound.smax = value;
                     }
                 }

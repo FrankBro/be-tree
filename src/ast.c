@@ -24,7 +24,7 @@ struct ast_node* ast_node_create()
         fprintf(stderr, "%s calloc failed", __func__);
         abort();
     }
-    node->id = UINT64_MAX;
+    node->id = INVALID_PRED;
     return node;
 }
 
@@ -1070,7 +1070,7 @@ static bool match_bool_expr(const struct pred** preds, const struct ast_bool_exp
 
 static bool match_node_inner(const struct pred** preds, const struct ast_node* node, struct memoize* memoize, struct report* report)
 {
-    if(unlikely(node->id != UINT64_MAX)) {
+    if(unlikely(node->id != INVALID_PRED)) {
         if(test_bit(memoize->pass, node->id)) {
             report->memoized++;
             return true;
@@ -1111,7 +1111,7 @@ static bool match_node_inner(const struct pred** preds, const struct ast_node* n
             return false;
         }
     }
-    if(unlikely(node->id != UINT64_MAX)) {
+    if(unlikely(node->id != INVALID_PRED)) {
         if(result) {
             set_bit(memoize->pass, node->id);
         }

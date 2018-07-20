@@ -253,7 +253,7 @@ betree_str_t try_get_id_for_string(const struct config* config, struct attr_var 
         }
     }
     free(copy);
-    return UINT64_MAX;
+    return INVALID_STR;
 }
 
 betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, const char* string)
@@ -281,7 +281,7 @@ betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, 
         (attr_domain->bound.value_type == VALUE_S || attr_domain->bound.value_type == VALUE_SL || attr_domain->bound.value_type == VALUE_FREQUENCY));
     if(attr_domain->bound.smax + 1 == string_map->string_value_count) {
         free(copy);
-        return UINT64_MAX;
+        return INVALID_STR;
     }
     add_to_string_map(string_map, copy);
     return string_map->string_value_count - 1;
