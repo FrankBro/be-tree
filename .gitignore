@@ -15,6 +15,7 @@ src/event_parser.output
 ._.DS_Store
 callgrind.out.*
 cachegrind.out.*
+massif.out.*
 output.be
 betree.dot
 betree.png

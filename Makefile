@@ -28,6 +28,7 @@ YFLAGS?=-dv
 VALGRIND=valgrind --leak-check=full --track-origins=yes --suppressions=valgrind.supp
 CALLGRIND=valgrind --tool=callgrind --instr-atstart=no
 CACHEGRIND=valgrind --tool=cachegrind
+MASSIF=valgrind --tool=massif
 
 ################################################################################
 # Default Target
@@ -125,4 +126,7 @@ callgrind:
 
 cachegrind:
 	$(CACHEGRIND) build/tests/real_tests
+
+massif:
+	$(MASSIF) build/tests/real_tests
 
