@@ -700,13 +700,22 @@ static bool splitable_attr_domain(const struct config* config, const struct attr
     switch(attr_domain->bound.value_type) {
         case VALUE_I:
         case VALUE_IL:
+            if(attr_domain->bound.imin == INT64_MIN || attr_domain->bound.imax == INT64_MAX) {
+                return false;
+            }
             return ((uint64_t)llabs(attr_domain->bound.imax - attr_domain->bound.imin)) < config->max_domain_for_split;
         case VALUE_F:
+            if(feq(attr_domain->bound.fmin, -DBL_MAX) || feq(attr_domain->bound.fmax, DBL_MAX)) {
+                return false;
+            }
             return ((uint64_t)fabs(attr_domain->bound.fmax - attr_domain->bound.fmin)) < config->max_domain_for_split;
         case VALUE_B:
             return true;
         case VALUE_S:
         case VALUE_SL:
+            if(attr_domain->bound.smax == SIZE_MAX) {
+                return false;
+            }
             return (attr_domain->bound.smax - attr_domain->bound.smin) < config->max_domain_for_split;
         case VALUE_SEGMENTS:
         case VALUE_FREQUENCY:
