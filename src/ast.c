@@ -528,6 +528,10 @@ static bool match_special_expr(const struct pred** preds, const struct ast_speci
                     if(is_caps_defined == false) {
                         return false;
                     }
+                    if(caps.size == 0) {
+                        // Optimization from lookig at what within_frequency_caps does
+                        return true;
+                    }
                     int64_t now;
                     bool is_now_defined = get_integer_var(f->now.var, preds, &now);
                     if(is_now_defined == false) {
