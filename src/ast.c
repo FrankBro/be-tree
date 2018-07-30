@@ -219,10 +219,10 @@ struct ast_node* ast_special_segment_create(
 }
 
 struct ast_node* ast_special_geo_create(const enum ast_special_geo_e op,
-    struct special_geo_value latitude,
-    struct special_geo_value longitude,
+    double latitude,
+    double longitude,
     bool has_radius,
-    struct special_geo_value radius)
+    double radius)
 {
     struct ast_node* node = ast_special_expr_create();
     struct ast_special_geo geo = { .op = op,
@@ -456,22 +456,6 @@ static bool list_value_matches(enum ast_list_value_e a, enum value_e b)
         || (a == AST_LIST_VALUE_STRING_LIST && b == VALUE_SL);
 }
 
-static double get_geo_value_as_float(const struct special_geo_value value)
-{
-    switch(value.value_type) {
-        case AST_SPECIAL_GEO_VALUE_INTEGER: {
-            return (double)value.integer_value;
-        }
-        case AST_SPECIAL_GEO_VALUE_FLOAT: {
-            return value.float_value;
-        }
-        default: {
-            switch_default_error("Invalid geo value type");
-            return false;
-        }
-    }
-}
-
 const char* frequency_type_to_string(enum frequency_type_e type)
 {
     const char* string;
@@ -603,11 +587,8 @@ static bool match_special_expr(const struct pred** preds, const struct ast_speci
                         || is_longitude_defined == false) {
                         return false;
                     }
-                    double latitude_cst = get_geo_value_as_float(g->latitude);
-                    double longitude_cst = get_geo_value_as_float(g->longitude);
-                    double radius_cst = get_geo_value_as_float(g->radius);
 
-                    return geo_within_radius( latitude_cst, longitude_cst, latitude_var, longitude_var, radius_cst);
+                    return geo_within_radius(g->latitude, g->longitude, latitude_var, longitude_var, g->radius);
                 }
                 default:
                     switch_default_error("Invalid geo operation");
@@ -2242,22 +2223,6 @@ static bool eq_list_expr(struct ast_list_expr a, struct ast_list_expr b)
     return a.attr_var.var == b.attr_var.var && eq_list_value(a.value, b.value);
 }
 
-static bool eq_geo_value(struct special_geo_value a, struct special_geo_value b)
-{
-    if(a.value_type != b.value_type) {
-        return false;
-    }
-    switch(a.value_type) {
-        case AST_SPECIAL_GEO_VALUE_INTEGER:
-            return a.integer_value == b.integer_value;
-        case AST_SPECIAL_GEO_VALUE_FLOAT:
-            return feq(a.float_value, b.float_value);
-        default:
-            switch_default_error("Invalid geo value type");
-            return false;
-    }
-}
-
 static bool eq_special_expr(struct ast_special_expr a, struct ast_special_expr b)
 {
     if(a.type != b.type) {
@@ -2283,10 +2248,10 @@ static bool eq_special_expr(struct ast_special_expr a, struct ast_special_expr b
         case AST_SPECIAL_GEO:
             return
                 a.geo.has_radius == b.geo.has_radius &&
-                eq_geo_value(a.geo.latitude, b.geo.latitude) &&
-                eq_geo_value(a.geo.longitude, b.geo.longitude) &&
+                feq(a.geo.latitude, b.geo.latitude) &&
+                feq(a.geo.longitude, b.geo.longitude) &&
                 a.geo.op == b.geo.op &&
-                eq_geo_value(a.geo.radius, b.geo.radius);
+                feq(a.geo.radius, b.geo.radius);
         case AST_SPECIAL_STRING:
             return
                 a.string.attr_var.var == b.string.attr_var.var &&

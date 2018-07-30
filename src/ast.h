@@ -200,19 +200,6 @@ struct ast_special_segment {
     struct attr_var now;
 };
 
-enum ast_special_geo_value_e {
-    AST_SPECIAL_GEO_VALUE_INTEGER,
-    AST_SPECIAL_GEO_VALUE_FLOAT,
-};
-
-struct special_geo_value {
-    enum ast_special_geo_value_e value_type;
-    union {
-        int64_t integer_value;
-        double float_value;
-    };
-};
-
 enum ast_special_geo_e {
     AST_SPECIAL_GEOWITHINRADIUS,
 };
@@ -220,9 +207,9 @@ enum ast_special_geo_e {
 struct ast_special_geo {
     enum ast_special_geo_e op;
     bool has_radius;
-    struct special_geo_value latitude;
-    struct special_geo_value longitude;
-    struct special_geo_value radius;
+    double latitude;
+    double longitude;
+    double radius;
     struct attr_var latitude_var;
     struct attr_var longitude_var;
 };
@@ -304,10 +291,10 @@ struct ast_node* ast_special_segment_create(enum ast_special_segment_e op,
     betree_seg_t segment_id,
     int64_t seconds);
 struct ast_node* ast_special_geo_create(enum ast_special_geo_e op,
-    struct special_geo_value latitude,
-    struct special_geo_value longitude,
+    double latitude,
+    double longitude,
     bool has_radius,
-    struct special_geo_value radius);
+    double radius);
 struct ast_node* ast_special_string_create(
     enum ast_special_string_e op, const char* name, const char* pattern);
 void free_ast_node(struct ast_node* node);

@@ -41,7 +41,6 @@
     struct set_left_value set_left_value;
     struct set_right_value set_right_value;
     struct list_value list_value;
-    struct special_geo_value special_geo_value;
     struct ast_node *node;
     int token;
 }
@@ -76,7 +75,6 @@
 
 %type<integer_list_value> integer_list_value integer_list_loop
 %type<string_list_value> string_list_value string_list_loop
-%type<special_geo_value> s_geo_expr_value
 
 %left TCEQ TCNE TCGT TCGE TCLT TCLE
 %left TOR
@@ -192,11 +190,9 @@ s_segment_expr      : TSEGMENTWITHIN TLPAREN integer TCOMMA integer TRPAREN
                                                             { $$ = ast_special_segment_create(AST_SPECIAL_SEGMENTBEFORE, $3, $5, $7); free($3); }
 ;
 
-s_geo_expr_value    : integer                               { $$.value_type = AST_SPECIAL_GEO_VALUE_INTEGER; $$.integer_value = $1; }
-                    | float                                 { $$.value_type = AST_SPECIAL_GEO_VALUE_FLOAT; $$.float_value = $1; }
-;
-
-s_geo_expr          : TGEOWITHINRADIUS TLPAREN s_geo_expr_value TCOMMA s_geo_expr_value TCOMMA s_geo_expr_value TRPAREN
+s_geo_expr          : TGEOWITHINRADIUS TLPAREN integer TCOMMA integer TCOMMA integer TRPAREN
+                                                            { $$ = ast_special_geo_create(AST_SPECIAL_GEOWITHINRADIUS, (double)$3, (double)$5, true, (double)$7); }
+                    | TGEOWITHINRADIUS TLPAREN float TCOMMA float TCOMMA float TRPAREN
                                                             { $$ = ast_special_geo_create(AST_SPECIAL_GEOWITHINRADIUS, $3, $5, true, $7); }
 ;
 

@@ -388,12 +388,9 @@ int test_special()
         node->special_expr.type == AST_SPECIAL_GEO &&
         node->special_expr.geo.op == AST_SPECIAL_GEOWITHINRADIUS &&
         node->special_expr.geo.has_radius == true &&
-        node->special_expr.geo.latitude.value_type == AST_SPECIAL_GEO_VALUE_INTEGER &&
-        node->special_expr.geo.latitude.integer_value == 100 &&
-        node->special_expr.geo.longitude.value_type == AST_SPECIAL_GEO_VALUE_INTEGER &&
-        node->special_expr.geo.longitude.integer_value == 100 &&
-        node->special_expr.geo.radius.value_type == AST_SPECIAL_GEO_VALUE_INTEGER &&
-        node->special_expr.geo.radius.integer_value == 10
+        feq(node->special_expr.geo.latitude, 100.0) &&
+        feq(node->special_expr.geo.longitude, 100.0) &&
+        feq(node->special_expr.geo.radius, 10.0)
     , "geo_within_radius");
     free_ast_node(node);
     parse("geo_within_radius(100.0, 100.0, 10.0)", &node);
@@ -401,12 +398,9 @@ int test_special()
         node->special_expr.type == AST_SPECIAL_GEO &&
         node->special_expr.geo.op == AST_SPECIAL_GEOWITHINRADIUS &&
         node->special_expr.geo.has_radius == true &&
-        node->special_expr.geo.latitude.value_type == AST_SPECIAL_GEO_VALUE_FLOAT &&
-        feq(node->special_expr.geo.latitude.float_value, 100.0) &&
-        node->special_expr.geo.longitude.value_type == AST_SPECIAL_GEO_VALUE_FLOAT &&
-        feq(node->special_expr.geo.longitude.float_value, 100.0) &&
-        node->special_expr.geo.radius.value_type == AST_SPECIAL_GEO_VALUE_FLOAT &&
-        feq(node->special_expr.geo.radius.float_value, 10.0)
+        feq(node->special_expr.geo.latitude, 100.0) &&
+        feq(node->special_expr.geo.longitude, 100.0) &&
+        feq(node->special_expr.geo.radius, 10.0)
     , "geo_within_radius");
     free_ast_node(node);
     parse("contains(a, \"abc\")", &node);
