@@ -182,7 +182,7 @@ static void assign_special_pred(struct pred_map* pred_map, struct ast_special_ex
             match_or_insert(pred_map, &m->frequency_preds, node); 
             break;
         default:
-            switch_default_error("Invalid list op");
+            switch_default_error("Invalid special type");
             break;
     }
 }
