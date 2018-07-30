@@ -2506,9 +2506,6 @@ static size_t get_attr_string_bound(const struct config* config, const char* att
 {
     for(size_t i = 0; i < config->attr_domain_count; i++) {
         if(strcmp(attr, config->attr_domains[i]->attr_var.attr) == 0) {
-            betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_TYPE_MISMATCH, 
-              config->attr_domains[i]->bound.value_type == VALUE_S
-              || config->attr_domains[i]->bound.value_type == VALUE_SL);
             size_t count = config->attr_domains[i]->bound.smax;
             if(count == SIZE_MAX) {
                 return count;
@@ -2518,7 +2515,6 @@ static size_t get_attr_string_bound(const struct config* config, const char* att
             }
         }
     }
-    betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_MISSING, false);
     return SIZE_MAX;
 }
 

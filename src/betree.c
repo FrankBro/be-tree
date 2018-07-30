@@ -18,7 +18,6 @@
 bool betree_delete(struct betree* betree, betree_sub_t id)
 {
     struct sub* sub = find_sub_id(id, betree->cnode);
-    betree_assert(betree->config->abort_on_error, ERROR_CANT_FIND_SUB, sub != NULL);
     bool found = betree_delete_inner((const struct attr_domain**)betree->config->attr_domains, sub, betree->cnode);
     free_sub(sub);
     return found;
@@ -46,9 +45,7 @@ bool betree_insert_all(struct betree* tree, size_t count, const char** exprs)
         struct ast_node* node;
         if(parse(expr, &node) != 0) {
             fprintf(stderr, "Failed to parse id %" PRIu64 ": %s\n", i, expr);
-            if(tree->config->abort_on_error) {
-                abort();
-            }
+            abort();
         }
         if(!is_valid(tree->config, node)) {
             return false;
@@ -69,10 +66,7 @@ bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr)
 {
     struct ast_node* node;
     if(parse(expr, &node) != 0) {
-        fprintf(stderr, "Failed to parse id %" PRIu64 ": %s\n", id, expr);
-        if(tree->config->abort_on_error) {
-            abort();
-        }
+        return false;
     }
     if(!is_valid(tree->config, node)) {
         free_ast_node(node);

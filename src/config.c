@@ -8,14 +8,13 @@
 #include "memoize.h"
 #include "utils.h"
 
-struct config* make_config(uint64_t lnode_max_cap, uint64_t partition_min_size)
+struct config* make_config(uint8_t lnode_max_cap, uint8_t partition_min_size)
 {
     struct config* config = calloc(1, sizeof(*config));
     if(config == NULL) {
         fprintf(stderr, "%s calloc failed\n", __func__);
         abort();
     }
-    config->abort_on_error = true;
     config->attr_domain_count = 0;
     config->attr_domains = NULL;
     config->attr_to_id_count = 0;
@@ -277,8 +276,6 @@ betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, 
         string_map = &config->string_maps[config->string_map_count - 1];
     }
     const struct attr_domain* attr_domain = get_attr_domain((const struct attr_domain**)config->attr_domains, attr_var.var);
-    betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_TYPE_MISMATCH, attr_domain != NULL && 
-        (attr_domain->bound.value_type == VALUE_S || attr_domain->bound.value_type == VALUE_SL || attr_domain->bound.value_type == VALUE_FREQUENCY));
     if(attr_domain->bound.smax + 1 == string_map->string_value_count) {
         free(copy);
         return INVALID_STR;
@@ -289,8 +286,6 @@ betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, 
 
 bool is_variable_allow_undefined(const struct config* config, const betree_var_t variable_id)
 {
-    betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_MISSING, variable_id < config->attr_domain_count);
-    betree_assert(config->abort_on_error, ERROR_ATTR_DOMAIN_NOT_INDEX, config->attr_domains[variable_id]->attr_var.var == variable_id);
     return config->attr_domains[variable_id]->allow_undefined;
 }
 

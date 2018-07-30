@@ -24,15 +24,14 @@ struct string_map {
     };
 };
 
-struct config* make_config(uint64_t lnode_max_cap, uint64_t partition_min_size);
+struct config* make_config(uint8_t lnode_max_cap, uint8_t partition_min_size);
 struct config* make_default_config();
 void free_config(struct config* config);
 
 struct config {
-    uint64_t lnode_max_cap;
-    uint64_t partition_min_size;
-    uint64_t max_domain_for_split;
-    bool abort_on_error;
+    uint8_t lnode_max_cap;
+    uint8_t partition_min_size;
+    uint32_t max_domain_for_split;
     struct {
         size_t attr_domain_count;
         struct attr_domain** attr_domains;

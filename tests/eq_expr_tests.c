@@ -316,13 +316,11 @@ int test_set_var_wrong()
     add_attr_domain_bounded_i(config, "i2", false, 0, 10);
 
     {
-        config->abort_on_error = false;
         struct ast_node* a = parse_and_assign("i in (1, 2)", config);
         struct ast_node* b = parse_and_assign("i in (\"1\", \"2\")", config);
         mu_assert(!eq_expr(a, b), "wrong value type");
         free_ast_node(a);
         free_ast_node(b);
-        config->abort_on_error = true;
     }
     {
         struct ast_node* a = parse_and_assign("i in (1, 2)", config);
@@ -408,13 +406,11 @@ int test_set_list_wrong()
     add_attr_domain_il(config, "il2", false);
 
     {
-        config->abort_on_error = false;
         struct ast_node* a = parse_and_assign("1 in il", config);
         struct ast_node* b = parse_and_assign("\"1\" in il", config);
         mu_assert(!eq_expr(a, b), "wrong value type");
         free_ast_node(a);
         free_ast_node(b);
-        config->abort_on_error = true;
     }
     {
         struct ast_node* a = parse_and_assign("1 in il", config);
@@ -514,13 +510,11 @@ int test_list_wrong()
     add_attr_domain_il(config, "il2", false);
 
     {
-        config->abort_on_error = false;
         struct ast_node* a = parse_and_assign("il one of (1, 2)", config);
         struct ast_node* b = parse_and_assign("il one of (\"1\", \"2\")", config);
         mu_assert(!eq_expr(a, b), "wrong value type");
         free_ast_node(a);
         free_ast_node(b);
-        config->abort_on_error = true;
     }
     {
         struct ast_node* a = parse_and_assign("il one of (1, 2)", config);
