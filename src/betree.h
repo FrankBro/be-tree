@@ -7,6 +7,7 @@
 typedef uint64_t betree_sub_t;
 
 struct betree;
+struct event;
 
 struct report {
     size_t evaluated;
@@ -25,6 +26,7 @@ void betree_add_domain(struct betree* betree, const char* domain);
 bool betree_insert_all(struct betree* tree, size_t count, const char** exprs);
 bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr);
 void betree_search(const struct betree* betree, const char* event, struct report* report);
+void betree_search_with_event(const struct betree* betree, const struct event* event, struct report* report);
 bool betree_delete(struct betree* betree, betree_sub_t id);
 
 struct report* make_report();

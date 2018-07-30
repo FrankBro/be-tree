@@ -86,10 +86,27 @@ bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr)
     return insert_be_tree(tree->config, sub, tree->cnode, NULL);
 }
 
+static struct pred** make_environment(size_t attr_domain_count, const struct event* event)
+{
+    struct pred** preds = calloc(attr_domain_count, sizeof(*preds));
+    for(size_t i = 0; i < event->pred_count; i++) {
+        if(event->preds[i] != NULL) {
+            preds[event->preds[i]->attr_var.var] = event->preds[i];
+        }
+    }
+    return preds;
+}
+
+void betree_search_with_event(const struct betree* tree, const struct event* event, struct report* report)
+{
+    const struct pred** preds = (const struct pred**)make_environment(tree->config->attr_domain_count, event);
+    betree_search_with_preds(tree->config, preds, tree->cnode, report);
+}
+
 void betree_search(const struct betree* tree, const char* event_str, struct report* report)
 {
     struct event* event = make_event_from_string(tree->config, event_str);
-    betree_search_with_event(tree->config, event, tree->cnode, report);
+    betree_search_with_event(tree, event, report);
     free_event(event);
 }
 

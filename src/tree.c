@@ -1139,7 +1139,9 @@ void free_event(struct event* event)
     }
     for(size_t i = 0; i < event->pred_count; i++) {
         const struct pred* pred = event->preds[i];
-        free_pred((struct pred*)pred);
+        if(pred != NULL) {
+            free_pred((struct pred*)pred);
+        }
     }
     free(event->preds);
     event->preds = NULL;
@@ -1744,35 +1746,27 @@ void free_memoize(struct memoize memoize)
     free(memoize.fail);
 }
 
-static uint64_t* make_undefined(size_t attr_domain_count, const struct event* event)
+static uint64_t* make_undefined(size_t attr_domain_count, const struct pred** preds)
 {
     uint64_t* undefined = calloc(attr_domain_count, sizeof(*undefined));
     for(size_t i = 0; i < attr_domain_count; i++) {
         undefined[i] = UINT64_MAX;
     }
-    for(size_t i = 0; i < event->pred_count; i++) {
-        clear_bit(undefined, event->preds[i]->attr_var.var);
+    for(size_t i = 0; i < attr_domain_count; i++) {
+        if(preds[i] != NULL) {
+            clear_bit(undefined, preds[i]->attr_var.var);
+        }
     }
     return undefined;
 }
 
-static struct pred** make_environment(size_t attr_domain_count, const struct event* event)
-{
-    struct pred** preds = calloc(attr_domain_count, sizeof(*preds));
-    for(size_t i = 0; i < event->pred_count; i++) {
-        preds[event->preds[i]->attr_var.var] = event->preds[i];
-    }
-    return preds;
-}
-
-void betree_search_with_event(const struct config* config,
-    const struct event* event,
+void betree_search_with_preds(const struct config* config,
+    const struct pred** preds,
     const struct cnode* cnode,
     struct report* report)
 {
-    uint64_t* undefined = make_undefined(config->attr_domain_count, event);
+    uint64_t* undefined = make_undefined(config->attr_domain_count, preds);
     struct memoize memoize = make_memoize(config->pred_map->pred_count);
-    const struct pred** preds = (const struct pred**)make_environment(config->attr_domain_count, event);
     struct subs_to_eval subs;
     init_subs_to_eval(&subs);
     match_be_tree((const struct attr_domain**)config->attr_domains, preds, cnode, &subs);
@@ -1878,6 +1872,9 @@ void fill_event(const struct config* config, struct event* event)
 {
     for(size_t i = 0; i < event->pred_count; i++) {
         struct pred* pred = event->preds[i];
+        if(pred == NULL) {
+            continue;
+        }
         betree_var_t var = try_get_id_for_attr(config, pred->attr_var.attr);
         if(unlikely(var == INVALID_VAR)) {
             fprintf(stderr, "Cannot find variable %s in config, aborting", pred->attr_var.attr);

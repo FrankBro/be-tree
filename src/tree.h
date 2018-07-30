@@ -130,8 +130,8 @@ struct betree {
 bool betree_delete_inner(const struct attr_domain** attr_domains, struct sub* sub, struct cnode* cnode);
 struct sub* find_sub_id(betree_sub_t id, struct cnode* cnode);
 
-void betree_search_with_event(const struct config* config,
-    const struct event* event,
+void betree_search_with_preds(const struct config* config,
+    const struct pred** preds,
     const struct cnode* cnode,
     struct report* report);
 
