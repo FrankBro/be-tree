@@ -36,6 +36,7 @@ static bool is_valid(const struct config* config, const struct ast_node* node)
     return str;
 }
 
+/*
 bool betree_insert_all(struct betree* tree, size_t count, const char** exprs)
 {
     // Hackish a bit for now, insert all except the last manually, then insert the last one legit
@@ -61,6 +62,7 @@ bool betree_insert_all(struct betree* tree, size_t count, const char** exprs)
     tree->cnode->lnode->subs = subs;
     return betree_insert(tree, count - 1, exprs[count - 1]);
 }
+*/
 
 bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr)
 {
@@ -156,82 +158,43 @@ void betree_free(struct betree* tree)
     free(tree);
 }
 
-void betree_add_domain(struct betree* betree, const char* domain)
+void betree_add_boolean_variable(struct betree* betree, const char* name, bool allow_undefined)
 {
-    struct config* config = betree->config;
-    char* domain_copy = strdup(domain);
-    char* line_rest = domain_copy;
-    const char* name = strtok_r(line_rest, "|", &line_rest);
-    const char* type = strtok_r(line_rest, "|", &line_rest);
-    bool allow_undefined = strcmp(strtok_r(line_rest, "|\n", &line_rest), "true") == 0;
-    const char* min_str = strtok_r(line_rest, "|\n", &line_rest);
-    const char* max_str = strtok_r(line_rest, "|\n", &line_rest);
-    if(strcmp(type, "integer") == 0) {
-        int64_t min = INT64_MIN, max = INT64_MAX;
-        if(min_str != NULL) {
-            min = strtoll(min_str, NULL, 10);
-        }
-        if(max_str != NULL) {
-            max = strtoll(max_str, NULL, 10);
-        }
-        add_attr_domain_bounded_i(config, name, allow_undefined, min, max);
-    }
-    else if(strcmp(type, "float") == 0) {
-        double min = -DBL_MAX, max = DBL_MAX;
-        if(min_str != NULL) {
-            min = atof(min_str);
-        }
-        if(max_str != NULL) {
-            max = atof(max_str);
-        }
-        add_attr_domain_bounded_f(config, name, allow_undefined, min, max);
-    }
-    else if(strcmp(type, "boolean") == 0) {
-        add_attr_domain_b(config, name, allow_undefined);
-    }
-    else if(strcmp(type, "frequency") == 0) {
-        add_attr_domain_frequency(config, name, allow_undefined);
-    }
-    else if(strcmp(type, "segments") == 0) {
-        add_attr_domain_segments(config, name, allow_undefined);
-    }
-    else if(strcmp(type, "string") == 0) {
-        if(min_str != NULL) {
-            size_t max = atoi(min_str);
-            add_attr_domain_bounded_s(config, name, allow_undefined, max);
-        }
-        else {
-            add_attr_domain_s(config, name, allow_undefined);
-        }
-    }
-    else if(strcmp(type, "integer list") == 0) {
-        int64_t min = INT64_MIN, max = INT64_MAX;
-        if(min_str != NULL) {
-            min = strtoll(min_str, NULL, 10);
-        }
-        if(max_str != NULL) {
-            max = strtoll(max_str, NULL, 10);
-        }
-        if(min_str != NULL && max_str != NULL) {
-            add_attr_domain_bounded_il(config, name, allow_undefined, min, max);
-        }
-        else {
-            add_attr_domain_il(config, name, allow_undefined);
-        }
-    }
-    else if(strcmp(type, "string list") == 0) {
-        if(min_str != NULL) {
-            size_t max = atoi(min_str);
-            add_attr_domain_bounded_sl(config, name, allow_undefined, max);
-        }
-        else {
-            add_attr_domain_sl(config, name, allow_undefined);
-        }
-    }
-    else {
-        fprintf(stderr, "Unknown definition type");
-        abort();
-    }
-    free(domain_copy);
+    add_attr_domain_b(betree->config, name, allow_undefined);
+}
+
+void betree_add_integer_variable(struct betree* betree, const char* name, bool allow_undefined, int64_t min, int64_t max)
+{
+    add_attr_domain_bounded_i(betree->config, name, allow_undefined, min, max);
+}
+
+void betree_add_float_variable(struct betree* betree, const char* name, bool allow_undefined, double min, double max)
+{
+    add_attr_domain_bounded_f(betree->config, name, allow_undefined, min, max);
+}
+
+void betree_add_string_variable(struct betree* betree, const char* name, bool allow_undefined, size_t count)
+{
+    add_attr_domain_bounded_s(betree->config, name, allow_undefined, count);
+}
+
+void betree_add_integer_list_variable(struct betree* betree, const char* name, bool allow_undefined, int64_t min, int64_t max)
+{
+    add_attr_domain_bounded_il(betree->config, name, allow_undefined, min, max);
+}
+
+void betree_add_string_list_variable(struct betree* betree, const char* name, bool allow_undefined, size_t count)
+{
+    add_attr_domain_bounded_sl(betree->config, name, allow_undefined, count);
+}
+
+void betree_add_segments_variable(struct betree* betree, const char* name, bool allow_undefined)
+{
+    add_attr_domain_segments(betree->config, name, allow_undefined);
+}
+
+void betree_add_frequency_caps_variable(struct betree* betree, const char* name, bool allow_undefined)
+{
+    add_attr_domain_frequency(betree->config, name, allow_undefined);
 }
 

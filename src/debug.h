@@ -1,6 +1,8 @@
 #pragma once
 
-#include "tree.h"
+struct config;
+struct cnode;
+struct betree;
 
 void print_be_tree(const struct config* config, const struct cnode* root);
 

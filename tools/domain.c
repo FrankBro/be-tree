@@ -5,6 +5,7 @@
 
 #include "ast.h"
 #include "betree.h"
+#include "helper.h"
 #include "tree.h"
 
 struct value_bound get_integer_events_bound(betree_var_t var, struct event** events, size_t event_count) 
@@ -440,7 +441,7 @@ void read_betree_defs(struct betree* tree)
 
     char line[LINE_MAX];
     while(fgets(line, sizeof(line), f)) {
-        betree_add_domain(tree, line);
+        add_variable_from_string(tree, line);
     }
 
     fclose(f);

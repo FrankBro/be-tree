@@ -3,15 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ast.h"
 #include "betree.h"
 #include "debug.h"
-#include "hashmap.h"
+#include "helper.h"
 #include "minunit.h"
+#include "tree.h"
 #include "utils.h"
-
-int parse(const char* text, struct ast_node** node);
-int event_parse(const char* text, struct event** event);
 
 int test_sub_has_attribute()
 {
@@ -584,17 +581,6 @@ int test_negative_float()
     return 0;
 }
 
-
-void empty_tree(struct betree* tree)
-{
-    if(tree->cnode != NULL) {
-        free_cnode(tree->cnode);
-        tree->cnode = make_cnode(tree->config, NULL);
-        free_pred_map(tree->config->pred_map);
-        tree->config->pred_map = make_pred_map();
-    }
-}
-
 int test_integer_set()
 {
     struct betree* tree = betree_make();
@@ -925,8 +911,6 @@ int test_string_list()
     return 0;
 }
 
-int event_parse(const char* text, struct event** event);
-
 int test_parenthesis()
 {
     struct betree* tree = betree_make();
@@ -1083,6 +1067,7 @@ int test_not_domain_changing()
     return 0;
 }
 
+/*
 int test_insert_all()
 {
     struct betree* tree = betree_make();
@@ -1110,6 +1095,7 @@ int test_insert_all()
     betree_free(tree);
     return 0;
 }
+*/
 
 int test_bug_cases()
 {
@@ -1273,20 +1259,6 @@ int test_undefined_cdir_search()
     return 0;
 }
 
-int test_erlang_test()
-{
-    struct betree* tree = betree_make();
-    betree_add_domain(tree, "s|string|false|1");
-    mu_assert(betree_insert(tree, 1, "s <> \"good\""), "");
-    mu_assert(false == betree_insert(tree, 2, "s <> \"bad\""), "");
-    struct report* report = make_report();
-    betree_search(tree, "{\"s\": \"diff\"}", report);
-    mu_assert(report->matched == 1 && report->evaluated == 1, "");
-    betree_free(tree);
-    free_report(report);
-    return 0;
-}
-
 int all_tests()
 {
     mu_run_test(test_sub_has_attribute);
@@ -1315,13 +1287,12 @@ int all_tests()
     mu_run_test(test_parenthesis);
     mu_run_test(test_splitable_string_domain);
     mu_run_test(test_not_domain_changing);
-    mu_run_test(test_insert_all);
+    /*mu_run_test(test_insert_all);*/
     mu_run_test(test_bug_cases);
     mu_run_test(test_splitable_integer_list_domain);
     mu_run_test(test_splitable_string_list_domain);
     mu_run_test(test_set_bug_cdir);
     mu_run_test(test_undefined_cdir_search);
-    mu_run_test(test_erlang_test);
 
     return 0;
 }

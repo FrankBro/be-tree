@@ -5,19 +5,17 @@
 #include <string.h>
 #include <time.h>
 
-#include "ast.h"
+#include "betree.h"
 #include "debug.h"
 #include "minunit.h"
 #include "utils.h"
-
-int parse(const char* text, struct ast_node** node);
 
 #define COUNT 1000
 
 int test_cdir_split()
 {
     struct betree* tree = betree_make();
-    add_attr_domain_bounded_i(tree->config, "a", false, 0, COUNT);
+    betree_add_integer_variable(tree, "a", false, 0, COUNT);
 
     struct timespec start, init_done, insert_done, search_done;
 
@@ -71,7 +69,7 @@ int test_pdir_split()
         if(asprintf(&name, "a%zu", i) < 0) {
             abort();
         }
-        add_attr_domain_bounded_i(tree->config, name, true, 0, 10);
+        betree_add_integer_variable(tree, name, true, 0, 10);
         free(name);
     }
 

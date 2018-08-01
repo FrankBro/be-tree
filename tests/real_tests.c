@@ -14,6 +14,8 @@
 #include "betree.h"
 #include "debug.h"
 #include "hashmap.h"
+#include "helper.h"
+#include "tree.h"
 #include "utils.h"
 
 #define MAX_EXPRS 5000
@@ -134,7 +136,7 @@ void read_betree_defs(struct betree* tree)
 
     char line[LINE_MAX];
     while(fgets(line, sizeof(line), f)) {
-        betree_add_domain(tree, line);
+        add_variable_from_string(tree, line);
     }
 
     fclose(f);
