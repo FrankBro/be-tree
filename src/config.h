@@ -37,10 +37,6 @@ struct config {
         struct attr_domain** attr_domains;
     };
     struct {
-        size_t attr_to_id_count;
-        char** attr_to_ids;
-    };
-    struct {
         size_t string_map_count;
         struct string_map* string_maps;
     };
@@ -66,7 +62,6 @@ bool is_variable_allow_undefined(const struct config* config, const betree_var_t
 
 const char* get_attr_for_id(const struct config* config, betree_var_t variable_id);
 betree_var_t try_get_id_for_attr(const struct config* config, const char* attr);
-betree_var_t get_id_for_attr(struct config* config, const char* attr);
 betree_str_t try_get_id_for_string(const struct config* config, struct attr_var attr_var, const char* string);
 betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, const char* string);
 

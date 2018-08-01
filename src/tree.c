@@ -465,7 +465,7 @@ bool sub_has_attribute(const struct sub* sub, betree_var_t variable_id)
 
 bool sub_has_attribute_str(struct config* config, const struct sub* sub, const char* attr)
 {
-    betree_var_t variable_id = get_id_for_attr(config, attr);
+    betree_var_t variable_id = try_get_id_for_attr(config, attr);
     return sub_has_attribute(sub, variable_id);
 }
 
@@ -1619,8 +1619,8 @@ struct event* make_event()
 
 const char* get_attr_for_id(const struct config* config, betree_var_t variable_id)
 {
-    if(variable_id < config->attr_to_id_count) {
-        return config->attr_to_ids[variable_id];
+    if(variable_id < config->attr_domain_count) {
+        return config->attr_domains[variable_id]->attr_var.attr;
     }
     return NULL;
 }
@@ -1631,47 +1631,14 @@ betree_var_t try_get_id_for_attr(const struct config* config, const char* attr)
     for(size_t i = 0; copy[i]; i++) {
         copy[i] = tolower(copy[i]);
     }
-    for(size_t i = 0; i < config->attr_to_id_count; i++) {
-        if(strcmp(config->attr_to_ids[i], copy) == 0) {
+    for(size_t i = 0; i < config->attr_domain_count; i++) {
+        if(strcmp(config->attr_domains[i]->attr_var.attr, copy) == 0) {
             free(copy);
             return i;
         }
     }
     free(copy);
     return INVALID_VAR;
-}
-
-betree_var_t get_id_for_attr(struct config* config, const char* attr)
-{
-    char* copy = strdup(attr);
-    for(size_t i = 0; copy[i]; i++) {
-        copy[i] = tolower(copy[i]);
-    }
-    for(size_t i = 0; i < config->attr_to_id_count; i++) {
-        if(strcmp(config->attr_to_ids[i], copy) == 0) {
-            free(copy);
-            return i;
-        }
-    }
-    if(config->attr_to_id_count == 0) {
-        config->attr_to_ids = calloc(1, sizeof(*config->attr_to_ids));
-        if(config->attr_to_ids == NULL) {
-            fprintf(stderr, "%s calloc failed\n", __func__);
-            abort();
-        }
-    }
-    else {
-        char** attr_to_ids
-            = realloc(config->attr_to_ids, sizeof(*attr_to_ids) * (config->attr_to_id_count + 1));
-        if(attr_to_ids == NULL) {
-            fprintf(stderr, "%s realloc failed\n", __func__);
-            abort();
-        }
-        config->attr_to_ids = attr_to_ids;
-    }
-    config->attr_to_ids[config->attr_to_id_count] = copy;
-    config->attr_to_id_count++;
-    return config->attr_to_id_count - 1;
 }
 
 void event_to_string(const struct event* event, char* buffer)
@@ -1828,7 +1795,7 @@ struct attr_var make_attr_var(const char* attr, struct config* config)
         attr_var.var = INVALID_VAR;
     }
     else {
-        attr_var.var = get_id_for_attr(config, attr);
+        attr_var.var = try_get_id_for_attr(config, attr);
     }
     return attr_var;
 }

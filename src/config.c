@@ -17,8 +17,6 @@ struct config* make_config(uint8_t lnode_max_cap, uint8_t partition_min_size)
     }
     config->attr_domain_count = 0;
     config->attr_domains = NULL;
-    config->attr_to_id_count = 0;
-    config->attr_to_ids = NULL;
     config->lnode_max_cap = lnode_max_cap;
     config->partition_min_size = partition_min_size;
     config->max_domain_for_split = 1000;
@@ -37,13 +35,6 @@ void free_config(struct config* config)
 {
     if(config == NULL) {
         return;
-    }
-    if(config->attr_to_ids != NULL) {
-        for(size_t i = 0; i < config->attr_to_id_count; i++) {
-            free(config->attr_to_ids[i]);
-        }
-        free(config->attr_to_ids);
-        config->attr_to_ids = NULL;
     }
     if(config->attr_domains != NULL) {
         for(size_t i = 0; i < config->attr_domain_count; i++) {
@@ -89,7 +80,7 @@ static struct attr_domain* make_attr_domain(
 static void add_attr_domain(
     struct config* config, const char* attr, struct value_bound bound, bool allow_undefined)
 {
-    betree_var_t variable_id = get_id_for_attr(config, attr);
+    betree_var_t variable_id = config->attr_domain_count;
     struct attr_domain* attr_domain = make_attr_domain(attr, variable_id, bound, allow_undefined);
     if(config->attr_domain_count == 0) {
         config->attr_domains = calloc(1, sizeof(*config->attr_domains));

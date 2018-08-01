@@ -85,7 +85,7 @@ bool pnode_has_attr(struct config* config, const char* attr, const struct pnode*
     if(config == NULL || pnode == NULL || attr == NULL) {
         return false;
     }
-    betree_var_t variable_id = get_id_for_attr(config, attr);
+    betree_var_t variable_id = try_get_id_for_attr(config, attr);
     return pnode->attr_var.var == variable_id;
 }
 
@@ -94,7 +94,7 @@ bool cdir_has_attr(struct config* config, const char* attr, const struct cdir* c
     if(config == NULL || cdir == NULL || attr == NULL) {
         return false;
     }
-    betree_var_t variable_id = get_id_for_attr(config, attr);
+    betree_var_t variable_id = try_get_id_for_attr(config, attr);
     return cdir->attr_var.var == variable_id;
 }
 

@@ -1868,29 +1868,29 @@ void assign_variable_id(struct config* config, struct ast_node* node)
         case(AST_TYPE_SPECIAL_EXPR): {
             switch(node->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY: {
-                    betree_var_t variable_id = get_id_for_attr(config, node->special_expr.frequency.attr_var.attr);
+                    betree_var_t variable_id = try_get_id_for_attr(config, node->special_expr.frequency.attr_var.attr);
                     node->special_expr.frequency.attr_var.var = variable_id;
-                    betree_var_t now_id = get_id_for_attr(config, node->special_expr.frequency.now.attr);
+                    betree_var_t now_id = try_get_id_for_attr(config, node->special_expr.frequency.now.attr);
                     node->special_expr.frequency.now.var = now_id;
                     return;
                 }
                 case AST_SPECIAL_SEGMENT: {
-                    betree_var_t variable_id = get_id_for_attr(config, node->special_expr.segment.attr_var.attr);
+                    betree_var_t variable_id = try_get_id_for_attr(config, node->special_expr.segment.attr_var.attr);
                     node->special_expr.segment.attr_var.var = variable_id;
-                    betree_var_t now_id = get_id_for_attr(config, node->special_expr.segment.now.attr);
+                    betree_var_t now_id = try_get_id_for_attr(config, node->special_expr.segment.now.attr);
                     node->special_expr.segment.now.var = now_id;
                     return;
                 }
                 case AST_SPECIAL_GEO: {
-                    betree_var_t latitude_id = get_id_for_attr(config, node->special_expr.geo.latitude_var.attr);
+                    betree_var_t latitude_id = try_get_id_for_attr(config, node->special_expr.geo.latitude_var.attr);
                     node->special_expr.geo.latitude_var.var = latitude_id;
-                    betree_var_t longitude_id = get_id_for_attr(config, node->special_expr.geo.longitude_var.attr);
+                    betree_var_t longitude_id = try_get_id_for_attr(config, node->special_expr.geo.longitude_var.attr);
                     node->special_expr.geo.longitude_var.var = longitude_id;
                     return;
                 }
                 case AST_SPECIAL_STRING: {
                     betree_var_t variable_id
-                        = get_id_for_attr(config, node->special_expr.string.attr_var.attr);
+                        = try_get_id_for_attr(config, node->special_expr.string.attr_var.attr);
                     node->special_expr.string.attr_var.var = variable_id;
                     return;
                 }
@@ -1903,12 +1903,12 @@ void assign_variable_id(struct config* config, struct ast_node* node)
         }
         case(AST_TYPE_COMPARE_EXPR): {
             betree_var_t variable_id
-                = get_id_for_attr(config, node->compare_expr.attr_var.attr);
+                = try_get_id_for_attr(config, node->compare_expr.attr_var.attr);
             node->compare_expr.attr_var.var = variable_id;
             return;
         }
         case(AST_TYPE_EQUALITY_EXPR): {
-            betree_var_t variable_id = get_id_for_attr(config, node->equality_expr.attr_var.attr);
+            betree_var_t variable_id = try_get_id_for_attr(config, node->equality_expr.attr_var.attr);
             node->equality_expr.attr_var.var = variable_id;
             return;
         }
@@ -1926,7 +1926,7 @@ void assign_variable_id(struct config* config, struct ast_node* node)
                 }
                 case AST_BOOL_VARIABLE: {
                     betree_var_t variable_id
-                        = get_id_for_attr(config, node->bool_expr.variable.attr);
+                        = try_get_id_for_attr(config, node->bool_expr.variable.attr);
                     node->bool_expr.variable.var = variable_id;
                     return;
                 }
@@ -1936,7 +1936,7 @@ void assign_variable_id(struct config* config, struct ast_node* node)
             }
         }
         case(AST_TYPE_LIST_EXPR): {
-            betree_var_t variable_id = get_id_for_attr(config, node->list_expr.attr_var.attr);
+            betree_var_t variable_id = try_get_id_for_attr(config, node->list_expr.attr_var.attr);
             node->list_expr.attr_var.var = variable_id;
             return;
         }
@@ -1950,7 +1950,7 @@ void assign_variable_id(struct config* config, struct ast_node* node)
                 }
                 case AST_SET_LEFT_VALUE_VARIABLE: {
                     betree_var_t variable_id
-                        = get_id_for_attr(config, node->set_expr.left_value.variable_value.attr);
+                        = try_get_id_for_attr(config, node->set_expr.left_value.variable_value.attr);
                     node->set_expr.left_value.variable_value.var = variable_id;
                     break;
                 }
@@ -1967,7 +1967,7 @@ void assign_variable_id(struct config* config, struct ast_node* node)
                 }
                 case AST_SET_RIGHT_VALUE_VARIABLE: {
                     betree_var_t variable_id
-                        = get_id_for_attr(config, node->set_expr.right_value.variable_value.attr);
+                        = try_get_id_for_attr(config, node->set_expr.right_value.variable_value.attr);
                     node->set_expr.right_value.variable_value.var = variable_id;
                     break;
                 }
@@ -2407,8 +2407,8 @@ void sort_lists(struct ast_node* node)
 
 bool var_exists(const struct config* config, const char* attr)
 {
-    for(size_t i = 0; i < config->attr_to_id_count; i++) {
-        if(strcmp(attr, config->attr_to_ids[i]) == 0) {
+    for(size_t i = 0; i < config->attr_domain_count; i++) {
+        if(strcmp(attr, config->attr_domains[i]->attr_var.attr) == 0) {
             return true;
         }
     }
