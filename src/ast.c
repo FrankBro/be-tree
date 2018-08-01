@@ -513,7 +513,7 @@ static bool match_special_expr(const struct pred** preds, const struct ast_speci
                         return false;
                     }
                     if(caps.size == 0) {
-                        // Optimization from lookig at what within_frequency_caps does
+                        // Optimization from looking at what within_frequency_caps does
                         return true;
                     }
                     int64_t now;
