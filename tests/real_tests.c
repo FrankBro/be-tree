@@ -98,13 +98,21 @@ size_t read_betree_events(struct config* config, struct events* events)
 
 size_t read_betree_exprs(struct betree* tree)
 {
+    enum e { constant_count = 4 };
+    const struct betree_constant* constants[constant_count] = {
+        betree_make_integer_constant("flight_id", 10),
+        betree_make_integer_constant("advertiser_id", 20),
+        betree_make_integer_constant("campaign_id", 30),
+        betree_make_integer_constant("product_id", 40),
+    };
+
     FILE* f = fopen("betree_exprs", "r");
 
     //char* lines[MAX_EXPRS];
     char line[10000]; // Arbitrary from what I've seen
     size_t count = 0;
     while(fgets(line, sizeof(line), f)) {
-        if(!betree_insert(tree, count, line)) {
+        if(!betree_insert_with_constants(tree, count, constant_count, constants, line)) {
             printf("Can't insert expr %zu: %s\n", count, line);
             abort();
         }

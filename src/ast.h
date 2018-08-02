@@ -184,6 +184,7 @@ struct ast_special_frequency {
     int64_t value;
     size_t length;
     struct attr_var now;
+    uint32_t id;
 };
 
 enum ast_special_segment_e {
@@ -304,6 +305,7 @@ bool match_node(const struct pred** preds, const struct ast_node* node, struct m
 struct value_bound get_variable_bound(
     const struct attr_domain* domain, const struct ast_node* node);
 
+bool assign_constants(size_t constant_count, const struct betree_constant** constants, struct ast_node* node);
 void assign_variable_id(struct config* config, struct ast_node* node);
 void assign_str_id(struct config* config, struct ast_node* node);
 void assign_pred_id(struct config* config, struct ast_node* node);

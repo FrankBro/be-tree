@@ -192,7 +192,8 @@ struct ast_node* ast_special_frequency_create(const enum ast_special_frequency_e
         .type = type,
         .ns = ns,
         .value = value,
-        .length = length };
+        .length = length,
+        .id = UINT32_MAX };
     node->special_expr.type = AST_SPECIAL_FREQUENCY;
     node->special_expr.frequency = frequency;
     node->special_expr.frequency.now = make_attr_var("now", NULL);
@@ -521,33 +522,7 @@ static bool match_special_expr(const struct pred** preds, const struct ast_speci
                     if(is_now_defined == false) {
                         return false;
                     }
-                    uint32_t id = 20;
-                    switch(special_expr.frequency.type) {
-                        case FREQUENCY_TYPE_ADVERTISER:
-                        case FREQUENCY_TYPE_ADVERTISERIP:
-                            // id = ADVERTISER_ID;
-                            id = 20;
-                            break;
-                        case FREQUENCY_TYPE_CAMPAIGN:
-                        case FREQUENCY_TYPE_CAMPAIGNIP:
-                            // id = CAMPAIGN_ID;
-                            id = 30;
-                            break;
-                        case FREQUENCY_TYPE_FLIGHT:
-                        case FREQUENCY_TYPE_FLIGHTIP:
-                            // id = FLIGHT_ID;
-                            id = 10;
-                            break;
-                        case FREQUENCY_TYPE_PRODUCT:
-                        case FREQUENCY_TYPE_PRODUCTIP:
-                            // id = PRODUCT_ID;
-                            id = 40;
-                            break;
-                        default:
-                            switch_default_error("Invalid frequency type");
-                            break;
-                    }
-                    return within_frequency_caps(&caps, f->type, id, f->ns, f->value, f->length, now);
+                    return within_frequency_caps(&caps, f->type, f->id, f->ns, f->value, f->length, now);
                 }
                 default:
                     switch_default_error("Invalid frequency operation");
@@ -1860,6 +1835,94 @@ struct value_bound get_variable_bound(const struct attr_domain* domain, const st
             abort();
     }
     return bound;
+}
+
+static bool get_integer_constant(const char* name, size_t count, const struct betree_constant** constants, int64_t* ret)
+{
+    const struct betree_constant* constant = NULL;
+    for(size_t i = 0; i < count; i++) {
+        if(strcmp(name, constants[i]->name) == 0) {
+            constant = constants[i];
+            break;
+        }
+    }
+    if(constant == NULL || constant->value.value_type != VALUE_I) {
+        return false;
+    }
+    *ret = constant->value.ivalue;
+    return true;
+}
+
+static const char* get_constant_name_for_type(enum frequency_type_e type)
+{
+    switch(type) {
+        case FREQUENCY_TYPE_ADVERTISER:
+        case FREQUENCY_TYPE_ADVERTISERIP:
+            return "advertiser_id";
+        case FREQUENCY_TYPE_CAMPAIGN:
+        case FREQUENCY_TYPE_CAMPAIGNIP:
+            return "campaign_id";
+        case FREQUENCY_TYPE_FLIGHT:
+        case FREQUENCY_TYPE_FLIGHTIP:
+            return "flight_id";
+        case FREQUENCY_TYPE_PRODUCT:
+        case FREQUENCY_TYPE_PRODUCTIP:
+            return "product_id";
+        default:
+            return NULL;
+    };
+}
+
+bool assign_constants(size_t constant_count, const struct betree_constant** constants, struct ast_node* node)
+{
+    switch(node->type) {
+        case AST_TYPE_COMPARE_EXPR:
+        case AST_TYPE_EQUALITY_EXPR:
+        case AST_TYPE_SET_EXPR:
+        case AST_TYPE_LIST_EXPR:
+            return true;
+        case AST_TYPE_BOOL_EXPR:
+            switch(node->bool_expr.op) {
+                case AST_BOOL_OR:
+                case AST_BOOL_AND: {
+                    bool lhs = assign_constants(constant_count, constants, node->bool_expr.binary.lhs);
+                    bool rhs = assign_constants(constant_count, constants, node->bool_expr.binary.rhs);
+                    return lhs && rhs;
+                }
+                case AST_BOOL_NOT:
+                    return assign_constants(constant_count, constants, node->bool_expr.unary.expr);
+                case AST_BOOL_VARIABLE:
+                default:
+                    return true;
+
+            }
+        case AST_TYPE_SPECIAL_EXPR:
+            switch(node->special_expr.type) {
+                case AST_SPECIAL_FREQUENCY: {
+                    const char* name = get_constant_name_for_type(node->special_expr.frequency.type);
+                    if(name == NULL) {
+                        return false;
+                    }
+                    int64_t constant = INT64_MAX;
+                    bool success = get_integer_constant(name, constant_count, constants, &constant);
+                    if(success == false) {
+                        return false;
+                    }
+                    node->special_expr.frequency.id = (uint32_t)constant;
+                    return true;
+                }
+                case AST_SPECIAL_SEGMENT:
+                case AST_SPECIAL_GEO:
+                case AST_SPECIAL_STRING:
+                    return true;
+                default:
+                    fprintf(stderr, "Invalid special node type\n");
+                    abort();
+            }
+        default:
+            fprintf(stderr, "Invalid node type\n");
+            abort();
+    }
 }
 
 void assign_variable_id(struct config* config, struct ast_node* node)

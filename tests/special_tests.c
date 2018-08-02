@@ -19,6 +19,13 @@ frequency(
     int64_t now, 
     enum frequency_type_e cap_type, uint32_t cap_id, const char* cap_ns, uint32_t cap_value, int64_t timestamp)
 {
+    enum e { constant_count = 4 };
+    const struct betree_constant* constants[constant_count] = {
+        betree_make_integer_constant("flight_id", 10),
+        betree_make_integer_constant("advertiser_id", 20),
+        betree_make_integer_constant("campaign_id", 30),
+        betree_make_integer_constant("product_id", 40),
+    };
     struct betree* tree = betree_make();
     add_attr_domain_bounded_i(tree->config, "now", false, 0, 10);
     const char* frequency_attr = "frequency_caps";
@@ -36,7 +43,7 @@ frequency(
     if(asprintf(&expr, "%swithin_frequency_cap(\"%s\", \"%s\", %" PRId64 ", %" PRId64 ")", pre, type_value, ns, value, length) < 0) {
         abort();
     }
-    betree_insert(tree, 1, expr);
+    betree_insert_with_constants(tree, 1, constant_count, constants, expr);
     char* event_str;
     const char* cap_type_value = frequency_type_to_string(cap_type);
     if(asprintf(&event_str, "{\"now\": %ld, \"frequency_caps\": [[\"%s\", %u, \"%s\", %ld, %d]]}", now, cap_type_value, cap_id, cap_ns, timestamp * usec, cap_value) < 0) {

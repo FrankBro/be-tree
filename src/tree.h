@@ -127,6 +127,11 @@ struct betree {
     struct cnode* cnode;
 };
 
+struct betree_constant {
+    const char* name;
+    struct value value;
+};
+
 bool betree_delete_inner(const struct attr_domain** attr_domains, struct sub* sub, struct cnode* cnode);
 struct sub* find_sub_id(betree_sub_t id, struct cnode* cnode);
 

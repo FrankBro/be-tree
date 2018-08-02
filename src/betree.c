@@ -63,8 +63,7 @@ bool betree_insert_all(struct betree* tree, size_t count, const char** exprs)
     return betree_insert(tree, count - 1, exprs[count - 1]);
 }
 */
-
-bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr)
+bool betree_insert_with_constants(struct betree* tree, betree_sub_t id, size_t constant_count, const struct betree_constant** constants, const char* expr)
 {
     struct ast_node* node;
     if(parse(expr, &node) != 0) {
@@ -74,12 +73,20 @@ bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr)
         free_ast_node(node);
         return false;
     }
+    if(!assign_constants(constant_count, constants, node)) {
+        return false;
+    }
     assign_variable_id(tree->config, node);
     assign_str_id(tree->config, node);
     sort_lists(node);
     assign_pred_id(tree->config, node);
     struct sub* sub = make_sub(tree->config, id, node);
     return insert_be_tree(tree->config, sub, tree->cnode, NULL);
+}
+
+bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr)
+{
+    return betree_insert_with_constants(tree, id, 0, NULL, expr);
 }
 
 static struct pred** make_environment(size_t attr_domain_count, const struct event* event)
@@ -196,5 +203,32 @@ void betree_add_segments_variable(struct betree* betree, const char* name, bool 
 void betree_add_frequency_caps_variable(struct betree* betree, const char* name, bool allow_undefined)
 {
     add_attr_domain_frequency(betree->config, name, allow_undefined);
+}
+
+struct betree_constant* betree_make_integer_constant(const char* name, int64_t ivalue)
+{
+    struct betree_constant* constant = malloc(sizeof(*constant));
+    if(constant == NULL) {
+        fprintf(stderr, "%s malloc failed", __func__);
+        abort();
+    }
+    constant->name = strdup(name);
+    struct value value = { .value_type = VALUE_I, .ivalue = ivalue };
+    constant->value = value;
+    return constant;
+}
+
+void betree_free_constant(struct betree_constant* constant)
+{
+    free_value(constant->value);
+    free((char*)constant->name);
+    free(constant);
+}
+
+void betree_free_constants(size_t count, struct betree_constant** constants)
+{
+    for(size_t i = 0; i < count; i++) {
+        betree_free_constant(constants[i]);
+    }
 }
 

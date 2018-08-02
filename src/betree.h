@@ -17,6 +17,8 @@ struct report {
     betree_sub_t* subs;
 };
 
+struct betree_constant;
+
 /*
  * Initialization
  */
@@ -36,9 +38,15 @@ void betree_add_frequency_caps_variable(struct betree* betree, const char* name,
  * Runtime
  */
 //bool betree_insert_all(struct betree* tree, size_t count, const char** exprs);
+
+struct betree_constant* betree_make_integer_constant(const char* name, int64_t value);
+
 bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr);
+bool betree_insert_with_constants(struct betree* tree, betree_sub_t id, size_t constant_count, const struct betree_constant** constants, const char* expr);
+
 void betree_search(const struct betree* betree, const char* event, struct report* report);
 void betree_search_with_event(const struct betree* betree, const struct event* event, struct report* report);
+
 bool betree_delete(struct betree* betree, betree_sub_t id);
 
 struct report* make_report();
@@ -48,3 +56,7 @@ void free_report(struct report* report);
  * Destruction
  */
 void betree_free(struct betree* betree);
+
+void betree_free_constant(struct betree_constant* constant);
+void betree_free_constants(size_t count, struct betree_constant** constants);
+
