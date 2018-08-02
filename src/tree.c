@@ -1066,45 +1066,6 @@ static void free_pdir(struct pdir* pdir)
     free(pdir);
 }
 
-static void free_value(struct value value)
-{
-    switch(value.value_type) {
-        case VALUE_IL: {
-            free(value.ilvalue.integers);
-            break;
-        }
-        case VALUE_SL: {
-            for(size_t i = 0; i < value.slvalue.count; i++) {
-                free((char*)value.slvalue.strings[i].string);
-            }
-            free(value.slvalue.strings);
-            break;
-        }
-        case VALUE_S: {
-            free((char*)value.svalue.string);
-        }
-        case VALUE_B:
-        case VALUE_I:
-        case VALUE_F: {
-            break;
-        }
-        case VALUE_SEGMENTS: {
-            free(value.segments_value.content);
-            break;
-        }
-        case VALUE_FREQUENCY: {
-            for(size_t i = 0; i < value.frequency_value.size; i++) {
-                free((char*)value.frequency_value.content[i].namespace.string);
-            }
-            free(value.frequency_value.content);
-            break;
-        }
-        default: {
-            switch_default_error("Invalid value value type");
-        }
-    }
-}
-
 static void free_pred(struct pred* pred)
 {
     if(pred == NULL) {

@@ -123,3 +123,5 @@ struct frequency_cap make_frequency_cap(const char* type,
 
 enum frequency_type_e get_type_from_string(const char* stype);
 
+void free_value(struct value value);
+
