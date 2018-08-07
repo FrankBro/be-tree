@@ -4,9 +4,9 @@
 #include "utils.h"
 #include "var.h"
 
-bool get_variable(betree_var_t var, const struct pred** preds, struct value* value)
+bool get_variable(betree_var_t var, const struct betree_variable** preds, struct value* value)
 {
-    const struct pred* pred = preds[var];
+    const struct betree_variable* pred = preds[var];
     if(pred != NULL) {
         *value = pred->value;
         return true;
@@ -14,9 +14,9 @@ bool get_variable(betree_var_t var, const struct pred** preds, struct value* val
     return false;
 }
 
-bool get_float_var(betree_var_t var, const struct pred** preds, double* ret)
+bool get_float_var(betree_var_t var, const struct betree_variable** preds, double* ret)
 {
-    const struct pred* pred = preds[var];
+    const struct betree_variable* pred = preds[var];
     if(pred != NULL) {
         *ret = pred->value.fvalue;
         return true;
@@ -24,9 +24,9 @@ bool get_float_var(betree_var_t var, const struct pred** preds, double* ret)
     return false;
 }
 
-bool get_string_var(betree_var_t var, const struct pred** preds, struct string_value* ret)
+bool get_string_var(betree_var_t var, const struct betree_variable** preds, struct string_value* ret)
 {
-    const struct pred* pred = preds[var];
+    const struct betree_variable* pred = preds[var];
     if(pred != NULL) {
         *ret = pred->value.svalue;
         return true;
@@ -34,9 +34,9 @@ bool get_string_var(betree_var_t var, const struct pred** preds, struct string_v
     return false;
 }
 
-bool get_integer_var(betree_var_t var, const struct pred** preds, int64_t* ret)
+bool get_integer_var(betree_var_t var, const struct betree_variable** preds, int64_t* ret)
 {
-    const struct pred* pred = preds[var];
+    const struct betree_variable* pred = preds[var];
     if(pred != NULL) {
         *ret = pred->value.ivalue;
         return true;
@@ -44,9 +44,9 @@ bool get_integer_var(betree_var_t var, const struct pred** preds, int64_t* ret)
     return false;
 }
 
-bool get_bool_var(betree_var_t var, const struct pred** preds, bool* ret)
+bool get_bool_var(betree_var_t var, const struct betree_variable** preds, bool* ret)
 {
-    const struct pred* pred = preds[var];
+    const struct betree_variable* pred = preds[var];
     if(pred != NULL) {
         *ret = pred->value.bvalue;
         return true;
@@ -54,9 +54,9 @@ bool get_bool_var(betree_var_t var, const struct pred** preds, bool* ret)
     return false;
 }
 
-bool get_integer_list_var(betree_var_t var, const struct pred** preds, struct integer_list_value* ret)
+bool get_integer_list_var(betree_var_t var, const struct betree_variable** preds, struct betree_integer_list** ret)
 {
-    const struct pred* pred = preds[var];
+    const struct betree_variable* pred = preds[var];
     if(pred != NULL) {
         *ret = pred->value.ilvalue;
         return true;
@@ -64,9 +64,9 @@ bool get_integer_list_var(betree_var_t var, const struct pred** preds, struct in
     return false;
 }
 
-bool get_string_list_var(betree_var_t var, const struct pred** preds, struct string_list_value* ret)
+bool get_string_list_var(betree_var_t var, const struct betree_variable** preds, struct betree_string_list** ret)
 {
-    const struct pred* pred = preds[var];
+    const struct betree_variable* pred = preds[var];
     if(pred != NULL) {
         *ret = pred->value.slvalue;
         return true;
@@ -74,9 +74,9 @@ bool get_string_list_var(betree_var_t var, const struct pred** preds, struct str
     return false;
 }
 
-bool get_segments_var(betree_var_t var, const struct pred** preds, struct segments_list* ret)
+bool get_segments_var(betree_var_t var, const struct betree_variable** preds, struct betree_segments** ret)
 {
-    const struct pred* pred = preds[var];
+    const struct betree_variable* pred = preds[var];
     if(pred != NULL) {
         *ret = pred->value.segments_value;
         return true;
@@ -84,9 +84,9 @@ bool get_segments_var(betree_var_t var, const struct pred** preds, struct segmen
     return false;
 }
 
-bool get_frequency_var(betree_var_t var, const struct pred** preds, struct frequency_caps_list* ret)
+bool get_frequency_var(betree_var_t var, const struct betree_variable** preds, struct betree_frequency_caps** ret)
 {
-    const struct pred* pred = preds[var];
+    const struct betree_variable* pred = preds[var];
     if(pred != NULL) {
         *ret = pred->value.frequency_value;
         return true;
@@ -98,7 +98,7 @@ bool is_empty_list(struct value value)
 {
     return (value.value_type == VALUE_IL || value.value_type == VALUE_SL
                || value.value_type == VALUE_SEGMENTS || value.value_type == VALUE_FREQUENCY)
-        && value.ilvalue.count == 0 && value.slvalue.count == 0 && value.segments_value.size == 0
-        && value.frequency_value.size == 0;
+        && value.ilvalue->count == 0 && value.slvalue->count == 0 && value.segments_value->size == 0
+        && value.frequency_value->size == 0;
 }
 

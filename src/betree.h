@@ -18,6 +18,22 @@ struct report {
 };
 
 struct betree_constant;
+struct betree_variable;
+
+struct betree_integer_list;
+struct betree_string_list;
+struct betree_segment;
+struct betree_segments;
+struct betree_frequency_cap;
+struct betree_frequency_caps;
+
+struct betree_segments* betree_make_segments(size_t count);
+struct betree_segment* betree_make_segment(int64_t id, int64_t timestamp);
+void betree_add_segment(struct betree_segments* segments, size_t index, struct betree_segment* segment);
+
+struct betree_frequency_caps* betree_make_frequency_caps(size_t count);
+struct betree_frequency_cap* betree_make_frequency_cap(const char* type, uint32_t id, const char* ns, int64_t timestamp, uint32_t value);
+void betree_add_frequency_cap(struct betree_frequency_caps* frequency_caps, size_t index, struct betree_frequency_cap* frequency_cap);
 
 /*
  * Initialization
@@ -41,11 +57,21 @@ void betree_add_frequency_caps_variable(struct betree* betree, const char* name,
 
 struct betree_constant* betree_make_integer_constant(const char* name, int64_t value);
 
+struct betree_variable* betree_make_boolean_variable(const char* name, bool value);
+struct betree_variable* betree_make_integer_variable(const char* name, int64_t value);
+struct betree_variable* betree_make_float_variable(const char* name, double value);
+struct betree_variable* betree_make_string_variable(const char* name, const char* value);
+struct betree_variable* betree_make_integer_list_variable(const char* name, struct betree_integer_list* value);
+struct betree_variable* betree_make_string_list_variable(const char* name, struct betree_string_list* value);
+struct betree_variable* betree_make_segments_variable(const char* name, struct betree_segments* value);
+struct betree_variable* betree_make_frequency_caps_variable(const char* name, struct betree_frequency_caps* value);
+
 bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr);
 bool betree_insert_with_constants(struct betree* tree, betree_sub_t id, size_t constant_count, const struct betree_constant** constants, const char* expr);
 
 void betree_search(const struct betree* betree, const char* event, struct report* report);
 void betree_search_with_event(const struct betree* betree, const struct event* event, struct report* report);
+void betree_search_with_variables(const struct betree* betree, size_t variable_count, const struct betree_variable** variables, struct report* report);
 
 bool betree_delete(struct betree* betree, betree_sub_t id);
 

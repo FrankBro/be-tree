@@ -31,8 +31,8 @@
     char *string;
     int64_t integer_value;
     double float_value;
-    struct integer_list_value integer_list_value;
-    struct string_list_value string_list_value;
+    struct betree_integer_list* integer_list_value;
+    struct betree_string_list* string_list_value;
     struct value value;
     struct string_value string_value;
     struct compare_value compare_value;
@@ -101,14 +101,14 @@ string              : TSTRING                               { $$.string = strdup
 
 integer_list_value  : TLPAREN integer_list_loop TRPAREN     { $$ = $2; }
 
-integer_list_loop   : integer                               { $$.count = 0; $$.integers = NULL; add_integer_list_value($1, &$$); }
-                    | integer_list_loop TCOMMA integer      { add_integer_list_value($3, &$1); $$ = $1; }
+integer_list_loop   : integer                               { $$ = make_integer_list(); add_integer_list_value($1, $$); }
+                    | integer_list_loop TCOMMA integer      { add_integer_list_value($3, $1); $$ = $1; }
 ;       
 
 string_list_value   : TLPAREN string_list_loop TRPAREN      { $$ = $2; }
 
-string_list_loop    : string                                { $$.count = 0; $$.strings = NULL; add_string_list_value($1, &$$); }
-                    | string_list_loop TCOMMA string        { add_string_list_value($3, &$1); $$ = $1; }
+string_list_loop    : string                                { $$ = make_string_list(); add_string_list_value($1, $$); }
+                    | string_list_loop TCOMMA string        { add_string_list_value($3, $1); $$ = $1; }
 ;       
 
 expr                : TLPAREN expr TRPAREN                  { $$ = $2; }

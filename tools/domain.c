@@ -14,7 +14,7 @@ struct value_bound get_integer_events_bound(betree_var_t var, struct event** eve
     for(size_t i = 0; i < event_count; i++) {
         struct event* event = events[i];
         for(size_t j = 0; j < event->pred_count; j++) {
-            struct pred* pred = event->preds[j];
+            struct betree_variable* pred = event->preds[j];
             if(pred->attr_var.var == var) {
                 if(pred->value.ivalue < bound.imin) {
                     bound.imin = pred->value.ivalue;
@@ -51,10 +51,10 @@ struct value_bound get_integer_list_events_bound(betree_var_t var, struct event*
     for(size_t i = 0; i < event_count; i++) {
         struct event* event = events[i];
         for(size_t j = 0; j < event->pred_count; j++) {
-            struct pred* pred = event->preds[j];
+            struct betree_variable* pred = event->preds[j];
             if(pred->attr_var.var == var) {
-                for(size_t k = 0; k < pred->value.ilvalue.count; k++) {
-                    int64_t value = pred->value.ilvalue.integers[k];
+                for(size_t k = 0; k < pred->value.ilvalue->count; k++) {
+                    int64_t value = pred->value.ilvalue->integers[k];
                     if(value < bound.imin) {
                         bound.imin = value;
                     }
@@ -91,7 +91,7 @@ struct value_bound get_float_events_bound(betree_var_t var, struct event** event
     for(size_t i = 0; i < event_count; i++) {
         struct event* event = events[i];
         for(size_t j = 0; j < event->pred_count; j++) {
-            struct pred* pred = event->preds[j];
+            struct betree_variable* pred = event->preds[j];
             if(pred->attr_var.var == var) {
                 if(pred->value.fvalue < bound.fmin) {
                     bound.fmin = pred->value.fvalue;
@@ -128,7 +128,7 @@ struct value_bound get_string_events_bound(betree_var_t var, struct event** even
     for(size_t i = 0; i < event_count; i++) {
         struct event* event = events[i];
         for(size_t j = 0; j < event->pred_count; j++) {
-            struct pred* pred = event->preds[j];
+            struct betree_variable* pred = event->preds[j];
             if(pred->attr_var.var == var) {
                 if(pred->value.svalue.str < bound.smin) {
                     bound.smin = pred->value.svalue.str;
@@ -165,10 +165,10 @@ struct value_bound get_string_list_events_bound(betree_var_t var, struct event**
     for(size_t i = 0; i < event_count; i++) {
         struct event* event = events[i];
         for(size_t j = 0; j < event->pred_count; j++) {
-            struct pred* pred = event->preds[j];
+            struct betree_variable* pred = event->preds[j];
             if(pred->attr_var.var == var) {
-                for(size_t k = 0; k < pred->value.slvalue.count; k++) {
-                    betree_str_t value = pred->value.slvalue.strings[k].str;
+                for(size_t k = 0; k < pred->value.slvalue->count; k++) {
+                    betree_str_t value = pred->value.slvalue->strings[k].str;
                     if(value < bound.smin) {
                         bound.smin = value;
                     }

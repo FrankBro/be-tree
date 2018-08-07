@@ -126,8 +126,8 @@ enum set_right_value_e {
 struct set_right_value {
     enum set_right_value_e value_type;
     union {
-        struct integer_list_value integer_list_value;
-        struct string_list_value string_list_value;
+        struct betree_integer_list* integer_list_value;
+        struct betree_string_list* string_list_value;
         struct attr_var variable_value;
     };
 };
@@ -159,8 +159,8 @@ enum ast_list_value_e {
 struct list_value {
     enum ast_list_value_e value_type;
     union {
-        struct integer_list_value integer_list_value;
-        struct string_list_value string_list_value;
+        struct betree_integer_list* integer_list_value;
+        struct betree_string_list* string_list_value;
     };
 };
 
@@ -300,7 +300,7 @@ struct ast_node* ast_special_string_create(
     enum ast_special_string_e op, const char* name, const char* pattern);
 void free_ast_node(struct ast_node* node);
 
-bool match_node(const struct pred** preds, const struct ast_node* node, struct memoize* memoize, struct report* report);
+bool match_node(const struct betree_variable** preds, const struct ast_node* node, struct memoize* memoize, struct report* report);
 
 struct value_bound get_variable_bound(
     const struct attr_domain* domain, const struct ast_node* node);

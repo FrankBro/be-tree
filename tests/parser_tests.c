@@ -229,7 +229,7 @@ int test_integer_set()
         node->set_expr.op == AST_SET_IN &&
         node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE &&
         node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST &&
-        node->set_expr.right_value.integer_list_value.integers[0] == -1
+        node->set_expr.right_value.integer_list_value->integers[0] == -1
     , "minus");
     free_ast_node(node);
     parse("-1 in a", &node);
@@ -302,7 +302,7 @@ int test_integer_list()
     mu_assert(node->type == AST_TYPE_LIST_EXPR &&
         node->list_expr.op == AST_LIST_ONE_OF &&
         node->list_expr.value.value_type == AST_LIST_VALUE_INTEGER_LIST &&
-        node->list_expr.value.integer_list_value.integers[0] == -1
+        node->list_expr.value.integer_list_value->integers[0] == -1
     , "minus");
     free_ast_node(node);
     return 0;

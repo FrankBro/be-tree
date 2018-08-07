@@ -36,15 +36,15 @@
     int64_t integer_value;
     double float_value;
     struct string_value string_value;
-    struct integer_list_value integer_list_value;
-    struct string_list_value string_list_value;
-    struct segments_list segments_list_value;
-    struct segment segment_value;
-    struct frequency_caps_list frequencies_value;
-    struct frequency_cap frequency_value;
+    struct betree_integer_list* integer_list_value;
+    struct betree_string_list* string_list_value;
+    struct betree_segments* segments_list_value;
+    struct betree_segment* segment_value;
+    struct betree_frequency_caps* frequencies_value;
+    struct betree_frequency_cap* frequency_value;
 
     struct value value;
-    struct pred* pred;
+    struct betree_variable* pred;
 
     struct event* event;
 }
@@ -124,28 +124,28 @@ float               : EVENT_FLOAT                           { $$ = $1; }
 
 string              : EVENT_STRING                          { $$.string = strdup($1); $$.str = INVALID_STR; free($1); }
 
-empty_list_value    : EVENT_LSQUARE EVENT_RSQUARE           { $$.count = 0; $$.integers = NULL; }
+empty_list_value    : EVENT_LSQUARE EVENT_RSQUARE           { $$ = make_integer_list(); }
 
 integer_list_value  : EVENT_LSQUARE integer_list_loop EVENT_RSQUARE       
                                                             { $$ = $2; }
 
-integer_list_loop   : integer                               { $$.count = 0; $$.integers = NULL; add_integer_list_value($1, &$$); }
-                    | integer_list_loop EVENT_COMMA integer { add_integer_list_value($3, &$1); $$ = $1; }
+integer_list_loop   : integer                               { $$ = make_integer_list(); add_integer_list_value($1, $$); }
+                    | integer_list_loop EVENT_COMMA integer { add_integer_list_value($3, $1); $$ = $1; }
 ;               
 
 string_list_value   : EVENT_LSQUARE string_list_loop EVENT_RSQUARE        
                                                             { $$ = $2; }
 
-string_list_loop    : string                                { $$.count = 0; $$.strings = NULL; add_string_list_value($1, &$$); }
-                    | string_list_loop EVENT_COMMA string   { add_string_list_value($3, &$1); $$ = $1; }
+string_list_loop    : string                                { $$ = make_string_list(); add_string_list_value($1, $$); }
+                    | string_list_loop EVENT_COMMA string   { add_string_list_value($3, $1); $$ = $1; }
 ;       
 
 segments_value      : EVENT_LSQUARE segments_loop EVENT_RSQUARE           
                                                             { $$ = $2; }
 
-segments_loop       : segment_value                         { $$.size = 0; $$.content = NULL; add_segment($1, &$$); }
+segments_loop       : segment_value                         { $$ = make_segments(); add_segment($1, $$); }
                     | segments_loop EVENT_COMMA segment_value        
-                                                            { add_segment($3, &$1); $$ = $1; }
+                                                            { add_segment($3, $1); $$ = $1; }
 ;
 
 segment_value       : EVENT_LSQUARE integer EVENT_COMMA integer EVENT_RSQUARE  
@@ -154,9 +154,9 @@ segment_value       : EVENT_LSQUARE integer EVENT_COMMA integer EVENT_RSQUARE
 frequencies_value   : EVENT_LSQUARE frequencies_loop EVENT_RSQUARE
                                                             { $$ = $2; }
 
-frequencies_loop    : frequency_value                       { $$.size = 0; $$.content = NULL; add_frequency($1, &$$); }
+frequencies_loop    : frequency_value                       { $$ = make_frequency_caps(); add_frequency($1, $$); }
                     | frequencies_loop EVENT_COMMA frequency_value  
-                                                            { add_frequency($3, &$1); $$ = $1; }
+                                                            { add_frequency($3, $1); $$ = $1; }
 ;
 
 frequency_value     : EVENT_LSQUARE EVENT_STRING EVENT_COMMA integer EVENT_COMMA string EVENT_COMMA integer EVENT_COMMA integer EVENT_RSQUARE

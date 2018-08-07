@@ -14,6 +14,7 @@
 #include "hashmap.h"
 #include "tree.h"
 #include "utils.h"
+#include "value.h"
 
 bool betree_delete(struct betree* betree, betree_sub_t id)
 {
@@ -89,9 +90,9 @@ bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr)
     return betree_insert_with_constants(tree, id, 0, NULL, expr);
 }
 
-static struct pred** make_environment(size_t attr_domain_count, const struct event* event)
+static struct betree_variable** make_environment(size_t attr_domain_count, const struct event* event)
 {
-    struct pred** preds = calloc(attr_domain_count, sizeof(*preds));
+    struct betree_variable** preds = calloc(attr_domain_count, sizeof(*preds));
     for(size_t i = 0; i < event->pred_count; i++) {
         if(event->preds[i] != NULL) {
             preds[event->preds[i]->attr_var.var] = event->preds[i];
@@ -102,7 +103,7 @@ static struct pred** make_environment(size_t attr_domain_count, const struct eve
 
 void betree_search_with_event(const struct betree* tree, const struct event* event, struct report* report)
 {
-    const struct pred** preds = (const struct pred**)make_environment(tree->config->attr_domain_count, event);
+    const struct betree_variable** preds = (const struct betree_variable**)make_environment(tree->config->attr_domain_count, event);
     betree_search_with_preds(tree->config, preds, tree->cnode, report);
 }
 
@@ -230,5 +231,101 @@ void betree_free_constants(size_t count, struct betree_constant** constants)
     for(size_t i = 0; i < count; i++) {
         betree_free_constant(constants[i]);
     }
+}
+
+struct betree_segments* betree_make_segments(size_t count)
+{
+    struct betree_segments* segments = malloc(sizeof(*segments));
+    segments->size = count;
+    segments->content = calloc(count, sizeof(*segments->content));
+    return segments;
+}
+
+struct betree_segment* betree_make_segment(int64_t id, int64_t timestamp)
+{
+    return make_segment(id, timestamp);
+}
+
+void betree_add_segment(struct betree_segments* segments, size_t index, struct betree_segment* segment)
+{
+    segments->content[index] = segment;
+}
+
+
+struct betree_frequency_caps* betree_make_frequency_caps(size_t count)
+{
+    struct betree_frequency_caps* frequency_caps = malloc(sizeof(*frequency_caps));
+    frequency_caps->size = count;
+    frequency_caps->content = calloc(count, sizeof(*frequency_caps->content));
+    return frequency_caps;
+}
+
+struct betree_frequency_cap* betree_make_frequency_cap(const char* stype, uint32_t id, const char* ns, int64_t timestamp, uint32_t value)
+{
+    struct string_value namespace = { .string = strdup(ns), .str = INVALID_STR, .var = INVALID_VAR };
+    return make_frequency_cap(stype, id, namespace, timestamp, value);
+}
+
+void betree_add_frequency_cap(struct betree_frequency_caps* frequency_caps, size_t index, struct betree_frequency_cap* frequency_cap)
+{
+    frequency_caps->content[index] = frequency_cap;
+}
+
+static struct betree_variable* betree_make_variable(const char* name, struct value value)
+{
+    struct attr_var attr_var = make_attr_var(name, NULL);
+    struct betree_variable* var = malloc(sizeof(*var));
+    var->attr_var = attr_var;
+    var->value = value;
+    return var;
+}
+
+struct betree_variable* betree_make_boolean_variable(const char* name, bool value)
+{
+    struct value v = { .value_type = VALUE_B, .bvalue = value };
+    return betree_make_variable(name, v);
+}
+
+struct betree_variable* betree_make_integer_variable(const char* name, int64_t value)
+{
+    struct value v = { .value_type = VALUE_I, .ivalue = value };
+    return betree_make_variable(name, v);
+}
+
+struct betree_variable* betree_make_float_variable(const char* name, double value)
+{
+    struct value v = { .value_type = VALUE_F, .fvalue = value };
+    return betree_make_variable(name, v);
+}
+
+struct betree_variable* betree_make_string_variable(const char* name, const char* value)
+{
+    struct string_value svalue = { .string = value, .var = INVALID_VAR, .str = INVALID_STR };
+    struct value v = { .value_type = VALUE_S, .svalue = svalue };
+    return betree_make_variable(name, v);
+}
+
+struct betree_variable* betree_make_integer_list_variable(const char* name, struct betree_integer_list* value)
+{
+    struct value v = { .value_type = VALUE_IL, .ilvalue = value };
+    return betree_make_variable(name, v);
+}
+
+struct betree_variable* betree_make_string_list_variable(const char* name, struct betree_string_list* value)
+{
+    struct value v = { .value_type = VALUE_SL, .slvalue = value };
+    return betree_make_variable(name, v);
+}
+
+struct betree_variable* betree_make_segments_variable(const char* name, struct betree_segments* value)
+{
+    struct value v = { .value_type = VALUE_SEGMENTS, .segments_value = value };
+    return betree_make_variable(name, v);
+}
+
+struct betree_variable* betree_make_frequency_caps_variable(const char* name, struct betree_frequency_caps* value)
+{
+    struct value v = { .value_type = VALUE_FREQUENCY, .frequency_value = value };
+    return betree_make_variable(name, v);
 }
 

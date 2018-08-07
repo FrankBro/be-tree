@@ -9,7 +9,7 @@
 #include "memoize.h"
 #include "value.h"
 
-struct pred {
+struct betree_variable {
     struct attr_var attr_var;
     struct value value;
 };
@@ -32,7 +32,7 @@ struct sub {
 
 struct event {
     size_t pred_count;
-    struct pred** preds;
+    struct betree_variable** preds;
 };
 
 struct cnode;
@@ -110,8 +110,8 @@ struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* ex
 struct event* make_event();
 void event_to_string(const struct event* event, char* buffer);
 
-struct pred* make_pred(const char* attr, betree_var_t variable_id, struct value value);
-void add_pred(struct pred* pred, struct event* event);
+struct betree_variable* make_pred(const char* attr, betree_var_t variable_id, struct value value);
+void add_pred(struct betree_variable* pred, struct event* event);
 
 void fill_event(const struct config* config, struct event* event);
 bool validate_event(const struct config* config, const struct event* event);
@@ -136,7 +136,7 @@ bool betree_delete_inner(const struct attr_domain** attr_domains, struct sub* su
 struct sub* find_sub_id(betree_sub_t id, struct cnode* cnode);
 
 void betree_search_with_preds(const struct config* config,
-    const struct pred** preds,
+    const struct betree_variable** preds,
     const struct cnode* cnode,
     struct report* report);
 

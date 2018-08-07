@@ -62,7 +62,7 @@ static enum short_circuit_e try_short_circuit(const struct short_circuit* short_
     return SHORT_CIRCUIT_NONE;
 }
 
-static bool match_sub(const struct pred** preds, const struct sub* sub, struct report* report, struct memoize* memoize, const uint64_t* undefined)
+static bool match_sub(const struct betree_variable** preds, const struct sub* sub, struct report* report, struct memoize* memoize, const uint64_t* undefined)
 {
     enum short_circuit_e short_circuit = try_short_circuit(&sub->short_circuit, undefined);
     if(unlikely(short_circuit != SHORT_CIRCUIT_NONE)) {
@@ -100,15 +100,15 @@ static struct pnode* search_pdir(betree_var_t variable_id, const struct pdir* pd
     return NULL;
 }
 
-static void search_cdir(const struct attr_domain** attr_domains, const struct pred** preds, struct cdir* cdir, struct subs_to_eval* subs);
+static void search_cdir(const struct attr_domain** attr_domains, const struct betree_variable** preds, struct cdir* cdir, struct subs_to_eval* subs);
 
-static bool event_contains_variable(const struct pred** preds, betree_var_t variable_id)
+static bool event_contains_variable(const struct betree_variable** preds, betree_var_t variable_id)
 {
     return preds[variable_id] != NULL;
 }
 
 void match_be_tree(const struct attr_domain** attr_domains,
-    const struct pred** preds,
+    const struct betree_variable** preds,
     const struct cnode* cnode,
     struct subs_to_eval* subs)
 {
@@ -124,12 +124,12 @@ void match_be_tree(const struct attr_domain** attr_domains,
     }
 }
 
-static bool is_event_enclosed(const struct pred** preds, const struct cdir* cdir)
+static bool is_event_enclosed(const struct betree_variable** preds, const struct cdir* cdir)
 {
     if(cdir == NULL) {
         return false;
     }
-    const struct pred* pred = preds[cdir->attr_var.var];
+    const struct betree_variable* pred = preds[cdir->attr_var.var];
     if(pred == NULL) {
         return true;
     }
@@ -143,15 +143,15 @@ static bool is_event_enclosed(const struct pred** preds, const struct cdir* cdir
         case VALUE_S:
             return cdir->bound.smin <= pred->value.svalue.str && cdir->bound.smax >= pred->value.svalue.str;
         case VALUE_IL:
-            if(pred->value.ilvalue.count != 0) {
-                return cdir->bound.imin <= pred->value.ilvalue.integers[0] && cdir->bound.imax >= pred->value.ilvalue.integers[pred->value.ilvalue.count-1];
+            if(pred->value.ilvalue->count != 0) {
+                return cdir->bound.imin <= pred->value.ilvalue->integers[0] && cdir->bound.imax >= pred->value.ilvalue->integers[pred->value.ilvalue->count-1];
             }
             else {
                 return true;
             }
         case VALUE_SL:
-            if(pred->value.slvalue.count != 0) {
-                return cdir->bound.smin <= pred->value.slvalue.strings[0].str && cdir->bound.smax >= pred->value.slvalue.strings[pred->value.slvalue.count-1].str;
+            if(pred->value.slvalue->count != 0) {
+                return cdir->bound.smin <= pred->value.slvalue->strings[0].str && cdir->bound.smax >= pred->value.slvalue->strings[pred->value.slvalue->count-1].str;
             }
             else {
                 return true;
@@ -208,7 +208,7 @@ bool sub_is_enclosed(const struct attr_domain** attr_domains, const struct sub* 
     return false;
 }
 
-static void search_cdir(const struct attr_domain** attr_domains, const struct pred** preds, struct cdir* cdir, struct subs_to_eval* subs)
+static void search_cdir(const struct attr_domain** attr_domains, const struct betree_variable** preds, struct cdir* cdir, struct subs_to_eval* subs)
 {
     match_be_tree(attr_domains, preds, cdir->cnode, subs);
     if(is_event_enclosed(preds, cdir->lchild)) {
@@ -1066,7 +1066,7 @@ static void free_pdir(struct pdir* pdir)
     free(pdir);
 }
 
-static void free_pred(struct pred* pred)
+static void free_pred(struct betree_variable* pred)
 {
     if(pred == NULL) {
         return;
@@ -1099,9 +1099,9 @@ void free_event(struct event* event)
         return;
     }
     for(size_t i = 0; i < event->pred_count; i++) {
-        const struct pred* pred = event->preds[i];
+        const struct betree_variable* pred = event->preds[i];
         if(pred != NULL) {
-            free_pred((struct pred*)pred);
+            free_pred((struct betree_variable*)pred);
         }
     }
     free(event->preds);
@@ -1328,9 +1328,9 @@ static bool search_delete_cdir(const struct attr_domain** attr_domains, struct s
     return isFound;
 }
 
-struct pred* make_pred(const char* attr, betree_var_t variable_id, struct value value)
+struct betree_variable* make_pred(const char* attr, betree_var_t variable_id, struct value value)
 {
-    struct pred* pred = calloc(1, sizeof(*pred));
+    struct betree_variable* pred = calloc(1, sizeof(*pred));
     if(pred == NULL) {
         fprintf(stderr, "%s calloc failed\n", __func__);
         abort();
@@ -1606,7 +1606,7 @@ void event_to_string(const struct event* event, char* buffer)
 {
     size_t length = 0;
     for(size_t i = 0; i < event->pred_count; i++) {
-        const struct pred* pred = event->preds[i];
+        const struct betree_variable* pred = event->preds[i];
         if(i != 0) {
             length += sprintf(buffer + length, ", ");
         }
@@ -1674,7 +1674,7 @@ void free_memoize(struct memoize memoize)
     free(memoize.fail);
 }
 
-static uint64_t* make_undefined(size_t attr_domain_count, const struct pred** preds)
+static uint64_t* make_undefined(size_t attr_domain_count, const struct betree_variable** preds)
 {
     uint64_t* undefined = calloc(attr_domain_count, sizeof(*undefined));
     for(size_t i = 0; i < attr_domain_count; i++) {
@@ -1689,7 +1689,7 @@ static uint64_t* make_undefined(size_t attr_domain_count, const struct pred** pr
 }
 
 void betree_search_with_preds(const struct config* config,
-    const struct pred** preds,
+    const struct betree_variable** preds,
     const struct cnode* cnode,
     struct report* report)
 {
@@ -1716,17 +1716,17 @@ void betree_search_with_preds(const struct config* config,
 static void sort_event_lists(struct event* event)
 {
     for(size_t i = 0; i < event->pred_count; i++) {
-        struct pred* pred = event->preds[i];
+        struct betree_variable* pred = event->preds[i];
         if(pred->value.value_type == VALUE_IL) {
-            qsort(pred->value.ilvalue.integers,
-              pred->value.ilvalue.count,
-              sizeof(*pred->value.ilvalue.integers),
+            qsort(pred->value.ilvalue->integers,
+              pred->value.ilvalue->count,
+              sizeof(*pred->value.ilvalue->integers),
               icmpfunc);
         }
         else if(pred->value.value_type == VALUE_SL) {
-            qsort(pred->value.slvalue.strings,
-              pred->value.slvalue.count,
-              sizeof(*pred->value.slvalue.strings),
+            qsort(pred->value.slvalue->strings,
+              pred->value.slvalue->count,
+              sizeof(*pred->value.slvalue->strings),
               scmpfunc);
         }
     }
@@ -1772,7 +1772,7 @@ struct attr_var copy_attr_var(struct attr_var attr_var)
     return copy;
 }
 
-void add_pred(struct pred* pred, struct event* event)
+void add_pred(struct betree_variable* pred, struct event* event)
 {
     if(pred == NULL) {
         return;
@@ -1785,7 +1785,7 @@ void add_pred(struct pred* pred, struct event* event)
         }
     }
     else {
-        struct pred** preds = realloc(event->preds, sizeof(*preds) * (event->pred_count + 1));
+        struct betree_variable** preds = realloc(event->preds, sizeof(*preds) * (event->pred_count + 1));
         if(preds == NULL) {
             fprintf(stderr, "%s realloc failed\n", __func__);
             abort();
@@ -1799,7 +1799,7 @@ void add_pred(struct pred* pred, struct event* event)
 void fill_event(const struct config* config, struct event* event)
 {
     for(size_t i = 0; i < event->pred_count; i++) {
-        struct pred* pred = event->preds[i];
+        struct betree_variable* pred = event->preds[i];
         if(pred == NULL) {
             continue;
         }
@@ -1823,20 +1823,20 @@ void fill_event(const struct config* config, struct event* event)
                 break;
             }
             case VALUE_SL: {
-                for(size_t j = 0; j < pred->value.slvalue.count; j++) {
+                for(size_t j = 0; j < pred->value.slvalue->count; j++) {
                     betree_str_t str
-                        = try_get_id_for_string(config, pred->attr_var, pred->value.slvalue.strings[j].string);
-                    pred->value.slvalue.strings[j].var = pred->attr_var.var;
-                    pred->value.slvalue.strings[j].str = str;
+                        = try_get_id_for_string(config, pred->attr_var, pred->value.slvalue->strings[j].string);
+                    pred->value.slvalue->strings[j].var = pred->attr_var.var;
+                    pred->value.slvalue->strings[j].str = str;
                 }
                 break;
             }
             case VALUE_FREQUENCY: {
-                for(size_t j = 0; j < pred->value.frequency_value.size; j++) {
+                for(size_t j = 0; j < pred->value.frequency_value->size; j++) {
                     betree_str_t str = try_get_id_for_string(
-                        config, pred->attr_var, pred->value.frequency_value.content[j].namespace.string);
-                    pred->value.frequency_value.content[j].namespace.var = pred->attr_var.var;
-                    pred->value.frequency_value.content[j].namespace.str = str;
+                        config, pred->attr_var, pred->value.frequency_value->content[j]->namespace.string);
+                    pred->value.frequency_value->content[j]->namespace.var = pred->attr_var.var;
+                    pred->value.frequency_value->content[j]->namespace.str = str;
                 }
                 break;
             }
@@ -1854,7 +1854,7 @@ bool validate_event(const struct config* config, const struct event* event)
         if(attr_domain->allow_undefined == false) {
             bool found = false;
             for(size_t j = 0; j < event->pred_count; j++) {
-                const struct pred* pred = event->preds[j];
+                const struct betree_variable* pred = event->preds[j];
                 if(pred->attr_var.var == attr_domain->attr_var.var) {
                     found = true;
                     break;

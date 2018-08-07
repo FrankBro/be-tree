@@ -127,21 +127,25 @@ static struct set_left_value clone_set_left_value(struct set_left_value orig)
     return clone;
 }
 
-static struct integer_list_value clone_integer_list(struct integer_list_value list)
+static struct betree_integer_list* clone_integer_list(struct betree_integer_list* list)
 {
-    struct integer_list_value clone = { .count = 0, .integers = NULL };
-    for(size_t i = 0; i < list.count; i++) {
-        add_integer_list_value(list.integers[i], &clone);
+    struct betree_integer_list* clone = make_integer_list();
+    clone->count = list->count;
+    clone->integers = malloc(sizeof(*clone->integers) * clone->count);
+    for(size_t i = 0; i < list->count; i++) {
+        clone->integers[i] = list->integers[i];
     }
     return clone;
 }
 
-static struct string_list_value clone_string_list(struct string_list_value list)
+static struct betree_string_list* clone_string_list(struct betree_string_list* list)
 {
-    struct string_list_value clone = { .count = 0, .strings = NULL };
-    for(size_t i = 0; i < list.count; i++) {
-        struct string_value string_clone = clone_string_value(list.strings[i]);
-        add_string_list_value(string_clone, &clone);
+    struct betree_string_list* clone = make_string_list();
+    clone->count = list->count;
+    clone->strings = malloc(sizeof(*clone->strings) * clone->count);
+    for(size_t i = 0; i < list->count; i++) {
+        struct string_value string_clone = clone_string_value(list->strings[i]);
+        clone->strings[i] = string_clone;
     }
     return clone;
 }

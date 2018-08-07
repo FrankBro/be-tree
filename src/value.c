@@ -7,7 +7,47 @@
 #include "value.h"
 #include "utils.h"
 
-void add_integer_list_value(int64_t integer, struct integer_list_value* list)
+struct betree_integer_list* make_integer_list()
+{
+    struct betree_integer_list* value = calloc(1, sizeof(*value));
+    if(value == NULL) {
+        fprintf(stderr, "%s calloc failed", __func__);
+        abort();
+    }
+    return value;
+}
+
+struct betree_string_list* make_string_list()
+{
+    struct betree_string_list* value = calloc(1, sizeof(*value));
+    if(value == NULL) {
+        fprintf(stderr, "%s calloc failed", __func__);
+        abort();
+    }
+    return value;
+}
+
+struct betree_segments* make_segments()
+{
+    struct betree_segments* value = calloc(1, sizeof(*value));
+    if(value == NULL) {
+        fprintf(stderr, "%s calloc failed", __func__);
+        abort();
+    }
+    return value;
+}
+
+struct betree_frequency_caps* make_frequency_caps()
+{
+    struct betree_frequency_caps* value = calloc(1, sizeof(*value));
+    if(value == NULL) {
+        fprintf(stderr, "%s calloc failed", __func__);
+        abort();
+    }
+    return value;
+}
+
+void add_integer_list_value(int64_t integer, struct betree_integer_list* list)
 {
     if(list->count == 0) {
         list->integers = calloc(1, sizeof(*list->integers));
@@ -28,19 +68,19 @@ void add_integer_list_value(int64_t integer, struct integer_list_value* list)
     list->count++;
 }
 
-const char* integer_list_value_to_string(struct integer_list_value list)
+const char* integer_list_value_to_string(struct betree_integer_list* list)
 {
     char* string = NULL;
-    for(size_t i = 0; i < list.count; i++) {
+    for(size_t i = 0; i < list->count; i++) {
         char* new_string;
         if(i != 0) {
-            if(asprintf(&new_string, "%s, %ld", string, list.integers[i]) < 0) {
+            if(asprintf(&new_string, "%s, %ld", string, list->integers[i]) < 0) {
                 abort();
             }
             free(string);
         }
         else {
-            if(asprintf(&new_string, "%ld", list.integers[i]) < 0) {
+            if(asprintf(&new_string, "%ld", list->integers[i]) < 0) {
                 abort();
             }
         }
@@ -49,7 +89,7 @@ const char* integer_list_value_to_string(struct integer_list_value list)
     return string;
 }
 
-void add_string_list_value(struct string_value string, struct string_list_value* list)
+void add_string_list_value(struct string_value string, struct betree_string_list* list)
 {
     if(list->count == 0) {
         list->strings = calloc(1, sizeof(*list->strings));
@@ -71,19 +111,19 @@ void add_string_list_value(struct string_value string, struct string_list_value*
     list->count++;
 }
 
-const char* string_list_value_to_string(struct string_list_value list)
+const char* string_list_value_to_string(struct betree_string_list* list)
 {
     char* string = NULL;
-    for(size_t i = 0; i < list.count; i++) {
+    for(size_t i = 0; i < list->count; i++) {
         char* new_string;
         if(i != 0) {
-            if(asprintf(&new_string, "%s, \"%s\"", string, list.strings[i].string) < 0) {
+            if(asprintf(&new_string, "%s, \"%s\"", string, list->strings[i].string) < 0) {
                 abort();
             }
             free(string);
         }
         else {
-            if(asprintf(&new_string, "\"%s\"", list.strings[i].string) < 0) {
+            if(asprintf(&new_string, "\"%s\"", list->strings[i].string) < 0) {
                 abort();
             }
         }
@@ -92,7 +132,7 @@ const char* string_list_value_to_string(struct string_list_value list)
     return string;
 }
 
-void add_segment(struct segment segment, struct segments_list* list)
+void add_segment(struct betree_segment* segment, struct betree_segments* list)
 {
     if(list->size == 0) {
         list->content = calloc(1, sizeof(*list->content));
@@ -102,7 +142,7 @@ void add_segment(struct segment segment, struct segments_list* list)
         }
     }
     else {
-        struct segment* content = realloc(list->content, sizeof(*list->content) * (list->size + 1));
+        struct betree_segment** content = realloc(list->content, sizeof(*list->content) * (list->size + 1));
         if(content == NULL) {
             fprintf(stderr, "%s realloc failed", __func__);
             abort();
@@ -113,7 +153,7 @@ void add_segment(struct segment segment, struct segments_list* list)
     list->size++;
 }
 
-void add_frequency(struct frequency_cap frequency, struct frequency_caps_list* list)
+void add_frequency(struct betree_frequency_cap* frequency, struct betree_frequency_caps* list)
 {
     if(list->size == 0) {
         list->content = calloc(1, sizeof(*list->content));
@@ -123,7 +163,7 @@ void add_frequency(struct frequency_cap frequency, struct frequency_caps_list* l
         }
     }
     else {
-        struct frequency_cap* content
+        struct betree_frequency_cap** content
             = realloc(list->content, sizeof(*list->content) * (list->size + 1));
         if(content == NULL) {
             fprintf(stderr, "%s realloc failed", __func__);
@@ -135,25 +175,28 @@ void add_frequency(struct frequency_cap frequency, struct frequency_caps_list* l
     list->size++;
 }
 
-struct segment make_segment(int64_t id, int64_t timestamp)
+struct betree_segment* make_segment(int64_t id, int64_t timestamp)
 {
-    struct segment segment = { .id = id, .timestamp = timestamp };
+    struct betree_segment* segment = malloc(sizeof(*segment));
+    segment->id = id;
+    segment->timestamp = timestamp;
     return segment;
 }
 
-struct frequency_cap make_frequency_cap(const char* stype,
+struct betree_frequency_cap* make_frequency_cap(const char* stype,
     uint32_t id,
     struct string_value namespace,
     int64_t timestamp,
     uint32_t value)
 {
+    struct betree_frequency_cap* frequency_cap = malloc(sizeof(*frequency_cap));
     enum frequency_type_e type = get_type_from_string(stype);
-    struct frequency_cap frequency_cap = { .type = type,
-        .id = id,
-        .namespace = namespace,
-        .timestamp_defined = true,
-        .timestamp = timestamp,
-        .value = value };
+    frequency_cap->type = type;
+    frequency_cap->id = id;
+    frequency_cap->namespace = namespace;
+    frequency_cap->timestamp_defined = true;
+    frequency_cap->timestamp = timestamp;
+    frequency_cap->value = value;
     return frequency_cap;
 }
 
@@ -189,18 +232,59 @@ enum frequency_type_e get_type_from_string(const char* stype)
     }
 }
 
+void free_integer_list(struct betree_integer_list* value)
+{
+    free(value->integers);
+    free(value);
+}
+
+void free_string_list(struct betree_string_list* value)
+{
+    for(size_t i = 0; i < value->count; i++) {
+        free((char*)value->strings[i].string);
+    }
+    free(value->strings);
+    free(value);
+}
+
+void free_segment(struct betree_segment* value)
+{
+    free(value);
+}
+
+void free_segments(struct betree_segments* value)
+{
+    for(size_t i = 0; i < value->size; i++) {
+        free(value->content[i]);
+    }
+    free(value->content);
+    free(value);
+}
+
+void free_frequency_cap(struct betree_frequency_cap* value)
+{
+    free((char*)value->namespace.string);
+    free(value);
+}
+
+void free_frequency_caps(struct betree_frequency_caps* value)
+{
+    for(size_t i = 0; i < value->size; i++) {
+        free_frequency_cap(value->content[i]);
+    }
+    free(value->content);
+    free(value);
+}
+
 void free_value(struct value value)
 {
     switch(value.value_type) {
         case VALUE_IL: {
-            free(value.ilvalue.integers);
+            free_integer_list(value.ilvalue);
             break;
         }
         case VALUE_SL: {
-            for(size_t i = 0; i < value.slvalue.count; i++) {
-                free((char*)value.slvalue.strings[i].string);
-            }
-            free(value.slvalue.strings);
+            free_string_list(value.slvalue);
             break;
         }
         case VALUE_S: {
@@ -212,14 +296,11 @@ void free_value(struct value value)
             break;
         }
         case VALUE_SEGMENTS: {
-            free(value.segments_value.content);
+            free_segments(value.segments_value);
             break;
         }
         case VALUE_FREQUENCY: {
-            for(size_t i = 0; i < value.frequency_value.size; i++) {
-                free((char*)value.frequency_value.content[i].namespace.string);
-            }
-            free(value.frequency_value.content);
+            free_frequency_caps(value.frequency_value);
             break;
         }
         default: {
