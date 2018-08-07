@@ -25,7 +25,7 @@ LEX?=flex
 YACC?=bison
 YFLAGS?=-dv
 
-VALGRIND=valgrind --leak-check=full --track-origins=yes --suppressions=valgrind.supp
+VALGRIND=valgrind --tool=memcheck --leak-check=full --track-origins=yes --suppressions=valgrind.supp
 CALLGRIND=valgrind --tool=callgrind --instr-atstart=no
 CACHEGRIND=valgrind --tool=cachegrind
 MASSIF=valgrind --tool=massif
@@ -118,6 +118,7 @@ valgrind:
 	$(VALGRIND) build/tests/memoize_tests
 	$(VALGRIND) build/tests/parser_tests
 	$(VALGRIND) build/tests/performance_tests
+	$(VALGRIND) build/tests/printer_tests
 	$(VALGRIND) build/tests/report_tests
 	$(VALGRIND) build/tests/special_tests
 
