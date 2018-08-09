@@ -8,7 +8,7 @@
     #include "event_parser.h"
     #include "tree.h"
     #include "value.h"
-    struct event *root;
+    struct betree_event *root;
     extern int zzlex();
     void zzerror(void *scanner, const char *s) { (void)scanner; printf("ERROR: %s\n", s); }
 #if defined(__GNUC__)
@@ -25,7 +25,7 @@
 %define api.prefix {zz}
 
 %{
-    int event_parse(const char *text, struct event **event);
+    int event_parse(const char *text, struct betree_event **event);
 %}
 
 %union {
@@ -44,9 +44,9 @@
     struct betree_frequency_cap* frequency_value;
 
     struct value value;
-    struct betree_variable* pred;
+    struct betree_variable* variable;
 
-    struct event* event;
+    struct betree_event* event;
 }
 
 %token<token> EVENT_LCURLY EVENT_RCURLY
@@ -73,8 +73,8 @@
 %type<frequency_value> frequency_value;
 
 %type<value> value
-%type<pred> pred
-%type<event> pred_loop
+%type<variable> variable
+%type<event> variable_loop
 
 %start program
 
@@ -90,25 +90,25 @@
 
 %%
 
-program             : EVENT_LCURLY pred_loop EVENT_RCURLY   { root = $2; }
+program             : EVENT_LCURLY variable_loop EVENT_RCURLY   { root = $2; }
 
-pred_loop           : pred                                  { $$ = make_event(); add_pred($1, $$); }
-                    | pred_loop EVENT_COMMA pred            { add_pred($3, $1); $$ = $1; }
+variable_loop       : variable                              { $$ = make_empty_event(); add_variable($1, $$); }
+                    | variable_loop EVENT_COMMA variable    { add_variable($3, $1); $$ = $1; }
 ;       
 
-pred                : EVENT_STRING EVENT_COLON value        { $$ = make_pred($1, INVALID_VAR, $3); free($1); }
+variable            : EVENT_STRING EVENT_COLON value        { $$ = make_pred($1, INVALID_VAR, $3); free($1); }
                     | EVENT_STRING EVENT_COLON EVENT_NULL   { $$ = NULL; free($1); }
 ;
 
-value               : boolean                               { $$.value_type = VALUE_B; $$.bvalue = $1; }
-                    | integer                               { $$.value_type = VALUE_I; $$.ivalue = $1; }
-                    | float                                 { $$.value_type = VALUE_F; $$.fvalue = $1; }
-                    | string                                { $$.value_type = VALUE_S; $$.svalue = $1; }
-                    | empty_list_value                      { $$.value_type = VALUE_IL; $$.ilvalue = $1; }
-                    | integer_list_value                    { $$.value_type = VALUE_IL; $$.ilvalue = $1; }
-                    | string_list_value                     { $$.value_type = VALUE_SL; $$.slvalue = $1; }
-                    | segments_value                        { $$.value_type = VALUE_SEGMENTS; $$.segments_value = $1; }
-                    | frequencies_value                     { $$.value_type = VALUE_FREQUENCY; $$.frequency_value = $1; }
+value               : boolean                               { $$.value_type = BETREE_BOOLEAN; $$.bvalue = $1; }
+                    | integer                               { $$.value_type = BETREE_INTEGER; $$.ivalue = $1; }
+                    | float                                 { $$.value_type = BETREE_FLOAT; $$.fvalue = $1; }
+                    | string                                { $$.value_type = BETREE_STRING; $$.svalue = $1; }
+                    | empty_list_value                      { $$.value_type = BETREE_INTEGER_LIST; $$.ilvalue = $1; }
+                    | integer_list_value                    { $$.value_type = BETREE_INTEGER_LIST; $$.ilvalue = $1; }
+                    | string_list_value                     { $$.value_type = BETREE_STRING_LIST; $$.slvalue = $1; }
+                    | segments_value                        { $$.value_type = BETREE_SEGMENTS; $$.segments_value = $1; }
+                    | frequencies_value                     { $$.value_type = BETREE_FREQUENCY_CAPS; $$.frequency_value = $1; }
 
 boolean             : EVENT_TRUE                            { $$ = true; }
                     | EVENT_FALSE                           { $$ = false; }
@@ -160,9 +160,9 @@ frequencies_loop    : frequency_value                       { $$ = make_frequenc
 ;
 
 frequency_value     : EVENT_LSQUARE EVENT_STRING EVENT_COMMA integer EVENT_COMMA string EVENT_COMMA integer EVENT_COMMA integer EVENT_RSQUARE
-                                                            { $$ = make_frequency_cap($2, $4, $6, $8, $10); free($2); }
+                                                            { $$ = make_frequency_cap($2, $4, $6, true, $8, $10); free($2); }
                     | EVENT_LSQUARE EVENT_LSQUARE EVENT_STRING EVENT_COMMA integer EVENT_COMMA string EVENT_RSQUARE EVENT_COMMA integer EVENT_COMMA integer EVENT_RSQUARE
-                                                            { $$ = make_frequency_cap($3, $5, $7, $10, $12); free($3); }
+                                                            { $$ = make_frequency_cap($3, $5, $7, true, $10, $12); free($3); }
 ;
 
 %%
@@ -173,7 +173,7 @@ frequency_value     : EVENT_LSQUARE EVENT_STRING EVENT_COMMA integer EVENT_COMMA
 
 #include "event_lexer.h"
 
-int event_parse(const char *text, struct event** event)
+int event_parse(const char *text, struct betree_event** event)
 {
     // zzdebug = 1;
     

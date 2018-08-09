@@ -30,11 +30,6 @@ struct sub {
     struct short_circuit short_circuit;
 };
 
-struct event {
-    size_t pred_count;
-    struct betree_variable** preds;
-};
-
 struct cnode;
 
 struct lnode {
@@ -93,7 +88,7 @@ struct pdir {
 };
 
 void free_sub(struct sub* sub);
-void free_event(struct event* event);
+void free_event(struct betree_event* event);
 
 bool sub_has_attribute(const struct sub* sub, betree_var_t variable_id);
 bool sub_has_attribute_str(struct config* config, const struct sub* sub, const char* attr);
@@ -107,16 +102,16 @@ void free_cnode(struct cnode* cnode);
 void fill_pred(struct sub* sub, const struct ast_node* expr);
 struct sub* make_empty_sub(betree_sub_t id);
 struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* expr);
-struct event* make_event();
-void event_to_string(const struct event* event, char* buffer);
+struct betree_event* make_empty_event();
+void event_to_string(const struct betree_event* event, char* buffer);
 
 struct betree_variable* make_pred(const char* attr, betree_var_t variable_id, struct value value);
-void add_pred(struct betree_variable* pred, struct event* event);
+void add_variable(struct betree_variable* variable, struct betree_event* event);
 
-void fill_event(const struct config* config, struct event* event);
-bool validate_event(const struct config* config, const struct event* event);
+void fill_event(const struct config* config, struct betree_event* event);
+bool validate_event(const struct config* config, const struct betree_event* event);
 
-struct event* make_event_from_string(const struct config* config, const char* event_str);
+struct betree_event* make_event_from_string(const struct betree* betree, const char* event_str);
 
 struct memoize make_memoize(size_t pred_count);
 void free_memoize(struct memoize memoize);

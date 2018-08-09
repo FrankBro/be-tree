@@ -40,29 +40,29 @@ static void print_cdir(const struct config* config, const struct cdir* cdir, uin
     }
     print_dashs(level);
     switch(cdir->bound.value_type) {
-        case(VALUE_I): 
-        case(VALUE_IL): 
+        case(BETREE_INTEGER):
+        case(BETREE_INTEGER_LIST):
             printf(" cdir [%" PRIu64 ", %" PRIu64 "]", cdir->bound.imin, cdir->bound.imax);
             break;
-        case(VALUE_F): {
+        case(BETREE_FLOAT): {
             printf(" cdir [%.2f, %.2f]", cdir->bound.fmin, cdir->bound.fmax);
             break;
         }
-        case(VALUE_B): {
+        case(BETREE_BOOLEAN): {
             const char* min = cdir->bound.bmin ? "true" : "false";
             const char* max = cdir->bound.bmax ? "true" : "false";
             printf(" cdir [%s, %s]", min, max);
             break;
         }
-        case(VALUE_S):
-        case(VALUE_SL):
+        case(BETREE_STRING):
+        case(BETREE_STRING_LIST):
             printf(" cdir [%zu , %zu]", cdir->bound.smin, cdir->bound.smax);
             break;
-        case(VALUE_SEGMENTS): {
+        case(BETREE_SEGMENTS): {
             fprintf(stderr, "%s a segments value cdir should never happen for now", __func__);
             abort();
         }
-        case(VALUE_FREQUENCY): {
+        case(BETREE_FREQUENCY_CAPS): {
             fprintf(stderr, "%s a frequency value cdir should never happen for now", __func__);
             abort();
         }
@@ -202,19 +202,25 @@ static const char* get_path_cdir(const struct config* config, const struct cdir*
     }
     char* name;
     switch(cdir->bound.value_type) {
-        case(VALUE_I):
-        case(VALUE_IL):
-            if(asprintf(&name, "%s_%" PRIu64 "_%" PRIu64, parent_path, cdir->bound.imin, cdir->bound.imax) < 0) {
+        case(BETREE_INTEGER):
+        case(BETREE_INTEGER_LIST):
+            if(asprintf(&name,
+                   "%s_%" PRIu64 "_%" PRIu64,
+                   parent_path,
+                   cdir->bound.imin,
+                   cdir->bound.imax)
+                < 0) {
                 abort();
             }
             break;
-        case(VALUE_F): {
-            if(asprintf(&name, "%s_%.0f_%.0f", parent_path, cdir->bound.fmin, cdir->bound.fmax) < 0) {
+        case(BETREE_FLOAT): {
+            if(asprintf(&name, "%s_%.0f_%.0f", parent_path, cdir->bound.fmin, cdir->bound.fmax)
+                < 0) {
                 abort();
             }
             break;
         }
-        case(VALUE_B): {
+        case(BETREE_BOOLEAN): {
             const char* min = cdir->bound.bmin ? "true" : "false";
             const char* max = cdir->bound.bmax ? "true" : "false";
             if(asprintf(&name, "%s_%s_%s", parent_path, min, max) < 0) {
@@ -222,17 +228,17 @@ static const char* get_path_cdir(const struct config* config, const struct cdir*
             }
             break;
         }
-        case(VALUE_S):
-        case(VALUE_SL):
+        case(BETREE_STRING):
+        case(BETREE_STRING_LIST):
             if(asprintf(&name, "%s_%zu_%zu", parent_path, cdir->bound.smin, cdir->bound.smax) < 0) {
                 abort();
             }
             break;
-        case(VALUE_SEGMENTS): {
+        case(BETREE_SEGMENTS): {
             fprintf(stderr, "%s a segments value cdir should never happen for now", __func__);
             abort();
         }
-        case(VALUE_FREQUENCY): {
+        case(BETREE_FREQUENCY_CAPS): {
             fprintf(stderr, "%s a frequency value cdir should never happen for now", __func__);
             abort();
         }
@@ -369,8 +375,8 @@ static void write_dot_file_cdir_td(FILE* f,
         else {
             const char* name = get_name_cdir(config, cdir);
             switch(cdir->bound.value_type) {
-                case(VALUE_I):
-                case(VALUE_IL):
+                case(BETREE_INTEGER):
+                case(BETREE_INTEGER_LIST):
                     fprintf(f,
                         "<td colspan=\"%" PRIu64 "\" port=\"%s\">[%" PRIu64 ", %" PRIu64 "]</td>\n",
                         colspan,
@@ -378,7 +384,7 @@ static void write_dot_file_cdir_td(FILE* f,
                         cdir->bound.imin,
                         cdir->bound.imax);
                     break;
-                case(VALUE_F): {
+                case(BETREE_FLOAT): {
                     fprintf(f,
                         "<td colspan=\"%" PRIu64 "\" port=\"%s\">[%.0f, %.0f]</td>\n",
                         colspan,
@@ -387,7 +393,7 @@ static void write_dot_file_cdir_td(FILE* f,
                         cdir->bound.fmax);
                     break;
                 }
-                case(VALUE_B): {
+                case(BETREE_BOOLEAN): {
                     const char* min = cdir->bound.bmin ? "true" : "false";
                     const char* max = cdir->bound.bmax ? "true" : "false";
                     fprintf(f,
@@ -398,8 +404,8 @@ static void write_dot_file_cdir_td(FILE* f,
                         max);
                     break;
                 }
-                case(VALUE_S):
-                case(VALUE_SL):
+                case(BETREE_STRING):
+                case(BETREE_STRING_LIST):
                     fprintf(f,
                         "<td colspan=\"%" PRIu64 "\" port=\"%s\">[%zu, %zu]</td>\n",
                         colspan,
@@ -407,12 +413,12 @@ static void write_dot_file_cdir_td(FILE* f,
                         cdir->bound.smin,
                         cdir->bound.smax);
                     break;
-                case(VALUE_SEGMENTS): {
+                case(BETREE_SEGMENTS): {
                     fprintf(
                         stderr, "%s a segment value cdir should never happen for now", __func__);
                     abort();
                 }
-                case(VALUE_FREQUENCY): {
+                case(BETREE_FREQUENCY_CAPS): {
                     fprintf(
                         stderr, "%s a frequency value cdir should never happen for now", __func__);
                     abort();
@@ -904,4 +910,3 @@ void write_dot_file_tree(const struct betree* tree)
 {
     write_dot_file(tree->config, tree->cnode);
 }
-

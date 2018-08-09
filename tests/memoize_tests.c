@@ -13,8 +13,6 @@
 #include "value.h"
 #include "var.h"
 
-extern bool MATCH_NODE_DEBUG;
-
 struct report* test(const char* expr_a, const char* expr_b, const char* event, struct betree* tree)
 {
     if(tree->config->pred_map == NULL) {

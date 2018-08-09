@@ -94,7 +94,7 @@ static struct ast_node* clone_bool(betree_pred_t id, struct ast_bool_expr orig)
         }
         case AST_BOOL_NOT: {
             struct ast_node* clone_expr = clone_node(orig.unary.expr);
-             clone->bool_expr.unary.expr = clone_expr;
+            clone->bool_expr.unary.expr = clone_expr;
             break;
         }
         case AST_BOOL_VARIABLE:
@@ -278,4 +278,3 @@ struct ast_node* clone_node(const struct ast_node* node)
     }
     return clone;
 }
-

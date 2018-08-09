@@ -287,25 +287,24 @@ struct ast_node* ast_special_frequency_create(enum ast_special_frequency_e op,
     struct string_value ns,
     int64_t value,
     size_t length);
-struct ast_node* ast_special_segment_create(enum ast_special_segment_e op,
-    const char* name,
-    betree_seg_t segment_id,
-    int64_t seconds);
-struct ast_node* ast_special_geo_create(enum ast_special_geo_e op,
-    double latitude,
-    double longitude,
-    bool has_radius,
-    double radius);
+struct ast_node* ast_special_segment_create(
+    enum ast_special_segment_e op, const char* name, betree_seg_t segment_id, int64_t seconds);
+struct ast_node* ast_special_geo_create(
+    enum ast_special_geo_e op, double latitude, double longitude, bool has_radius, double radius);
 struct ast_node* ast_special_string_create(
     enum ast_special_string_e op, const char* name, const char* pattern);
 void free_ast_node(struct ast_node* node);
 
-bool match_node(const struct betree_variable** preds, const struct ast_node* node, struct memoize* memoize, struct report* report);
+bool match_node(const struct betree_variable** preds,
+    const struct ast_node* node,
+    struct memoize* memoize,
+    struct report* report);
 
 struct value_bound get_variable_bound(
     const struct attr_domain* domain, const struct ast_node* node);
 
-bool assign_constants(size_t constant_count, const struct betree_constant** constants, struct ast_node* node);
+bool assign_constants(
+    size_t constant_count, const struct betree_constant** constants, struct ast_node* node);
 void assign_variable_id(struct config* config, struct ast_node* node);
 void assign_str_id(struct config* config, struct ast_node* node);
 void assign_pred_id(struct config* config, struct ast_node* node);
@@ -317,4 +316,3 @@ bool fast_eq_expr(const struct ast_node* a, const struct ast_node* b);
 
 bool all_variables_in_config(const struct config* config, const struct ast_node* node);
 bool all_bounded_strings_valid(const struct config* config, const struct ast_node* node);
-

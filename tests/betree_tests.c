@@ -14,7 +14,7 @@ int test_sub_has_attribute()
 {
     struct betree* tree = betree_make();
     add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);
-    
+
     mu_assert(betree_insert(tree, 0, "a = 0"), "");
 
     struct sub* sub = tree->cnode->lnode->subs[0];
@@ -31,16 +31,20 @@ bool cnode_has_sub0(struct cnode* cnode)
 }
 bool cnode_has_sub1(struct cnode* cnode, betree_sub_t sub1)
 {
-    return cnode != NULL && cnode->lnode != NULL && cnode->lnode->sub_count == 1 && cnode->lnode->subs[0]->id == sub1;
+    return cnode != NULL && cnode->lnode != NULL && cnode->lnode->sub_count == 1
+        && cnode->lnode->subs[0]->id == sub1;
 }
 
 bool cnode_has_sub2(struct cnode* cnode, betree_sub_t sub1, betree_sub_t sub2)
 {
-    return cnode != NULL && cnode->lnode != NULL && cnode->lnode->sub_count == 2 && cnode->lnode->subs[0]->id == sub1 && cnode->lnode->subs[1]->id == sub2;
+    return cnode != NULL && cnode->lnode != NULL && cnode->lnode->sub_count == 2
+        && cnode->lnode->subs[0]->id == sub1 && cnode->lnode->subs[1]->id == sub2;
 }
 bool cnode_has_sub3(struct cnode* cnode, betree_sub_t sub1, betree_sub_t sub2, betree_sub_t sub3)
 {
-    return cnode != NULL && cnode->lnode != NULL && cnode->lnode->sub_count == 3 && cnode->lnode->subs[0]->id == sub1 && cnode->lnode->subs[1]->id == sub2 && cnode->lnode->subs[2]->id == sub3;
+    return cnode != NULL && cnode->lnode != NULL && cnode->lnode->sub_count == 3
+        && cnode->lnode->subs[0]->id == sub1 && cnode->lnode->subs[1]->id == sub2
+        && cnode->lnode->subs[2]->id == sub3;
 }
 
 bool report_has_sub0(struct report* report)
@@ -127,7 +131,8 @@ int test_insert_first_split()
     return 0;
 }
 
-bool test_cnode_has_pnodes(struct config* config, const struct cnode* cnode, size_t pnode_count, const char** attrs)
+bool test_cnode_has_pnodes(
+    struct config* config, const struct cnode* cnode, size_t pnode_count, const char** attrs)
 {
     if(cnode->pdir == NULL || cnode->pdir->pnode_count != pnode_count) {
         return false;
@@ -151,42 +156,37 @@ int test_pdir_split_twice()
     mu_assert(betree_insert(tree, 2, "a = 0"), "");
     mu_assert(betree_insert(tree, 3, "a = 0"), "");
 
-    mu_assert(tree->cnode->lnode->sub_count == 3 &&
-      tree->cnode->lnode->subs[0]->id == 1 &&
-      tree->cnode->lnode->subs[1]->id == 2 &&
-      tree->cnode->lnode->subs[2]->id == 3
-      , "subs123 in first lnode");
+    mu_assert(tree->cnode->lnode->sub_count == 3 && tree->cnode->lnode->subs[0]->id == 1
+            && tree->cnode->lnode->subs[1]->id == 2 && tree->cnode->lnode->subs[2]->id == 3,
+        "subs123 in first lnode");
 
     mu_assert(betree_insert(tree, 4, "b = 0"), "");
     mu_assert(betree_insert(tree, 5, "b = 0"), "");
     mu_assert(betree_insert(tree, 6, "b = 0"), "");
 
-    mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3 &&
-      tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[0]->id == 1 &&
-      tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[1]->id == 2 &&
-      tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[2]->id == 3
-      , "subs123 in second lnode");
-    mu_assert(tree->cnode->lnode->sub_count == 3 &&
-      tree->cnode->lnode->subs[0]->id == 4 &&
-      tree->cnode->lnode->subs[1]->id == 5 &&
-      tree->cnode->lnode->subs[2]->id == 6
-      , "subs456 in first lnode");
+    mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3
+            && tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[0]->id == 1
+            && tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[1]->id == 2
+            && tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[2]->id == 3,
+        "subs123 in second lnode");
+    mu_assert(tree->cnode->lnode->sub_count == 3 && tree->cnode->lnode->subs[0]->id == 4
+            && tree->cnode->lnode->subs[1]->id == 5 && tree->cnode->lnode->subs[2]->id == 6,
+        "subs456 in first lnode");
 
     mu_assert(betree_insert(tree, 7, "c = 0"), "");
 
-    mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3 &&
-      tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[0]->id == 1 &&
-      tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[1]->id == 2 &&
-      tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[2]->id == 3
-      , "subs123 in second lnode");
-    mu_assert(tree->cnode->pdir->pnodes[1]->cdir->cnode->lnode->sub_count == 3 &&
-      tree->cnode->pdir->pnodes[1]->cdir->cnode->lnode->subs[0]->id == 4 &&
-      tree->cnode->pdir->pnodes[1]->cdir->cnode->lnode->subs[1]->id == 5 &&
-      tree->cnode->pdir->pnodes[1]->cdir->cnode->lnode->subs[2]->id == 6
-      , "subs456 in second lnode");
-    mu_assert(tree->cnode->lnode->sub_count == 1 &&
-      tree->cnode->lnode->subs[0]->id == 7
-      , "subs7 in first lnode");
+    mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3
+            && tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[0]->id == 1
+            && tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[1]->id == 2
+            && tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[2]->id == 3,
+        "subs123 in second lnode");
+    mu_assert(tree->cnode->pdir->pnodes[1]->cdir->cnode->lnode->sub_count == 3
+            && tree->cnode->pdir->pnodes[1]->cdir->cnode->lnode->subs[0]->id == 4
+            && tree->cnode->pdir->pnodes[1]->cdir->cnode->lnode->subs[1]->id == 5
+            && tree->cnode->pdir->pnodes[1]->cdir->cnode->lnode->subs[2]->id == 6,
+        "subs456 in second lnode");
+    mu_assert(tree->cnode->lnode->sub_count == 1 && tree->cnode->lnode->subs[0]->id == 7,
+        "subs7 in first lnode");
 
     betree_free(tree);
     return 0;
@@ -202,40 +202,36 @@ int test_cdir_split_twice()
     mu_assert(betree_insert(tree, 2, "a = 2"), "");
     mu_assert(betree_insert(tree, 3, "a = 2"), "");
 
-    mu_assert(tree->cnode->lnode->sub_count == 3 &&
-      tree->cnode->lnode->subs[0]->id == 1 &&
-      tree->cnode->lnode->subs[1]->id == 2 &&
-      tree->cnode->lnode->subs[2]->id == 3
-      , "subs123 in first lnode");
+    mu_assert(tree->cnode->lnode->sub_count == 3 && tree->cnode->lnode->subs[0]->id == 1
+            && tree->cnode->lnode->subs[1]->id == 2 && tree->cnode->lnode->subs[2]->id == 3,
+        "subs123 in first lnode");
 
     mu_assert(betree_insert(tree, 4, "b = 0"), "");
 
-    mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3 &&
-      tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[0]->id == 1 &&
-      tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[1]->id == 2 &&
-      tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[2]->id == 3
-      , "subs123 in second lnode");
-    mu_assert(tree->cnode->lnode->sub_count == 1 &&
-      tree->cnode->lnode->subs[0]->id == 4
-      , "subs4 in first lnode");
+    mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3
+            && tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[0]->id == 1
+            && tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[1]->id == 2
+            && tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->subs[2]->id == 3,
+        "subs123 in second lnode");
+    mu_assert(tree->cnode->lnode->sub_count == 1 && tree->cnode->lnode->subs[0]->id == 4,
+        "subs4 in first lnode");
 
     mu_assert(betree_insert(tree, 5, "a = 7"), "");
     mu_assert(betree_insert(tree, 6, "a = 7"), "");
     mu_assert(betree_insert(tree, 7, "a = 7"), "");
 
-    mu_assert(tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->sub_count == 3 &&
-      tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->subs[0]->id == 1 &&
-      tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->subs[1]->id == 2 &&
-      tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->subs[2]->id == 3
-      , "subs123 in second lnode");
-    mu_assert(tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->sub_count == 3 &&
-      tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->subs[0]->id == 5 &&
-      tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->subs[1]->id == 6 &&
-      tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->subs[2]->id == 7
-      , "subs567 in second lnode");
-    mu_assert(tree->cnode->lnode->sub_count == 1 &&
-      tree->cnode->lnode->subs[0]->id == 4
-      , "subs4 in first lnode");
+    mu_assert(tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->sub_count == 3
+            && tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->subs[0]->id == 1
+            && tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->subs[1]->id == 2
+            && tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->subs[2]->id == 3,
+        "subs123 in second lnode");
+    mu_assert(tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->sub_count == 3
+            && tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->subs[0]->id == 5
+            && tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->subs[1]->id == 6
+            && tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->subs[2]->id == 7,
+        "subs567 in second lnode");
+    mu_assert(tree->cnode->lnode->sub_count == 1 && tree->cnode->lnode->subs[0]->id == 4,
+        "subs4 in first lnode");
 
     betree_free(tree);
     return 0;
@@ -285,8 +281,6 @@ int test_remove_sub_in_tree_with_delete()
     return 0;
 }
 
-extern bool MATCH_NODE_DEBUG;
-
 int test_match_deeper()
 {
     struct betree* tree = betree_make();
@@ -311,10 +305,11 @@ int test_match_deeper()
     const struct lnode* lnode_b = cnode_b->lnode;
 
     mu_assert(lnode->sub_count == 0 && pdir_a->pnode_count == 1
-            && pnode_has_attr(tree->config, "a", pnode_a) && cdir_has_attr(tree->config, "a", cdir_a)
-            && lnode_a->sub_count == 1 && pdir_b->pnode_count == 1
-            && pnode_has_attr(tree->config, "b", pnode_b) && cdir_has_attr(tree->config, "b", cdir_b)
-            && cdir_b->lchild == NULL && cdir_b->rchild == NULL && lnode_b->sub_count == 3,
+            && pnode_has_attr(tree->config, "a", pnode_a)
+            && cdir_has_attr(tree->config, "a", cdir_a) && lnode_a->sub_count == 1
+            && pdir_b->pnode_count == 1 && pnode_has_attr(tree->config, "b", pnode_b)
+            && cdir_has_attr(tree->config, "b", cdir_b) && cdir_b->lchild == NULL
+            && cdir_b->rchild == NULL && lnode_b->sub_count == 3,
         "tree matches what we expected");
 
     mu_assert(lnode_a->sub_count == 1, "lnode in 'a' has one sub");
@@ -357,7 +352,8 @@ int test_min_partition()
 {
     size_t lnode_max_cap = 3;
     // With 0
-    struct betree* tree = betree_make_with_parameters(lnode_max_cap, 0);;
+    struct betree* tree = betree_make_with_parameters(lnode_max_cap, 0);
+    ;
     add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);
     add_attr_domain_bounded_i(tree->config, "b", false, 0, 10);
     add_attr_domain_bounded_i(tree->config, "c", false, 0, 10);
@@ -368,15 +364,15 @@ int test_min_partition()
     mu_assert(betree_insert(tree, 3, "c = 0"), "");
 
     mu_assert(tree->cnode->lnode->sub_count == 2, "First lnode has two subs");
-    mu_assert(tree->cnode->pdir->pnode_count == 1 && 
-      tree->cnode->pdir->pnodes[0]->attr_var.var == 0 && 
-      tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 2,
+    mu_assert(tree->cnode->pdir->pnode_count == 1 && tree->cnode->pdir->pnodes[0]->attr_var.var == 0
+            && tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 2,
         "Has a pnode for 'a' and two subs");
 
     betree_free(tree);
 
     // With 3
-    tree = betree_make_with_parameters(lnode_max_cap, 3);;
+    tree = betree_make_with_parameters(lnode_max_cap, 3);
+    ;
     add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);
     add_attr_domain_bounded_i(tree->config, "b", false, 0, 10);
     add_attr_domain_bounded_i(tree->config, "c", false, 0, 10);
@@ -412,10 +408,9 @@ int test_allow_undefined()
     struct report* report = make_report();
     betree_search(tree, "{\"b\": 0}", report);
 
-    mu_assert(tree->cnode->lnode->sub_count == 2 && 
-      tree->cnode->pdir != NULL && 
-      tree->cnode->pdir->pnode_count == 1 && 
-      tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 2,
+    mu_assert(tree->cnode->lnode->sub_count == 2 && tree->cnode->pdir != NULL
+            && tree->cnode->pdir->pnode_count == 1
+            && tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 2,
         "Structure is what is expected");
     mu_assert(report->matched == 1, "Found the sub in the lower lnode");
 
@@ -441,9 +436,10 @@ int test_float()
     }
 
     const struct pnode* pnode = tree->cnode->pdir->pnodes[0];
-    mu_assert(tree->cnode->pdir != NULL && tree->cnode->pdir->pnode_count == 1 && pnode->cdir != NULL
-            && pnode->cdir->cnode->lnode->sub_count == 0 && pnode->cdir->lchild != NULL
-            && pnode->cdir->rchild != NULL && pnode->cdir->lchild->cnode->lnode->sub_count == 3
+    mu_assert(tree->cnode->pdir != NULL && tree->cnode->pdir->pnode_count == 1
+            && pnode->cdir != NULL && pnode->cdir->cnode->lnode->sub_count == 0
+            && pnode->cdir->lchild != NULL && pnode->cdir->rchild != NULL
+            && pnode->cdir->lchild->cnode->lnode->sub_count == 3
             && pnode->cdir->rchild->cnode->lnode->sub_count == 1,
         "structure is respected");
 
@@ -535,10 +531,10 @@ int test_negative_int()
     const struct cdir* lchild = cdir->lchild;
     const struct cdir* rchild = cdir->rchild;
 
-    mu_assert(cdir->bound.value_type == VALUE_I && cdir->bound.imin == min
-            && cdir->bound.imax == max && lchild->bound.value_type == VALUE_I
+    mu_assert(cdir->bound.value_type == BETREE_INTEGER && cdir->bound.imin == min
+            && cdir->bound.imax == max && lchild->bound.value_type == BETREE_INTEGER
             && lchild->bound.imin == min && lchild->bound.imax == mid
-            && rchild->bound.value_type == VALUE_I && rchild->bound.imin == mid
+            && rchild->bound.value_type == BETREE_INTEGER && rchild->bound.imin == mid
             && rchild->bound.imax == max,
         "cdirs have proper bounds");
 
@@ -569,10 +565,10 @@ int test_negative_float()
     const struct cdir* lchild = cdir->lchild;
     const struct cdir* rchild = cdir->rchild;
 
-    mu_assert(cdir->bound.value_type == VALUE_F && feq(cdir->bound.fmin, min)
-            && feq(cdir->bound.fmax, max) && lchild->bound.value_type == VALUE_F
+    mu_assert(cdir->bound.value_type == BETREE_FLOAT && feq(cdir->bound.fmin, min)
+            && feq(cdir->bound.fmax, max) && lchild->bound.value_type == BETREE_FLOAT
             && feq(lchild->bound.fmin, min) && feq(lchild->bound.fmax, mid)
-            && rchild->bound.value_type == VALUE_F && feq(rchild->bound.fmin, mid)
+            && rchild->bound.value_type == BETREE_FLOAT && feq(rchild->bound.fmin, mid)
             && feq(rchild->bound.fmax, max),
         "cdirs have proper bounds");
 
@@ -655,7 +651,7 @@ int test_string_set()
 {
     struct betree* tree = betree_make();
     add_attr_domain_s(tree->config, "a", false);
-    
+
     const char* event = "{\"a\": \"a\"}";
 
     {
@@ -965,9 +961,12 @@ int test_splitable_string_domain()
 
         mu_assert(tree->cnode->lnode->sub_count == 0, "first lnode empty");
         mu_assert(tree->cnode->pdir->pnode_count == 1, "has a pnode");
-        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 0, "second lnode empty");
-        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->sub_count == 3, "lchild has 3 subs");
-        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->sub_count == 2, "rchild has 2 subs");
+        mu_assert(
+            tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 0, "second lnode empty");
+        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->sub_count == 3,
+            "lchild has 3 subs");
+        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->sub_count == 2,
+            "rchild has 2 subs");
 
         struct report* report = make_report();
         betree_search(tree, "{\"s\": \"1\"}", report);
@@ -992,10 +991,12 @@ int test_splitable_string_domain()
 
         mu_assert(tree->cnode->lnode->sub_count == 0, "first lnode empty");
         mu_assert(tree->cnode->pdir->pnode_count == 1, "a pdir was created");
-        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 1, "one sub in the top cdir");
-        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->lchild != NULL && 
-          tree->cnode->pdir->pnodes[0]->cdir->rchild != NULL &&
-          tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->sub_count == 1, "cdir split as expected");
+        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 1,
+            "one sub in the top cdir");
+        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->lchild != NULL
+                && tree->cnode->pdir->pnodes[0]->cdir->rchild != NULL
+                && tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->sub_count == 1,
+            "cdir split as expected");
 
         struct report* report = make_report();
         betree_search(tree, "{\"s\": \"2\"}", report);
@@ -1020,20 +1021,20 @@ int test_not_domain_changing()
         mu_assert(betree_insert(tree, 2, "not (i < 7)"), "");
 
         mu_assert(tree->cnode->lnode->sub_count == 0, "first lnode empty");
-        mu_assert(tree->cnode->pdir->pnode_count == 1 &&
-          tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 0, "second lnode empty");
+        mu_assert(tree->cnode->pdir->pnode_count == 1
+                && tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 0,
+            "second lnode empty");
         struct cdir* cdir = tree->cnode->pdir->pnodes[0]->cdir;
-        mu_assert(cdir->lchild != NULL && cdir->rchild != NULL &&
-          cdir->lchild->cnode->lnode->sub_count == 1 &&
-          cdir->rchild->cnode->lnode->sub_count == 1, "lchild and rchild contain our subs");
+        mu_assert(cdir->lchild != NULL && cdir->rchild != NULL
+                && cdir->lchild->cnode->lnode->sub_count == 1
+                && cdir->rchild->cnode->lnode->sub_count == 1,
+            "lchild and rchild contain our subs");
 
         struct report* report = make_report();
         betree_search(tree, "{\"i\": 1}", report);
 
-        mu_assert(report->matched == 1 && 
-          report->subs[0] == 1 &&
-          report->evaluated == 1 
-          , "only evaluated and found the correct expressions");
+        mu_assert(report->matched == 1 && report->subs[0] == 1 && report->evaluated == 1,
+            "only evaluated and found the correct expressions");
 
         empty_tree(tree);
         free_report(report);
@@ -1043,20 +1044,20 @@ int test_not_domain_changing()
         mu_assert(betree_insert(tree, 2, "not (not (i > 7))"), "");
 
         mu_assert(tree->cnode->lnode->sub_count == 0, "first lnode empty");
-        mu_assert(tree->cnode->pdir->pnode_count == 1 &&
-          tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 0, "second lnode empty");
+        mu_assert(tree->cnode->pdir->pnode_count == 1
+                && tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 0,
+            "second lnode empty");
         struct cdir* cdir = tree->cnode->pdir->pnodes[0]->cdir;
-        mu_assert(cdir->lchild != NULL && cdir->rchild != NULL &&
-          cdir->lchild->cnode->lnode->sub_count == 1 &&
-          cdir->rchild->cnode->lnode->sub_count == 1, "lchild and rchild contain our subs");
+        mu_assert(cdir->lchild != NULL && cdir->rchild != NULL
+                && cdir->lchild->cnode->lnode->sub_count == 1
+                && cdir->rchild->cnode->lnode->sub_count == 1,
+            "lchild and rchild contain our subs");
 
         struct report* report = make_report();
         betree_search(tree, "{\"i\": 1}", report);
 
-        mu_assert(report->matched == 1 && 
-          report->subs[0] == 1 &&
-          report->evaluated == 1
-          , "only evaluated and found the correct expressions");
+        mu_assert(report->matched == 1 && report->subs[0] == 1 && report->evaluated == 1,
+            "only evaluated and found the correct expressions");
 
         empty_tree(tree);
         free_report(report);
@@ -1130,9 +1131,12 @@ int test_splitable_integer_list_domain()
 
         mu_assert(tree->cnode->lnode->sub_count == 0, "first lnode empty");
         mu_assert(tree->cnode->pdir->pnode_count == 1, "has a pnode");
-        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 0, "second lnode empty");
-        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->sub_count == 3, "lchild has 3 subs");
-        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->sub_count == 2, "rchild has 2 subs");
+        mu_assert(
+            tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 0, "second lnode empty");
+        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->sub_count == 3,
+            "lchild has 3 subs");
+        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->sub_count == 2,
+            "rchild has 2 subs");
 
         struct report* report = make_report();
         betree_search(tree, "{\"il\": [2]}", report);
@@ -1163,9 +1167,12 @@ int test_splitable_string_list_domain()
 
         mu_assert(tree->cnode->lnode->sub_count == 0, "first lnode empty");
         mu_assert(tree->cnode->pdir->pnode_count == 1, "has a pnode");
-        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 0, "second lnode empty");
-        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->sub_count == 3, "lchild has 3 subs");
-        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->sub_count == 2, "rchild has 2 subs");
+        mu_assert(
+            tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 0, "second lnode empty");
+        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->sub_count == 3,
+            "lchild has 3 subs");
+        mu_assert(tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->sub_count == 2,
+            "rchild has 2 subs");
 
         struct report* report = make_report();
         betree_search(tree, "{\"sl\": [\"1\"]}", report);
@@ -1193,9 +1200,12 @@ int test_set_bug_cdir()
 
     mu_assert(tree->cnode->lnode->sub_count == 0, "first lnode empty");
     mu_assert(tree->cnode->pdir->pnode_count == 1, "has a pnode");
-    mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 0, "second lnode empty");
-    mu_assert(tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->sub_count == 2, "lchild has 2 subs");
-    mu_assert(tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->sub_count == 3, "rchild has 3 subs");
+    mu_assert(
+        tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 0, "second lnode empty");
+    mu_assert(tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->sub_count == 2,
+        "lchild has 2 subs");
+    mu_assert(tree->cnode->pdir->pnodes[0]->cdir->rchild->cnode->lnode->sub_count == 3,
+        "rchild has 3 subs");
 
     struct report* report = make_report();
     betree_search(tree, "{\"s\": \"c\"}", report);
@@ -1223,8 +1233,8 @@ int test_undefined_cdir_search()
 
     betree_search(tree, event, report);
 
-    mu_assert(report->evaluated == 1 &&
-      report->matched == 1, "true because false on undef, then not");
+    mu_assert(
+        report->evaluated == 1 && report->matched == 1, "true because false on undef, then not");
 
     free_report(report);
     report = make_report();
@@ -1233,25 +1243,35 @@ int test_undefined_cdir_search()
 
     write_dot_file_tree(tree);
 
-    mu_assert(tree->cnode->lnode->sub_count == 0 &&
-      tree->cnode->pdir != NULL &&
-      tree->cnode->pdir->pnode_count == 1 &&
-      strcmp(tree->cnode->pdir->pnodes[0]->attr_var.attr, "b") == 0 &&
-      tree->cnode->pdir->pnodes[0]->cdir != NULL &&
-      tree->cnode->pdir->pnodes[0]->cdir->lchild != NULL &&
-      tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir != NULL &&
-      tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir->pnode_count == 1 &&
-      strcmp(tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir->pnodes[0]->attr_var.attr, "i") == 0 &&
-      tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir->pnodes[0]->cdir != NULL &&
-      tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir->pnodes[0]->cdir->lchild != NULL &&
-      tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir == NULL &&
-      tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir->pnodes[0]->cdir->lchild->cnode->lnode->sub_count == 1, 
-      "expected structure, split on b, all went in lchild for only false, first then i and split into lchild/rchild");
+    mu_assert(tree->cnode->lnode->sub_count == 0 && tree->cnode->pdir != NULL
+            && tree->cnode->pdir->pnode_count == 1
+            && strcmp(tree->cnode->pdir->pnodes[0]->attr_var.attr, "b") == 0
+            && tree->cnode->pdir->pnodes[0]->cdir != NULL
+            && tree->cnode->pdir->pnodes[0]->cdir->lchild != NULL
+            && tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir != NULL
+            && tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir->pnode_count == 1
+            && strcmp(tree->cnode->pdir->pnodes[0]
+                          ->cdir->lchild->cnode->pdir->pnodes[0]
+                          ->attr_var.attr,
+                   "i")
+                == 0
+            && tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir->pnodes[0]->cdir != NULL
+            && tree->cnode->pdir->pnodes[0]->cdir->lchild->cnode->pdir->pnodes[0]->cdir->lchild
+                != NULL
+            && tree->cnode->pdir->pnodes[0]
+                    ->cdir->lchild->cnode->pdir->pnodes[0]
+                    ->cdir->lchild->cnode->pdir
+                == NULL
+            && tree->cnode->pdir->pnodes[0]
+                    ->cdir->lchild->cnode->pdir->pnodes[0]
+                    ->cdir->lchild->cnode->lnode->sub_count
+                == 1,
+        "expected structure, split on b, all went in lchild for only false, first then i and split "
+        "into lchild/rchild");
 
     betree_search(tree, event, report);
 
-    mu_assert(report->evaluated == 1 &&
-      report->matched == 1, "still true");
+    mu_assert(report->evaluated == 1 && report->matched == 1, "still true");
 
     free_report(report);
     betree_free(tree);

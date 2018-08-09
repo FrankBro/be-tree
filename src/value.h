@@ -4,16 +4,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-enum value_e {
-    VALUE_B,
-    VALUE_I,
-    VALUE_F,
-    VALUE_S,
-    VALUE_IL,
-    VALUE_SL,
-    VALUE_SEGMENTS,
-    VALUE_FREQUENCY,
-};
+#include "betree.h"
 
 typedef uint64_t betree_var_t;
 static const betree_var_t INVALID_VAR = UINT64_MAX;
@@ -73,7 +64,7 @@ struct betree_frequency_caps {
 };
 
 struct value {
-    enum value_e value_type;
+    enum betree_value_type_e value_type;
     union {
         int64_t ivalue;
         double fvalue;
@@ -87,7 +78,7 @@ struct value {
 };
 
 struct value_bound {
-    enum value_e value_type;
+    enum betree_value_type_e value_type;
     union {
         struct {
             int64_t imin;
@@ -123,6 +114,7 @@ struct betree_segment* make_segment(int64_t id, int64_t timestamp);
 struct betree_frequency_cap* make_frequency_cap(const char* type,
     uint32_t id,
     struct string_value namespace,
+    bool timestamp_defined,
     int64_t timestamp,
     uint32_t value);
 

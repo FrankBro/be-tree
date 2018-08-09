@@ -206,30 +206,47 @@ char* ast_to_string(const struct ast_node* node)
         case(AST_TYPE_SPECIAL_EXPR): {
             switch(node->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY:
-                    if(asprintf(&expr, "within_frequency_cap(\"%s\", \"%s\", %ld, %zu)", 
-                          frequency_type_to_string(node->special_expr.frequency.type), 
-                          node->special_expr.frequency.ns.string,
-                          node->special_expr.frequency.value,
-                          node->special_expr.frequency.length) < 0) {
+                    if(asprintf(&expr,
+                           "within_frequency_cap(\"%s\", \"%s\", %ld, %zu)",
+                           frequency_type_to_string(node->special_expr.frequency.type),
+                           node->special_expr.frequency.ns.string,
+                           node->special_expr.frequency.value,
+                           node->special_expr.frequency.length)
+                        < 0) {
                         abort();
                     }
                     return expr;
                 case AST_SPECIAL_SEGMENT: {
                     const char* op;
                     switch(node->special_expr.segment.op) {
-                        case AST_SPECIAL_SEGMENTWITHIN: op = "segment_within"; break;
-                        case AST_SPECIAL_SEGMENTBEFORE: op = "segment_before"; break;
+                        case AST_SPECIAL_SEGMENTWITHIN:
+                            op = "segment_within";
+                            break;
+                        case AST_SPECIAL_SEGMENTBEFORE:
+                            op = "segment_before";
+                            break;
                         default:
                             switch_default_error("Invalid special segment op");
                             return NULL;
                     }
-                    if(asprintf(&expr, "%s(%s, %lu, %ld)", op, node->special_expr.segment.attr_var.attr, node->special_expr.segment.segment_id, node->special_expr.segment.seconds) < 0) {
+                    if(asprintf(&expr,
+                           "%s(%s, %lu, %ld)",
+                           op,
+                           node->special_expr.segment.attr_var.attr,
+                           node->special_expr.segment.segment_id,
+                           node->special_expr.segment.seconds)
+                        < 0) {
                         abort();
                     }
                     return expr;
                 }
                 case AST_SPECIAL_GEO: {
-                    if(asprintf(&expr, "geo_within_radius(%.2f, %.2f, %.2f)", node->special_expr.geo.latitude, node->special_expr.geo.longitude, node->special_expr.geo.radius) < 0) {
+                    if(asprintf(&expr,
+                           "geo_within_radius(%.2f, %.2f, %.2f)",
+                           node->special_expr.geo.latitude,
+                           node->special_expr.geo.longitude,
+                           node->special_expr.geo.radius)
+                        < 0) {
                         abort();
                     }
                     return expr;
@@ -237,14 +254,25 @@ char* ast_to_string(const struct ast_node* node)
                 case AST_SPECIAL_STRING: {
                     const char* op;
                     switch(node->special_expr.string.op) {
-                        case AST_SPECIAL_CONTAINS: op = "contains"; break;
-                        case AST_SPECIAL_STARTSWITH: op = "starts_with"; break;
-                        case AST_SPECIAL_ENDSWITH: op = "ends_with"; break;
+                        case AST_SPECIAL_CONTAINS:
+                            op = "contains";
+                            break;
+                        case AST_SPECIAL_STARTSWITH:
+                            op = "starts_with";
+                            break;
+                        case AST_SPECIAL_ENDSWITH:
+                            op = "ends_with";
+                            break;
                         default:
                             switch_default_error("Invalid special string op");
                             return NULL;
                     }
-                    if(asprintf(&expr, "%s(%s, \"%s\")", op, node->special_expr.string.attr_var.attr, node->special_expr.string.pattern) < 0) {
+                    if(asprintf(&expr,
+                           "%s(%s, \"%s\")",
+                           op,
+                           node->special_expr.string.attr_var.attr,
+                           node->special_expr.string.pattern)
+                        < 0) {
                         abort();
                     }
                     return expr;
@@ -340,4 +368,3 @@ char* ast_to_string(const struct ast_node* node)
         }
     }
 }
-

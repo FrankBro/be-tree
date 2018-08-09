@@ -186,6 +186,7 @@ struct betree_segment* make_segment(int64_t id, int64_t timestamp)
 struct betree_frequency_cap* make_frequency_cap(const char* stype,
     uint32_t id,
     struct string_value namespace,
+    bool timestamp_defined,
     int64_t timestamp,
     uint32_t value)
 {
@@ -194,7 +195,7 @@ struct betree_frequency_cap* make_frequency_cap(const char* stype,
     frequency_cap->type = type;
     frequency_cap->id = id;
     frequency_cap->namespace = namespace;
-    frequency_cap->timestamp_defined = true;
+    frequency_cap->timestamp_defined = timestamp_defined;
     frequency_cap->timestamp = timestamp;
     frequency_cap->value = value;
     return frequency_cap;
@@ -279,27 +280,27 @@ void free_frequency_caps(struct betree_frequency_caps* value)
 void free_value(struct value value)
 {
     switch(value.value_type) {
-        case VALUE_IL: {
+        case BETREE_INTEGER_LIST: {
             free_integer_list(value.ilvalue);
             break;
         }
-        case VALUE_SL: {
+        case BETREE_STRING_LIST: {
             free_string_list(value.slvalue);
             break;
         }
-        case VALUE_S: {
+        case BETREE_STRING: {
             free((char*)value.svalue.string);
         }
-        case VALUE_B:
-        case VALUE_I:
-        case VALUE_F: {
+        case BETREE_BOOLEAN:
+        case BETREE_INTEGER:
+        case BETREE_FLOAT: {
             break;
         }
-        case VALUE_SEGMENTS: {
+        case BETREE_SEGMENTS: {
             free_segments(value.segments_value);
             break;
         }
-        case VALUE_FREQUENCY: {
+        case BETREE_FREQUENCY_CAPS: {
             free_frequency_caps(value.frequency_value);
             break;
         }

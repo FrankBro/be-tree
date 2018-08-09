@@ -6,9 +6,6 @@
 #include "minunit.h"
 #include "tree.h"
 
-int parse(const char* text, struct ast_node** node);
-int event_parse(const char* text, struct event** event);
-
 int test_integer()
 {
     struct betree* tree = betree_make();

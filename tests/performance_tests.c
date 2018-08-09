@@ -58,8 +58,6 @@ int test_cdir_split()
     return 0;
 }
 
-extern bool MATCH_NODE_DEBUG;
-
 int test_pdir_split()
 {
     struct betree* tree = betree_make();

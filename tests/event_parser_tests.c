@@ -8,33 +8,33 @@
 #include "utils.h"
 #include "var.h"
 
-int event_parse(const char* text, struct event** event);
+int event_parse(const char* text, struct betree_event** event);
 
-bool test_bool_pred(const char* attr, bool value, const struct event* event, size_t index)
+bool test_bool_pred(const char* attr, bool value, const struct betree_event* event, size_t index)
 {
-    const struct betree_variable* pred = event->preds[index];
-    return strcmp(pred->attr_var.attr, attr) == 0 && pred->value.value_type == VALUE_B
+    const struct betree_variable* pred = event->variables[index];
+    return strcmp(pred->attr_var.attr, attr) == 0 && pred->value.value_type == BETREE_BOOLEAN
         && pred->value.bvalue == value;
 }
 
-bool test_integer_pred(const char* attr, int64_t value, const struct event* event, size_t index)
+bool test_integer_pred(const char* attr, int64_t value, const struct betree_event* event, size_t index)
 {
-    const struct betree_variable* pred = event->preds[index];
-    return strcmp(pred->attr_var.attr, attr) == 0 && pred->value.value_type == VALUE_I
+    const struct betree_variable* pred = event->variables[index];
+    return strcmp(pred->attr_var.attr, attr) == 0 && pred->value.value_type == BETREE_INTEGER
         && pred->value.ivalue == value;
 }
 
-bool test_float_pred(const char* attr, double value, const struct event* event, size_t index)
+bool test_float_pred(const char* attr, double value, const struct betree_event* event, size_t index)
 {
-    const struct betree_variable* pred = event->preds[index];
-    return strcmp(pred->attr_var.attr, attr) == 0 && pred->value.value_type == VALUE_F
+    const struct betree_variable* pred = event->variables[index];
+    return strcmp(pred->attr_var.attr, attr) == 0 && pred->value.value_type == BETREE_FLOAT
         && feq(pred->value.fvalue, value);
 }
 
-bool test_string_pred(const char* attr, const char* value, const struct event* event, size_t index)
+bool test_string_pred(const char* attr, const char* value, const struct betree_event* event, size_t index)
 {
-    const struct betree_variable* pred = event->preds[index];
-    return strcmp(pred->attr_var.attr, attr) == 0 && pred->value.value_type == VALUE_S
+    const struct betree_variable* pred = event->variables[index];
+    return strcmp(pred->attr_var.attr, attr) == 0 && pred->value.value_type == BETREE_STRING
         && strcmp(pred->value.svalue.string, value) == 0;
 }
 
@@ -44,11 +44,11 @@ bool test_empty_list(const struct betree_variable* pred)
 }
 
 bool test_integer_list_pred(
-    const char* attr, struct betree_integer_list* list, const struct event* event, size_t index)
+    const char* attr, struct betree_integer_list* list, const struct betree_event* event, size_t index)
 {
-    const struct betree_variable* pred = event->preds[index];
+    const struct betree_variable* pred = event->variables[index];
     if(strcmp(pred->attr_var.attr, attr) == 0
-        && (test_empty_list(pred) || pred->value.value_type == VALUE_IL)) {
+        && (test_empty_list(pred) || pred->value.value_type == BETREE_INTEGER_LIST)) {
         if(list->count == pred->value.ilvalue->count) {
             for(size_t i = 0; i < list->count; i++) {
                 if(list->integers[i] != pred->value.ilvalue->integers[i]) {
@@ -61,13 +61,13 @@ bool test_integer_list_pred(
     return false;
 }
 
-bool test_integer_list_pred0(const char* attr, const struct event* event, size_t index)
+bool test_integer_list_pred0(const char* attr, const struct betree_event* event, size_t index)
 {
     struct betree_integer_list* list = make_integer_list();
     return test_integer_list_pred(attr, list, event, index);
 }
 
-bool test_integer_list_pred1(const char* attr, int64_t i1, const struct event* event, size_t index)
+bool test_integer_list_pred1(const char* attr, int64_t i1, const struct betree_event* event, size_t index)
 {
     struct betree_integer_list* list = make_integer_list();
     add_integer_list_value(i1, list);
@@ -76,7 +76,7 @@ bool test_integer_list_pred1(const char* attr, int64_t i1, const struct event* e
 }
 
 bool test_integer_list_pred2(
-    const char* attr, int64_t i1, int64_t i2, const struct event* event, size_t index)
+    const char* attr, int64_t i1, int64_t i2, const struct betree_event* event, size_t index)
 {
     struct betree_integer_list* list = make_integer_list();
     add_integer_list_value(i1, list);
@@ -86,11 +86,11 @@ bool test_integer_list_pred2(
 }
 
 bool test_string_list_pred(
-    const char* attr, struct betree_string_list* list, const struct event* event, size_t index)
+    const char* attr, struct betree_string_list* list, const struct betree_event* event, size_t index)
 {
-    const struct betree_variable* pred = event->preds[index];
+    const struct betree_variable* pred = event->variables[index];
     if(strcmp(pred->attr_var.attr, attr) == 0
-        && (test_empty_list(pred) || pred->value.value_type == VALUE_SL)) {
+        && (test_empty_list(pred) || pred->value.value_type == BETREE_STRING_LIST)) {
         if(list->count == pred->value.slvalue->count) {
             for(size_t i = 0; i < list->count; i++) {
                 if(strcmp(list->strings[i].string, pred->value.slvalue->strings[i].string) != 0) {
@@ -103,14 +103,14 @@ bool test_string_list_pred(
     return false;
 }
 
-bool test_string_list_pred0(const char* attr, const struct event* event, size_t index)
+bool test_string_list_pred0(const char* attr, const struct betree_event* event, size_t index)
 {
     struct betree_string_list* list = make_string_list();
     return test_string_list_pred(attr, list, event, index);
 }
 
 bool test_string_list_pred1(
-    const char* attr, const char* s1, const struct event* event, size_t index)
+    const char* attr, const char* s1, const struct betree_event* event, size_t index)
 {
     struct betree_string_list* list = make_string_list();
     struct string_value sv1 = { .string = s1 };
@@ -120,7 +120,7 @@ bool test_string_list_pred1(
 }
 
 bool test_string_list_pred2(
-    const char* attr, const char* s1, const char* s2, const struct event* event, size_t index)
+    const char* attr, const char* s1, const char* s2, const struct betree_event* event, size_t index)
 {
     struct betree_string_list* list = make_string_list();
     struct string_value sv1 = { .string = s1 };
@@ -132,11 +132,11 @@ bool test_string_list_pred2(
 }
 
 bool test_segment_list_pred(
-    const char* attr, struct betree_segments* list, const struct event* event, size_t index)
+    const char* attr, struct betree_segments* list, const struct betree_event* event, size_t index)
 {
-    const struct betree_variable* pred = event->preds[index];
+    const struct betree_variable* pred = event->variables[index];
     if(strcmp(pred->attr_var.attr, attr) == 0
-        && (test_empty_list(pred) || pred->value.value_type == VALUE_SEGMENTS)) {
+        && (test_empty_list(pred) || pred->value.value_type == BETREE_SEGMENTS)) {
         if(list->size == pred->value.segments_value->size) {
             for(size_t i = 0; i < list->size; i++) {
                 struct betree_segment* target = list->content[i];
@@ -151,14 +151,14 @@ bool test_segment_list_pred(
     return false;
 }
 
-bool test_segment_list_pred0(const char* attr, const struct event* event, size_t index)
+bool test_segment_list_pred0(const char* attr, const struct betree_event* event, size_t index)
 {
     struct betree_segments* list = make_segments();
     return test_segment_list_pred(attr, list, event, index);
 }
 
 bool test_segment_list_pred1(
-    const char* attr, int64_t id1, int64_t timestamp1, const struct event* event, size_t index)
+    const char* attr, int64_t id1, int64_t timestamp1, const struct betree_event* event, size_t index)
 {
     struct betree_segments* list = make_segments();
     struct betree_segment* s1 = make_segment(id1, timestamp1);
@@ -172,7 +172,7 @@ bool test_segment_list_pred2(const char* attr,
     int64_t timestamp1,
     int64_t id2,
     int64_t timestamp2,
-    const struct event* event,
+    const struct betree_event* event,
     size_t index)
 {
     struct betree_segments* list = make_segments();
@@ -185,11 +185,11 @@ bool test_segment_list_pred2(const char* attr,
 }
 
 bool test_frequency_list_pred(
-    const char* attr, struct betree_frequency_caps* list, const struct event* event, size_t index)
+    const char* attr, struct betree_frequency_caps* list, const struct betree_event* event, size_t index)
 {
-    const struct betree_variable* pred = event->preds[index];
+    const struct betree_variable* pred = event->variables[index];
     if(strcmp(pred->attr_var.attr, attr) == 0
-        && (test_empty_list(pred) || pred->value.value_type == VALUE_FREQUENCY)) {
+        && (test_empty_list(pred) || pred->value.value_type == BETREE_FREQUENCY_CAPS)) {
         if(list->size == pred->value.frequency_value->size) {
             for(size_t i = 0; i < list->size; i++) {
                 struct betree_frequency_cap* target = list->content[i];
@@ -207,36 +207,48 @@ bool test_frequency_list_pred(
     return false;
 }
 
-bool test_frequency_list_pred0(const char* attr, const struct event* event, size_t index)
+bool test_frequency_list_pred0(const char* attr, const struct betree_event* event, size_t index)
 {
     struct betree_frequency_caps* list = make_frequency_caps();
     return test_frequency_list_pred(attr, list, event, index);
 }
 
 bool test_frequency_list_pred1(const char* attr,
-    const char* type1, int64_t id1, const char* namespace1, int64_t timestamp1, int64_t value1,
-    const struct event* event,
+    const char* type1,
+    int64_t id1,
+    const char* namespace1,
+    int64_t timestamp1,
+    int64_t value1,
+    const struct betree_event* event,
     size_t index)
 {
     struct betree_frequency_caps* list = make_frequency_caps();
     struct string_value ns1 = { .string = namespace1 };
-    struct betree_frequency_cap* s1 = make_frequency_cap(type1, id1, ns1, timestamp1, value1);
+    struct betree_frequency_cap* s1 = make_frequency_cap(type1, id1, ns1, true, timestamp1, value1);
     add_frequency(s1, list);
     bool result = test_frequency_list_pred(attr, list, event, index);
     return result;
 }
 
 bool test_frequency_list_pred2(const char* attr,
-    const char* type1, int64_t id1, const char* namespace1, int64_t timestamp1, int64_t value1,
-    const char* type2, int64_t id2, const char* namespace2, int64_t timestamp2, int64_t value2,
-    const struct event* event,
+    const char* type1,
+    int64_t id1,
+    const char* namespace1,
+    int64_t timestamp1,
+    int64_t value1,
+    const char* type2,
+    int64_t id2,
+    const char* namespace2,
+    int64_t timestamp2,
+    int64_t value2,
+    const struct betree_event* event,
     size_t index)
 {
     struct betree_frequency_caps* list = make_frequency_caps();
     struct string_value ns1 = { .string = namespace1 };
-    struct betree_frequency_cap* s1 = make_frequency_cap(type1, id1, ns1, timestamp1, value1);
+    struct betree_frequency_cap* s1 = make_frequency_cap(type1, id1, ns1, true, timestamp1, value1);
     struct string_value ns2 = { .string = namespace2 };
-    struct betree_frequency_cap* s2 = make_frequency_cap(type2, id2, ns2, timestamp2, value2);
+    struct betree_frequency_cap* s2 = make_frequency_cap(type2, id2, ns2, true, timestamp2, value2);
     add_frequency(s1, list);
     add_frequency(s2, list);
     bool result = test_frequency_list_pred(attr, list, event, index);
@@ -245,9 +257,9 @@ bool test_frequency_list_pred2(const char* attr,
 
 int test_bool()
 {
-    struct event* event;
+    struct betree_event* event;
     event_parse("{\"true\": true, \"false\": false}", &event);
-    mu_assert(event->pred_count == 2 && test_bool_pred("true", true, event, 0)
+    mu_assert(event->variable_count == 2 && test_bool_pred("true", true, event, 0)
             && test_bool_pred("false", false, event, 1),
         "true and false");
     free_event(event);
@@ -256,9 +268,9 @@ int test_bool()
 
 int test_integer()
 {
-    struct event* event;
+    struct betree_event* event;
     event_parse("{\"positive\": 1, \"negative\": -1}", &event);
-    mu_assert(event->pred_count == 2 && test_integer_pred("positive", 1, event, 0)
+    mu_assert(event->variable_count == 2 && test_integer_pred("positive", 1, event, 0)
             && test_integer_pred("negative", -1, event, 1),
         "positive and negative");
     free_event(event);
@@ -267,9 +279,9 @@ int test_integer()
 
 int test_float()
 {
-    struct event* event;
+    struct betree_event* event;
     event_parse("{\"no decimal\": 1., \"decimal\": 1.2, \"negative\": -1.}", &event);
-    mu_assert(event->pred_count == 3 && test_float_pred("no decimal", 1., event, 0)
+    mu_assert(event->variable_count == 3 && test_float_pred("no decimal", 1., event, 0)
             && test_float_pred("decimal", 1.2, event, 1)
             && test_float_pred("negative", -1., event, 2),
         "all cases");
@@ -279,9 +291,9 @@ int test_float()
 
 int test_string()
 {
-    struct event* event;
+    struct betree_event* event;
     event_parse("{\"normal\": \"normal\", \"empty\": \"\"}", &event);
-    mu_assert(event->pred_count == 2 && test_string_pred("normal", "normal", event, 0)
+    mu_assert(event->variable_count == 2 && test_string_pred("normal", "normal", event, 0)
             && test_string_pred("empty", "", event, 1),
         "empty or not");
     free_event(event);
@@ -290,9 +302,9 @@ int test_string()
 
 int test_integer_list()
 {
-    struct event* event;
+    struct betree_event* event;
     event_parse("{\"single\":[1], \"two\":[1,2], \"empty\":[]}", &event);
-    mu_assert(event->pred_count == 3 && test_integer_list_pred1("single", 1, event, 0)
+    mu_assert(event->variable_count == 3 && test_integer_list_pred1("single", 1, event, 0)
             && test_integer_list_pred2("two", 1, 2, event, 1)
             && test_integer_list_pred0("empty", event, 2),
         "all cases");
@@ -302,9 +314,9 @@ int test_integer_list()
 
 int test_string_list()
 {
-    struct event* event;
+    struct betree_event* event;
     event_parse("{\"single\":[\"1\"], \"two\":[\"1\",\"2\"], \"empty\":[]}", &event);
-    mu_assert(event->pred_count == 3 && test_string_list_pred1("single", "1", event, 0)
+    mu_assert(event->variable_count == 3 && test_string_list_pred1("single", "1", event, 0)
             && test_string_list_pred2("two", "1", "2", event, 1)
             && test_string_list_pred0("empty", event, 2),
         "all cases");
@@ -314,9 +326,9 @@ int test_string_list()
 
 int test_segment()
 {
-    struct event* event;
+    struct betree_event* event;
     event_parse("{\"single\":[[1,2]], \"two\": [[1,2],[3,4]], \"empty\":[]}", &event);
-    mu_assert(event->pred_count == 3 && test_segment_list_pred1("single", 1, 2, event, 0)
+    mu_assert(event->variable_count == 3 && test_segment_list_pred1("single", 1, 2, event, 0)
             && test_segment_list_pred2("two", 1, 2, 3, 4, event, 1)
             && test_segment_list_pred0("empty", event, 2),
         "all cases");
@@ -326,11 +338,11 @@ int test_segment()
 
 int test_frequency()
 {
-    struct event* event;
+    struct betree_event* event;
     event_parse("{\"single\":[[\"flight\",1,\"ns\",2,3]], \"two\": "
                 "[[\"flight\",1,\"ns1\",2,3],[\"flight\",4,\"ns2\",5,6]], \"empty\":[]}",
         &event);
-    mu_assert(event->pred_count == 3
+    mu_assert(event->variable_count == 3
             && test_frequency_list_pred1("single", "flight", 1, "ns", 2, 3, event, 0)
             && test_frequency_list_pred2(
                    "two", "flight", 1, "ns1", 2, 3, "flight", 4, "ns2", 5, 6, event, 1)
@@ -346,7 +358,7 @@ int test_frequency()
                 "\"product\": [[\"product\",0,\"\",0,0]],"
                 "\"product:ip\": [[\"product:ip\",0,\"\",0,0]]}",
         &event);
-    mu_assert(event->pred_count == 8
+    mu_assert(event->variable_count == 8
             && test_frequency_list_pred1("advertiser", "advertiser", 0, "", 0, 0, event, 0)
             && test_frequency_list_pred1("advertiser:ip", "advertiser:ip", 0, "", 0, 0, event, 1)
             && test_frequency_list_pred1("campaign", "campaign", 0, "", 0, 0, event, 2)
@@ -358,29 +370,31 @@ int test_frequency()
         "all types");
     free_event(event);
     event_parse("{\"new_format\": [[[\"flight\", 1, \"ns\"], 2, 3]]}", &event);
-    mu_assert(event->pred_count == 1 && test_frequency_list_pred1("new_format", "flight", 1, "ns", 2, 3, event, 0), "new format");
+    mu_assert(event->variable_count == 1
+            && test_frequency_list_pred1("new_format", "flight", 1, "ns", 2, 3, event, 0),
+        "new format");
     free_event(event);
     return 0;
 }
 
 int test_null()
 {
-    struct event* event;
+    struct betree_event* event;
     event_parse("{\"single\": null}", &event);
-    mu_assert(event->pred_count == 0, "single null");
+    mu_assert(event->variable_count == 0, "single null");
     free_event(event);
     event_parse("{\"first\": null, \"second\": 2, \"third\": 3}", &event);
-    mu_assert(event->pred_count == 2 && test_integer_pred("second", 2, event, 0)
+    mu_assert(event->variable_count == 2 && test_integer_pred("second", 2, event, 0)
             && test_integer_pred("third", 3, event, 1),
         "first");
     free_event(event);
     event_parse("{\"first\": 1, \"second\": null, \"third\": 3}", &event);
-    mu_assert(event->pred_count == 2 && test_integer_pred("first", 1, event, 0)
+    mu_assert(event->variable_count == 2 && test_integer_pred("first", 1, event, 0)
             && test_integer_pred("third", 3, event, 1),
         "second");
     free_event(event);
     event_parse("{\"first\": 1, \"second\": 2, \"third\": null}", &event);
-    mu_assert(event->pred_count == 2 && test_integer_pred("first", 1, event, 0)
+    mu_assert(event->variable_count == 2 && test_integer_pred("first", 1, event, 0)
             && test_integer_pred("second", 2, event, 1),
         "third");
     free_event(event);

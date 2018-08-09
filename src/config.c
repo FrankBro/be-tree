@@ -102,9 +102,10 @@ static void add_attr_domain(
     config->attr_domain_count++;
 }
 
-void add_attr_domain_bounded_i(struct config* config, const char* attr, bool allow_undefined, int64_t min, int64_t max)
+void add_attr_domain_bounded_i(
+    struct config* config, const char* attr, bool allow_undefined, int64_t min, int64_t max)
 {
-    struct value_bound bound = { .value_type = VALUE_I, .imin = min, .imax = max };
+    struct value_bound bound = { .value_type = BETREE_INTEGER, .imin = min, .imax = max };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
@@ -113,9 +114,10 @@ void add_attr_domain_i(struct config* config, const char* attr, bool allow_undef
     add_attr_domain_bounded_i(config, attr, allow_undefined, INT64_MIN, INT64_MAX);
 }
 
-void add_attr_domain_bounded_f(struct config* config, const char* attr, bool allow_undefined, double min, double max)
+void add_attr_domain_bounded_f(
+    struct config* config, const char* attr, bool allow_undefined, double min, double max)
 {
-    struct value_bound bound = { .value_type = VALUE_F, .fmin = min, .fmax = max };
+    struct value_bound bound = { .value_type = BETREE_FLOAT, .fmin = min, .fmax = max };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
@@ -126,7 +128,7 @@ void add_attr_domain_f(struct config* config, const char* attr, bool allow_undef
 
 void add_attr_domain_b(struct config* config, const char* attr, bool allow_undefined)
 {
-    struct value_bound bound = { .value_type = VALUE_B, .bmin = false, .bmax = true };
+    struct value_bound bound = { .value_type = BETREE_BOOLEAN, .bmin = false, .bmax = true };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
@@ -135,9 +137,10 @@ void add_attr_domain_s(struct config* config, const char* attr, bool allow_undef
     add_attr_domain_bounded_s(config, attr, allow_undefined, SIZE_MAX);
 }
 
-void add_attr_domain_bounded_s(struct config* config, const char* attr, bool allow_undefined, size_t max)
+void add_attr_domain_bounded_s(
+    struct config* config, const char* attr, bool allow_undefined, size_t max)
 {
-    struct value_bound bound = { .value_type = VALUE_S, .smin = 0, .smax = max - 1 };
+    struct value_bound bound = { .value_type = BETREE_STRING, .smin = 0, .smax = max - 1 };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
@@ -146,9 +149,10 @@ void add_attr_domain_il(struct config* config, const char* attr, bool allow_unde
     add_attr_domain_bounded_il(config, attr, allow_undefined, INT64_MIN, INT64_MAX);
 }
 
-void add_attr_domain_bounded_il(struct config* config, const char* attr, bool allow_undefined, int64_t min, int64_t max)
+void add_attr_domain_bounded_il(
+    struct config* config, const char* attr, bool allow_undefined, int64_t min, int64_t max)
 {
-    struct value_bound bound = { .value_type = VALUE_IL, .imin = min, .imax = max };
+    struct value_bound bound = { .value_type = BETREE_INTEGER_LIST, .imin = min, .imax = max };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
@@ -157,25 +161,27 @@ void add_attr_domain_sl(struct config* config, const char* attr, bool allow_unde
     add_attr_domain_bounded_sl(config, attr, allow_undefined, SIZE_MAX);
 }
 
-void add_attr_domain_bounded_sl(struct config* config, const char* attr, bool allow_undefined, size_t max)
+void add_attr_domain_bounded_sl(
+    struct config* config, const char* attr, bool allow_undefined, size_t max)
 {
-    struct value_bound bound = { .value_type = VALUE_SL, .smin = 0, .smax = max - 1 };
+    struct value_bound bound = { .value_type = BETREE_STRING_LIST, .smin = 0, .smax = max - 1 };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
 void add_attr_domain_segments(struct config* config, const char* attr, bool allow_undefined)
 {
-    struct value_bound bound = { .value_type = VALUE_SEGMENTS };
+    struct value_bound bound = { .value_type = BETREE_SEGMENTS };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
 void add_attr_domain_frequency(struct config* config, const char* attr, bool allow_undefined)
 {
-    struct value_bound bound = { .value_type = VALUE_FREQUENCY };
+    struct value_bound bound = { .value_type = BETREE_FREQUENCY_CAPS };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
-const struct attr_domain* get_attr_domain(const struct attr_domain** attr_domains, betree_var_t variable_id)
+const struct attr_domain* get_attr_domain(
+    const struct attr_domain** attr_domains, betree_var_t variable_id)
 {
     return attr_domains[variable_id];
 }
@@ -190,8 +196,8 @@ static void add_string_map(struct attr_var attr_var, struct config* config)
         }
     }
     else {
-        struct string_map* string_maps = realloc(
-            config->string_maps, sizeof(*string_maps) * (config->string_map_count + 1));
+        struct string_map* string_maps
+            = realloc(config->string_maps, sizeof(*string_maps) * (config->string_map_count + 1));
         if(string_maps == NULL) {
             fprintf(stderr, "%s realloc failed\n", __func__);
             abort();
@@ -215,8 +221,8 @@ static void add_to_string_map(struct string_map* string_map, char* copy)
         }
     }
     else {
-        char** string_values = realloc(
-            string_map->string_values, sizeof(*string_values) * (string_map->string_value_count + 1));
+        char** string_values = realloc(string_map->string_values,
+            sizeof(*string_values) * (string_map->string_value_count + 1));
         if(string_values == NULL) {
             fprintf(stderr, "%s realloc failed\n", __func__);
             abort();
@@ -227,7 +233,8 @@ static void add_to_string_map(struct string_map* string_map, char* copy)
     string_map->string_value_count++;
 }
 
-betree_str_t try_get_id_for_string(const struct config* config, struct attr_var attr_var, const char* string)
+betree_str_t try_get_id_for_string(
+    const struct config* config, struct attr_var attr_var, const char* string)
 {
     char* copy = strdup(string);
     for(size_t i = 0; i < config->string_map_count; i++) {
@@ -266,7 +273,8 @@ betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, 
         add_string_map(attr_var, config);
         string_map = &config->string_maps[config->string_map_count - 1];
     }
-    const struct attr_domain* attr_domain = get_attr_domain((const struct attr_domain**)config->attr_domains, attr_var.var);
+    const struct attr_domain* attr_domain
+        = get_attr_domain((const struct attr_domain**)config->attr_domains, attr_var.var);
     if(attr_domain->bound.smax + 1 == string_map->string_value_count) {
         free(copy);
         return INVALID_STR;
@@ -279,4 +287,3 @@ bool is_variable_allow_undefined(const struct config* config, const betree_var_t
 {
     return config->attr_domains[variable_id]->allow_undefined;
 }
-

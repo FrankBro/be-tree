@@ -86,7 +86,8 @@ static uint64_t score_node(struct ast_node* node)
                 case AST_BOOL_OR:
                 case AST_BOOL_AND:
                     // lhs + rhs
-                    return score_node(node->bool_expr.binary.lhs) + score_node(node->bool_expr.binary.rhs);
+                    return score_node(node->bool_expr.binary.lhs)
+                        + score_node(node->bool_expr.binary.rhs);
                 case AST_BOOL_NOT:
                     // expr
                     return score_node(node->bool_expr.unary.expr);
@@ -112,7 +113,7 @@ static uint64_t score_node(struct ast_node* node)
                     abort();
             }
         case AST_TYPE_SPECIAL_EXPR:
-            switch (node->special_expr.type) {
+            switch(node->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY:
                     // depend on variable length
                     return 20;
@@ -389,7 +390,7 @@ bool d64binary_search(int64_t arr[], size_t count, int64_t to_find)
     int imin = 0;
     int imax = (int)count - 1;
     while(imax >= imin) {
-        int imid = imin + ((imax - imin)/2);
+        int imid = imin + ((imax - imin) / 2);
         if(arr[imid] == to_find) {
             return true;
         }
@@ -408,7 +409,7 @@ bool sbinary_search(struct string_value arr[], size_t count, betree_str_t to_fin
     int imin = 0;
     int imax = (int)count - 1;
     while(imax >= imin) {
-        int imid = imin + ((imax - imin)/2);
+        int imid = imin + ((imax - imin) / 2);
         if(arr[imid].str == to_find) {
             return true;
         }
@@ -432,23 +433,23 @@ static bool string_in_string_list(struct string_value string, struct betree_stri
     return sbinary_search(list->strings, list->count, string.str);
 }
 
-static bool compare_value_matches(enum ast_compare_value_e a, enum value_e b)
+static bool compare_value_matches(enum ast_compare_value_e a, enum betree_value_type_e b)
 {
-    return (a == AST_COMPARE_VALUE_INTEGER && b == VALUE_I)
-        || (a == AST_COMPARE_VALUE_FLOAT && b == VALUE_F);
+    return (a == AST_COMPARE_VALUE_INTEGER && b == BETREE_INTEGER)
+        || (a == AST_COMPARE_VALUE_FLOAT && b == BETREE_FLOAT);
 }
 
-static bool equality_value_matches(enum ast_equality_value_e a, enum value_e b)
+static bool equality_value_matches(enum ast_equality_value_e a, enum betree_value_type_e b)
 {
-    return (a == AST_EQUALITY_VALUE_INTEGER && b == VALUE_I)
-        || (a == AST_EQUALITY_VALUE_FLOAT && b == VALUE_F)
-        || (a == AST_EQUALITY_VALUE_STRING && b == VALUE_S);
+    return (a == AST_EQUALITY_VALUE_INTEGER && b == BETREE_INTEGER)
+        || (a == AST_EQUALITY_VALUE_FLOAT && b == BETREE_FLOAT)
+        || (a == AST_EQUALITY_VALUE_STRING && b == BETREE_STRING);
 }
 
-static bool list_value_matches(enum ast_list_value_e a, enum value_e b)
+static bool list_value_matches(enum ast_list_value_e a, enum betree_value_type_e b)
 {
-    return (a == AST_LIST_VALUE_INTEGER_LIST && b == VALUE_IL)
-        || (a == AST_LIST_VALUE_STRING_LIST && b == VALUE_SL);
+    return (a == AST_LIST_VALUE_INTEGER_LIST && b == BETREE_INTEGER_LIST)
+        || (a == AST_LIST_VALUE_STRING_LIST && b == BETREE_STRING_LIST);
 }
 
 const char* frequency_type_to_string(enum frequency_type_e type)
@@ -495,7 +496,8 @@ const char* frequency_type_to_string(enum frequency_type_e type)
     return string;
 }
 
-static bool match_special_expr(const struct betree_variable** preds, const struct ast_special_expr special_expr)
+static bool match_special_expr(
+    const struct betree_variable** preds, const struct ast_special_expr special_expr)
 {
     switch(special_expr.type) {
         case AST_SPECIAL_FREQUENCY: {
@@ -516,7 +518,8 @@ static bool match_special_expr(const struct betree_variable** preds, const struc
                     if(is_now_defined == false) {
                         return false;
                     }
-                    return within_frequency_caps(caps, f->type, f->id, f->ns, f->value, f->length, now);
+                    return within_frequency_caps(
+                        caps, f->type, f->id, f->ns, f->value, f->length, now);
                 }
                 default:
                     switch_default_error("Invalid frequency operation");
@@ -550,14 +553,16 @@ static bool match_special_expr(const struct betree_variable** preds, const struc
                 case AST_SPECIAL_GEOWITHINRADIUS: {
                     const struct ast_special_geo* g = &special_expr.geo;
                     double latitude_var, longitude_var;
-                    bool is_latitude_defined = get_float_var(g->latitude_var.var, preds, &latitude_var);
-                    bool is_longitude_defined = get_float_var(g->longitude_var.var, preds, &longitude_var);
-                    if(is_latitude_defined == false
-                        || is_longitude_defined == false) {
+                    bool is_latitude_defined
+                        = get_float_var(g->latitude_var.var, preds, &latitude_var);
+                    bool is_longitude_defined
+                        = get_float_var(g->longitude_var.var, preds, &longitude_var);
+                    if(is_latitude_defined == false || is_longitude_defined == false) {
                         return false;
                     }
 
-                    return geo_within_radius(g->latitude, g->longitude, latitude_var, longitude_var, g->radius);
+                    return geo_within_radius(
+                        g->latitude, g->longitude, latitude_var, longitude_var, g->radius);
                 }
                 default:
                     switch_default_error("Invalid geo operation");
@@ -729,7 +734,8 @@ static bool match_all_of_string(struct value variable, struct ast_list_expr list
     }
 }
 
-static bool match_list_expr(const struct betree_variable** preds, const struct ast_list_expr list_expr)
+static bool match_list_expr(
+    const struct betree_variable** preds, const struct ast_list_expr list_expr)
 {
     struct value variable;
     bool is_variable_defined = get_variable(list_expr.attr_var.var, preds, &variable);
@@ -844,7 +850,8 @@ static bool match_set_expr(const struct betree_variable** preds, const struct as
     }
 }
 
-static bool match_compare_expr(const struct betree_variable** preds, const struct ast_compare_expr compare_expr) 
+static bool match_compare_expr(
+    const struct betree_variable** preds, const struct ast_compare_expr compare_expr)
 {
     struct value variable;
     bool is_variable_defined = get_variable(compare_expr.attr_var.var, preds, &variable);
@@ -923,7 +930,8 @@ static bool match_compare_expr(const struct betree_variable** preds, const struc
     }
 }
 
-static bool match_equality_expr(const struct betree_variable** preds, const struct ast_equality_expr equality_expr)
+static bool match_equality_expr(
+    const struct betree_variable** preds, const struct ast_equality_expr equality_expr)
 {
     struct value variable;
     bool is_variable_defined = get_variable(equality_expr.attr_var.var, preds, &variable);
@@ -978,9 +986,15 @@ static bool match_equality_expr(const struct betree_variable** preds, const stru
     }
 }
 
-static bool match_node_inner(const struct betree_variable** preds, const struct ast_node* node, struct memoize* memoize, struct report* report);
+static bool match_node_inner(const struct betree_variable** preds,
+    const struct ast_node* node,
+    struct memoize* memoize,
+    struct report* report);
 
-static bool match_bool_expr(const struct betree_variable** preds, const struct ast_bool_expr bool_expr, struct memoize* memoize, struct report* report)
+static bool match_bool_expr(const struct betree_variable** preds,
+    const struct ast_bool_expr bool_expr,
+    struct memoize* memoize,
+    struct report* report)
 {
     switch(bool_expr.op) {
         case AST_BOOL_AND: {
@@ -1018,7 +1032,10 @@ static bool match_bool_expr(const struct betree_variable** preds, const struct a
     }
 }
 
-static bool match_node_inner(const struct betree_variable** preds, const struct ast_node* node, struct memoize* memoize, struct report* report)
+static bool match_node_inner(const struct betree_variable** preds,
+    const struct ast_node* node,
+    struct memoize* memoize,
+    struct report* report)
 {
     if(unlikely(node->id != INVALID_PRED)) {
         if(test_bit(memoize->pass, node->id)) {
@@ -1072,24 +1089,30 @@ static bool match_node_inner(const struct betree_variable** preds, const struct 
     return result;
 }
 
-bool match_node(const struct betree_variable** preds, const struct ast_node* node, struct memoize* memoize, struct report* report)
+bool match_node(const struct betree_variable** preds,
+    const struct ast_node* node,
+    struct memoize* memoize,
+    struct report* report)
 {
     return match_node_inner(preds, node, memoize, report);
 }
 
-struct bound_dirty 
-{
+struct bound_dirty {
     bool min_dirty;
     bool max_dirty;
 };
 
-static void get_variable_bound_inner(const struct attr_domain* domain, const struct ast_node* node, struct value_bound* bound, bool is_reversed, struct bound_dirty* dirty)
+static void get_variable_bound_inner(const struct attr_domain* domain,
+    const struct ast_node* node,
+    struct value_bound* bound,
+    bool is_reversed,
+    struct bound_dirty* dirty)
 {
     if(node == NULL) {
         return;
     }
     switch(node->type) {
-        case AST_TYPE_SPECIAL_EXPR: 
+        case AST_TYPE_SPECIAL_EXPR:
             return;
         case AST_TYPE_LIST_EXPR:
             if(domain->attr_var.var != node->list_expr.attr_var.var) {
@@ -1105,14 +1128,18 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                     if(domain->attr_var.var != node->list_expr.attr_var.var) {
                         return;
                     }
-                    if(domain->bound.value_type == VALUE_IL && node->list_expr.value.value_type == AST_LIST_VALUE_INTEGER_LIST) {
+                    if(domain->bound.value_type == BETREE_INTEGER_LIST
+                        && node->list_expr.value.value_type == AST_LIST_VALUE_INTEGER_LIST) {
                         if(is_reversed) {
                         }
                         else {
                             if(node->list_expr.value.integer_list_value->count != 0) {
                                 bound->imin = node->list_expr.value.integer_list_value->integers[0];
                                 dirty->min_dirty = true;
-                                bound->imax = node->list_expr.value.integer_list_value->integers[node->list_expr.value.integer_list_value->count-1];
+                                bound->imax
+                                    = node->list_expr.value.integer_list_value
+                                          ->integers[node->list_expr.value.integer_list_value->count
+                                              - 1];
                                 dirty->max_dirty = true;
                             }
                             else {
@@ -1121,14 +1148,20 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                         }
                         return;
                     }
-                    else if(domain->bound.value_type == VALUE_SL && node->list_expr.value.value_type == AST_LIST_VALUE_STRING_LIST) {
+                    else if(domain->bound.value_type == BETREE_STRING_LIST
+                        && node->list_expr.value.value_type == AST_LIST_VALUE_STRING_LIST) {
                         if(is_reversed) {
                         }
                         else {
                             if(node->list_expr.value.string_list_value->count != 0) {
-                                bound->smin = node->list_expr.value.string_list_value->strings[0].str;
+                                bound->smin
+                                    = node->list_expr.value.string_list_value->strings[0].str;
                                 dirty->min_dirty = true;
-                                bound->smax = node->list_expr.value.string_list_value->strings[node->list_expr.value.string_list_value->count-1].str;
+                                bound->smax
+                                    = node->list_expr.value.string_list_value
+                                          ->strings[node->list_expr.value.string_list_value->count
+                                              - 1]
+                                          .str;
                                 dirty->max_dirty = true;
                             }
                             else {
@@ -1142,12 +1175,16 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                         return;
                     }
                 case AST_LIST_NONE_OF:
-                    if(domain->bound.value_type == VALUE_IL && node->list_expr.value.value_type == AST_LIST_VALUE_INTEGER_LIST) {
+                    if(domain->bound.value_type == BETREE_INTEGER_LIST
+                        && node->list_expr.value.value_type == AST_LIST_VALUE_INTEGER_LIST) {
                         if(is_reversed) {
                             if(node->list_expr.value.integer_list_value->count != 0) {
                                 bound->imin = node->list_expr.value.integer_list_value->integers[0];
                                 dirty->min_dirty = true;
-                                bound->imax = node->list_expr.value.integer_list_value->integers[node->list_expr.value.integer_list_value->count-1];
+                                bound->imax
+                                    = node->list_expr.value.integer_list_value
+                                          ->integers[node->list_expr.value.integer_list_value->count
+                                              - 1];
                                 dirty->max_dirty = true;
                             }
                             else {
@@ -1158,12 +1195,18 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                         }
                         return;
                     }
-                    else if(domain->bound.value_type == VALUE_SL && node->list_expr.value.value_type == AST_LIST_VALUE_STRING_LIST) {
+                    else if(domain->bound.value_type == BETREE_STRING_LIST
+                        && node->list_expr.value.value_type == AST_LIST_VALUE_STRING_LIST) {
                         if(is_reversed) {
                             if(node->list_expr.value.string_list_value->count != 0) {
-                                bound->smin = node->list_expr.value.string_list_value->strings[0].str;
+                                bound->smin
+                                    = node->list_expr.value.string_list_value->strings[0].str;
                                 dirty->min_dirty = true;
-                                bound->smax = node->list_expr.value.string_list_value->strings[node->list_expr.value.string_list_value->count-1].str;
+                                bound->smax
+                                    = node->list_expr.value.string_list_value
+                                          ->strings[node->list_expr.value.string_list_value->count
+                                              - 1]
+                                          .str;
                                 dirty->max_dirty = true;
                             }
                             else {
@@ -1189,14 +1232,20 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                         if(domain->attr_var.var != node->set_expr.left_value.variable_value.var) {
                             return;
                         }
-                        if(domain->bound.value_type == VALUE_I && node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST) {
+                        if(domain->bound.value_type == BETREE_INTEGER
+                            && node->set_expr.right_value.value_type
+                                == AST_SET_RIGHT_VALUE_INTEGER_LIST) {
                             if(is_reversed) {
                             }
                             else {
                                 if(node->set_expr.right_value.integer_list_value->count != 0) {
-                                    bound->imin = node->set_expr.right_value.integer_list_value->integers[0];
+                                    bound->imin = node->set_expr.right_value.integer_list_value
+                                                      ->integers[0];
                                     dirty->min_dirty = true;
-                                    bound->imax = node->set_expr.right_value.integer_list_value->integers[node->set_expr.right_value.integer_list_value->count-1];
+                                    bound->imax = node->set_expr.right_value.integer_list_value
+                                                      ->integers[node->set_expr.right_value
+                                                                     .integer_list_value->count
+                                                          - 1];
                                     dirty->max_dirty = true;
                                 }
                                 else {
@@ -1205,14 +1254,22 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                             }
                             return;
                         }
-                        else if(domain->bound.value_type == VALUE_S && node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
+                        else if(domain->bound.value_type == BETREE_STRING
+                            && node->set_expr.right_value.value_type
+                                == AST_SET_RIGHT_VALUE_STRING_LIST) {
                             if(is_reversed) {
                             }
                             else {
                                 if(node->set_expr.right_value.string_list_value->count != 0) {
-                                    bound->smin = node->set_expr.right_value.string_list_value->strings[0].str;
+                                    bound->smin
+                                        = node->set_expr.right_value.string_list_value->strings[0]
+                                              .str;
                                     dirty->min_dirty = true;
-                                    bound->smax = node->set_expr.right_value.string_list_value->strings[node->set_expr.right_value.string_list_value->count-1].str;
+                                    bound->smax = node->set_expr.right_value.string_list_value
+                                                      ->strings[node->set_expr.right_value
+                                                                    .string_list_value->count
+                                                          - 1]
+                                                      .str;
                                     dirty->max_dirty = true;
                                 }
                                 else {
@@ -1230,7 +1287,9 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                         if(domain->attr_var.var != node->set_expr.right_value.variable_value.var) {
                             return;
                         }
-                        if(domain->bound.value_type == VALUE_IL && node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_INTEGER) {
+                        if(domain->bound.value_type == BETREE_INTEGER_LIST
+                            && node->set_expr.left_value.value_type
+                                == AST_SET_LEFT_VALUE_INTEGER) {
                             if(is_reversed) {
                             }
                             else {
@@ -1246,7 +1305,9 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                             }
                             return;
                         }
-                        else if(domain->bound.value_type == VALUE_SL && node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_STRING) {
+                        else if(domain->bound.value_type == BETREE_STRING_LIST
+                            && node->set_expr.left_value.value_type
+                                == AST_SET_LEFT_VALUE_STRING) {
                             if(is_reversed) {
                             }
                             else {
@@ -1276,12 +1337,18 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                         if(domain->attr_var.var != node->set_expr.left_value.variable_value.var) {
                             return;
                         }
-                        if(domain->bound.value_type == VALUE_I && node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST) {
+                        if(domain->bound.value_type == BETREE_INTEGER
+                            && node->set_expr.right_value.value_type
+                                == AST_SET_RIGHT_VALUE_INTEGER_LIST) {
                             if(is_reversed) {
                                 if(node->set_expr.right_value.integer_list_value->count != 0) {
-                                    bound->imin = node->set_expr.right_value.integer_list_value->integers[0];
+                                    bound->imin = node->set_expr.right_value.integer_list_value
+                                                      ->integers[0];
                                     dirty->min_dirty = true;
-                                    bound->imax = node->set_expr.right_value.integer_list_value->integers[node->set_expr.right_value.integer_list_value->count-1];
+                                    bound->imax = node->set_expr.right_value.integer_list_value
+                                                      ->integers[node->set_expr.right_value
+                                                                     .integer_list_value->count
+                                                          - 1];
                                     dirty->max_dirty = true;
                                 }
                                 else {
@@ -1292,12 +1359,20 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                             }
                             return;
                         }
-                        else if(domain->bound.value_type == VALUE_S && node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
+                        else if(domain->bound.value_type == BETREE_STRING
+                            && node->set_expr.right_value.value_type
+                                == AST_SET_RIGHT_VALUE_STRING_LIST) {
                             if(is_reversed) {
                                 if(node->set_expr.right_value.string_list_value->count != 0) {
-                                    bound->smin = node->set_expr.right_value.string_list_value->strings[0].str;
+                                    bound->smin
+                                        = node->set_expr.right_value.string_list_value->strings[0]
+                                              .str;
                                     dirty->min_dirty = true;
-                                    bound->smax = node->set_expr.right_value.string_list_value->strings[node->set_expr.right_value.string_list_value->count-1].str;
+                                    bound->smax = node->set_expr.right_value.string_list_value
+                                                      ->strings[node->set_expr.right_value
+                                                                    .string_list_value->count
+                                                          - 1]
+                                                      .str;
                                     dirty->max_dirty = true;
                                 }
                                 else {
@@ -1317,7 +1392,9 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                         if(domain->attr_var.var != node->set_expr.right_value.variable_value.var) {
                             return;
                         }
-                        if(domain->bound.value_type == VALUE_IL && node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_INTEGER) {
+                        if(domain->bound.value_type == BETREE_INTEGER_LIST
+                            && node->set_expr.left_value.value_type
+                                == AST_SET_LEFT_VALUE_INTEGER) {
                             if(is_reversed) {
                                 if(node->set_expr.right_value.integer_list_value->count != 0) {
                                     bound->imin = node->set_expr.left_value.integer_value;
@@ -1333,7 +1410,9 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                             }
                             return;
                         }
-                        else if(domain->bound.value_type == VALUE_SL && node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_STRING) {
+                        else if(domain->bound.value_type == BETREE_STRING_LIST
+                            && node->set_expr.left_value.value_type
+                                == AST_SET_LEFT_VALUE_STRING) {
                             if(is_reversed) {
                                 if(node->set_expr.right_value.string_list_value->count != 0) {
                                     bound->smin = node->set_expr.left_value.string_value.str;
@@ -1368,7 +1447,7 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                     if(domain->attr_var.var != node->bool_expr.variable.var) {
                         return;
                     }
-                    if(domain->bound.value_type != VALUE_B) {
+                    if(domain->bound.value_type != BETREE_BOOLEAN) {
                         invalid_expr("Domain and expr type mismatch");
                         return;
                     }
@@ -1386,34 +1465,37 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                     }
                     return;
                 case AST_BOOL_NOT:
-                    get_variable_bound_inner(domain, node->bool_expr.unary.expr, bound, !is_reversed, dirty);
+                    get_variable_bound_inner(
+                        domain, node->bool_expr.unary.expr, bound, !is_reversed, dirty);
                     return;
                 case AST_BOOL_OR: {
                     struct value_bound lbound = { .value_type = bound->value_type };
                     struct bound_dirty ldirty = { .min_dirty = false, .max_dirty = false };
                     struct value_bound rbound = { .value_type = bound->value_type };
                     struct bound_dirty rdirty = { .min_dirty = false, .max_dirty = false };
-                    get_variable_bound_inner(domain, node->bool_expr.binary.lhs, &lbound, is_reversed, &ldirty);
-                    get_variable_bound_inner(domain, node->bool_expr.binary.rhs, &rbound, is_reversed, &rdirty);
+                    get_variable_bound_inner(
+                        domain, node->bool_expr.binary.lhs, &lbound, is_reversed, &ldirty);
+                    get_variable_bound_inner(
+                        domain, node->bool_expr.binary.rhs, &rbound, is_reversed, &rdirty);
                     if(ldirty.min_dirty == true && rdirty.min_dirty == true) {
                         dirty->min_dirty = true;
                         switch(bound->value_type) {
-                            case VALUE_B:
+                            case BETREE_BOOLEAN:
                                 bound->bmin = lbound.bmin && rbound.bmin;
                                 break;
-                            case VALUE_I:
-                            case VALUE_IL:
+                            case BETREE_INTEGER:
+                            case BETREE_INTEGER_LIST:
                                 bound->imin = d64min(lbound.imin, rbound.imin);
                                 break;
-                            case VALUE_F:
+                            case BETREE_FLOAT:
                                 bound->fmin = fmin(lbound.fmin, rbound.fmin);
                                 break;
-                            case VALUE_S:
-                            case VALUE_SL:
+                            case BETREE_STRING:
+                            case BETREE_STRING_LIST:
                                 bound->smin = smin(lbound.smin, rbound.smin);
                                 break;
-                            case VALUE_SEGMENTS:
-                            case VALUE_FREQUENCY:
+                            case BETREE_SEGMENTS:
+                            case BETREE_FREQUENCY_CAPS:
                             default:
                                 break;
                         }
@@ -1421,22 +1503,22 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                     if(ldirty.max_dirty == true && rdirty.max_dirty == true) {
                         dirty->max_dirty = true;
                         switch(bound->value_type) {
-                            case VALUE_B:
+                            case BETREE_BOOLEAN:
                                 bound->bmax = lbound.bmax || rbound.bmax;
                                 break;
-                            case VALUE_I:
-                            case VALUE_IL:
+                            case BETREE_INTEGER:
+                            case BETREE_INTEGER_LIST:
                                 bound->imax = d64max(lbound.imax, rbound.imax);
                                 break;
-                            case VALUE_F:
+                            case BETREE_FLOAT:
                                 bound->fmax = fmax(lbound.fmax, rbound.fmax);
                                 break;
-                            case VALUE_S:
-                            case VALUE_SL:
+                            case BETREE_STRING:
+                            case BETREE_STRING_LIST:
                                 bound->smax = smax(lbound.smax, rbound.smax);
                                 break;
-                            case VALUE_SEGMENTS:
-                            case VALUE_FREQUENCY:
+                            case BETREE_SEGMENTS:
+                            case BETREE_FREQUENCY_CAPS:
                             default:
                                 break;
                         }
@@ -1448,12 +1530,14 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                     struct bound_dirty ldirty = { .min_dirty = false, .max_dirty = false };
                     struct value_bound rbound = { .value_type = bound->value_type };
                     struct bound_dirty rdirty = { .min_dirty = false, .max_dirty = false };
-                    get_variable_bound_inner(domain, node->bool_expr.binary.lhs, &lbound, is_reversed, &ldirty);
-                    get_variable_bound_inner(domain, node->bool_expr.binary.rhs, &rbound, is_reversed, &rdirty);
+                    get_variable_bound_inner(
+                        domain, node->bool_expr.binary.lhs, &lbound, is_reversed, &ldirty);
+                    get_variable_bound_inner(
+                        domain, node->bool_expr.binary.rhs, &rbound, is_reversed, &rdirty);
                     if(ldirty.min_dirty == true || rdirty.min_dirty == true) {
                         dirty->min_dirty = true;
                         switch(bound->value_type) {
-                            case VALUE_B:
+                            case BETREE_BOOLEAN:
                                 if(ldirty.min_dirty == true && rdirty.min_dirty == true) {
                                     bound->bmin = lbound.bmin && rbound.bmin;
                                 }
@@ -1464,8 +1548,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                                     bound->bmin = rbound.bmin;
                                 }
                                 break;
-                            case VALUE_I:
-                            case VALUE_IL:
+                            case BETREE_INTEGER:
+                            case BETREE_INTEGER_LIST:
                                 if(ldirty.min_dirty == true && rdirty.min_dirty == true) {
                                     bound->imin = d64min(lbound.imin, rbound.imin);
                                 }
@@ -1476,7 +1560,7 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                                     bound->imin = rbound.imin;
                                 }
                                 break;
-                            case VALUE_F:
+                            case BETREE_FLOAT:
                                 if(ldirty.min_dirty == true && rdirty.min_dirty == true) {
                                     bound->fmin = fmin(lbound.fmin, rbound.fmin);
                                 }
@@ -1487,8 +1571,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                                     bound->fmin = rbound.fmin;
                                 }
                                 break;
-                            case VALUE_S:
-                            case VALUE_SL:
+                            case BETREE_STRING:
+                            case BETREE_STRING_LIST:
                                 if(ldirty.min_dirty == true && rdirty.min_dirty == true) {
                                     bound->smin = smin(lbound.smin, rbound.smin);
                                 }
@@ -1499,8 +1583,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                                     bound->smin = rbound.smin;
                                 }
                                 break;
-                            case VALUE_SEGMENTS:
-                            case VALUE_FREQUENCY:
+                            case BETREE_SEGMENTS:
+                            case BETREE_FREQUENCY_CAPS:
                             default:
                                 break;
                         }
@@ -1508,7 +1592,7 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                     if(ldirty.max_dirty == true || rdirty.max_dirty == true) {
                         dirty->max_dirty = true;
                         switch(bound->value_type) {
-                            case VALUE_B:
+                            case BETREE_BOOLEAN:
                                 if(ldirty.max_dirty == true && rdirty.max_dirty == true) {
                                     bound->bmax = lbound.bmax || rbound.bmax;
                                 }
@@ -1519,8 +1603,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                                     bound->bmax = rbound.bmax;
                                 }
                                 break;
-                            case VALUE_I:
-                            case VALUE_IL:
+                            case BETREE_INTEGER:
+                            case BETREE_INTEGER_LIST:
                                 if(ldirty.max_dirty == true && rdirty.max_dirty == true) {
                                     bound->imax = d64max(lbound.imax, rbound.imax);
                                 }
@@ -1531,7 +1615,7 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                                     bound->imax = rbound.imax;
                                 }
                                 break;
-                            case VALUE_F:
+                            case BETREE_FLOAT:
                                 if(ldirty.max_dirty == true && rdirty.max_dirty == true) {
                                     bound->fmax = fmax(lbound.fmax, rbound.fmax);
                                 }
@@ -1542,8 +1626,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                                     bound->fmax = rbound.fmax;
                                 }
                                 break;
-                            case VALUE_S:
-                            case VALUE_SL:
+                            case BETREE_STRING:
+                            case BETREE_STRING_LIST:
                                 if(ldirty.max_dirty == true && rdirty.max_dirty == true) {
                                     bound->smax = smax(lbound.smax, rbound.smax);
                                 }
@@ -1554,8 +1638,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                                     bound->smax = rbound.smax;
                                 }
                                 break;
-                            case VALUE_SEGMENTS:
-                            case VALUE_FREQUENCY:
+                            case BETREE_SEGMENTS:
+                            case BETREE_FREQUENCY_CAPS:
                             default:
                                 break;
                         }
@@ -1570,7 +1654,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
             if(domain->attr_var.var != node->equality_expr.attr_var.var) {
                 return;
             }
-            if(!equality_value_matches(node->equality_expr.value.value_type, domain->bound.value_type)) {
+            if(!equality_value_matches(
+                   node->equality_expr.value.value_type, domain->bound.value_type)) {
                 invalid_expr("Domain and expr type mismatch");
                 return;
             }
@@ -1658,7 +1743,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
             if(domain->attr_var.var != node->compare_expr.attr_var.var) {
                 return;
             }
-            if(!compare_value_matches(node->compare_expr.value.value_type, domain->bound.value_type)) {
+            if(!compare_value_matches(
+                   node->compare_expr.value.value_type, domain->bound.value_type)) {
                 invalid_expr("Domain and expr type mismatch");
                 return;
             }
@@ -1681,7 +1767,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                                 dirty->min_dirty = true;
                             }
                             else {
-                                bound->fmax = node->compare_expr.value.float_value - __DBL_EPSILON__;
+                                bound->fmax
+                                    = node->compare_expr.value.float_value - __DBL_EPSILON__;
                                 dirty->max_dirty = true;
                             }
                             break;
@@ -1694,7 +1781,7 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                     switch(node->compare_expr.value.value_type) {
                         case AST_COMPARE_VALUE_INTEGER:
                             if(is_reversed) {
-                                bound->imin =  node->compare_expr.value.integer_value + 1;
+                                bound->imin = node->compare_expr.value.integer_value + 1;
                                 dirty->min_dirty = true;
                             }
                             else {
@@ -1704,7 +1791,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                             break;
                         case AST_COMPARE_VALUE_FLOAT:
                             if(is_reversed) {
-                                bound->fmin = node->compare_expr.value.float_value + __DBL_EPSILON__;
+                                bound->fmin
+                                    = node->compare_expr.value.float_value + __DBL_EPSILON__;
                                 dirty->min_dirty = true;
                             }
                             else {
@@ -1735,7 +1823,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                                 dirty->max_dirty = true;
                             }
                             else {
-                                bound->fmin = node->compare_expr.value.float_value + __DBL_EPSILON__;
+                                bound->fmin
+                                    = node->compare_expr.value.float_value + __DBL_EPSILON__;
                                 dirty->min_dirty = true;
                             }
                             break;
@@ -1758,7 +1847,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                             break;
                         case AST_COMPARE_VALUE_FLOAT:
                             if(is_reversed) {
-                                bound->fmax = node->compare_expr.value.float_value - __DBL_EPSILON__;
+                                bound->fmax
+                                    = node->compare_expr.value.float_value - __DBL_EPSILON__;
                                 dirty->max_dirty = true;
                             }
                             else {
@@ -1773,7 +1863,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain, const str
                     break;
                 default:
                     switch_default_error("Invalid compare operation");
-                    break;;
+                    break;
+                    ;
             }
             return;
         default:
@@ -1788,7 +1879,7 @@ struct value_bound get_variable_bound(const struct attr_domain* domain, const st
     struct bound_dirty dirty = { .min_dirty = false, .max_dirty = false };
     get_variable_bound_inner(domain, node, &bound, false, &dirty);
     switch(domain->bound.value_type) {
-        case VALUE_B:
+        case BETREE_BOOLEAN:
             if(dirty.min_dirty == false) {
                 bound.bmin = domain->bound.bmin;
             }
@@ -1796,8 +1887,8 @@ struct value_bound get_variable_bound(const struct attr_domain* domain, const st
                 bound.bmax = domain->bound.bmax;
             }
             break;
-        case VALUE_I:
-        case VALUE_IL:
+        case BETREE_INTEGER:
+        case BETREE_INTEGER_LIST:
             if(dirty.min_dirty == false) {
                 bound.imin = domain->bound.imin;
             }
@@ -1805,7 +1896,7 @@ struct value_bound get_variable_bound(const struct attr_domain* domain, const st
                 bound.imax = domain->bound.imax;
             }
             break;
-        case VALUE_F:
+        case BETREE_FLOAT:
             if(dirty.min_dirty == false) {
                 bound.fmin = domain->bound.fmin;
             }
@@ -1813,8 +1904,8 @@ struct value_bound get_variable_bound(const struct attr_domain* domain, const st
                 bound.fmax = domain->bound.fmax;
             }
             break;
-        case VALUE_S:
-        case VALUE_SL:
+        case BETREE_STRING:
+        case BETREE_STRING_LIST:
             if(dirty.min_dirty == false) {
                 bound.smin = domain->bound.smin;
             }
@@ -1822,8 +1913,8 @@ struct value_bound get_variable_bound(const struct attr_domain* domain, const st
                 bound.smax = domain->bound.smax;
             }
             break;
-        case VALUE_SEGMENTS:
-        case VALUE_FREQUENCY:
+        case BETREE_SEGMENTS:
+        case BETREE_FREQUENCY_CAPS:
         default:
             fprintf(stderr, "Invalid domain type to get a bound\n");
             abort();
@@ -1831,7 +1922,8 @@ struct value_bound get_variable_bound(const struct attr_domain* domain, const st
     return bound;
 }
 
-static bool get_integer_constant(const char* name, size_t count, const struct betree_constant** constants, int64_t* ret)
+static bool get_integer_constant(
+    const char* name, size_t count, const struct betree_constant** constants, int64_t* ret)
 {
     const struct betree_constant* constant = NULL;
     for(size_t i = 0; i < count; i++) {
@@ -1840,7 +1932,7 @@ static bool get_integer_constant(const char* name, size_t count, const struct be
             break;
         }
     }
-    if(constant == NULL || constant->value.value_type != VALUE_I) {
+    if(constant == NULL || constant->value.value_type != BETREE_INTEGER) {
         return false;
     }
     *ret = constant->value.ivalue;
@@ -1867,7 +1959,8 @@ static const char* get_constant_name_for_type(enum frequency_type_e type)
     };
 }
 
-bool assign_constants(size_t constant_count, const struct betree_constant** constants, struct ast_node* node)
+bool assign_constants(
+    size_t constant_count, const struct betree_constant** constants, struct ast_node* node)
 {
     switch(node->type) {
         case AST_TYPE_COMPARE_EXPR:
@@ -1879,8 +1972,10 @@ bool assign_constants(size_t constant_count, const struct betree_constant** cons
             switch(node->bool_expr.op) {
                 case AST_BOOL_OR:
                 case AST_BOOL_AND: {
-                    bool lhs = assign_constants(constant_count, constants, node->bool_expr.binary.lhs);
-                    bool rhs = assign_constants(constant_count, constants, node->bool_expr.binary.rhs);
+                    bool lhs
+                        = assign_constants(constant_count, constants, node->bool_expr.binary.lhs);
+                    bool rhs
+                        = assign_constants(constant_count, constants, node->bool_expr.binary.rhs);
                     return lhs && rhs;
                 }
                 case AST_BOOL_NOT:
@@ -1888,12 +1983,12 @@ bool assign_constants(size_t constant_count, const struct betree_constant** cons
                 case AST_BOOL_VARIABLE:
                 default:
                     return true;
-
             }
         case AST_TYPE_SPECIAL_EXPR:
             switch(node->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY: {
-                    const char* name = get_constant_name_for_type(node->special_expr.frequency.type);
+                    const char* name
+                        = get_constant_name_for_type(node->special_expr.frequency.type);
                     if(name == NULL) {
                         return false;
                     }
@@ -1925,23 +2020,29 @@ void assign_variable_id(struct config* config, struct ast_node* node)
         case(AST_TYPE_SPECIAL_EXPR): {
             switch(node->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY: {
-                    betree_var_t variable_id = try_get_id_for_attr(config, node->special_expr.frequency.attr_var.attr);
+                    betree_var_t variable_id
+                        = try_get_id_for_attr(config, node->special_expr.frequency.attr_var.attr);
                     node->special_expr.frequency.attr_var.var = variable_id;
-                    betree_var_t now_id = try_get_id_for_attr(config, node->special_expr.frequency.now.attr);
+                    betree_var_t now_id
+                        = try_get_id_for_attr(config, node->special_expr.frequency.now.attr);
                     node->special_expr.frequency.now.var = now_id;
                     return;
                 }
                 case AST_SPECIAL_SEGMENT: {
-                    betree_var_t variable_id = try_get_id_for_attr(config, node->special_expr.segment.attr_var.attr);
+                    betree_var_t variable_id
+                        = try_get_id_for_attr(config, node->special_expr.segment.attr_var.attr);
                     node->special_expr.segment.attr_var.var = variable_id;
-                    betree_var_t now_id = try_get_id_for_attr(config, node->special_expr.segment.now.attr);
+                    betree_var_t now_id
+                        = try_get_id_for_attr(config, node->special_expr.segment.now.attr);
                     node->special_expr.segment.now.var = now_id;
                     return;
                 }
                 case AST_SPECIAL_GEO: {
-                    betree_var_t latitude_id = try_get_id_for_attr(config, node->special_expr.geo.latitude_var.attr);
+                    betree_var_t latitude_id
+                        = try_get_id_for_attr(config, node->special_expr.geo.latitude_var.attr);
                     node->special_expr.geo.latitude_var.var = latitude_id;
-                    betree_var_t longitude_id = try_get_id_for_attr(config, node->special_expr.geo.longitude_var.attr);
+                    betree_var_t longitude_id
+                        = try_get_id_for_attr(config, node->special_expr.geo.longitude_var.attr);
                     node->special_expr.geo.longitude_var.var = longitude_id;
                     return;
                 }
@@ -1965,7 +2066,8 @@ void assign_variable_id(struct config* config, struct ast_node* node)
             return;
         }
         case(AST_TYPE_EQUALITY_EXPR): {
-            betree_var_t variable_id = try_get_id_for_attr(config, node->equality_expr.attr_var.attr);
+            betree_var_t variable_id
+                = try_get_id_for_attr(config, node->equality_expr.attr_var.attr);
             node->equality_expr.attr_var.var = variable_id;
             return;
         }
@@ -2006,8 +2108,8 @@ void assign_variable_id(struct config* config, struct ast_node* node)
                     break;
                 }
                 case AST_SET_LEFT_VALUE_VARIABLE: {
-                    betree_var_t variable_id
-                        = try_get_id_for_attr(config, node->set_expr.left_value.variable_value.attr);
+                    betree_var_t variable_id = try_get_id_for_attr(
+                        config, node->set_expr.left_value.variable_value.attr);
                     node->set_expr.left_value.variable_value.var = variable_id;
                     break;
                 }
@@ -2023,8 +2125,8 @@ void assign_variable_id(struct config* config, struct ast_node* node)
                     break;
                 }
                 case AST_SET_RIGHT_VALUE_VARIABLE: {
-                    betree_var_t variable_id
-                        = try_get_id_for_attr(config, node->set_expr.right_value.variable_value.attr);
+                    betree_var_t variable_id = try_get_id_for_attr(
+                        config, node->set_expr.right_value.variable_value.attr);
                     node->set_expr.right_value.variable_value.var = variable_id;
                     break;
                 }
@@ -2046,8 +2148,9 @@ void assign_str_id(struct config* config, struct ast_node* node)
         case(AST_TYPE_SPECIAL_EXPR): {
             switch(node->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY: {
-                    betree_str_t str_id
-                        = get_id_for_string(config, node->special_expr.frequency.attr_var, node->special_expr.frequency.ns.string);
+                    betree_str_t str_id = get_id_for_string(config,
+                        node->special_expr.frequency.attr_var,
+                        node->special_expr.frequency.ns.string);
                     node->special_expr.frequency.ns.var = node->special_expr.frequency.attr_var.var;
                     node->special_expr.frequency.ns.str = str_id;
                     return;
@@ -2072,8 +2175,9 @@ void assign_str_id(struct config* config, struct ast_node* node)
         }
         case(AST_TYPE_EQUALITY_EXPR): {
             if(node->equality_expr.value.value_type == AST_EQUALITY_VALUE_STRING) {
-                betree_str_t str_id
-                    = get_id_for_string(config, node->equality_expr.attr_var, node->equality_expr.value.string_value.string);
+                betree_str_t str_id = get_id_for_string(config,
+                    node->equality_expr.attr_var,
+                    node->equality_expr.value.string_value.string);
                 node->equality_expr.value.string_value.var = node->equality_expr.attr_var.var;
                 node->equality_expr.value.string_value.str = str_id;
             }
@@ -2102,9 +2206,11 @@ void assign_str_id(struct config* config, struct ast_node* node)
         case(AST_TYPE_LIST_EXPR): {
             if(node->list_expr.value.value_type == AST_LIST_VALUE_STRING_LIST) {
                 for(size_t i = 0; i < node->list_expr.value.string_list_value->count; i++) {
-                    betree_str_t str_id = get_id_for_string(
-                        config, node->list_expr.attr_var, node->list_expr.value.string_list_value->strings[i].string);
-                    node->list_expr.value.string_list_value->strings[i].var = node->list_expr.attr_var.var;
+                    betree_str_t str_id = get_id_for_string(config,
+                        node->list_expr.attr_var,
+                        node->list_expr.value.string_list_value->strings[i].string);
+                    node->list_expr.value.string_list_value->strings[i].var
+                        = node->list_expr.attr_var.var;
                     node->list_expr.value.string_list_value->strings[i].str = str_id;
                 }
             }
@@ -2112,16 +2218,20 @@ void assign_str_id(struct config* config, struct ast_node* node)
         }
         case(AST_TYPE_SET_EXPR): {
             if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_STRING) {
-                betree_str_t str_id
-                    = get_id_for_string(config, node->set_expr.right_value.variable_value, node->set_expr.left_value.string_value.string);
-                node->set_expr.left_value.string_value.var = node->set_expr.right_value.variable_value.var;
+                betree_str_t str_id = get_id_for_string(config,
+                    node->set_expr.right_value.variable_value,
+                    node->set_expr.left_value.string_value.string);
+                node->set_expr.left_value.string_value.var
+                    = node->set_expr.right_value.variable_value.var;
                 node->set_expr.left_value.string_value.str = str_id;
             }
             if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
                 for(size_t i = 0; i < node->set_expr.right_value.string_list_value->count; i++) {
-                    betree_str_t str_id = get_id_for_string(
-                        config, node->set_expr.left_value.variable_value, node->set_expr.right_value.string_list_value->strings[i].string);
-                    node->set_expr.right_value.string_list_value->strings[i].var = node->set_expr.left_value.variable_value.var;
+                    betree_str_t str_id = get_id_for_string(config,
+                        node->set_expr.left_value.variable_value,
+                        node->set_expr.right_value.string_list_value->strings[i].string);
+                    node->set_expr.right_value.string_list_value->strings[i].var
+                        = node->set_expr.left_value.variable_value.var;
                     node->set_expr.right_value.string_list_value->strings[i].str = str_id;
                 }
             }
@@ -2160,7 +2270,8 @@ static bool eq_equality_value(struct equality_value a, struct equality_value b)
         case AST_EQUALITY_VALUE_FLOAT:
             return feq(a.float_value, b.float_value);
         case AST_EQUALITY_VALUE_STRING:
-            return a.string_value.var == b.string_value.var && a.string_value.str == b.string_value.str;
+            return a.string_value.var == b.string_value.var
+                && a.string_value.str == b.string_value.str;
         default:
             switch_default_error("Invalid equality value type");
             return false;
@@ -2195,7 +2306,8 @@ static bool eq_set_left_value(struct set_left_value a, struct set_left_value b)
         case AST_SET_LEFT_VALUE_INTEGER:
             return a.integer_value == b.integer_value;
         case AST_SET_LEFT_VALUE_STRING:
-            return a.string_value.var == b.string_value.var && a.string_value.str == b.string_value.str;
+            return a.string_value.var == b.string_value.var
+                && a.string_value.str == b.string_value.str;
         case AST_SET_LEFT_VALUE_VARIABLE:
             return a.variable_value.var == b.variable_value.var;
         default:
@@ -2253,7 +2365,8 @@ static bool eq_set_expr(struct ast_set_expr a, struct ast_set_expr b)
     if(a.op != b.op) {
         return false;
     }
-    return eq_set_left_value(a.left_value, b.left_value) && eq_set_right_value(a.right_value, b.right_value);
+    return eq_set_left_value(a.left_value, b.left_value)
+        && eq_set_right_value(a.right_value, b.right_value);
 }
 
 static bool eq_list_value(struct list_value a, struct list_value b)
@@ -2287,33 +2400,23 @@ static bool eq_special_expr(struct ast_special_expr a, struct ast_special_expr b
     }
     switch(a.type) {
         case AST_SPECIAL_FREQUENCY:
-            return
-                a.frequency.attr_var.var == b.frequency.attr_var.var &&
-                a.frequency.length == b.frequency.length &&
-                a.frequency.ns.var == b.frequency.ns.var &&
-                a.frequency.ns.str == b.frequency.ns.str &&
-                a.frequency.op == b.frequency.op &&
-                a.frequency.type == b.frequency.type &&
-                a.frequency.value == b.frequency.value;
+            return a.frequency.attr_var.var == b.frequency.attr_var.var
+                && a.frequency.length == b.frequency.length
+                && a.frequency.ns.var == b.frequency.ns.var
+                && a.frequency.ns.str == b.frequency.ns.str && a.frequency.op == b.frequency.op
+                && a.frequency.type == b.frequency.type && a.frequency.value == b.frequency.value;
         case AST_SPECIAL_SEGMENT:
-            return
-                a.segment.attr_var.var == b.segment.attr_var.var &&
-                a.segment.has_variable == b.segment.has_variable &&
-                a.segment.op == b.segment.op &&
-                a.segment.seconds == b.segment.seconds &&
-                a.segment.segment_id == b.segment.segment_id;
+            return a.segment.attr_var.var == b.segment.attr_var.var
+                && a.segment.has_variable == b.segment.has_variable && a.segment.op == b.segment.op
+                && a.segment.seconds == b.segment.seconds
+                && a.segment.segment_id == b.segment.segment_id;
         case AST_SPECIAL_GEO:
-            return
-                a.geo.has_radius == b.geo.has_radius &&
-                feq(a.geo.latitude, b.geo.latitude) &&
-                feq(a.geo.longitude, b.geo.longitude) &&
-                a.geo.op == b.geo.op &&
-                feq(a.geo.radius, b.geo.radius);
+            return a.geo.has_radius == b.geo.has_radius && feq(a.geo.latitude, b.geo.latitude)
+                && feq(a.geo.longitude, b.geo.longitude) && a.geo.op == b.geo.op
+                && feq(a.geo.radius, b.geo.radius);
         case AST_SPECIAL_STRING:
-            return
-                a.string.attr_var.var == b.string.attr_var.var &&
-                a.string.op == b.string.op &&
-                strcmp(a.string.pattern, b.string.pattern) == 0;
+            return a.string.attr_var.var == b.string.attr_var.var && a.string.op == b.string.op
+                && strcmp(a.string.pattern, b.string.pattern) == 0;
         default:
             switch_default_error("Invalid special expr type");
             return false;
@@ -2330,16 +2433,14 @@ bool eq_expr(const struct ast_node* a, const struct ast_node* b)
     }
     switch(a->type) {
         case AST_TYPE_COMPARE_EXPR: {
-            return
-                a->compare_expr.attr_var.var == b->compare_expr.attr_var.var &&
-                a->compare_expr.op == b->compare_expr.op &&
-                eq_compare_value(a->compare_expr.value, b->compare_expr.value);
+            return a->compare_expr.attr_var.var == b->compare_expr.attr_var.var
+                && a->compare_expr.op == b->compare_expr.op
+                && eq_compare_value(a->compare_expr.value, b->compare_expr.value);
         }
         case AST_TYPE_EQUALITY_EXPR: {
-            return
-                a->equality_expr.attr_var.var == b->equality_expr.attr_var.var &&
-                a->equality_expr.op == b->equality_expr.op &&
-                eq_equality_value(a->equality_expr.value, b->equality_expr.value);
+            return a->equality_expr.attr_var.var == b->equality_expr.attr_var.var
+                && a->equality_expr.op == b->equality_expr.op
+                && eq_equality_value(a->equality_expr.value, b->equality_expr.value);
         }
         case AST_TYPE_BOOL_EXPR: {
             return eq_bool_expr(a->bool_expr, b->bool_expr);
@@ -2372,7 +2473,8 @@ bool fast_eq_expr(const struct ast_node* a, const struct ast_node* b)
             return a->bool_expr.unary.expr->id == b->bool_expr.unary.expr->id;
         }
         if(a->bool_expr.op == AST_BOOL_AND || a->bool_expr.op == AST_BOOL_OR) {
-            return a->bool_expr.binary.lhs->id == b->bool_expr.binary.lhs->id && a->bool_expr.binary.rhs->id == b->bool_expr.binary.rhs->id;
+            return a->bool_expr.binary.lhs->id == b->bool_expr.binary.lhs->id
+                && a->bool_expr.binary.rhs->id == b->bool_expr.binary.rhs->id;
         }
     }
     return a->id == b->id;
@@ -2386,7 +2488,7 @@ void assign_pred_id(struct config* config, struct ast_node* node)
 void sort_lists(struct ast_node* node)
 {
     switch(node->type) {
-        case AST_TYPE_COMPARE_EXPR: 
+        case AST_TYPE_COMPARE_EXPR:
         case AST_TYPE_EQUALITY_EXPR:
             return;
         case AST_TYPE_BOOL_EXPR:
@@ -2408,16 +2510,16 @@ void sort_lists(struct ast_node* node)
             if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
                 switch(node->set_expr.right_value.value_type) {
                     case AST_SET_RIGHT_VALUE_INTEGER_LIST:
-                        qsort(node->set_expr.right_value.integer_list_value->integers, 
-                          node->set_expr.right_value.integer_list_value->count, 
-                          sizeof(*node->set_expr.right_value.integer_list_value->integers),
-                          icmpfunc);
+                        qsort(node->set_expr.right_value.integer_list_value->integers,
+                            node->set_expr.right_value.integer_list_value->count,
+                            sizeof(*node->set_expr.right_value.integer_list_value->integers),
+                            icmpfunc);
                         return;
                     case AST_SET_RIGHT_VALUE_STRING_LIST:
-                        qsort(node->set_expr.right_value.string_list_value->strings, 
-                          node->set_expr.right_value.string_list_value->count, 
-                          sizeof(*node->set_expr.right_value.string_list_value->strings),
-                          scmpfunc);
+                        qsort(node->set_expr.right_value.string_list_value->strings,
+                            node->set_expr.right_value.string_list_value->count,
+                            sizeof(*node->set_expr.right_value.string_list_value->strings),
+                            scmpfunc);
                         return;
                     case AST_SET_RIGHT_VALUE_VARIABLE:
                     default:
@@ -2430,16 +2532,16 @@ void sort_lists(struct ast_node* node)
         case AST_TYPE_LIST_EXPR:
             switch(node->list_expr.value.value_type) {
                 case AST_LIST_VALUE_INTEGER_LIST:
-                    qsort(node->list_expr.value.integer_list_value->integers, 
-                      node->list_expr.value.integer_list_value->count, 
-                      sizeof(*node->list_expr.value.integer_list_value->integers),
-                      icmpfunc);
+                    qsort(node->list_expr.value.integer_list_value->integers,
+                        node->list_expr.value.integer_list_value->count,
+                        sizeof(*node->list_expr.value.integer_list_value->integers),
+                        icmpfunc);
                     return;
                 case AST_LIST_VALUE_STRING_LIST:
-                    qsort(node->list_expr.value.string_list_value->strings, 
-                      node->list_expr.value.string_list_value->count, 
-                      sizeof(*node->list_expr.value.string_list_value->strings),
-                      scmpfunc);
+                    qsort(node->list_expr.value.string_list_value->strings,
+                        node->list_expr.value.string_list_value->count,
+                        sizeof(*node->list_expr.value.string_list_value->strings),
+                        scmpfunc);
                     return;
                 default:
                     switch_default_error("Invalid list value type");
@@ -2483,7 +2585,8 @@ bool all_variables_in_config(const struct config* config, const struct ast_node*
             switch(node->bool_expr.op) {
                 case AST_BOOL_OR:
                 case AST_BOOL_AND:
-                    return all_variables_in_config(config, node->bool_expr.binary.lhs) && all_variables_in_config(config, node->bool_expr.binary.rhs);
+                    return all_variables_in_config(config, node->bool_expr.binary.lhs)
+                        && all_variables_in_config(config, node->bool_expr.binary.rhs);
                 case AST_BOOL_NOT:
                     return all_variables_in_config(config, node->bool_expr.unary.expr);
                 case AST_BOOL_VARIABLE:
@@ -2565,12 +2668,17 @@ static bool str_valid(const struct config* config, const char* attr, const char*
     }
     bool within_bound = space_left > 0;
     if(within_bound == false) {
-        fprintf(stderr, "For attr '%s', string '%s' could not fit within the bound %zu\n", attr, string, bound);
+        fprintf(stderr,
+            "For attr '%s', string '%s' could not fit within the bound %zu\n",
+            attr,
+            string,
+            bound);
     }
     return within_bound;
 }
 
-static bool strs_valid(const struct config* config, const char* attr, const struct betree_string_list* strings)
+static bool strs_valid(
+    const struct config* config, const char* attr, const struct betree_string_list* strings)
 {
     size_t bound = get_attr_string_bound(config, attr);
     if(bound == SIZE_MAX) {
@@ -2593,7 +2701,10 @@ static bool strs_valid(const struct config* config, const char* attr, const stru
     size_t needed = strings->count - found;
     bool within_bound = space_left >= needed;
     if(within_bound == false) {
-        fprintf(stderr, "For attr '%s', not all strings could not fit within the bound %zu\n", attr, bound);
+        fprintf(stderr,
+            "For attr '%s', not all strings could not fit within the bound %zu\n",
+            attr,
+            bound);
     }
     return within_bound;
 }
@@ -2605,7 +2716,9 @@ bool all_bounded_strings_valid(const struct config* config, const struct ast_nod
             return true;
         case AST_TYPE_EQUALITY_EXPR:
             if(node->equality_expr.value.value_type == AST_EQUALITY_VALUE_STRING) {
-                return str_valid(config, node->equality_expr.attr_var.attr, node->equality_expr.value.string_value.string);
+                return str_valid(config,
+                    node->equality_expr.attr_var.attr,
+                    node->equality_expr.value.string_value.string);
             }
             return true;
         case AST_TYPE_BOOL_EXPR:
@@ -2627,16 +2740,23 @@ bool all_bounded_strings_valid(const struct config* config, const struct ast_nod
                     return false;
             }
         case AST_TYPE_SET_EXPR:
-            if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE && node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
-                return strs_valid(config, node->set_expr.left_value.variable_value.attr, node->set_expr.right_value.string_list_value);
+            if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE
+                && node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
+                return strs_valid(config,
+                    node->set_expr.left_value.variable_value.attr,
+                    node->set_expr.right_value.string_list_value);
             }
-            if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE && node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_STRING) {
-                return str_valid(config, node->set_expr.right_value.variable_value.attr, node->set_expr.left_value.string_value.string);
+            if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE
+                && node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_STRING) {
+                return str_valid(config,
+                    node->set_expr.right_value.variable_value.attr,
+                    node->set_expr.left_value.string_value.string);
             }
             return true;
         case AST_TYPE_LIST_EXPR:
             if(node->list_expr.value.value_type == AST_LIST_VALUE_STRING_LIST) {
-                return strs_valid(config, node->list_expr.attr_var.attr, node->list_expr.value.string_list_value);
+                return strs_valid(
+                    config, node->list_expr.attr_var.attr, node->list_expr.value.string_list_value);
             }
             return true;
         case AST_TYPE_SPECIAL_EXPR:
@@ -2646,4 +2766,3 @@ bool all_bounded_strings_valid(const struct config* config, const struct ast_nod
             return false;
     }
 }
-

@@ -3,97 +3,99 @@
  *
  * The random number generator rand() of the standard C library is obsolete
  * and should not be used in more demanding applications. There are plenty
- * libraries with advanced features (eg. GSL) with functions to calculate 
- * the mean, the standard deviation, generating random numbers etc. 
+ * libraries with advanced features (eg. GSL) with functions to calculate
+ * the mean, the standard deviation, generating random numbers etc.
  * However, these features are not the core of the standard C library.
  */
 #include <inttypes.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
 #include <math.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <time.h>
 
 #include "ast.h"
 #include "random_words.h"
 #include "utils.h"
- 
+
 double mean(double* values, size_t n)
 {
     double s = 0;
- 
-    for (size_t i = 0; i < n; i++)
-        s += values[i];
+
+    for(size_t i = 0; i < n; i++) s += values[i];
     return s / n;
 }
- 
+
 double stddev(double* values, size_t n)
 {
-    double average = mean(values,n);
+    double average = mean(values, n);
     double s = 0;
- 
-    for (size_t i = 0; i < n; i++)
-        s += (values[i] - average) * (values[i] - average);
+
+    for(size_t i = 0; i < n; i++) s += (values[i] - average) * (values[i] - average);
     return sqrt(s / (n - 1));
 }
- 
+
 /*
  * Normal random numbers generator - Marsaglia algorithm.
  */
 double* generate(size_t n)
 {
     size_t m = n + n % 2;
-    double* values = (double*)calloc(m,sizeof(double));
- 
-    if (values)
-    {
-        for (size_t i = 0; i < m; i += 2)
-        {
+    double* values = (double*)calloc(m, sizeof(double));
+
+    if(values) {
+        for(size_t i = 0; i < m; i += 2) {
             double x, y, rsq, f;
             do {
                 x = 2.0 * rand() / (double)RAND_MAX - 1.0;
                 y = 2.0 * rand() / (double)RAND_MAX - 1.0;
                 rsq = x * x + y * y;
-            } while (rsq >= 1. || feq(rsq, 0.));
-            f = sqrt( -2.0 * log(rsq) / rsq );
-            values[i]   = x * f;
-            values[i+1] = y * f;
+            } while(rsq >= 1. || feq(rsq, 0.));
+            f = sqrt(-2.0 * log(rsq) / rsq);
+            values[i] = x * f;
+            values[i + 1] = y * f;
         }
     }
     return values;
 }
 
-const struct ast_node* make_binary_expr(size_t attr_min, size_t attr_max, int64_t value_min, int64_t value_max) 
+const struct ast_node* make_binary_expr(
+    size_t attr_min, size_t attr_max, int64_t value_min, int64_t value_max)
 {
     struct ast_node* binary_node;
     size_t attr_index = random_in_range(attr_min, attr_max);
     const char* attr = RANDOM_WORDS[attr_index];
-    bool is_equality_node = random_bool(); 
+    bool is_equality_node = random_bool();
     if(is_equality_node) {
         enum ast_equality_e op = random_in_range(0, 1);
         int64_t integer_value = random_in_range(value_min, value_max);
-        struct equality_value value = { .value_type = AST_EQUALITY_VALUE_INTEGER, .integer_value = integer_value };
+        struct equality_value value
+            = { .value_type = AST_EQUALITY_VALUE_INTEGER, .integer_value = integer_value };
         binary_node = ast_equality_expr_create(op, attr, value);
     }
     else {
         enum ast_compare_e op = random_in_range(0, 3);
         int64_t integer_value = random_in_range(value_min, value_max);
-        struct compare_value value = { .value_type = AST_COMPARE_VALUE_INTEGER, .integer_value = integer_value };
+        struct compare_value value
+            = { .value_type = AST_COMPARE_VALUE_INTEGER, .integer_value = integer_value };
         binary_node = ast_compare_expr_create(op, attr, value);
     }
     return binary_node;
 }
- 
-const struct ast_node* generate_expr(size_t complexity, size_t attr_min, size_t attr_max, int64_t value_min, int64_t value_max)
+
+const struct ast_node* generate_expr(
+    size_t complexity, size_t attr_min, size_t attr_max, int64_t value_min, int64_t value_max)
 {
     struct ast_node* last_combi_node = NULL;
     for(size_t j = 0; j < complexity; j++) {
-        struct ast_node* bin_node = (struct ast_node*)make_binary_expr(attr_min, attr_max, value_min, value_max);
+        struct ast_node* bin_node
+            = (struct ast_node*)make_binary_expr(attr_min, attr_max, value_min, value_max);
 
         enum ast_bool_e boolop = random_in_range(0, 1);
         if(j == 0) {
-            struct ast_node* another_bin_node = (struct ast_node*)make_binary_expr(attr_min, attr_max, value_min, value_max);
+            struct ast_node* another_bin_node
+                = (struct ast_node*)make_binary_expr(attr_min, attr_max, value_min, value_max);
             last_combi_node = ast_bool_expr_binary_create(boolop, bin_node, another_bin_node);
         }
         else {
@@ -144,7 +146,7 @@ void write_expr(FILE* f, const struct ast_node* node)
             fprintf(f, "%" PRIu64 " ", node->compare_expr.value.integer_value);
             break;
         }
-        case AST_TYPE_EQUALITY_EXPR : {
+        case AST_TYPE_EQUALITY_EXPR: {
             fprintf(f, "%s ", node->equality_expr.attr_var.attr);
             switch(node->equality_expr.op) {
                 case AST_EQUALITY_EQ: {
@@ -186,7 +188,7 @@ void write_expr(FILE* f, const struct ast_node* node)
                             break;
                         }
                         case AST_BOOL_NOT:
-                        case AST_BOOL_VARIABLE: 
+                        case AST_BOOL_VARIABLE:
                         default: {
                             switch_default_error("Invalid bool operation");
                         }
@@ -217,7 +219,7 @@ int main(void)
     unsigned int complexity_max = 25;
     unsigned int complexity_mean = (complexity_min + complexity_max) / 2;
     double complexity_stddev = (complexity_max - complexity_mean) / 3;
- 
+
     srand((unsigned int)time(NULL));
 
     FILE* f = fopen("output.be", "w");
@@ -225,7 +227,8 @@ int main(void)
     double* seq = generate(expr_count);
     for(unsigned int i = 0; i < expr_count; i++) {
         unsigned int complexity = seq[i] * complexity_stddev + complexity_mean;
-        const struct ast_node* node = generate_expr(complexity, attr_min, attr_max, value_min, value_max);
+        const struct ast_node* node
+            = generate_expr(complexity, attr_min, attr_max, value_min, value_max);
         write_expr(f, node);
         fprintf(f, "\n");
         free_ast_node((struct ast_node*)node);

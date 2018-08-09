@@ -26,9 +26,14 @@ struct value_bound get_bound(struct config* config, const char* expr)
 bool match_bool(struct config* config, const char* expr, bool min, bool max)
 {
     struct value_bound bound = get_bound(config, expr);
-    bool result = bound.value_type == VALUE_B && bound.bmin == min && bound.bmax == max;
+    bool result = bound.value_type == BETREE_BOOLEAN && bound.bmin == min && bound.bmax == max;
     if(!result) {
-        fprintf(stderr, "Min: Expected %d, Got %d. Max: Expected %d, Got %d\n", min, bound.bmin, max, bound.bmax);
+        fprintf(stderr,
+            "Min: Expected %d, Got %d. Max: Expected %d, Got %d\n",
+            min,
+            bound.bmin,
+            max,
+            bound.bmax);
     }
     return result;
 }
@@ -36,9 +41,14 @@ bool match_bool(struct config* config, const char* expr, bool min, bool max)
 bool match_integer(struct config* config, const char* expr, int64_t min, int64_t max)
 {
     struct value_bound bound = get_bound(config, expr);
-    bool result = bound.value_type == VALUE_I && bound.imin == min && bound.imax == max;
+    bool result = bound.value_type == BETREE_INTEGER && bound.imin == min && bound.imax == max;
     if(!result) {
-        fprintf(stderr, "Min: Expected %ld, Got %ld. Max: Expected %ld, Got %ld\n", min, bound.imin, max, bound.imax);
+        fprintf(stderr,
+            "Min: Expected %ld, Got %ld. Max: Expected %ld, Got %ld\n",
+            min,
+            bound.imin,
+            max,
+            bound.imax);
     }
     return result;
 }
@@ -46,9 +56,14 @@ bool match_integer(struct config* config, const char* expr, int64_t min, int64_t
 bool match_integer_list(struct config* config, const char* expr, int64_t min, int64_t max)
 {
     struct value_bound bound = get_bound(config, expr);
-    bool result = bound.value_type == VALUE_IL && bound.imin == min && bound.imax == max;
+    bool result = bound.value_type == BETREE_INTEGER_LIST && bound.imin == min && bound.imax == max;
     if(!result) {
-        fprintf(stderr, "Min: Expected %ld, Got %ld. Max: Expected %ld, Got %ld\n", min, bound.imin, max, bound.imax);
+        fprintf(stderr,
+            "Min: Expected %ld, Got %ld. Max: Expected %ld, Got %ld\n",
+            min,
+            bound.imin,
+            max,
+            bound.imax);
     }
     return result;
 }
@@ -56,9 +71,14 @@ bool match_integer_list(struct config* config, const char* expr, int64_t min, in
 bool match_float(struct config* config, const char* expr, double min, double max)
 {
     struct value_bound bound = get_bound(config, expr);
-    bool result = bound.value_type == VALUE_F && feq(bound.fmin, min) && feq(bound.fmax, max);
+    bool result = bound.value_type == BETREE_FLOAT && feq(bound.fmin, min) && feq(bound.fmax, max);
     if(!result) {
-        fprintf(stderr, "Min: Expected %.0f, Got %.0f. Max: Expected %.0f, Got %.0f\n", min, bound.fmin, max, bound.fmax);
+        fprintf(stderr,
+            "Min: Expected %.0f, Got %.0f. Max: Expected %.0f, Got %.0f\n",
+            min,
+            bound.fmin,
+            max,
+            bound.fmax);
     }
     return result;
 }
@@ -66,9 +86,14 @@ bool match_float(struct config* config, const char* expr, double min, double max
 bool match_string(struct config* config, const char* expr, size_t min, size_t max)
 {
     struct value_bound bound = get_bound(config, expr);
-    bool result = bound.value_type == VALUE_S && bound.smin == min && bound.smax == max;
+    bool result = bound.value_type == BETREE_STRING && bound.smin == min && bound.smax == max;
     if(!result) {
-        fprintf(stderr, "Min: Expected %zu, Got %zu. Max: Expected %zu, Got %zu\n", min, bound.smin, max, bound.smax);
+        fprintf(stderr,
+            "Min: Expected %zu, Got %zu. Max: Expected %zu, Got %zu\n",
+            min,
+            bound.smin,
+            max,
+            bound.smax);
     }
     return result;
 }
@@ -76,9 +101,14 @@ bool match_string(struct config* config, const char* expr, size_t min, size_t ma
 bool match_string_list(struct config* config, const char* expr, size_t min, size_t max)
 {
     struct value_bound bound = get_bound(config, expr);
-    bool result = bound.value_type == VALUE_SL && bound.smin == min && bound.smax == max;
+    bool result = bound.value_type == BETREE_STRING_LIST && bound.smin == min && bound.smax == max;
     if(!result) {
-        fprintf(stderr, "Min: Expected %zu, Got %zu. Max: Expected %zu, Got %zu\n", min, bound.smin, max, bound.smax);
+        fprintf(stderr,
+            "Min: Expected %zu, Got %zu. Max: Expected %zu, Got %zu\n",
+            min,
+            bound.smin,
+            max,
+            bound.smax);
     }
     return result;
 }
@@ -219,15 +249,18 @@ int test_integer_list_bounds()
     mu_assert(match_integer_list(tree->config, "il one of (2, 7)", 2, 7), "one of");
     mu_assert(match_integer_list(tree->config, "not (il one of (2, 7))", min, max), "not (one of)");
     /*mu_assert(match_integer_list(tree->config, "il one of ()", min, max), "empty one of");*/
-    /*mu_assert(match_integer_list(tree->config, "not (il one of ())", min, max), "not (empty one of)");*/
+    /*mu_assert(match_integer_list(tree->config, "not (il one of ())", min, max), "not (empty one
+     * of)");*/
     mu_assert(match_integer_list(tree->config, "il all of (2, 7)", 2, 7), "all of");
     mu_assert(match_integer_list(tree->config, "not (il all of (2, 7))", min, max), "not (all of)");
     /*mu_assert(match_integer_list(tree->config, "il all of ()", min, max), "empty all of");*/
-    /*mu_assert(match_integer_list(tree->config, "not (il all of ())", min, max), "not (empty all of)");*/
+    /*mu_assert(match_integer_list(tree->config, "not (il all of ())", min, max), "not (empty all
+     * of)");*/
     mu_assert(match_integer_list(tree->config, "il none of (2, 7)", min, max), "none of");
     mu_assert(match_integer_list(tree->config, "not (il none of (2, 7))", 2, 7), "not (none of)");
     /*mu_assert(match_integer_list(tree->config, "il none of ()", min, max), "empty none of");*/
-    /*mu_assert(match_integer_list(tree->config, "not (il none of ())", min, max), "not (empty none of)");*/
+    /*mu_assert(match_integer_list(tree->config, "not (il none of ())", min, max), "not (empty none
+     * of)");*/
 
     mu_assert(match_integer_list(tree->config, "wrong", min, max), "not in expression");
 
@@ -238,7 +271,8 @@ int test_integer_list_bounds()
 
 int test_string_list_bounds()
 {
-    struct betree* tree = betree_make_with_parameters(5, 0); // to make sure it doesn't split for now
+    struct betree* tree
+        = betree_make_with_parameters(5, 0); // to make sure it doesn't split for now
     size_t min = 0;
     size_t max = 3;
     add_attr_domain_bounded_sl(tree->config, "sl", false, max + 1);
@@ -256,17 +290,23 @@ int test_string_list_bounds()
     mu_assert(match_string_list(tree->config, "not (\"b\" not in sl)", 1, 1), "not (not in)`");
 
     mu_assert(match_string_list(tree->config, "sl one of (\"b\", \"c\")", 1, 2), "one of");
-    mu_assert(match_string_list(tree->config, "not (sl one of (\"b\", \"c\"))", min, max), "not (one of)");
+    mu_assert(match_string_list(tree->config, "not (sl one of (\"b\", \"c\"))", min, max),
+        "not (one of)");
     /*mu_assert(match_string_list(tree->config, "sl one of ()", min, max), "empty one of");*/
-    /*mu_assert(match_string_list(tree->config, "not (sl one of ())", min, max), "not (empty one of)");*/
+    /*mu_assert(match_string_list(tree->config, "not (sl one of ())", min, max), "not (empty one
+     * of)");*/
     mu_assert(match_string_list(tree->config, "sl all of (\"b\", \"c\")", 1, 2), "all of");
-    mu_assert(match_string_list(tree->config, "not (sl all of (\"b\", \"c\"))", min, max), "not (all of)");
+    mu_assert(match_string_list(tree->config, "not (sl all of (\"b\", \"c\"))", min, max),
+        "not (all of)");
     /*mu_assert(match_string_list(tree->config, "sl all of ()", min, max), "empty all of");*/
-    /*mu_assert(match_string_list(tree->config, "not (sl all of ())", min, max), "not (empty all of)");*/
+    /*mu_assert(match_string_list(tree->config, "not (sl all of ())", min, max), "not (empty all
+     * of)");*/
     mu_assert(match_string_list(tree->config, "sl none of (\"b\", \"c\")", min, max), "none of");
-    mu_assert(match_string_list(tree->config, "not (sl none of (\"b\", \"c\"))", 1, 2), "not (none of)");
+    mu_assert(
+        match_string_list(tree->config, "not (sl none of (\"b\", \"c\"))", 1, 2), "not (none of)");
     /*mu_assert(match_string_list(tree->config, "sl none of ()", min, max), "empty none of");*/
-    /*mu_assert(match_string_list(tree->config, "not (sl none of ())", min, max), "not (empty none of)");*/
+    /*mu_assert(match_string_list(tree->config, "not (sl none of ())", min, max), "not (empty none
+     * of)");*/
 
     mu_assert(match_string_list(tree->config, "wrong", min, max), "not in expression");
 
@@ -284,7 +324,7 @@ int test_complex_bounds()
     mu_assert(match_integer(tree->config, "i > 5 and i < 8", 6, 7), "and");
     mu_assert(match_integer(tree->config, "i > 5 or i > 6", 6, 10), "or");
     mu_assert(match_integer(tree->config, "(i > 5 and i < 8) or (i > 6)", 6, 10), "and or");
-    
+
     mu_assert(match_integer(tree->config, "i > 5 and i > 8", 6, 10), "and");
     mu_assert(match_integer(tree->config, "not (i > 5 and i > 8)", 0, 8), "not and");
     mu_assert(match_integer(tree->config, "i > 5 or i > 6", 6, 10), "or");

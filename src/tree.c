@@ -32,22 +32,19 @@ static void init_subs_to_eval(struct subs_to_eval* subs)
 
 static void add_sub_to_eval(struct sub* sub, struct subs_to_eval* subs)
 {
-	if (subs->capacity == subs->count) {
-		subs->capacity *= 2;
-		subs->subs = realloc(subs->subs, sizeof(*subs->subs) * subs->capacity);
-	}
+    if(subs->capacity == subs->count) {
+        subs->capacity *= 2;
+        subs->subs = realloc(subs->subs, sizeof(*subs->subs) * subs->capacity);
+    }
 
-	subs->subs[subs->count] = sub;
-	subs->count++;
+    subs->subs[subs->count] = sub;
+    subs->count++;
 }
 
-enum short_circuit_e {
-    SHORT_CIRCUIT_PASS,
-    SHORT_CIRCUIT_FAIL,
-    SHORT_CIRCUIT_NONE
-};
+enum short_circuit_e { SHORT_CIRCUIT_PASS, SHORT_CIRCUIT_FAIL, SHORT_CIRCUIT_NONE };
 
-static enum short_circuit_e try_short_circuit(const struct short_circuit* short_circuit, const uint64_t* undefined)
+static enum short_circuit_e try_short_circuit(
+    const struct short_circuit* short_circuit, const uint64_t* undefined)
 {
     for(size_t i = 0; i < short_circuit->count; i++) {
         bool pass = short_circuit->pass[i] & undefined[i];
@@ -62,7 +59,11 @@ static enum short_circuit_e try_short_circuit(const struct short_circuit* short_
     return SHORT_CIRCUIT_NONE;
 }
 
-static bool match_sub(const struct betree_variable** preds, const struct sub* sub, struct report* report, struct memoize* memoize, const uint64_t* undefined)
+static bool match_sub(const struct betree_variable** preds,
+    const struct sub* sub,
+    struct report* report,
+    struct memoize* memoize,
+    const uint64_t* undefined)
 {
     enum short_circuit_e short_circuit = try_short_circuit(&sub->short_circuit, undefined);
     if(unlikely(short_circuit != SHORT_CIRCUIT_NONE)) {
@@ -100,7 +101,10 @@ static struct pnode* search_pdir(betree_var_t variable_id, const struct pdir* pd
     return NULL;
 }
 
-static void search_cdir(const struct attr_domain** attr_domains, const struct betree_variable** preds, struct cdir* cdir, struct subs_to_eval* subs);
+static void search_cdir(const struct attr_domain** attr_domains,
+    const struct betree_variable** preds,
+    struct cdir* cdir,
+    struct subs_to_eval* subs);
 
 static bool event_contains_variable(const struct betree_variable** preds, betree_var_t variable_id)
 {
@@ -116,8 +120,10 @@ void match_be_tree(const struct attr_domain** attr_domains,
     if(cnode->pdir != NULL) {
         for(size_t i = 0; i < cnode->pdir->pnode_count; i++) {
             struct pnode* pnode = cnode->pdir->pnodes[i];
-            const struct attr_domain* attr_domain = get_attr_domain(attr_domains, pnode->attr_var.var);
-            if(attr_domain->allow_undefined || event_contains_variable(preds, pnode->attr_var.var)) {
+            const struct attr_domain* attr_domain
+                = get_attr_domain(attr_domains, pnode->attr_var.var);
+            if(attr_domain->allow_undefined
+                || event_contains_variable(preds, pnode->attr_var.var)) {
                 search_cdir(attr_domains, preds, pnode->cdir, subs);
             }
         }
@@ -134,30 +140,35 @@ static bool is_event_enclosed(const struct betree_variable** preds, const struct
         return true;
     }
     switch(pred->value.value_type) {
-        case VALUE_B:
+        case BETREE_BOOLEAN:
             return cdir->bound.bmin <= pred->value.bvalue && cdir->bound.bmax >= pred->value.bvalue;
-        case VALUE_I:
+        case BETREE_INTEGER:
             return cdir->bound.imin <= pred->value.ivalue && cdir->bound.imax >= pred->value.ivalue;
-        case VALUE_F:
+        case BETREE_FLOAT:
             return cdir->bound.fmin <= pred->value.fvalue && cdir->bound.fmax >= pred->value.fvalue;
-        case VALUE_S:
-            return cdir->bound.smin <= pred->value.svalue.str && cdir->bound.smax >= pred->value.svalue.str;
-        case VALUE_IL:
+        case BETREE_STRING:
+            return cdir->bound.smin <= pred->value.svalue.str
+                && cdir->bound.smax >= pred->value.svalue.str;
+        case BETREE_INTEGER_LIST:
             if(pred->value.ilvalue->count != 0) {
-                return cdir->bound.imin <= pred->value.ilvalue->integers[0] && cdir->bound.imax >= pred->value.ilvalue->integers[pred->value.ilvalue->count-1];
+                return cdir->bound.imin <= pred->value.ilvalue->integers[0]
+                    && cdir->bound.imax
+                    >= pred->value.ilvalue->integers[pred->value.ilvalue->count - 1];
             }
             else {
                 return true;
             }
-        case VALUE_SL:
+        case BETREE_STRING_LIST:
             if(pred->value.slvalue->count != 0) {
-                return cdir->bound.smin <= pred->value.slvalue->strings[0].str && cdir->bound.smax >= pred->value.slvalue->strings[pred->value.slvalue->count-1].str;
+                return cdir->bound.smin <= pred->value.slvalue->strings[0].str
+                    && cdir->bound.smax
+                    >= pred->value.slvalue->strings[pred->value.slvalue->count - 1].str;
             }
             else {
                 return true;
             }
-        case VALUE_SEGMENTS:
-        case VALUE_FREQUENCY:
+        case BETREE_SEGMENTS:
+        case BETREE_FREQUENCY_CAPS:
             return true;
         default:
             switch_default_error("Invalid value type");
@@ -166,7 +177,8 @@ static bool is_event_enclosed(const struct betree_variable** preds, const struct
     return false;
 }
 
-bool sub_is_enclosed(const struct attr_domain** attr_domains, const struct sub* sub, const struct cdir* cdir)
+bool sub_is_enclosed(
+    const struct attr_domain** attr_domains, const struct sub* sub, const struct cdir* cdir)
 {
     if(cdir == NULL) {
         return false;
@@ -177,26 +189,27 @@ bool sub_is_enclosed(const struct attr_domain** attr_domains, const struct sub* 
             const struct attr_domain* attr_domain = get_attr_domain(attr_domains, variable_id);
             struct value_bound bound = get_variable_bound(attr_domain, sub->expr);
             switch(attr_domain->bound.value_type) {
-                case(VALUE_I):
-                case(VALUE_IL):
+                case(BETREE_INTEGER):
+                case(BETREE_INTEGER_LIST):
                     return cdir->bound.imin <= bound.imin && cdir->bound.imax >= bound.imax;
-                case(VALUE_F): {
+                case(BETREE_FLOAT): {
                     return cdir->bound.fmin <= bound.fmin && cdir->bound.fmax >= bound.fmax;
                 }
-                case(VALUE_B): {
+                case(BETREE_BOOLEAN): {
                     return cdir->bound.bmin <= bound.bmin && cdir->bound.bmax >= bound.bmax;
                 }
-                case(VALUE_S):
-                case(VALUE_SL):
+                case(BETREE_STRING):
+                case(BETREE_STRING_LIST):
                     return cdir->bound.smin <= bound.smin && cdir->bound.smax >= bound.smax;
-                case(VALUE_SEGMENTS): {
+                case(BETREE_SEGMENTS): {
                     fprintf(
                         stderr, "%s a segments value cdir should never happen for now\n", __func__);
                     abort();
                 }
-                case(VALUE_FREQUENCY): {
-                    fprintf(
-                        stderr, "%s a frequency value cdir should never happen for now\n", __func__);
+                case(BETREE_FREQUENCY_CAPS): {
+                    fprintf(stderr,
+                        "%s a frequency value cdir should never happen for now\n",
+                        __func__);
                     abort();
                 }
                 default: {
@@ -208,7 +221,10 @@ bool sub_is_enclosed(const struct attr_domain** attr_domains, const struct sub* 
     return false;
 }
 
-static void search_cdir(const struct attr_domain** attr_domains, const struct betree_variable** preds, struct cdir* cdir, struct subs_to_eval* subs)
+static void search_cdir(const struct attr_domain** attr_domains,
+    const struct betree_variable** preds,
+    struct cdir* cdir,
+    struct subs_to_eval* subs)
 {
     match_be_tree(attr_domains, preds, cdir->cnode, subs);
     if(is_event_enclosed(preds, cdir->lchild)) {
@@ -304,7 +320,8 @@ static bool is_root(const struct cnode* cnode)
 
 static void space_partitioning(const struct config* config, struct cnode* cnode);
 static void space_clustering(const struct config* config, struct cdir* cdir);
-static struct cdir* insert_cdir(const struct config* config, const struct sub* sub, struct cdir* cdir);
+static struct cdir* insert_cdir(
+    const struct config* config, const struct sub* sub, struct cdir* cdir);
 
 static size_t count_attr_in_lnode(betree_var_t variable_id, const struct lnode* lnode);
 
@@ -326,28 +343,28 @@ static size_t domain_bound_diff(const struct attr_domain* attr_domain)
 {
     const struct value_bound* b = &attr_domain->bound;
     switch(b->value_type) {
-        case VALUE_B:
+        case BETREE_BOOLEAN:
             return ((size_t)b->bmax) - ((size_t)b->bmin);
-        case VALUE_I:
-        case VALUE_IL:
+        case BETREE_INTEGER:
+        case BETREE_INTEGER_LIST:
             if(b->imin == INT64_MIN && b->imax == INT64_MAX) {
                 return SIZE_MAX;
             }
             else {
                 return (size_t)(llabs(b->imax - b->imin));
             }
-        case VALUE_F:
+        case BETREE_FLOAT:
             if(feq(b->fmin, -DBL_MAX) && feq(b->fmax, DBL_MAX)) {
                 return SIZE_MAX;
             }
             else {
                 return (size_t)(fabs(b->fmax - b->fmin));
             }
-        case VALUE_S:
-        case VALUE_SL:
+        case BETREE_STRING:
+        case BETREE_STRING_LIST:
             return b->smax - b->smin;
-        case VALUE_SEGMENTS:
-        case VALUE_FREQUENCY:
+        case BETREE_SEGMENTS:
+        case BETREE_FREQUENCY_CAPS:
         default:
             abort();
     }
@@ -357,7 +374,7 @@ static double get_attr_domain_score(const struct attr_domain* attr_domain)
 {
     size_t diff = domain_bound_diff(attr_domain);
     double num = attr_domain->allow_undefined ? 1. : 10.;
-    double bound_score = num / (double) diff;
+    double bound_score = num / (double)diff;
     return bound_score;
 }
 
@@ -375,7 +392,8 @@ static double get_pnode_score(const struct attr_domain** attr_domains, struct pn
     return get_score(attr_domains, pnode->attr_var.var, count);
 }
 
-static double get_lnode_score(const struct attr_domain** attr_domains, const struct lnode* lnode, betree_var_t var)
+static double get_lnode_score(
+    const struct attr_domain** attr_domains, const struct lnode* lnode, betree_var_t var)
 {
     size_t count = count_attr_in_lnode(var, lnode);
     return get_score(attr_domains, var, count);
@@ -386,7 +404,8 @@ static void update_partition_score(const struct attr_domain** attr_domains, stru
     pnode->score = get_pnode_score(attr_domains, pnode);
 }
 
-bool insert_be_tree(const struct config* config, const struct sub* sub, struct cnode* cnode, struct cdir* cdir)
+bool insert_be_tree(
+    const struct config* config, const struct sub* sub, struct cnode* cnode, struct cdir* cdir)
 {
     if(config == NULL) {
         fprintf(stderr, "Config is NULL, required to insert in the be tree\n");
@@ -432,7 +451,8 @@ static bool is_leaf(const struct cdir* cdir)
     return cdir->lchild == NULL && cdir->rchild == NULL;
 }
 
-static struct cdir* insert_cdir(const struct config* config, const struct sub* sub, struct cdir* cdir)
+static struct cdir* insert_cdir(
+    const struct config* config, const struct sub* sub, struct cdir* cdir)
 {
     if(is_leaf(cdir)) {
         return cdir;
@@ -441,7 +461,8 @@ static struct cdir* insert_cdir(const struct config* config, const struct sub* s
         if(sub_is_enclosed((const struct attr_domain**)config->attr_domains, sub, cdir->lchild)) {
             return insert_cdir(config, sub, cdir->lchild);
         }
-        else if(sub_is_enclosed((const struct attr_domain**)config->attr_domains, sub, cdir->rchild)) {
+        else if(sub_is_enclosed(
+                    (const struct attr_domain**)config->attr_domains, sub, cdir->rchild)) {
             return insert_cdir(config, sub, cdir->rchild);
         }
         return cdir;
@@ -695,30 +716,34 @@ static bool is_attr_used_in_parent_lnode(betree_var_t variable_id, const struct 
     return is_attr_used_in_parent_cnode(variable_id, lnode->parent);
 }
 
-static bool splitable_attr_domain(const struct config* config, const struct attr_domain* attr_domain)
+static bool splitable_attr_domain(
+    const struct config* config, const struct attr_domain* attr_domain)
 {
     switch(attr_domain->bound.value_type) {
-        case VALUE_I:
-        case VALUE_IL:
+        case BETREE_INTEGER:
+        case BETREE_INTEGER_LIST:
             if(attr_domain->bound.imin == INT64_MIN || attr_domain->bound.imax == INT64_MAX) {
                 return false;
             }
-            return ((uint64_t)llabs(attr_domain->bound.imax - attr_domain->bound.imin)) < config->max_domain_for_split;
-        case VALUE_F:
+            return ((uint64_t)llabs(attr_domain->bound.imax - attr_domain->bound.imin))
+                < config->max_domain_for_split;
+        case BETREE_FLOAT:
             if(feq(attr_domain->bound.fmin, -DBL_MAX) || feq(attr_domain->bound.fmax, DBL_MAX)) {
                 return false;
             }
-            return ((uint64_t)fabs(attr_domain->bound.fmax - attr_domain->bound.fmin)) < config->max_domain_for_split;
-        case VALUE_B:
+            return ((uint64_t)fabs(attr_domain->bound.fmax - attr_domain->bound.fmin))
+                < config->max_domain_for_split;
+        case BETREE_BOOLEAN:
             return true;
-        case VALUE_S:
-        case VALUE_SL:
+        case BETREE_STRING:
+        case BETREE_STRING_LIST:
             if(attr_domain->bound.smax == SIZE_MAX) {
                 return false;
             }
-            return (attr_domain->bound.smax - attr_domain->bound.smin) < config->max_domain_for_split;
-        case VALUE_SEGMENTS:
-        case VALUE_FREQUENCY:
+            return (attr_domain->bound.smax - attr_domain->bound.smin)
+                < config->max_domain_for_split;
+        case BETREE_SEGMENTS:
+        case BETREE_FREQUENCY_CAPS:
             return false;
         default:
             switch_default_error("Invalid bound value type");
@@ -737,10 +762,12 @@ static bool get_next_highest_score_unused_attr(
         for(size_t j = 0; j < sub->attr_var_count; j++) {
             struct attr_var current_attr_var = sub->attr_vars[j];
             betree_var_t current_variable_id = current_attr_var.var;
-            const struct attr_domain* attr_domain = get_attr_domain((const struct attr_domain**)config->attr_domains, current_variable_id);
+            const struct attr_domain* attr_domain = get_attr_domain(
+                (const struct attr_domain**)config->attr_domains, current_variable_id);
             if(splitable_attr_domain(config, attr_domain)
                 && !is_attr_used_in_parent_lnode(current_variable_id, lnode)) {
-                double current_score = get_lnode_score((const struct attr_domain**)config->attr_domains, lnode, current_variable_id);
+                double current_score = get_lnode_score(
+                    (const struct attr_domain**)config->attr_domains, lnode, current_variable_id);
                 found = true;
                 if(current_score > highest_score) {
                     highest_score = current_score;
@@ -770,7 +797,8 @@ static void update_cluster_capacity(const struct config* config, struct lnode* l
     lnode->max = max;
 }
 
-static size_t count_subs_with_variable(const struct sub** subs, size_t sub_count, betree_var_t variable_id)
+static size_t count_subs_with_variable(
+    const struct sub** subs, size_t sub_count, betree_var_t variable_id)
 {
     size_t count = 0;
     for(size_t i = 0; i < sub_count; i++) {
@@ -814,23 +842,23 @@ static void space_partitioning(const struct config* config, struct cnode* cnode)
 static bool is_atomic(const struct cdir* cdir)
 {
     switch(cdir->bound.value_type) {
-        case(VALUE_I):
-        case(VALUE_IL):
+        case(BETREE_INTEGER):
+        case(BETREE_INTEGER_LIST):
             return cdir->bound.imin == cdir->bound.imax;
-        case(VALUE_F): {
+        case(BETREE_FLOAT): {
             return feq(cdir->bound.fmin, cdir->bound.fmax);
         }
-        case(VALUE_B): {
+        case(BETREE_BOOLEAN): {
             return cdir->bound.bmin == cdir->bound.bmax;
         }
-        case(VALUE_S):
-        case(VALUE_SL):
+        case(BETREE_STRING):
+        case(BETREE_STRING_LIST):
             return cdir->bound.smin == cdir->bound.smax;
-        case(VALUE_SEGMENTS): {
+        case(BETREE_SEGMENTS): {
             fprintf(stderr, "%s a segments value cdir should never happen for now\n", __func__);
             abort();
         }
-        case(VALUE_FREQUENCY): {
+        case(BETREE_FREQUENCY_CAPS): {
             fprintf(stderr, "%s a frequency value cdir should never happen for now\n", __func__);
             abort();
         }
@@ -878,8 +906,8 @@ static struct value_bounds split_value_bound(struct value_bound bound)
     struct value_bound lbound = { .value_type = bound.value_type };
     struct value_bound rbound = { .value_type = bound.value_type };
     switch(bound.value_type) {
-        case(VALUE_I):
-        case(VALUE_IL): {
+        case(BETREE_INTEGER):
+        case(BETREE_INTEGER_LIST): {
             int64_t start = bound.imin, end = bound.imax;
             lbound.imin = start;
             rbound.imax = end;
@@ -903,7 +931,7 @@ static struct value_bounds split_value_bound(struct value_bound bound)
             }
             break;
         }
-        case(VALUE_F): {
+        case(BETREE_FLOAT): {
             double start = bound.fmin, end = bound.fmax;
             lbound.fmin = start;
             rbound.fmax = end;
@@ -927,7 +955,7 @@ static struct value_bounds split_value_bound(struct value_bound bound)
             }
             break;
         }
-        case(VALUE_B): {
+        case(BETREE_BOOLEAN): {
             bool start = bound.bmin, end = bound.bmax;
             lbound.bmin = start;
             rbound.bmax = end;
@@ -941,8 +969,8 @@ static struct value_bounds split_value_bound(struct value_bound bound)
             }
             break;
         }
-        case(VALUE_S):
-        case(VALUE_SL): {
+        case(BETREE_STRING):
+        case(BETREE_STRING_LIST): {
             size_t start = bound.smin, end = bound.smax;
             lbound.smin = start;
             rbound.smax = end;
@@ -966,11 +994,11 @@ static struct value_bounds split_value_bound(struct value_bound bound)
             }
             break;
         }
-        case(VALUE_SEGMENTS): {
+        case(BETREE_SEGMENTS): {
             fprintf(stderr, "%s a segment value cdir should never happen for now\n", __func__);
             abort();
         }
-        case(VALUE_FREQUENCY): {
+        case(BETREE_FREQUENCY_CAPS): {
             fprintf(stderr, "%s a frequency value cdir should never happen for now\n", __func__);
             abort();
         }
@@ -1000,11 +1028,13 @@ static void space_clustering(const struct config* config, struct cdir* cdir)
         cdir->rchild = create_cdir_with_cdir_parent(config, cdir, bounds.rbound);
         for(size_t i = 0; i < lnode->sub_count; i++) {
             const struct sub* sub = lnode->subs[i];
-            if(sub_is_enclosed((const struct attr_domain**)config->attr_domains, sub, cdir->lchild)) {
+            if(sub_is_enclosed(
+                   (const struct attr_domain**)config->attr_domains, sub, cdir->lchild)) {
                 move(sub, lnode, cdir->lchild->cnode->lnode);
                 i--;
             }
-            else if(sub_is_enclosed((const struct attr_domain**)config->attr_domains, sub, cdir->rchild)) {
+            else if(sub_is_enclosed(
+                        (const struct attr_domain**)config->attr_domains, sub, cdir->rchild)) {
                 move(sub, lnode, cdir->rchild->cnode->lnode);
                 i--;
             }
@@ -1016,7 +1046,8 @@ static void space_clustering(const struct config* config, struct cdir* cdir)
     update_cluster_capacity(config, lnode);
 }
 
-static bool search_delete_cdir(const struct attr_domain** attr_domains, struct sub* sub, struct cdir* cdir);
+static bool search_delete_cdir(
+    const struct attr_domain** attr_domains, struct sub* sub, struct cdir* cdir);
 
 static bool delete_sub_from_leaf(betree_sub_t sub, struct lnode* lnode)
 {
@@ -1093,19 +1124,18 @@ void free_sub(struct sub* sub)
     free(sub);
 }
 
-void free_event(struct event* event)
+void free_event(struct betree_event* event)
 {
     if(event == NULL) {
         return;
     }
-    for(size_t i = 0; i < event->pred_count; i++) {
-        const struct betree_variable* pred = event->preds[i];
+    for(size_t i = 0; i < event->variable_count; i++) {
+        const struct betree_variable* pred = event->variables[i];
         if(pred != NULL) {
             free_pred((struct betree_variable*)pred);
         }
     }
-    free(event->preds);
-    event->preds = NULL;
+    free(event->variables);
     free(event);
 }
 
@@ -1187,7 +1217,8 @@ static void free_pnode(struct pnode* pnode)
     free(pnode);
 }
 
-bool betree_delete_inner(const struct attr_domain** attr_domains, struct sub* sub, struct cnode* cnode)
+bool betree_delete_inner(
+    const struct attr_domain** attr_domains, struct sub* sub, struct cnode* cnode)
 {
     struct pnode* pnode = NULL;
     bool isFound = delete_sub_from_leaf(sub->id, cnode->lnode);
@@ -1299,7 +1330,8 @@ static void try_remove_cdir_from_parent(struct cdir* cdir)
     }
 }
 
-static bool search_delete_cdir(const struct attr_domain** attr_domains, struct sub* sub, struct cdir* cdir)
+static bool search_delete_cdir(
+    const struct attr_domain** attr_domains, struct sub* sub, struct cdir* cdir)
 {
     bool isFound = false;
     if(sub_is_enclosed(attr_domains, sub, cdir->lchild)) {
@@ -1458,7 +1490,9 @@ struct sub* make_empty_sub(betree_sub_t id)
     return sub;
 }
 
-static enum short_circuit_e short_circuit_for_attr_var(betree_var_t id, bool inverted, struct attr_var attr_var) {
+static enum short_circuit_e short_circuit_for_attr_var(
+    betree_var_t id, bool inverted, struct attr_var attr_var)
+{
     if(id == attr_var.var) {
         if(inverted) {
             return SHORT_CIRCUIT_PASS;
@@ -1472,17 +1506,21 @@ static enum short_circuit_e short_circuit_for_attr_var(betree_var_t id, bool inv
     }
 }
 
-static enum short_circuit_e short_circuit_for_node(betree_var_t id, bool inverted, const struct ast_node* node) {
+static enum short_circuit_e short_circuit_for_node(
+    betree_var_t id, bool inverted, const struct ast_node* node)
+{
     switch(node->type) {
-        case AST_TYPE_COMPARE_EXPR: 
+        case AST_TYPE_COMPARE_EXPR:
             return short_circuit_for_attr_var(id, inverted, node->compare_expr.attr_var);
-        case AST_TYPE_EQUALITY_EXPR: 
+        case AST_TYPE_EQUALITY_EXPR:
             return short_circuit_for_attr_var(id, inverted, node->equality_expr.attr_var);
         case AST_TYPE_BOOL_EXPR:
             switch(node->bool_expr.op) {
                 case AST_BOOL_OR: {
-                    enum short_circuit_e lhs = short_circuit_for_node(id, inverted, node->bool_expr.binary.lhs);
-                    enum short_circuit_e rhs = short_circuit_for_node(id, inverted, node->bool_expr.binary.rhs);
+                    enum short_circuit_e lhs
+                        = short_circuit_for_node(id, inverted, node->bool_expr.binary.lhs);
+                    enum short_circuit_e rhs
+                        = short_circuit_for_node(id, inverted, node->bool_expr.binary.rhs);
                     if(lhs == SHORT_CIRCUIT_PASS || rhs == SHORT_CIRCUIT_PASS) {
                         return SHORT_CIRCUIT_PASS;
                     }
@@ -1492,8 +1530,10 @@ static enum short_circuit_e short_circuit_for_node(betree_var_t id, bool inverte
                     return SHORT_CIRCUIT_NONE;
                 }
                 case AST_BOOL_AND: {
-                    enum short_circuit_e lhs = short_circuit_for_node(id, inverted, node->bool_expr.binary.lhs);
-                    enum short_circuit_e rhs = short_circuit_for_node(id, inverted, node->bool_expr.binary.rhs);
+                    enum short_circuit_e lhs
+                        = short_circuit_for_node(id, inverted, node->bool_expr.binary.lhs);
+                    enum short_circuit_e rhs
+                        = short_circuit_for_node(id, inverted, node->bool_expr.binary.rhs);
                     if(lhs == SHORT_CIRCUIT_FAIL || rhs == SHORT_CIRCUIT_FAIL) {
                         return SHORT_CIRCUIT_FAIL;
                     }
@@ -1511,23 +1551,31 @@ static enum short_circuit_e short_circuit_for_node(betree_var_t id, bool inverte
             }
         case AST_TYPE_SET_EXPR:
             if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
-                return short_circuit_for_attr_var(id, inverted, node->set_expr.left_value.variable_value);
+                return short_circuit_for_attr_var(
+                    id, inverted, node->set_expr.left_value.variable_value);
             }
             else {
-                return short_circuit_for_attr_var(id, inverted, node->set_expr.right_value.variable_value);
+                return short_circuit_for_attr_var(
+                    id, inverted, node->set_expr.right_value.variable_value);
             }
         case AST_TYPE_LIST_EXPR:
             return short_circuit_for_attr_var(id, inverted, node->list_expr.attr_var);
         case AST_TYPE_SPECIAL_EXPR:
             switch(node->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY:
-                    return short_circuit_for_attr_var(id, inverted, node->special_expr.frequency.attr_var);
+                    return short_circuit_for_attr_var(
+                        id, inverted, node->special_expr.frequency.attr_var);
                 case AST_SPECIAL_SEGMENT:
-                    return short_circuit_for_attr_var(id, inverted, node->special_expr.segment.attr_var);
+                    return short_circuit_for_attr_var(
+                        id, inverted, node->special_expr.segment.attr_var);
                 case AST_SPECIAL_GEO:
-                    return short_circuit_for_attr_var(id, inverted, node->special_expr.geo.latitude_var) || short_circuit_for_attr_var(id, inverted, node->special_expr.geo.longitude_var);
+                    return short_circuit_for_attr_var(
+                               id, inverted, node->special_expr.geo.latitude_var)
+                        || short_circuit_for_attr_var(
+                               id, inverted, node->special_expr.geo.longitude_var);
                 case AST_SPECIAL_STRING:
-                    return short_circuit_for_attr_var(id, inverted, node->special_expr.string.attr_var);
+                    return short_circuit_for_attr_var(
+                        id, inverted, node->special_expr.string.attr_var);
                 default:
                     abort();
             }
@@ -1542,7 +1590,8 @@ static void fill_short_circuit(struct config* config, struct sub* sub)
     for(size_t i = 0; i < config->attr_domain_count; i++) {
         struct attr_domain* attr_domain = config->attr_domains[i];
         if(attr_domain->allow_undefined) {
-            enum short_circuit_e result = short_circuit_for_node(attr_domain->attr_var.var, false, sub->expr);
+            enum short_circuit_e result
+                = short_circuit_for_node(attr_domain->attr_var.var, false, sub->expr);
             if(result == SHORT_CIRCUIT_PASS) {
                 set_bit(sub->short_circuit.pass, i);
             }
@@ -1566,15 +1615,15 @@ struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* ex
     return sub;
 }
 
-struct event* make_event()
+struct betree_event* make_empty_event()
 {
-    struct event* event = calloc(1, sizeof(*event));
+    struct betree_event* event = calloc(1, sizeof(*event));
     if(event == NULL) {
         fprintf(stderr, "%s event calloc failed\n", __func__);
         abort();
     }
-    event->pred_count = 0;
-    event->preds = NULL;
+    event->variable_count = 0;
+    event->variables = NULL;
     return event;
 }
 
@@ -1602,46 +1651,46 @@ betree_var_t try_get_id_for_attr(const struct config* config, const char* attr)
     return INVALID_VAR;
 }
 
-void event_to_string(const struct event* event, char* buffer)
+void event_to_string(const struct betree_event* event, char* buffer)
 {
     size_t length = 0;
-    for(size_t i = 0; i < event->pred_count; i++) {
-        const struct betree_variable* pred = event->preds[i];
+    for(size_t i = 0; i < event->variable_count; i++) {
+        const struct betree_variable* pred = event->variables[i];
         if(i != 0) {
             length += sprintf(buffer + length, ", ");
         }
         const char* attr = pred->attr_var.attr;
         switch(pred->value.value_type) {
-            case(VALUE_I): {
+            case(BETREE_INTEGER): {
                 length += sprintf(buffer + length, "%s = %" PRIu64, attr, pred->value.ivalue);
                 break;
             }
-            case(VALUE_F): {
+            case(BETREE_FLOAT): {
                 length += sprintf(buffer + length, "%s = %.2f", attr, pred->value.fvalue);
                 break;
             }
-            case(VALUE_B): {
+            case(BETREE_BOOLEAN): {
                 const char* value = pred->value.bvalue ? "true" : "false";
                 length += sprintf(buffer + length, "%s = %s", attr, value);
                 break;
             }
-            case(VALUE_S): {
+            case(BETREE_STRING): {
                 length += sprintf(buffer + length, "%s = \"%s\"", attr, pred->value.svalue.string);
                 break;
             }
-            case(VALUE_IL): {
+            case(BETREE_INTEGER_LIST): {
                 const char* integer_list = integer_list_value_to_string(pred->value.ilvalue);
                 length += sprintf(buffer + length, "%s = (%s)", attr, integer_list);
                 free((char*)integer_list);
                 break;
             }
-            case(VALUE_SEGMENTS):
-            case(VALUE_FREQUENCY): {
+            case(BETREE_SEGMENTS):
+            case(BETREE_FREQUENCY_CAPS): {
                 fprintf(stderr, "TODO\n");
                 abort();
                 break;
             }
-            case(VALUE_SL): {
+            case(BETREE_STRING_LIST): {
                 const char* string_list = string_list_value_to_string(pred->value.slvalue);
                 length += sprintf(buffer + length, "%s = (%s)", attr, string_list);
                 free((char*)string_list);
@@ -1656,7 +1705,7 @@ void event_to_string(const struct event* event, char* buffer)
 }
 
 int parse(const char* text, struct ast_node** node);
-int event_parse(const char* text, struct event** event);
+int event_parse(const char* text, struct betree_event** event);
 
 struct memoize make_memoize(size_t pred_count)
 {
@@ -1713,35 +1762,35 @@ void betree_search_with_preds(const struct config* config,
     free(preds);
 }
 
-static void sort_event_lists(struct event* event)
+static void sort_event_lists(struct betree_event* event)
 {
-    for(size_t i = 0; i < event->pred_count; i++) {
-        struct betree_variable* pred = event->preds[i];
-        if(pred->value.value_type == VALUE_IL) {
+    for(size_t i = 0; i < event->variable_count; i++) {
+        struct betree_variable* pred = event->variables[i];
+        if(pred->value.value_type == BETREE_INTEGER_LIST) {
             qsort(pred->value.ilvalue->integers,
-              pred->value.ilvalue->count,
-              sizeof(*pred->value.ilvalue->integers),
-              icmpfunc);
+                pred->value.ilvalue->count,
+                sizeof(*pred->value.ilvalue->integers),
+                icmpfunc);
         }
-        else if(pred->value.value_type == VALUE_SL) {
+        else if(pred->value.value_type == BETREE_STRING_LIST) {
             qsort(pred->value.slvalue->strings,
-              pred->value.slvalue->count,
-              sizeof(*pred->value.slvalue->strings),
-              scmpfunc);
+                pred->value.slvalue->count,
+                sizeof(*pred->value.slvalue->strings),
+                scmpfunc);
         }
     }
 }
 
-struct event* make_event_from_string(const struct config* config, const char* event_str)
+struct betree_event* make_event_from_string(const struct betree* betree, const char* event_str)
 {
-    struct event* event;
+    struct betree_event* event;
     if(likely(event_parse(event_str, &event))) {
         fprintf(stderr, "Failed to parse event: %s\n", event_str);
         abort();
     }
-    fill_event(config, event);
-    if(likely(validate_event(config, event) == false)) {
-        fprintf(stderr, "Failed to validate event: %s\n", event_str);
+    fill_event(betree->config, event);
+    if(likely(validate_event(betree->config, event) == false)) {
+        fprintf(stderr, "Failed to validate event\n");
         abort();
     }
     sort_event_lists(event);
@@ -1772,34 +1821,35 @@ struct attr_var copy_attr_var(struct attr_var attr_var)
     return copy;
 }
 
-void add_pred(struct betree_variable* pred, struct event* event)
+void add_variable(struct betree_variable* variable, struct betree_event* event)
 {
-    if(pred == NULL) {
+    if(variable == NULL) {
         return;
     }
-    if(event->pred_count == 0) {
-        event->preds = calloc(1, sizeof(*event->preds));
-        if(event->preds == NULL) {
+    if(event->variable_count == 0) {
+        event->variables = calloc(1, sizeof(*event->variables));
+        if(event->variables == NULL) {
             fprintf(stderr, "%s calloc failed\n", __func__);
             abort();
         }
     }
     else {
-        struct betree_variable** preds = realloc(event->preds, sizeof(*preds) * (event->pred_count + 1));
-        if(preds == NULL) {
+        struct betree_variable** variables
+            = realloc(event->variables, sizeof(*variables) * (event->variable_count + 1));
+        if(variables == NULL) {
             fprintf(stderr, "%s realloc failed\n", __func__);
             abort();
         }
-        event->preds = preds;
+        event->variables = variables;
     }
-    event->preds[event->pred_count] = pred;
-    event->pred_count++;
+    event->variables[event->variable_count] = variable;
+    event->variable_count++;
 }
 
-void fill_event(const struct config* config, struct event* event)
+void fill_event(const struct config* config, struct betree_event* event)
 {
-    for(size_t i = 0; i < event->pred_count; i++) {
-        struct betree_variable* pred = event->preds[i];
+    for(size_t i = 0; i < event->variable_count; i++) {
+        struct betree_variable* pred = event->variables[i];
         if(pred == NULL) {
             continue;
         }
@@ -1810,31 +1860,33 @@ void fill_event(const struct config* config, struct event* event)
         }
         pred->attr_var.var = var;
         switch(pred->value.value_type) {
-            case VALUE_B:
-            case VALUE_I:
-            case VALUE_F:
-            case VALUE_IL:
-            case VALUE_SEGMENTS:
+            case BETREE_BOOLEAN:
+            case BETREE_INTEGER:
+            case BETREE_FLOAT:
+            case BETREE_INTEGER_LIST:
+            case BETREE_SEGMENTS:
                 break;
-            case VALUE_S: {
-                betree_str_t str = try_get_id_for_string(config, pred->attr_var, pred->value.svalue.string);
+            case BETREE_STRING: {
+                betree_str_t str
+                    = try_get_id_for_string(config, pred->attr_var, pred->value.svalue.string);
                 pred->value.svalue.var = pred->attr_var.var;
                 pred->value.svalue.str = str;
                 break;
             }
-            case VALUE_SL: {
+            case BETREE_STRING_LIST: {
                 for(size_t j = 0; j < pred->value.slvalue->count; j++) {
-                    betree_str_t str
-                        = try_get_id_for_string(config, pred->attr_var, pred->value.slvalue->strings[j].string);
+                    betree_str_t str = try_get_id_for_string(
+                        config, pred->attr_var, pred->value.slvalue->strings[j].string);
                     pred->value.slvalue->strings[j].var = pred->attr_var.var;
                     pred->value.slvalue->strings[j].str = str;
                 }
                 break;
             }
-            case VALUE_FREQUENCY: {
+            case BETREE_FREQUENCY_CAPS: {
                 for(size_t j = 0; j < pred->value.frequency_value->size; j++) {
-                    betree_str_t str = try_get_id_for_string(
-                        config, pred->attr_var, pred->value.frequency_value->content[j]->namespace.string);
+                    betree_str_t str = try_get_id_for_string(config,
+                        pred->attr_var,
+                        pred->value.frequency_value->content[j]->namespace.string);
                     pred->value.frequency_value->content[j]->namespace.var = pred->attr_var.var;
                     pred->value.frequency_value->content[j]->namespace.str = str;
                 }
@@ -1847,14 +1899,14 @@ void fill_event(const struct config* config, struct event* event)
     }
 }
 
-bool validate_event(const struct config* config, const struct event* event)
+bool validate_event(const struct config* config, const struct betree_event* event)
 {
     for(size_t i = 0; i < config->attr_domain_count; i++) {
         const struct attr_domain* attr_domain = config->attr_domains[i];
         if(attr_domain->allow_undefined == false) {
             bool found = false;
-            for(size_t j = 0; j < event->pred_count; j++) {
-                const struct betree_variable* pred = event->preds[j];
+            for(size_t j = 0; j < event->variable_count; j++) {
+                const struct betree_variable* pred = event->variables[j];
                 if(pred->attr_var.var == attr_domain->attr_var.var) {
                     found = true;
                     break;
@@ -1868,4 +1920,3 @@ bool validate_event(const struct config* config, const struct event* event)
     }
     return true;
 }
-

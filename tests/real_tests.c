@@ -22,14 +22,12 @@
 #define MAX_EVENTS 1000
 #define DEFAULT_SEARCH_COUNT 10
 
-struct events {
+struct betree_events {
     size_t count;
     char** events;
 };
 
-extern bool MATCH_NODE_DEBUG;
-
-void add_event(char* event, struct events* events)
+void add_event(char* event, struct betree_events* events)
 {
     if(events->count == 0) {
         events->events = calloc(1, sizeof(*events->events));
@@ -66,9 +64,9 @@ char* strip_chars(const char* string, const char* chars)
     return new_string;
 }
 
-int event_parse(const char* text, struct event** event);
+int event_parse(const char* text, struct betree_event** event);
 
-size_t read_betree_events(struct config* config, struct events* events)
+size_t read_betree_events(struct config* config, struct betree_events* events)
 {
     FILE* f = fopen("betree_events", "r");
     size_t count = 0;
@@ -79,7 +77,7 @@ size_t read_betree_events(struct config* config, struct events* events)
             break;
         }
 
-        struct event* event;
+        struct betree_event* event;
         if(event_parse(line, &event) != 0) {
             fprintf(stderr, "Can't parse event %zu: %s", events->count + 1, line);
             abort();
@@ -183,7 +181,7 @@ int main(int argc, char** argv)
         + (insert_done.tv_nsec - start.tv_nsec) / 1000;
     printf("    Insert took %" PRIu64 "\n", insert_us);
 
-    struct events events = { .count = 0, .events = NULL };
+    struct betree_events events = { .count = 0, .events = NULL };
     size_t event_count = read_betree_events(tree->config, &events);
 
     uint64_t evaluated_sum = 0;
@@ -193,8 +191,6 @@ int main(int argc, char** argv)
 
     const size_t search_us_count = search_count * events.count;
     double search_us_data[search_us_count];
-
-    /*MATCH_NODE_DEBUG = true;*/
 
     CALLGRIND_START_INSTRUMENTATION;
 

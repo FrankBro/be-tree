@@ -50,8 +50,6 @@ static void add_predicate_to_map(struct pred_map* pred_map, struct ast_node* nod
     pred_map->pred_count++;
 }
 
-extern bool MATCH_NODE_DEBUG;
-
 static void match_or_insert(struct pred_map* pred_map, struct pred_container* container, struct ast_node* node)
 {
     for(size_t i = 0; i < container->count; i++) {
