@@ -66,7 +66,7 @@ char* strip_chars(const char* string, const char* chars)
 
 int event_parse(const char* text, struct betree_event** event);
 
-size_t read_betree_events(struct config* config, struct betree_events* events)
+size_t read_betree_events(struct betree_events* events)
 {
     FILE* f = fopen("betree_events", "r");
     size_t count = 0;
@@ -77,16 +77,6 @@ size_t read_betree_events(struct config* config, struct betree_events* events)
             break;
         }
 
-        struct betree_event* event;
-        if(event_parse(line, &event) != 0) {
-            fprintf(stderr, "Can't parse event %zu: %s", events->count + 1, line);
-            abort();
-        }
-
-        fill_event(config, event);
-        if(!validate_event(config, event)) {
-            abort();
-        }
         add_event(line, events);
         count++;
     }
@@ -182,7 +172,7 @@ int main(int argc, char** argv)
     printf("    Insert took %" PRIu64 "\n", insert_us);
 
     struct betree_events events = { .count = 0, .events = NULL };
-    size_t event_count = read_betree_events(tree->config, &events);
+    size_t event_count = read_betree_events(&events);
 
     uint64_t evaluated_sum = 0;
     uint64_t matched_sum = 0;

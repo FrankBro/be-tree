@@ -105,9 +105,9 @@ struct betree_segments* make_segments();
 struct betree_frequency_caps* make_frequency_caps();
 
 void add_integer_list_value(int64_t integer, struct betree_integer_list* list);
-const char* integer_list_value_to_string(struct betree_integer_list* list);
+char* integer_list_value_to_string(struct betree_integer_list* list);
 void add_string_list_value(struct string_value string, struct betree_string_list* list);
-const char* string_list_value_to_string(struct betree_string_list* list);
+char* string_list_value_to_string(struct betree_string_list* list);
 void add_segment(struct betree_segment* segment, struct betree_segments* list);
 void add_frequency(struct betree_frequency_cap* frequency, struct betree_frequency_caps* list);
 struct betree_segment* make_segment(int64_t id, int64_t timestamp);
@@ -119,6 +119,8 @@ struct betree_frequency_cap* make_frequency_cap(const char* type,
     uint32_t value);
 
 enum frequency_type_e get_type_from_string(const char* stype);
+char* segments_value_to_string(struct betree_segments* list);
+char* frequency_caps_value_to_string(struct betree_frequency_caps* list);
 
 void free_integer_list(struct betree_integer_list* value);
 void free_string_list(struct betree_string_list* value);

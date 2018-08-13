@@ -95,9 +95,9 @@ bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr)
     return betree_insert_with_constants(tree, id, 0, NULL, expr);
 }
 
-static struct betree_variable** make_environment(size_t attr_domain_count, const struct betree_event* event)
+static const struct betree_variable** make_environment(size_t attr_domain_count, const struct betree_event* event)
 {
-    struct betree_variable** preds = calloc(attr_domain_count, sizeof(*preds));
+    const struct betree_variable** preds = calloc(attr_domain_count, sizeof(*preds));
     for(size_t i = 0; i < event->variable_count; i++) {
         if(event->variables[i] != NULL) {
             preds[event->variables[i]->attr_var.var] = event->variables[i];
@@ -108,9 +108,13 @@ static struct betree_variable** make_environment(size_t attr_domain_count, const
 
 static void betree_search_with_event_filled(const struct betree* betree, struct betree_event* event, struct report* report)
 {
-    const struct betree_variable** preds
-        = (const struct betree_variable**)make_environment(betree->config->attr_domain_count, event);
-    betree_search_with_preds(betree->config, preds, betree->cnode, report);
+    const struct betree_variable** variables
+        = make_environment(betree->config->attr_domain_count, event);
+    if(validate_variables(betree->config, variables) == false) {
+        fprintf(stderr, "Failed to validate event\n");
+        abort();
+    }
+    betree_search_with_preds(betree->config, variables, betree->cnode, report);
 }
 
 void betree_search(const struct betree* tree, const char* event_str, struct report* report)
@@ -123,10 +127,6 @@ void betree_search(const struct betree* tree, const char* event_str, struct repo
 void betree_search_with_event(const struct betree* betree, struct betree_event* event, struct report* report)
 {
     fill_event(betree->config, event);
-    if(likely(validate_event(betree->config, event) == false)) {
-        fprintf(stderr, "Failed to validate event\n");
-        abort();
-    }
     betree_search_with_event_filled(betree, event, report);
 }
 
@@ -358,7 +358,7 @@ struct betree_variable* betree_make_float_variable(const char* name, double valu
 
 struct betree_variable* betree_make_string_variable(const char* name, const char* value)
 {
-    struct string_value svalue = { .string = value, .var = INVALID_VAR, .str = INVALID_STR };
+    struct string_value svalue = { .string = strdup(value), .var = INVALID_VAR, .str = INVALID_STR };
     struct value v = { .value_type = BETREE_STRING, .svalue = svalue };
     return betree_make_variable(name, v);
 }

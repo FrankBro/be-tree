@@ -1789,10 +1789,6 @@ struct betree_event* make_event_from_string(const struct betree* betree, const c
         abort();
     }
     fill_event(betree->config, event);
-    if(likely(validate_event(betree->config, event) == false)) {
-        fprintf(stderr, "Failed to validate event\n");
-        abort();
-    }
     sort_event_lists(event);
     return event;
 }
@@ -1899,24 +1895,15 @@ void fill_event(const struct config* config, struct betree_event* event)
     }
 }
 
-bool validate_event(const struct config* config, const struct betree_event* event)
+bool validate_variables(const struct config* config, const struct betree_variable* variables[])
 {
     for(size_t i = 0; i < config->attr_domain_count; i++) {
         const struct attr_domain* attr_domain = config->attr_domains[i];
-        if(attr_domain->allow_undefined == false) {
-            bool found = false;
-            for(size_t j = 0; j < event->variable_count; j++) {
-                const struct betree_variable* pred = event->variables[j];
-                if(pred->attr_var.var == attr_domain->attr_var.var) {
-                    found = true;
-                    break;
-                }
-            }
-            if(unlikely(!found)) {
-                fprintf(stderr, "Missing attribute: %s\n", attr_domain->attr_var.attr);
-                return false;
-            }
+        const struct betree_variable* variable = variables[i];
+        if(attr_domain->allow_undefined == false && variable == NULL) {
+            return false;
         }
     }
     return true;
 }
+

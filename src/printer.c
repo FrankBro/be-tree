@@ -2,6 +2,7 @@
 
 #include "ast.h"
 #include "printer.h"
+#include "tree.h"
 #include "utils.h"
 
 static const char* compare_value_to_string(struct compare_value value)
@@ -368,3 +369,67 @@ char* ast_to_string(const struct ast_node* node)
         }
     }
 }
+
+static const char* value_type_to_string(enum betree_value_type_e e)
+{
+    switch(e) {
+        case BETREE_BOOLEAN: return "boolean";
+        case BETREE_INTEGER: return "integer";
+        case BETREE_FLOAT: return "float";
+        case BETREE_STRING: return "string";
+        case BETREE_INTEGER_LIST: return "integer_list";
+        case BETREE_STRING_LIST: return "string_list";
+        case BETREE_SEGMENTS: return "segments";
+        case BETREE_FREQUENCY_CAPS: return "frequency_caps";
+        default: return "INVALID";
+    }
+}
+
+void print_variable(const struct betree_variable* v) 
+{
+    if(v == NULL) {
+        printf("undefined\n");
+        return;
+    }
+    const char* type = value_type_to_string(v->value.value_type);
+    printf("%s %s = ", type, v->attr_var.attr);
+    char* inner = NULL;
+    switch(v->value.value_type) {
+        case BETREE_BOOLEAN:
+            printf("%s", v->value.bvalue ? "true" : "false");
+            break;
+        case BETREE_INTEGER:
+            printf("%ld", v->value.ivalue);
+            break;
+        case BETREE_FLOAT:
+            printf("%.2f", v->value.fvalue);
+            break;
+        case BETREE_STRING:
+            printf("%s", v->value.svalue.string);
+            break;
+        case BETREE_INTEGER_LIST:
+            inner = integer_list_value_to_string(v->value.ilvalue);
+            printf("%s", inner);
+            break;
+        case BETREE_STRING_LIST:
+            inner = string_list_value_to_string(v->value.slvalue);
+            printf("%s", inner);
+            break;
+        case BETREE_SEGMENTS:
+            inner = segments_value_to_string(v->value.segments_value);
+            printf("%s", inner);
+            break;
+        case BETREE_FREQUENCY_CAPS:
+            inner = frequency_caps_value_to_string(v->value.frequency_value);
+            printf("%s", inner);
+            break;
+        default:
+            printf("INVALID");
+            break;
+    }
+    printf("\n");
+    if(inner != NULL) {
+        free(inner);
+    }
+}
+

@@ -402,9 +402,12 @@ size_t read_betree_events(struct config* config, struct betree_events* events)
         }
 
         fill_event(config, event);
+        /*
+         * Would be better if we did this but this is pretty useless now
         if(!validate_event(config, event)) {
             abort();
         }
+        */
         add_event(line, events);
         count++;
     }

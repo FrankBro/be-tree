@@ -109,7 +109,7 @@ struct betree_variable* make_pred(const char* attr, betree_var_t variable_id, st
 void add_variable(struct betree_variable* variable, struct betree_event* event);
 
 void fill_event(const struct config* config, struct betree_event* event);
-bool validate_event(const struct config* config, const struct betree_event* event);
+bool validate_variables(const struct config* config, const struct betree_variable* variables[]);
 
 struct betree_event* make_event_from_string(const struct betree* betree, const char* event_str);
 

@@ -1,3 +1,4 @@
+#include <float.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -1279,6 +1280,70 @@ int test_undefined_cdir_search()
     return 0;
 }
 
+int test_api() 
+{
+    struct betree* tree = betree_make();
+    betree_add_boolean_variable(tree, "b", false);
+    betree_add_integer_variable(tree, "i", false, INT64_MIN, INT64_MAX);
+    betree_add_float_variable(tree, "f", false, -DBL_MAX, DBL_MAX);
+    betree_add_string_variable(tree, "s", false, SIZE_MAX);
+    betree_add_integer_list_variable(tree, "il", false, INT64_MIN, INT64_MAX);
+    betree_add_string_list_variable(tree, "sl", false, SIZE_MAX);
+    betree_add_segments_variable(tree, "seg", false);
+    betree_add_frequency_caps_variable(tree, "frequency_caps", false);
+    betree_add_integer_variable(tree, "now", false, INT64_MIN, INT64_MAX);
+
+    const char* expr =
+             "b and "
+             "i = 10 and "
+             "f > 3.13 and "
+             "s = \"good\" and "
+             "1 in il and "
+             "sl none of (\"good\") and "
+             "segment_within(seg, 1, 20) and "
+             "within_frequency_cap(\"flight\", \"ns\", 100, 0)";
+    enum e { constant_count = 4 };
+    const struct betree_constant* constants[constant_count] = {
+        betree_make_integer_constant("flight_id", 10),
+        betree_make_integer_constant("advertiser_id", 20),
+        betree_make_integer_constant("campaign_id", 30),
+        betree_make_integer_constant("product_id", 40),
+    };
+    mu_assert(betree_insert_with_constants(tree, 0, constant_count, constants, expr), "");
+
+    struct betree_event* event = betree_make_event(tree);
+    betree_set_variable(event, 0, betree_make_boolean_variable("b", true));
+    betree_set_variable(event, 1, betree_make_integer_variable("i", 10));
+    betree_set_variable(event, 2, betree_make_float_variable("f", 3.14));
+    betree_set_variable(event, 3, betree_make_string_variable("s", "good"));
+    struct betree_integer_list* il = betree_make_integer_list(3);
+    betree_add_integer(il, 0, 1);
+    betree_add_integer(il, 1, 2);
+    betree_add_integer(il, 2, 3);
+    betree_set_variable(event, 4, betree_make_integer_list_variable("il", il));
+    struct betree_string_list* sl = betree_make_string_list(1);
+    betree_add_string(sl, 0, "bad");
+    betree_set_variable(event, 5, betree_make_string_list_variable("sl", sl));
+    struct betree_segments* seg = betree_make_segments(1);
+    int64_t usec = 1000 * 1000;
+    betree_add_segment(seg, 0, betree_make_segment(1, 10 * usec));
+    betree_set_variable(event, 6, betree_make_segments_variable("seg", seg));
+    struct betree_frequency_caps* frequency_caps = betree_make_frequency_caps(1);
+    betree_add_frequency_cap(frequency_caps, 0, betree_make_frequency_cap("flight", 10, "ns", false, 0, 0));
+    betree_set_variable(event, 7, betree_make_frequency_caps_variable("frequency_caps", frequency_caps));
+    betree_set_variable(event, 8, betree_make_integer_variable("now", 0));
+
+    struct report* report = make_report();
+    betree_search_with_event(tree, event, report);
+
+    mu_assert(report->matched == 1, "found 1");
+
+    betree_free(tree);
+    free_report(report);
+
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_sub_has_attribute);
@@ -1313,6 +1378,7 @@ int all_tests()
     mu_run_test(test_splitable_string_list_domain);
     mu_run_test(test_set_bug_cdir);
     mu_run_test(test_undefined_cdir_search);
+    mu_run_test(test_api);
 
     return 0;
 }

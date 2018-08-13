@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "ast.h"
 #include "betree.h"
 #include "value.h"
 #include "utils.h"
@@ -68,7 +69,7 @@ void add_integer_list_value(int64_t integer, struct betree_integer_list* list)
     list->count++;
 }
 
-const char* integer_list_value_to_string(struct betree_integer_list* list)
+char* integer_list_value_to_string(struct betree_integer_list* list)
 {
     char* string = NULL;
     for(size_t i = 0; i < list->count; i++) {
@@ -111,7 +112,7 @@ void add_string_list_value(struct string_value string, struct betree_string_list
     list->count++;
 }
 
-const char* string_list_value_to_string(struct betree_string_list* list)
+char* string_list_value_to_string(struct betree_string_list* list)
 {
     char* string = NULL;
     for(size_t i = 0; i < list->count; i++) {
@@ -308,5 +309,77 @@ void free_value(struct value value)
             switch_default_error("Invalid value value type");
         }
     }
+}
+
+char* segment_value_to_string(struct betree_segment* segment)
+{
+    char* string = NULL;
+    if(asprintf(&string, "[%ld, %ld]", segment->id, segment->timestamp) < 0) {
+        abort();
+    }
+    return string;
+}
+
+char* segments_value_to_string(struct betree_segments* list)
+{
+    char* string = NULL;
+    for(size_t i = 0; i < list->size; i++) {
+        char* new_string;
+        char* segment = segment_value_to_string(list->content[i]);
+        if(i != 0) {
+            if(asprintf(&new_string, "%s, %s", string, segment) < 0) {
+                abort();
+            }
+            free(string);
+        }
+        else {
+            if(asprintf(&new_string, "%s", segment) < 0) {
+                abort();
+            }
+        }
+        free(segment);
+        string = new_string;
+    }
+    return string;
+}
+
+char* frequency_cap_to_string(struct betree_frequency_cap* cap)
+{
+    char* string = NULL;
+    const char* type = frequency_type_to_string(cap->type);
+    if(cap->timestamp_defined) {
+        if(asprintf(&string, "[[\"%s\", %u, \"%s\"], %u, %ld]", type, cap->id, cap->namespace.string, cap->value, cap->timestamp) < 0) {
+            abort();
+        }
+    }
+    else {
+        if(asprintf(&string, "[[\"%s\", %u, \"%s\"], %u, undefined]", type, cap->id, cap->namespace.string, cap->value) < 0) {
+            abort();
+        }
+    }
+    return string;
+}
+
+char* frequency_caps_value_to_string(struct betree_frequency_caps* list)
+{
+    char* string = NULL;
+    for(size_t i = 0; i < list->size; i++) {
+        char* new_string;
+        char* cap = frequency_cap_to_string(list->content[i]);
+        if(i != 0) {
+            if(asprintf(&new_string, "%s, %s", string, cap) < 0) {
+                abort();
+            }
+            free(string);
+        }
+        else {
+            if(asprintf(&new_string, "%s", cap) < 0) {
+                abort();
+            }
+        }
+        free(cap);
+        string = new_string;
+    }
+    return string;
 }
 
