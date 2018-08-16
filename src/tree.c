@@ -300,7 +300,7 @@ static void insert_sub(const struct sub* sub, struct lnode* lnode)
     }
     else {
         struct sub** subs = realloc(lnode->subs, sizeof(*subs) * (lnode->sub_count + 1));
-        if(sub == NULL) {
+        if(subs == NULL) {
             fprintf(stderr, "%s realloc failed\n", __func__);
             abort();
         }
