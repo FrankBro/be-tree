@@ -100,7 +100,15 @@ size_t read_betree_exprs(struct betree* tree)
     char line[10000]; // Arbitrary from what I've seen
     size_t count = 0;
     while(fgets(line, sizeof(line), f)) {
-        if(!betree_insert_with_constants(tree, count, constant_count, constants, line)) {
+        struct betree_expression expr = {
+            .id = count,
+            .constant_count = constant_count,
+            .constants = constants,
+            .index_count = 0,
+            .indexes = NULL,
+            .expr = line
+        };
+        if(!betree_insert_with_struct(tree, &expr)) {
             printf("Can't insert expr %zu: %s\n", count, line);
             abort();
         }

@@ -338,32 +338,6 @@ void extract_operations(struct betree* tree)
     print_operation(tree->config, "list_all_of", &operations.list_all_of);
 }
 
-struct betree_events {
-    size_t count;
-    char** events;
-};
-
-void add_event(char* event, struct betree_events* events)
-{
-    if(events->count == 0) {
-        events->events = calloc(1, sizeof(*events->events));
-        if(events == NULL) {
-            fprintf(stderr, "%s calloc failed", __func__);
-            abort();
-        }
-    }
-    else {
-        char** new_events = realloc(events->events, sizeof(*new_events) * ((events->count) + 1));
-        if(new_events == NULL) {
-            fprintf(stderr, "%s realloc failed", __func__);
-            abort();
-        }
-        events->events = new_events;
-    }
-    events->events[events->count] = strdup(event);
-    events->count++;
-}
-
 char* strip_chars(const char* string, const char* chars)
 {
     char* new_string = malloc(strlen(string) + 1);
@@ -379,51 +353,32 @@ char* strip_chars(const char* string, const char* chars)
     return new_string;
 }
 
-int event_parse(const char* text, struct betree_event** event);
-
 #define MAX_EXPRS 5000
-#define MAX_EVENTS 1000
-
-size_t read_betree_events(struct config* config, struct betree_events* events)
-{
-    FILE* f = fopen("betree_events", "r");
-    size_t count = 0;
-
-    char line[22000]; // Arbitrary from what I've seen
-    while(fgets(line, sizeof(line), f)) {
-        if(MAX_EVENTS != 0 && events->count == MAX_EVENTS) {
-            break;
-        }
-
-        struct betree_event* event;
-        if(event_parse(line, &event) != 0) {
-            fprintf(stderr, "Can't parse event %zu: %s", events->count + 1, line);
-            abort();
-        }
-
-        fill_event(config, event);
-        /*
-         * Would be better if we did this but this is pretty useless now
-        if(!validate_event(config, event)) {
-            abort();
-        }
-        */
-        add_event(line, events);
-        count++;
-    }
-    fclose(f);
-    return count;
-}
 
 size_t read_betree_exprs(struct betree* tree)
 {
     FILE* f = fopen("betree_exprs", "r");
+    enum e { constant_count = 4 };
+    const struct betree_constant* constants[constant_count] = {
+        betree_make_integer_constant("flight_id", 10),
+        betree_make_integer_constant("advertiser_id", 20),
+        betree_make_integer_constant("campaign_id", 30),
+        betree_make_integer_constant("product_id", 40),
+    };
 
     // char* lines[MAX_EXPRS];
     char line[10000]; // Arbitrary from what I've seen
     size_t count = 0;
     while(fgets(line, sizeof(line), f)) {
-        if(!betree_insert(tree, count, line)) {
+        struct betree_expression expr = {
+            .id = count,
+            .constant_count = constant_count,
+            .constants = constants,
+            .index_count = 0,
+            .indexes = NULL,
+            .expr = line
+        };
+        if(!betree_insert_with_struct(tree, &expr)) {
             printf("Can't insert expr: %s\n", line);
             abort();
         }
@@ -501,74 +456,48 @@ int main(int argc, char** argv)
 
     extract_operations(tree);
 
-    struct betree_events events = { .count = 0, .events = NULL };
-    size_t event_count = read_betree_events(tree->config, &events);
-
-    struct betree_event* parsed_events[event_count];
-    for(size_t i = 0; i < event_count; i++) {
-        parsed_events[i] = make_event_from_string(tree, events.events[i]);
-    }
-
     struct ast_node* parsed_exprs[expr_count];
     extract_exprs_cnode(tree->cnode, parsed_exprs, 0);
 
     for(size_t i = 0; i < tree->config->attr_domain_count; i++) {
         const struct attr_domain* attr_domain = tree->config->attr_domains[i];
         if(attr_domain->bound.value_type == BETREE_INTEGER) {
-            struct value_bound events_bound
-                = get_integer_events_bound(attr_domain->attr_var.var, parsed_events, event_count);
             struct value_bound exprs_bound
                 = get_integer_exprs_bound(attr_domain, parsed_exprs, expr_count);
-            printf("    i, %s: expr: [%ld, %ld], event: [%ld, %ld]\n",
+            printf("    i, %s: expr: [%ld, %ld]\n",
                 attr_domain->attr_var.attr,
                 exprs_bound.imin,
-                exprs_bound.imax,
-                events_bound.imin,
-                events_bound.imax);
+                exprs_bound.imax);
         }
         else if(attr_domain->bound.value_type == BETREE_FLOAT) {
-            struct value_bound events_bound
-                = get_float_events_bound(attr_domain->attr_var.var, parsed_events, event_count);
             struct value_bound exprs_bound
                 = get_float_exprs_bound(attr_domain, parsed_exprs, expr_count);
-            printf("    f, %s: expr: [%.2f, %.2f], event: [%.2f, %.2f]\n",
+            printf("    f, %s: expr: [%.2f, %.2f]\n",
                 attr_domain->attr_var.attr,
                 exprs_bound.fmin,
-                exprs_bound.fmax,
-                events_bound.fmin,
-                events_bound.fmax);
+                exprs_bound.fmax);
         }
         else if(attr_domain->bound.value_type == BETREE_STRING) {
-            struct value_bound events_bound
-                = get_string_events_bound(attr_domain->attr_var.var, parsed_events, event_count);
             struct value_bound exprs_bound
                 = get_string_exprs_bound(attr_domain, parsed_exprs, expr_count);
-            printf("    s, %s: expr: %zu values, event: %zu values\n",
+            printf("    s, %s: expr: %zu values\n",
                 attr_domain->attr_var.attr,
-                exprs_bound.smax,
-                events_bound.smax);
+                exprs_bound.smax);
         }
         else if(attr_domain->bound.value_type == BETREE_INTEGER_LIST) {
-            struct value_bound events_bound = get_integer_list_events_bound(
-                attr_domain->attr_var.var, parsed_events, event_count);
             struct value_bound exprs_bound
                 = get_integer_list_exprs_bound(attr_domain, parsed_exprs, expr_count);
-            printf("    il, %s: expr: [%ld, %ld], event: [%ld, %ld]\n",
+            printf("    il, %s: expr: [%ld, %ld]\n",
                 attr_domain->attr_var.attr,
                 exprs_bound.imin,
-                exprs_bound.imax,
-                events_bound.imin,
-                events_bound.imax);
+                exprs_bound.imax);
         }
         else if(attr_domain->bound.value_type == BETREE_STRING_LIST) {
-            struct value_bound events_bound = get_string_list_events_bound(
-                attr_domain->attr_var.var, parsed_events, event_count);
             struct value_bound exprs_bound
                 = get_string_list_exprs_bound(attr_domain, parsed_exprs, expr_count);
-            printf("    sl, %s: expr: %zu values, event: %zu values\n",
+            printf("    sl, %s: expr: %zu values\n",
                 attr_domain->attr_var.attr,
-                exprs_bound.smax,
-                events_bound.smax);
+                exprs_bound.smax);
         }
     }
 

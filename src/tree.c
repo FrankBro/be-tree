@@ -1485,8 +1485,6 @@ struct sub* make_empty_sub(betree_sub_t id)
         abort();
     }
     sub->id = id;
-    sub->attr_var_count = 0;
-    sub->attr_vars = NULL;
     return sub;
 }
 

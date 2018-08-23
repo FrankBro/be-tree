@@ -14,14 +14,48 @@ struct betree_variable {
     struct value value;
 };
 
+struct betree_index_variable {
+    struct attr_var attr_var;
+    bool strict;
+};
+
+struct betree_index_definition {
+    const char* name;
+    struct {
+        size_t variable_count;
+        struct betree_index_variable* variables;
+    };
+};
+
+struct betree_index_entry {
+    betree_index_id id;
+    size_t value_count;
+    struct value** values;
+};
+
+struct betree_index_entries {
+    size_t entry_count;
+    struct betree_index_entry** entries;
+};
+
+struct betree_index {
+    const char* name;
+    struct betree_index_entries* entries;
+};
+
 struct short_circuit {
     size_t count;
     uint64_t* pass;
     uint64_t* fail;
 };
 
+struct index_result {
+    
+};
+
 struct sub {
     betree_sub_t id;
+    // TODO Do a uint64_t bitmap of defined vars instead
     struct {
         size_t attr_var_count;
         struct attr_var* attr_vars;

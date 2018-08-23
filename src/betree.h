@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 typedef uint64_t betree_sub_t;
+typedef uint64_t betree_index_id;
 
 struct betree;
 
@@ -17,6 +18,7 @@ struct report {
 };
 
 struct betree_constant;
+struct betree_index;
 struct betree_variable;
 
 struct betree_event {
@@ -65,6 +67,31 @@ struct betree_variable_definition {
     enum betree_value_type_e type;
 };
 
+struct betree_expression {
+    betree_sub_t id;
+    struct {
+        size_t constant_count;
+        const struct betree_constant** constants;
+    };
+    struct {
+        size_t index_count;
+        const struct betree_index** indexes;
+    };
+    const char* expr;
+};
+
+/*
+ * Index
+ */
+struct betree_index_entries;
+struct betree_index_entry;
+
+struct betree_index_entries* betree_make_index_entries();
+struct betree_index_entry* betree_make_index_entry(betree_index_id id);
+
+void betree_add_index_string_value(struct betree_index_entry* entry, const char* value);
+void betree_add_index_undefined_value(struct betree_index_entry* list);
+
 /*
  * Initialization
  */
@@ -80,10 +107,14 @@ void betree_add_string_list_variable(struct betree* betree, const char* name, bo
 void betree_add_segments_variable(struct betree* betree, const char* name, bool allow_undefined);
 void betree_add_frequency_caps_variable(struct betree* betree, const char* name, bool allow_undefined);
 
+struct betree_index_definition* betree_make_index_definition(const char* name);
+void betree_add_string_index(struct betree_index_definition* index, const char* name, bool strict);
+void betree_add_index(struct betree* betree, struct betree_index_definition* index);
+void betree_add_index_entry(struct betree_index_entries* entries, struct betree_index_entry* entry);
+
 /*
  * Runtime
  */
-//bool betree_insert_all(struct betree* tree, size_t count, const char** exprs);
 struct betree_variable_definition betree_get_variable_definition(struct betree* betree, size_t index);
 
 struct betree_constant* betree_make_integer_constant(const char* name, int64_t value);
@@ -97,11 +128,13 @@ struct betree_variable* betree_make_string_list_variable(const char* name, struc
 struct betree_variable* betree_make_segments_variable(const char* name, struct betree_segments* value);
 struct betree_variable* betree_make_frequency_caps_variable(const char* name, struct betree_frequency_caps* value);
 
+struct betree_index* betree_make_index(const char* name, struct betree_index_entries* entries);
+
 struct betree_event* betree_make_event(const struct betree* betree);
 void betree_set_variable(struct betree_event* event, size_t index, struct betree_variable* variable);
 
 bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr);
-bool betree_insert_with_constants(struct betree* tree, betree_sub_t id, size_t constant_count, const struct betree_constant** constants, const char* expr);
+bool betree_insert_with_struct(struct betree* tree, const struct betree_expression* expr);
 
 void betree_search(const struct betree* betree, const char* event, struct report* report);
 void betree_search_with_event(const struct betree* betree, struct betree_event* event, struct report* report);

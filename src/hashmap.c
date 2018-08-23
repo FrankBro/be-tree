@@ -185,6 +185,29 @@ static void assign_special_pred(struct pred_map* pred_map, struct ast_special_ex
     }
 }
 
+static void assign_index_pred(struct pred_map* pred_map, struct ast_index_expr* typed, struct ast_node* node)
+{
+    struct pred_special_map* m = &pred_map->special_map;
+    typed->
+    switch(typed->type) {
+        case AST_SPECIAL_STRING: 
+            match_or_insert(pred_map, &m->string_preds, node); 
+            break;
+        case AST_SPECIAL_SEGMENT: 
+            match_or_insert(pred_map, &m->segment_preds, node); 
+            break;
+        case AST_SPECIAL_GEO: 
+            match_or_insert(pred_map, &m->geo_preds, node); 
+            break;
+        case AST_SPECIAL_FREQUENCY: 
+            match_or_insert(pred_map, &m->frequency_preds, node); 
+            break;
+        default:
+            switch_default_error("Invalid special type");
+            break;
+    }
+}
+
 void assign_pred(struct pred_map* pred_map, struct ast_node* node)
 {
     if(node->type == AST_TYPE_BOOL_EXPR) {
@@ -214,6 +237,9 @@ void assign_pred(struct pred_map* pred_map, struct ast_node* node)
             break;
         case AST_TYPE_SPECIAL_EXPR:
             assign_special_pred(pred_map, &node->special_expr, node);
+            break;
+        case AST_TYPE_INDEX_EXPR:
+            assign_index_pred(pred_map, &node->index_expr, node);
             break;
         default:
             switch_default_error("Invalid node type");

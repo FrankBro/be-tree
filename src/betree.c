@@ -38,61 +38,120 @@ static bool is_valid(const struct config* config, const struct ast_node* node)
     return str;
 }
 
-/*
-bool betree_insert_all(struct betree* tree, size_t count, const char** exprs)
+
+static void assign_indexes(struct sub* sub, struct config* config, size_t index_count, const struct betree_index** indexes)
 {
-    // Hackish a bit for now, insert all except the last manually, then insert the last one legit
-    struct sub** subs = calloc(count - 1, sizeof(*subs));
-    for(size_t i = 0; i < count - 1; i++) {
-        const char* expr = exprs[i];
-        struct ast_node* node;
-        if(parse(expr, &node) != 0) {
-            fprintf(stderr, "Failed to parse id %" PRIu64 ": %s\n", i, expr);
-            abort();
+    sub->index_count = calloc(index_count, sizeof(*sub->index_count));
+    sub->indexes = calloc(index_count, sizeof(*sub->indexes));;
+    for(size_t i = 0; i < index_count; i++) {
+        const struct betree_index_definition* def = config->indexes[i];
+        const struct betree_index* index = indexes[i];
+        sub->index_count[i] = index->entries->entry_count;
+        sub->indexes[i] = calloc(index->entries->entry_count, sizeof(*sub->indexes[i]));
+        for(size_t j = 0; j < index->entries->entry_count; j++) {
+
         }
-        if(!is_valid(tree->config, node)) {
-            return false;
-        }
-        assign_variable_id(tree->config, node);
-        assign_str_id(tree->config, node);
-        sort_lists(node);
-        assign_pred_id(tree->config, node);
-        struct sub* sub = make_sub(tree->config, i, node);
-        subs[i] = sub;
     }
-    tree->cnode->lnode->sub_count = count - 1;
-    tree->cnode->lnode->subs = subs;
-    return betree_insert(tree, count - 1, exprs[count - 1]);
 }
-*/
-bool betree_insert_with_constants(struct betree* tree,
-    betree_sub_t id,
-    size_t constant_count,
-    const struct betree_constant** constants,
-    const char* expr)
+
+static bool inject_indexes(struct config* config, size_t index_count, const struct betree_index** indexes, struct ast_node** output)
+{
+    for(size_t i = 0; i < index_count; i++) {
+        const struct betree_index_definition* def = config->indexes[i];
+        const struct betree_index* index = indexes[i];
+        size_t entries_count = index->entries->entry_count;
+        struct ast_index_entry** entries = calloc(entries_count, sizeof(*entries));
+        for(size_t j = 0; j < entries_count; j++) {
+            const struct betree_index_entry* entry = index->entries->entries[j];
+            size_t var_count = entry->value_count;
+            struct ast_index_var** vars = calloc(var_count, sizeof(*vars));
+            for(size_t k = 0; i < entry->value_count; i++) {
+                struct betree_index_variable* var_def = &def->variables[i];
+                struct value* value = entry->values[i];
+                struct index_value index_value;
+                switch(value->value_type) {
+                    case BETREE_STRING: {
+                        index_value.value_type = AST_INDEX_VALUE_STRING;
+                        index_value.string_value = value->svalue;
+                        break;
+                    }
+                    case BETREE_INTEGER: {
+                        index_value.value_type = AST_INDEX_VALUE_INTEGER;
+                        index_value.integer_value = value->ivalue;
+                        break;
+                    }
+                    case BETREE_FLOAT: {
+                        index_value.value_type = AST_INDEX_VALUE_FLOAT;
+                        index_value.float_value = value->fvalue;
+                        break;
+                    }
+                    case BETREE_BOOLEAN:
+                    case BETREE_INTEGER_LIST:
+                    case BETREE_STRING_LIST:
+                    case BETREE_SEGMENTS:
+                    case BETREE_FREQUENCY_CAPS:
+                    default:
+                        fprintf(stderr, "invalid index value type\n");
+                        abort();
+                }
+                struct ast_index_var* ast_var = ast_index_var_create(var_def->attr_var.attr, index_value);
+                vars[k] = ast_var;
+            }
+            struct ast_index_entry* ast_entry = ast_index_entry_create(entry->id, var_count, vars);
+            entries[j] = ast_entry;
+        }
+        struct ast_node* index_node = ast_index_expr_create(entries_count, entries);
+        *output = ast_bool_expr_binary_create(AST_BOOL_AND, index_node, *output);
+    }
+    return true;
+}
+
+// index 1 : width, height
+// index 2 : country
+//
+// expr : not private
+// indexes 1 : [100, 200], [200, 300]
+// indexes 2 : "us", "ca"
+//
+// expr: ((width = 100 && height = 200) || (width = 200 && height = 300))
+//    && ((country = "us") || (country = "ca"))
+//    && not private
+
+bool betree_insert_with_struct(struct betree* tree, const struct betree_expression* expr)
 {
     struct ast_node* node;
-    if(parse(expr, &node) != 0) {
+    if(parse(expr->expr, &node) != 0) {
         return false;
     }
     if(!is_valid(tree->config, node)) {
         free_ast_node(node);
         return false;
     }
-    if(!assign_constants(constant_count, constants, node)) {
+    if(!inject_indexes(tree->config, expr->index_count, expr->indexes, &node)) {
+        return false;
+    }
+    if(!assign_constants(expr->constant_count, expr->constants, node)) {
         return false;
     }
     assign_variable_id(tree->config, node);
     assign_str_id(tree->config, node);
     sort_lists(node);
     assign_pred_id(tree->config, node);
-    struct sub* sub = make_sub(tree->config, id, node);
+    struct sub* sub = make_sub(tree->config, expr->id, node);
     return insert_be_tree(tree->config, sub, tree->cnode, NULL);
 }
 
-bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr)
+bool betree_insert(struct betree* tree, betree_sub_t id, const char* sexpr)
 {
-    return betree_insert_with_constants(tree, id, 0, NULL, expr);
+    const struct betree_expression expr = {
+        .id = id,
+        .constant_count = 0,
+        .constants = NULL,
+        .index_count = 0,
+        .indexes = NULL,
+        .expr = sexpr
+    };
+    return betree_insert_with_struct(tree, &expr);
 }
 
 static const struct betree_variable** make_environment(size_t attr_domain_count, const struct betree_event* event)
@@ -451,5 +510,139 @@ struct betree_event* betree_make_event(const struct betree* betree)
 void betree_set_variable(struct betree_event* event, size_t index, struct betree_variable* variable)
 {
     event->variables[index] = variable;
+}
+
+struct betree_index_definition* betree_make_index_definition(const char* name)
+{
+    struct betree_index_definition* index = malloc(sizeof(*index));
+    index->name = strdup(name);
+    index->variable_count = 0;
+    index->variables = NULL;
+    return index;
+}
+
+void betree_add_string_index(struct betree_index_definition* index, const char* name, bool strict)
+{
+    struct betree_index_variable v = { .attr_var = make_attr_var(name, NULL), .strict = strict };
+    if(index->variable_count == 0) {
+        index->variables = calloc(1, sizeof(*index->variables));
+        if(index->variables == NULL) {
+            fprintf(stderr, "%s calloc failed\n", __func__);
+            abort();
+        }
+    }
+    else {
+        struct betree_index_variable* variables = realloc(index->variables, sizeof(*variables) * (index->variable_count + 1));
+        if(variables == NULL) {
+            fprintf(stderr, "%s realloc failed\n", __func__);
+            abort();
+        }
+        index->variables = variables;
+    }
+    index->variables[index->variable_count] = v;
+    index->variable_count++;
+}
+
+void betree_add_index(struct betree* betree, struct betree_index_definition* index)
+{
+    if(betree->config->index_count == 0) {
+        betree->config->indexes = calloc(1, sizeof(*betree->config->indexes));
+        if(betree->config->indexes == NULL) {
+            fprintf(stderr, "%s calloc failed\n", __func__);
+            abort();
+        }
+    }
+    else {
+        struct betree_index_definition** indexes = realloc(betree->config->indexes, sizeof(*indexes) * (betree->config->index_count + 1));
+        if(indexes == NULL) {
+            fprintf(stderr, "%s realloc failed\n", __func__);
+            abort();
+        }
+        betree->config->indexes = indexes;
+    }
+    betree->config->indexes[betree->config->index_count] = index;
+    betree->config->index_count++;
+}
+
+struct betree_index_entries* betree_make_index_entries()
+{
+    struct betree_index_entries* entries = calloc(1, sizeof(*entries));
+    return entries;
+}
+
+struct betree_index_entry* betree_make_index_entry(betree_index_id id)
+{
+    struct betree_index_entry* entry = calloc(1, sizeof(*entry));
+    entry->id = id;
+    return entry;
+}
+
+static void betree_add_index_value(struct betree_index_entry* entry, struct value* value)
+{
+    if(entry->value_count == 0) {
+        entry->values = calloc(1, sizeof(*entry->values));
+        if(entry->values == NULL) {
+            fprintf(stderr, "%s calloc failed\n", __func__);
+            abort();
+        }
+    }
+    else {
+        struct value** values = realloc(entry->values, sizeof(*values) * (entry->value_count + 1));
+        if(values == NULL) {
+            fprintf(stderr, "%s realloc failed\n", __func__);
+            abort();
+        }
+        entry->values = values;
+    }
+    entry->values[entry->value_count] = value;
+    entry->value_count++;
+}
+
+static struct value* make_value(enum betree_value_type_e value_type)
+{
+    struct value* value = malloc(sizeof(*value));
+    value->value_type = value_type;
+    return value;
+}
+
+void betree_add_index_string_value(struct betree_index_entry* entry, const char* svalue)
+{
+    struct value* value = make_value(BETREE_STRING);
+    value->svalue.string = strdup(svalue);
+    betree_add_index_value(entry, value);
+}
+
+void betree_add_index_undefined_value(struct betree_index_entry* entry)
+{
+    betree_add_index_value(entry, NULL);
+}
+
+void betree_add_index_entry(struct betree_index_entries* entries, struct betree_index_entry* entry)
+{
+    if(entries->entry_count == 0) {
+        entries->entries = calloc(1, sizeof(*entries->entries));
+        if(entries->entries == NULL) {
+            fprintf(stderr, "%s calloc failed\n", __func__);
+            abort();
+        }
+    }
+    else {
+        struct betree_index_entry** inner_entries = realloc(entries->entries, sizeof(*inner_entries) * (entries->entry_count + 1));
+        if(inner_entries == NULL) {
+            fprintf(stderr, "%s realloc failed\n", __func__);
+            abort();
+        }
+        entries->entries = inner_entries;
+    }
+    entries->entries[entries->entry_count] = entry;
+    entries->entry_count++;
+}
+
+struct betree_index* betree_make_index(const char* name, struct betree_index_entries* entries)
+{
+    struct betree_index* index = malloc(sizeof(*index));
+    index->name = strdup(name);
+    index->entries = entries;
+    return index;
 }
 

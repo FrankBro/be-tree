@@ -43,7 +43,15 @@ frequency(
     if(asprintf(&expr, "%swithin_frequency_cap(\"%s\", \"%s\", %" PRId64 ", %" PRId64 ")", pre, type_value, ns, value, length) < 0) {
         abort();
     }
-    betree_insert_with_constants(tree, 1, constant_count, constants, expr);
+    struct betree_expression expr_struct = {
+        .id = 1,
+        .constant_count = constant_count,
+        .constants = constants,
+        .index_count = 0,
+        .indexes = NULL,
+        .expr = expr
+    };
+    betree_insert_with_struct(tree, &expr_struct);
     char* event_str;
     const char* cap_type_value = frequency_type_to_string(cap_type);
     if(asprintf(&event_str, "{\"now\": %ld, \"frequency_caps\": [[\"%s\", %u, \"%s\", %ld, %d]]}", now, cap_type_value, cap_id, cap_ns, timestamp * usec, cap_value) < 0) {

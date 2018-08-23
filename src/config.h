@@ -4,7 +4,6 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "config.h"
 #include "var.h"
 
 struct attr_domain {
@@ -41,6 +40,10 @@ struct config {
         struct string_map* string_maps;
     };
     struct pred_map* pred_map;
+    struct {
+        size_t index_count;
+        struct betree_index_definition** indexes;
+    };
 };
 
 void add_attr_domain_i(struct config* config, const char* attr, bool allow_undefined);

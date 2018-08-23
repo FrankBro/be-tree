@@ -2,12 +2,12 @@ echo ""
 echo "Unit Tests"
 
 real_tests="build/tests/real_tests"
-
+index_tests="build/tests/index_tests"
 
 # Loop over compiled tests and run them.
 for test_file in build/tests/*_tests
 do
-    if [ "$test_file" == "$real_tests" ]
+    if [ "$test_file" != "$index_tests" ]
     then
         continue
     fi

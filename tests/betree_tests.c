@@ -1309,7 +1309,15 @@ int test_api()
         betree_make_integer_constant("campaign_id", 30),
         betree_make_integer_constant("product_id", 40),
     };
-    mu_assert(betree_insert_with_constants(tree, 0, constant_count, constants, expr), "");
+    struct betree_expression expr_struct = {
+        .id = 0,
+        .constant_count = constant_count,
+        .constants = constants,
+        .index_count = 0,
+        .indexes = NULL,
+        .expr = expr
+    };
+    mu_assert(betree_insert_with_struct(tree, &expr_struct), "");
 
     struct betree_event* event = betree_make_event(tree);
     betree_set_variable(event, 0, betree_make_boolean_variable("b", true));
