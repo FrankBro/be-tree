@@ -185,6 +185,13 @@ static void assign_special_pred(struct pred_map* pred_map, struct ast_special_ex
     }
 }
 
+static void assign_undefined_pred(struct pred_map* pred_map, struct ast_undefined_expr* typed, struct ast_node* node)
+{
+    (void)typed;
+    struct pred_undefined_map* m = &pred_map->undefined_map;
+    match_or_insert(pred_map, &m->undefined_preds, node);
+}
+
 void assign_pred(struct pred_map* pred_map, struct ast_node* node)
 {
     if(node->type == AST_TYPE_BOOL_EXPR) {
@@ -214,6 +221,9 @@ void assign_pred(struct pred_map* pred_map, struct ast_node* node)
             break;
         case AST_TYPE_SPECIAL_EXPR:
             assign_special_pred(pred_map, &node->special_expr, node);
+            break;
+        case AST_TYPE_UNDEFINED_EXPR:
+            assign_undefined_pred(pred_map, &node->undefined_expr, node);
             break;
         default:
             switch_default_error("Invalid node type");

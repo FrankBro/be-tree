@@ -46,6 +46,10 @@ struct pred_special_map {
     struct pred_container string_preds;
 };
 
+struct pred_undefined_map {
+    struct pred_container undefined_preds;
+};
+
 struct pred_map {
     struct pred_compare_map compare_map;
     struct pred_equality_map equality_map;
@@ -53,6 +57,7 @@ struct pred_map {
     struct pred_set_map set_map;
     struct pred_list_map list_map;
     struct pred_special_map special_map;
+    struct pred_undefined_map undefined_map;
 
     size_t pred_count; 
     struct ast_node** preds;

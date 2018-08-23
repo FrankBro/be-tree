@@ -28,6 +28,14 @@ struct ast_node* ast_node_create()
     return node;
 }
 
+struct ast_node* ast_undefined_expr_create(const char* name)
+{
+    struct ast_node* node = ast_node_create();
+    node->type = AST_TYPE_UNDEFINED_EXPR;
+    node->undefined_expr.attr_var = make_attr_var(name, NULL);
+    return node;
+}
+
 struct ast_node* ast_compare_expr_create(
     enum ast_compare_e op, const char* name, struct compare_value value)
 {
@@ -72,43 +80,50 @@ struct ast_node* ast_bool_expr_unary_create(struct ast_node* expr)
     return node;
 }
 
+enum scores {
+    instant_cost = 1,
+    single_length_cost = 5,
+    double_length_cost = 10,
+    complex_cost = 20,
+};
+
 static uint64_t score_node(struct ast_node* node)
 {
     switch(node->type) {
+        case AST_TYPE_UNDEFINED_EXPR:
+            return instant_cost - 1;
         case AST_TYPE_COMPARE_EXPR:
-            // instant
-            return 1;
+            return instant_cost;
         case AST_TYPE_EQUALITY_EXPR:
-            // instant
-            return 1;
+            return instant_cost;
         case AST_TYPE_BOOL_EXPR:
             switch(node->bool_expr.op) {
                 case AST_BOOL_OR:
                 case AST_BOOL_AND:
                     // lhs + rhs
                     return score_node(node->bool_expr.binary.lhs)
-                        + score_node(node->bool_expr.binary.rhs);
+                         + score_node(node->bool_expr.binary.rhs);
                 case AST_BOOL_NOT:
                     // expr
                     return score_node(node->bool_expr.unary.expr);
                 case AST_BOOL_VARIABLE:
                     // instant
-                    return 1;
+                    return instant_cost;
                 default:
                     abort();
             }
         case AST_TYPE_SET_EXPR:
             // depend on constant length
-            return 5;
+            return single_length_cost;
         case AST_TYPE_LIST_EXPR:
             // depend on constant and variable length
             switch(node->list_expr.op) {
                 case AST_LIST_ONE_OF:
-                    return 10;
+                    return double_length_cost;
                 case AST_LIST_NONE_OF:
-                    return 10;
+                    return double_length_cost;
                 case AST_LIST_ALL_OF:
-                    return 10;
+                    return double_length_cost;
                 default:
                     abort();
             }
@@ -116,16 +131,16 @@ static uint64_t score_node(struct ast_node* node)
             switch(node->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY:
                     // depend on variable length
-                    return 20;
+                    return complex_cost;
                 case AST_SPECIAL_SEGMENT:
                     // depend on variable length
-                    return 20;
+                    return complex_cost;
                 case AST_SPECIAL_GEO:
                     // instant
-                    return 20;
+                    return instant_cost;
                 case AST_SPECIAL_STRING:
                     // depend on constant and variable length
-                    return 20;
+                    return complex_cost;
                 default:
                     abort();
             }
@@ -336,6 +351,9 @@ void free_ast_node(struct ast_node* node)
         return;
     }
     switch(node->type) {
+        case AST_TYPE_UNDEFINED_EXPR:
+            free_attr_var(node->undefined_expr.attr_var);
+            break;
         case AST_TYPE_SPECIAL_EXPR:
             free_special_expr(node->special_expr);
             break;
@@ -1032,6 +1050,14 @@ static bool match_bool_expr(const struct betree_variable** preds,
     }
 }
 
+static bool match_undefined_expr(const struct betree_variable** preds,
+    const struct ast_undefined_expr undefined_expr)
+{
+    struct value variable;
+    bool is_variable_defined = get_variable(undefined_expr.attr_var.var, preds, &variable);
+    return !is_variable_defined;
+}
+
 static bool match_node_inner(const struct betree_variable** preds,
     const struct ast_node* node,
     struct memoize* memoize,
@@ -1049,6 +1075,9 @@ static bool match_node_inner(const struct betree_variable** preds,
     }
     bool result;
     switch(node->type) {
+        case AST_TYPE_UNDEFINED_EXPR:
+            result = match_undefined_expr(preds, node->undefined_expr);
+            break;
         case AST_TYPE_SPECIAL_EXPR: {
             result = match_special_expr(preds, node->special_expr);
             break;
@@ -1112,6 +1141,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
         return;
     }
     switch(node->type) {
+        case AST_TYPE_UNDEFINED_EXPR:
+            return;
         case AST_TYPE_SPECIAL_EXPR:
             return;
         case AST_TYPE_LIST_EXPR:
@@ -1963,6 +1994,7 @@ bool assign_constants(
     size_t constant_count, const struct betree_constant** constants, struct ast_node* node)
 {
     switch(node->type) {
+        case AST_TYPE_UNDEFINED_EXPR:
         case AST_TYPE_COMPARE_EXPR:
         case AST_TYPE_EQUALITY_EXPR:
         case AST_TYPE_SET_EXPR:
@@ -2017,6 +2049,12 @@ bool assign_constants(
 void assign_variable_id(struct config* config, struct ast_node* node)
 {
     switch(node->type) {
+        case AST_TYPE_UNDEFINED_EXPR: {
+            betree_var_t variable_id
+                = try_get_id_for_attr(config, node->undefined_expr.attr_var.attr);
+            node->undefined_expr.attr_var.var = variable_id;
+            return;
+        }
         case(AST_TYPE_SPECIAL_EXPR): {
             switch(node->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY: {
@@ -2145,6 +2183,8 @@ void assign_variable_id(struct config* config, struct ast_node* node)
 void assign_str_id(struct config* config, struct ast_node* node)
 {
     switch(node->type) {
+        case AST_TYPE_UNDEFINED_EXPR:
+            return;
         case(AST_TYPE_SPECIAL_EXPR): {
             switch(node->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY: {
@@ -2432,6 +2472,8 @@ bool eq_expr(const struct ast_node* a, const struct ast_node* b)
         return false;
     }
     switch(a->type) {
+        case AST_TYPE_UNDEFINED_EXPR:
+            return a->undefined_expr.attr_var.var == b->undefined_expr.attr_var.var;
         case AST_TYPE_COMPARE_EXPR: {
             return a->compare_expr.attr_var.var == b->compare_expr.attr_var.var
                 && a->compare_expr.op == b->compare_expr.op
@@ -2488,6 +2530,7 @@ void assign_pred_id(struct config* config, struct ast_node* node)
 void sort_lists(struct ast_node* node)
 {
     switch(node->type) {
+        case AST_TYPE_UNDEFINED_EXPR:
         case AST_TYPE_COMPARE_EXPR:
         case AST_TYPE_EQUALITY_EXPR:
             return;
@@ -2577,6 +2620,8 @@ bool var_exists(const struct config* config, const char* attr)
 bool all_variables_in_config(const struct config* config, const struct ast_node* node)
 {
     switch(node->type) {
+        case  AST_TYPE_UNDEFINED_EXPR:
+            return var_exists(config, node->undefined_expr.attr_var.attr);
         case AST_TYPE_COMPARE_EXPR:
             return var_exists(config, node->compare_expr.attr_var.attr);
         case AST_TYPE_EQUALITY_EXPR:
@@ -2712,6 +2757,7 @@ static bool strs_valid(
 bool all_bounded_strings_valid(const struct config* config, const struct ast_node* node)
 {
     switch(node->type) {
+        case AST_TYPE_UNDEFINED_EXPR:
         case AST_TYPE_COMPARE_EXPR:
             return true;
         case AST_TYPE_EQUALITY_EXPR:

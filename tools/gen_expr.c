@@ -120,6 +120,10 @@ void write_expr(FILE* f, const struct ast_node* node)
             fprintf(stderr, "should never happen for now");
             abort();
         }
+        case(AST_TYPE_UNDEFINED_EXPR): {
+            fprintf(stderr, "should never happen for now");
+            abort();
+        }
         case(AST_TYPE_COMPARE_EXPR): {
             fprintf(f, "%s ", node->compare_expr.attr_var.attr);
             switch(node->compare_expr.op) {

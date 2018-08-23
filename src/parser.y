@@ -54,6 +54,7 @@
 %token<token> TSEGMENTWITHIN TSEGMENTBEFORE 
 %token<token> TGEOWITHINRADIUS 
 %token<token> TCONTAINS TSTARTSWITH TENDSWITH 
+%token<token> TUNDEFINED
 
 %token<string> TSTRING TIDENTIFIER
 %token<integer_value> TINTEGER
@@ -61,6 +62,7 @@
 
 %type<node> expr num_comp_expr eq_expr set_expr list_expr bool_expr
 %type<node> special_expr s_frequency_expr s_segment_expr s_geo_expr s_string_expr
+%type<node> undefined_expr
 %type<string> ident
 
 %type<integer_value> integer
@@ -118,7 +120,10 @@ expr                : TLPAREN expr TRPAREN                  { $$ = $2; }
                     | list_expr                             { $$ = $1; }
                     | bool_expr                             { $$ = $1; }
                     | special_expr                          { $$ = $1; }
+                    | undefined_expr                        { $$ = $1; }
 ;       
+
+undefined_expr      : TUNDEFINED ident                      { $$ = ast_undefined_expr_create($2); }
 
 num_comp_value      : integer                               { $$.value_type = AST_COMPARE_VALUE_INTEGER; $$.integer_value = $1; }
                     | float                                 { $$.value_type = AST_COMPARE_VALUE_FLOAT; $$.float_value = $1; }

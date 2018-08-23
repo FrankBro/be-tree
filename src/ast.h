@@ -244,6 +244,10 @@ struct ast_special_expr {
     };
 };
 
+struct ast_undefined_expr {
+    struct attr_var attr_var;
+};
+
 // Expression
 
 enum ast_node_type_e {
@@ -253,6 +257,7 @@ enum ast_node_type_e {
     AST_TYPE_SET_EXPR,
     AST_TYPE_LIST_EXPR,
     AST_TYPE_SPECIAL_EXPR,
+    AST_TYPE_UNDEFINED_EXPR,
 };
 
 struct ast_node {
@@ -265,6 +270,7 @@ struct ast_node {
         struct ast_set_expr set_expr;
         struct ast_list_expr list_expr;
         struct ast_special_expr special_expr;
+        struct ast_undefined_expr undefined_expr;
     };
 };
 
@@ -293,6 +299,9 @@ struct ast_node* ast_special_geo_create(
     enum ast_special_geo_e op, double latitude, double longitude, bool has_radius, double radius);
 struct ast_node* ast_special_string_create(
     enum ast_special_string_e op, const char* name, const char* pattern);
+
+struct ast_node* ast_undefined_expr_create(const char* name);
+
 void free_ast_node(struct ast_node* node);
 
 bool match_node(const struct betree_variable** preds,

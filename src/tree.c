@@ -1407,6 +1407,9 @@ static void fill_pred_attr_var(struct sub* sub, struct attr_var attr_var)
 void fill_pred(struct sub* sub, const struct ast_node* expr)
 {
     switch(expr->type) {
+        case AST_TYPE_UNDEFINED_EXPR:
+            fill_pred_attr_var(sub, expr->undefined_expr.attr_var);
+            return;
         case AST_TYPE_SPECIAL_EXPR: {
             switch(expr->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY:
@@ -1510,6 +1513,8 @@ static enum short_circuit_e short_circuit_for_node(
     betree_var_t id, bool inverted, const struct ast_node* node)
 {
     switch(node->type) {
+        case AST_TYPE_UNDEFINED_EXPR:
+            return short_circuit_for_attr_var(id, !inverted, node->undefined_expr.attr_var);
         case AST_TYPE_COMPARE_EXPR:
             return short_circuit_for_attr_var(id, inverted, node->compare_expr.attr_var);
         case AST_TYPE_EQUALITY_EXPR:

@@ -204,6 +204,11 @@ char* ast_to_string(const struct ast_node* node)
 {
     char* expr;
     switch(node->type) {
+        case AST_TYPE_UNDEFINED_EXPR:
+            if(asprintf(&expr, "?%s", node->undefined_expr.attr_var.attr) < 0) {
+                abort();
+            }
+            return expr;
         case(AST_TYPE_SPECIAL_EXPR): {
             switch(node->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY:

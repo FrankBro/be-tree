@@ -26,6 +26,27 @@ struct ast_node* parse_and_assign(const char* expr, struct config* config)
     return node;
 }
 
+int test_undefined()
+{
+    struct config* config = make_default_config();
+    add_attr_domain_bounded_i(config, "i", false, 0, 10);
+
+    {
+        fprintf(stderr, "first\n");
+        struct ast_node* a = parse_and_assign("?i", config);
+        fprintf(stderr, "a = %p\n", a);
+        struct ast_node* b = parse_and_assign("?i", config);
+        fprintf(stderr, "b = %p\n", b);
+        mu_assert(eq_expr(a, b), "undefined");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+
+    free_config(config);
+
+    return 0;
+}
+
 int test_compare_integer()
 {
     struct config* config = make_default_config();
@@ -880,6 +901,7 @@ int all_tests()
     mu_run_test(test_special_string);
     mu_run_test(test_bool);
     mu_run_test(test_bool_wrong);
+    mu_run_test(test_undefined);
 
     return 0;
 }
