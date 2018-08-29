@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "ast.h"
 #include "printer.h"
@@ -290,6 +291,14 @@ char* ast_to_string(const struct ast_node* node)
         }
         case(AST_TYPE_BOOL_EXPR): {
             switch(node->bool_expr.op) {
+                case AST_BOOL_LITERAL: {
+                    if(node->bool_expr.literal == true) {
+                        return strdup("true");
+                    }
+                    else {
+                        return strdup("false");
+                    }
+                }
                 case AST_BOOL_VARIABLE: {
                     if(asprintf(&expr, "%s", node->bool_expr.variable.attr) < 0) {
                         abort();

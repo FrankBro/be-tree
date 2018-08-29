@@ -76,6 +76,7 @@ enum ast_bool_e {
     AST_BOOL_AND,
     AST_BOOL_NOT,
     AST_BOOL_VARIABLE,
+    AST_BOOL_LITERAL,
 };
 
 struct ast_node;
@@ -95,6 +96,7 @@ struct ast_bool_expr {
         struct ast_bool_binary binary;
         struct ast_bool_unary unary;
         struct attr_var variable;
+        bool literal;
     };
 };
 
@@ -283,6 +285,7 @@ struct ast_node* ast_set_expr_create(
     enum ast_set_e op, struct set_left_value left_value, struct set_right_value right_value);
 struct ast_node* ast_list_expr_create(
     enum ast_list_e op, const char* name, struct list_value list_value);
+struct ast_node* ast_bool_expr_literal_create(bool value);
 struct ast_node* ast_bool_expr_variable_create(const char* name);
 struct ast_node* ast_bool_expr_unary_create(struct ast_node* expr);
 struct ast_node* ast_bool_expr_binary_create(

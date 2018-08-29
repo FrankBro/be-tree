@@ -55,6 +55,7 @@
 %token<token> TGEOWITHINRADIUS 
 %token<token> TCONTAINS TSTARTSWITH TENDSWITH 
 %token<token> TUNDEFINED
+%token<token> TTRUE TFALSE
 
 %token<string> TSTRING TIDENTIFIER
 %token<integer_value> TINTEGER
@@ -173,6 +174,8 @@ bool_expr           : expr TAND expr                        { $$ = ast_bool_expr
                     | expr TOR expr                         { $$ = ast_bool_expr_binary_create(AST_BOOL_OR, $1, $3); }
                     | TNOT expr                             { $$ = ast_bool_expr_unary_create($2); }
                     | ident                                 { $$ = ast_bool_expr_variable_create($1); free($1); }
+                    | TTRUE                                 { $$ = ast_bool_expr_literal_create(true); }
+                    | TFALSE                                { $$ = ast_bool_expr_literal_create(false); }
 ;                       
 
 special_expr        : s_frequency_expr                      { $$ = $1; }

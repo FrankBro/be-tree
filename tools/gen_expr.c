@@ -170,6 +170,14 @@ void write_expr(FILE* f, const struct ast_node* node)
         }
         case(AST_TYPE_BOOL_EXPR): {
             switch(node->bool_expr.op) {
+                case AST_BOOL_LITERAL:
+                    if(node->bool_expr.literal == true) {
+                        fprintf(f, "true");
+                    }
+                    else {
+                        fprintf(f, "false");
+                    }
+                    break;
                 case AST_BOOL_VARIABLE: {
                     fprintf(f, "%s", node->bool_expr.variable.attr);
                     break;
@@ -184,15 +192,16 @@ void write_expr(FILE* f, const struct ast_node* node)
                     write_expr(f, node->bool_expr.binary.lhs);
                     switch(node->bool_expr.op) {
                         case AST_BOOL_AND: {
-                            fprintf(f, "&& ");
+                            fprintf(f, "and ");
                             break;
                         }
                         case AST_BOOL_OR: {
-                            fprintf(f, "|| ");
+                            fprintf(f, "or ");
                             break;
                         }
                         case AST_BOOL_NOT:
                         case AST_BOOL_VARIABLE:
+                        case AST_BOOL_LITERAL:
                         default: {
                             switch_default_error("Invalid bool operation");
                         }

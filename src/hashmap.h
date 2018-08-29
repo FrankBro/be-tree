@@ -22,6 +22,7 @@ struct pred_equality_map {
 };
 
 struct pred_bool_map {
+    struct pred_container literal_preds;
     struct pred_container not_preds;
     struct pred_container or_preds;
     struct pred_container and_preds;

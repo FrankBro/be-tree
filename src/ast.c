@@ -66,6 +66,13 @@ static struct ast_node* ast_bool_expr_create(enum ast_bool_e op)
     return node;
 }
 
+struct ast_node* ast_bool_expr_literal_create(bool value)
+{
+    struct ast_node* node = ast_bool_expr_create(AST_BOOL_LITERAL);
+    node->bool_expr.literal = value;
+    return node;
+}
+
 struct ast_node* ast_bool_expr_variable_create(const char* name)
 {
     struct ast_node* node = ast_bool_expr_create(AST_BOOL_VARIABLE);
@@ -80,6 +87,7 @@ struct ast_node* ast_bool_expr_unary_create(struct ast_node* expr)
     return node;
 }
 
+// Instant here means simply fetching a variable
 enum scores {
     instant_cost = 1,
     single_length_cost = 5,
@@ -91,6 +99,7 @@ static uint64_t score_node(struct ast_node* node)
 {
     switch(node->type) {
         case AST_TYPE_UNDEFINED_EXPR:
+            // faster than instant
             return instant_cost - 1;
         case AST_TYPE_COMPARE_EXPR:
             return instant_cost;
@@ -109,6 +118,9 @@ static uint64_t score_node(struct ast_node* node)
                 case AST_BOOL_VARIABLE:
                     // instant
                     return instant_cost;
+                case AST_BOOL_LITERAL:
+                    // faster than instant
+                    return instant_cost - 1;
                 default:
                     abort();
             }
@@ -378,6 +390,8 @@ void free_ast_node(struct ast_node* node)
                     break;
                 case AST_BOOL_VARIABLE:
                     free_attr_var(node->bool_expr.variable);
+                    break;
+                case AST_BOOL_LITERAL:
                     break;
                 default:
                     switch_default_error("Invalid bool expr operation");
@@ -1015,6 +1029,8 @@ static bool match_bool_expr(const struct betree_variable** preds,
     struct report* report)
 {
     switch(bool_expr.op) {
+        case AST_BOOL_LITERAL:
+            return bool_expr.literal;
         case AST_BOOL_AND: {
             bool lhs = match_node_inner(preds, bool_expr.binary.lhs, memoize, report);
             if(lhs == false) {
@@ -1474,6 +1490,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
             }
         case AST_TYPE_BOOL_EXPR:
             switch(node->bool_expr.op) {
+                case AST_BOOL_LITERAL:
+                    return;
                 case AST_BOOL_VARIABLE:
                     if(domain->attr_var.var != node->bool_expr.variable.var) {
                         return;
@@ -2013,6 +2031,7 @@ bool assign_constants(
                 case AST_BOOL_NOT:
                     return assign_constants(constant_count, constants, node->bool_expr.unary.expr);
                 case AST_BOOL_VARIABLE:
+                case AST_BOOL_LITERAL:
                 default:
                     return true;
             }
@@ -2111,6 +2130,8 @@ void assign_variable_id(struct config* config, struct ast_node* node)
         }
         case(AST_TYPE_BOOL_EXPR): {
             switch(node->bool_expr.op) {
+                case AST_BOOL_LITERAL:
+                    return;
                 case AST_BOOL_NOT: {
                     assign_variable_id(config, node->bool_expr.unary.expr);
                     return;
@@ -2225,6 +2246,8 @@ void assign_str_id(struct config* config, struct ast_node* node)
         }
         case(AST_TYPE_BOOL_EXPR): {
             switch(node->bool_expr.op) {
+                case AST_BOOL_LITERAL:
+                    return;
                 case AST_BOOL_NOT: {
                     assign_str_id(config, node->bool_expr.unary.expr);
                     return;
@@ -2331,6 +2354,8 @@ static bool eq_bool_expr(struct ast_bool_expr a, struct ast_bool_expr b)
             return eq_expr(a.unary.expr, b.unary.expr);
         case AST_BOOL_VARIABLE:
             return a.variable.var == b.variable.var;
+        case AST_BOOL_LITERAL:
+            return a.literal == b.literal;
         default:
             switch_default_error("Invalid bool expr op");
             return false;
@@ -2544,6 +2569,7 @@ void sort_lists(struct ast_node* node)
                 case AST_BOOL_NOT:
                     return sort_lists(node->bool_expr.unary.expr);
                 case AST_BOOL_VARIABLE:
+                case AST_BOOL_LITERAL:
                     return;
                 default:
                     switch_default_error("Invalid bool expr op");
@@ -2636,6 +2662,8 @@ bool all_variables_in_config(const struct config* config, const struct ast_node*
                     return all_variables_in_config(config, node->bool_expr.unary.expr);
                 case AST_BOOL_VARIABLE:
                     return var_exists(config, node->bool_expr.variable.attr);
+                case AST_BOOL_LITERAL:
+                    return true;
                 default:
                     switch_default_error("Invalid bool expr op");
                     return false;
@@ -2780,6 +2808,7 @@ bool all_bounded_strings_valid(const struct config* config, const struct ast_nod
                 case AST_BOOL_NOT:
                     return all_bounded_strings_valid(config, node->bool_expr.unary.expr);
                 case AST_BOOL_VARIABLE:
+                case AST_BOOL_LITERAL:
                     return true;
                 default:
                     switch_default_error("Invalid bool expr op");

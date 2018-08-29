@@ -100,6 +100,9 @@ static struct ast_node* clone_bool(betree_pred_t id, struct ast_bool_expr orig)
         case AST_BOOL_VARIABLE:
             clone->bool_expr.variable = clone_attr_var(orig.variable);
             break;
+        case AST_BOOL_LITERAL:
+            clone->bool_expr.literal = orig.literal;
+            break;
         default:
             switch_default_error("Invalid bool op");
             break;

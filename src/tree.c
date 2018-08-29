@@ -1444,6 +1444,8 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
                 case AST_BOOL_VARIABLE:
                     fill_pred_attr_var(sub, expr->bool_expr.variable);
                     return;
+                case AST_BOOL_LITERAL:
+                    return;
                 default:
                     switch_default_error("Invalid bool op");
                     return;
@@ -1521,6 +1523,8 @@ static enum short_circuit_e short_circuit_for_node(
             return short_circuit_for_attr_var(id, inverted, node->equality_expr.attr_var);
         case AST_TYPE_BOOL_EXPR:
             switch(node->bool_expr.op) {
+                case AST_BOOL_LITERAL:
+                    return SHORT_CIRCUIT_NONE;
                 case AST_BOOL_OR: {
                     enum short_circuit_e lhs
                         = short_circuit_for_node(id, inverted, node->bool_expr.binary.lhs);

@@ -110,6 +110,9 @@ static void assign_bool_pred(struct pred_map* pred_map, struct ast_bool_expr* ty
 {
     struct pred_bool_map* m = &pred_map->bool_map;
     switch(typed->op) {
+        case AST_BOOL_LITERAL:
+            match_or_insert(pred_map, &m->literal_preds, node); 
+            break;
         case AST_BOOL_NOT: 
             match_or_insert(pred_map, &m->not_preds, node); 
             break;
