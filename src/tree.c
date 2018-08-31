@@ -342,7 +342,7 @@ static size_t domain_bound_diff(const struct attr_domain* attr_domain)
     const struct value_bound* b = &attr_domain->bound;
     switch(b->value_type) {
         case BETREE_BOOLEAN:
-            return ((size_t)b->bmax) - ((size_t)b->bmin);
+            return 1;
         case BETREE_INTEGER:
         case BETREE_INTEGER_LIST:
             if(b->imin == INT64_MIN && b->imax == INT64_MAX) {
