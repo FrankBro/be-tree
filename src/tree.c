@@ -43,10 +43,11 @@ static void add_sub_to_eval(struct sub* sub, struct subs_to_eval* subs)
 
 enum short_circuit_e { SHORT_CIRCUIT_PASS, SHORT_CIRCUIT_FAIL, SHORT_CIRCUIT_NONE };
 
-static enum short_circuit_e try_short_circuit(
+static enum short_circuit_e try_short_circuit(size_t attr_domains_count,
     const struct short_circuit* short_circuit, const uint64_t* undefined)
 {
-    for(size_t i = 0; i < short_circuit->count; i++) {
+    size_t count = attr_domains_count / 64 + 1;
+    for(size_t i = 0; i < count; i++) {
         bool pass = short_circuit->pass[i] & undefined[i];
         if(pass) {
             return SHORT_CIRCUIT_PASS;
@@ -59,13 +60,14 @@ static enum short_circuit_e try_short_circuit(
     return SHORT_CIRCUIT_NONE;
 }
 
-static bool match_sub(const struct betree_variable** preds,
+static bool match_sub(size_t attr_domains_count,
+    const struct betree_variable** preds,
     const struct sub* sub,
     struct report* report,
     struct memoize* memoize,
     const uint64_t* undefined)
 {
-    enum short_circuit_e short_circuit = try_short_circuit(&sub->short_circuit, undefined);
+    enum short_circuit_e short_circuit = try_short_circuit(attr_domains_count, &sub->short_circuit, undefined);
     if(unlikely(short_circuit != SHORT_CIRCUIT_NONE)) {
         report->shorted++;
         if(short_circuit == SHORT_CIRCUIT_PASS) {
@@ -1577,7 +1579,6 @@ struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* ex
     sub->attr_vars = calloc(count, sizeof(*sub->attr_vars));
     sub->expr = expr;
     fill_pred(sub, sub->expr);
-    sub->short_circuit.count = count;
     sub->short_circuit.pass = calloc(count, sizeof(*sub->short_circuit.pass));
     sub->short_circuit.fail = calloc(count, sizeof(*sub->short_circuit.fail));
     fill_short_circuit(config, sub);
@@ -1694,13 +1695,11 @@ void free_memoize(struct memoize memoize)
 
 static uint64_t* make_undefined(size_t attr_domain_count, const struct betree_variable** preds)
 {
-    uint64_t* undefined = calloc(attr_domain_count, sizeof(*undefined));
+    size_t count = attr_domain_count / 64 + 1;
+    uint64_t* undefined = calloc(count, sizeof(*undefined));
     for(size_t i = 0; i < attr_domain_count; i++) {
-        undefined[i] = UINT64_MAX;
-    }
-    for(size_t i = 0; i < attr_domain_count; i++) {
-        if(preds[i] != NULL) {
-            clear_bit(undefined, preds[i]->attr_var.var);
+        if(preds[i] == NULL) {
+            set_bit(undefined, i);
         }
     }
     return undefined;
@@ -1720,7 +1719,7 @@ void betree_search_with_preds(const struct config* config,
     report->evaluated = subs.count;
     for(size_t i = 0; i < subs.count; i++) {
         const struct sub* sub = subs.subs[i];
-        if(match_sub(preds, sub, report, &memoize, undefined) == true) {
+        if(match_sub(config->attr_domain_count, preds, sub, report, &memoize, undefined) == true) {
             report->subs[report->matched] = sub->id;
             report->matched++;
         }
