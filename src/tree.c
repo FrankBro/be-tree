@@ -68,7 +68,7 @@ static bool match_sub(size_t attr_domains_count,
     const uint64_t* undefined)
 {
     enum short_circuit_e short_circuit = try_short_circuit(attr_domains_count, &sub->short_circuit, undefined);
-    if(unlikely(short_circuit != SHORT_CIRCUIT_NONE)) {
+    if(short_circuit != SHORT_CIRCUIT_NONE) {
         report->shorted++;
         if(short_circuit == SHORT_CIRCUIT_PASS) {
             return true;
