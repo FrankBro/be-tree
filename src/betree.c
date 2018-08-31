@@ -19,8 +19,7 @@
 bool betree_delete(struct betree* betree, betree_sub_t id)
 {
     struct sub* sub = find_sub_id(id, betree->cnode);
-    bool found = betree_delete_inner(
-        (const struct attr_domain**)betree->config->attr_domains, sub, betree->cnode);
+    bool found = betree_delete_inner(betree->config->attr_domain_count, (const struct attr_domain**)betree->config->attr_domains, sub, betree->cnode);
     free_sub(sub);
     return found;
 }

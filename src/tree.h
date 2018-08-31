@@ -22,10 +22,7 @@ struct short_circuit {
 
 struct sub {
     betree_sub_t id;
-    struct {
-        size_t attr_var_count;
-        struct attr_var* attr_vars;
-    };
+    uint64_t* attr_vars;
     const struct ast_node* expr;
     struct short_circuit short_circuit;
 };
@@ -100,7 +97,6 @@ struct cnode* make_cnode(const struct config* config, struct cdir* parent);
 void free_cnode(struct cnode* cnode);
 
 void fill_pred(struct sub* sub, const struct ast_node* expr);
-struct sub* make_empty_sub(betree_sub_t id);
 struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* expr);
 struct betree_event* make_empty_event();
 void event_to_string(const struct betree_event* event, char* buffer);
@@ -127,7 +123,7 @@ struct betree_constant {
     struct value value;
 };
 
-bool betree_delete_inner(const struct attr_domain** attr_domains, struct sub* sub, struct cnode* cnode);
+bool betree_delete_inner(size_t attr_domains_count, const struct attr_domain** attr_domains, struct sub* sub, struct cnode* cnode);
 struct sub* find_sub_id(betree_sub_t id, struct cnode* cnode);
 
 void betree_search_with_preds(const struct config* config,

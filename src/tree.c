@@ -177,44 +177,40 @@ static bool is_event_enclosed(const struct betree_variable** preds, const struct
     return false;
 }
 
-bool sub_is_enclosed(
-    const struct attr_domain** attr_domains, const struct sub* sub, const struct cdir* cdir)
+bool sub_is_enclosed(const struct attr_domain** attr_domains, const struct sub* sub, const struct cdir* cdir)
 {
     if(cdir == NULL) {
         return false;
     }
-    for(size_t i = 0; i < sub->attr_var_count; i++) {
-        betree_var_t variable_id = sub->attr_vars[i].var;
-        if(variable_id == cdir->attr_var.var) {
-            const struct attr_domain* attr_domain = get_attr_domain(attr_domains, variable_id);
-            struct value_bound bound = get_variable_bound(attr_domain, sub->expr);
-            switch(attr_domain->bound.value_type) {
-                case(BETREE_INTEGER):
-                case(BETREE_INTEGER_LIST):
-                    return cdir->bound.imin <= bound.imin && cdir->bound.imax >= bound.imax;
-                case(BETREE_FLOAT): {
-                    return cdir->bound.fmin <= bound.fmin && cdir->bound.fmax >= bound.fmax;
-                }
-                case(BETREE_BOOLEAN): {
-                    return cdir->bound.bmin <= bound.bmin && cdir->bound.bmax >= bound.bmax;
-                }
-                case(BETREE_STRING):
-                case(BETREE_STRING_LIST):
-                    return cdir->bound.smin <= bound.smin && cdir->bound.smax >= bound.smax;
-                case(BETREE_SEGMENTS): {
-                    fprintf(
-                        stderr, "%s a segments value cdir should never happen for now\n", __func__);
-                    abort();
-                }
-                case(BETREE_FREQUENCY_CAPS): {
-                    fprintf(stderr,
-                        "%s a frequency value cdir should never happen for now\n",
-                        __func__);
-                    abort();
-                }
-                default: {
-                    switch_default_error("Invalid bound value type");
-                }
+    if(test_bit(sub->attr_vars, cdir->attr_var.var) == true) {
+        const struct attr_domain* attr_domain = get_attr_domain(attr_domains, cdir->attr_var.var);
+        struct value_bound bound = get_variable_bound(attr_domain, sub->expr);
+        switch(attr_domain->bound.value_type) {
+            case(BETREE_INTEGER):
+            case(BETREE_INTEGER_LIST):
+                return cdir->bound.imin <= bound.imin && cdir->bound.imax >= bound.imax;
+            case(BETREE_FLOAT): {
+                return cdir->bound.fmin <= bound.fmin && cdir->bound.fmax >= bound.fmax;
+            }
+            case(BETREE_BOOLEAN): {
+                return cdir->bound.bmin <= bound.bmin && cdir->bound.bmax >= bound.bmax;
+            }
+            case(BETREE_STRING):
+            case(BETREE_STRING_LIST):
+                return cdir->bound.smin <= bound.smin && cdir->bound.smax >= bound.smax;
+            case(BETREE_SEGMENTS): {
+                fprintf(
+                    stderr, "%s a segments value cdir should never happen for now\n", __func__);
+                abort();
+            }
+            case(BETREE_FREQUENCY_CAPS): {
+                fprintf(stderr,
+                    "%s a frequency value cdir should never happen for now\n",
+                    __func__);
+                abort();
+            }
+            default: {
+                switch_default_error("Invalid bound value type");
             }
         }
     }
@@ -415,8 +411,11 @@ bool insert_be_tree(
     struct pnode* max_pnode = NULL;
     if(cnode->pdir != NULL) {
         float max_score = -1.;
-        for(size_t i = 0; i < sub->attr_var_count; i++) {
-            betree_var_t variable_id = sub->attr_vars[i].var;
+        for(size_t i = 0; i < config->attr_domain_count; i++) {
+            if(test_bit(sub->attr_vars, i) == false) {
+                continue;
+            }
+            betree_var_t variable_id = i;
             if(!is_used_cnode(variable_id, cnode)) {
                 struct pnode* pnode = search_pdir(variable_id, cnode->pdir);
                 if(pnode != NULL) {
@@ -461,8 +460,7 @@ static struct cdir* insert_cdir(
         if(sub_is_enclosed((const struct attr_domain**)config->attr_domains, sub, cdir->lchild)) {
             return insert_cdir(config, sub, cdir->lchild);
         }
-        else if(sub_is_enclosed(
-                    (const struct attr_domain**)config->attr_domains, sub, cdir->rchild)) {
+        else if(sub_is_enclosed((const struct attr_domain**)config->attr_domains, sub, cdir->rchild)) {
             return insert_cdir(config, sub, cdir->rchild);
         }
         return cdir;
@@ -476,17 +474,15 @@ static bool is_overflowed(const struct lnode* lnode)
 
 bool sub_has_attribute(const struct sub* sub, betree_var_t variable_id)
 {
-    for(size_t i = 0; i < sub->attr_var_count; i++) {
-        if(sub->attr_vars[i].var == variable_id) {
-            return true;
-        }
-    }
-    return false;
+    return test_bit(sub->attr_vars, variable_id);
 }
 
 bool sub_has_attribute_str(struct config* config, const struct sub* sub, const char* attr)
 {
     betree_var_t variable_id = try_get_id_for_attr(config, attr);
+    if(variable_id == INVALID_VAR) {
+        return false;
+    }
     return sub_has_attribute(sub, variable_id);
 }
 
@@ -659,11 +655,8 @@ static size_t count_attr_in_lnode(betree_var_t variable_id, const struct lnode* 
             fprintf(stderr, "%s, sub is NULL\n", __func__);
             continue;
         }
-        for(size_t j = 0; j < sub->attr_var_count; j++) {
-            betree_var_t variable_id_to_count = sub->attr_vars[j].var;
-            if(variable_id_to_count == variable_id) {
-                count++;
-            }
+        if(test_bit(sub->attr_vars, variable_id) == true) {
+            count++;
         }
     }
     return count;
@@ -752,16 +745,18 @@ static bool splitable_attr_domain(
 }
 
 static bool get_next_highest_score_unused_attr(
-    const struct config* config, const struct lnode* lnode, struct attr_var* attr_var)
+    const struct config* config, const struct lnode* lnode, betree_var_t* var)
 {
     bool found = false;
     double highest_score = 0;
-    struct attr_var highest_attr_var;
+    betree_var_t highest_var;
     for(size_t i = 0; i < lnode->sub_count; i++) {
         const struct sub* sub = lnode->subs[i];
-        for(size_t j = 0; j < sub->attr_var_count; j++) {
-            struct attr_var current_attr_var = sub->attr_vars[j];
-            betree_var_t current_variable_id = current_attr_var.var;
+        for(size_t j = 0; j < config->attr_domain_count; j++) {
+            if(test_bit(sub->attr_vars, j) == false) {
+                continue;
+            }
+            betree_var_t current_variable_id = j;
             const struct attr_domain* attr_domain = get_attr_domain(
                 (const struct attr_domain**)config->attr_domains, current_variable_id);
             if(splitable_attr_domain(config, attr_domain)
@@ -771,7 +766,7 @@ static bool get_next_highest_score_unused_attr(
                 found = true;
                 if(current_score > highest_score) {
                     highest_score = current_score;
-                    highest_attr_var = current_attr_var;
+                    highest_var = current_variable_id;
                 }
             }
         }
@@ -780,7 +775,7 @@ static bool get_next_highest_score_unused_attr(
         return false;
     }
     else {
-        *attr_var = highest_attr_var;
+        *var = highest_var;
         return true;
     }
 }
@@ -814,21 +809,21 @@ static void space_partitioning(const struct config* config, struct cnode* cnode)
 {
     struct lnode* lnode = cnode->lnode;
     while(is_overflowed(lnode) == true) {
-        struct attr_var attr_var;
-        bool found = get_next_highest_score_unused_attr(config, lnode, &attr_var);
+        betree_var_t var;
+        bool found = get_next_highest_score_unused_attr(config, lnode, &var);
         if(found == false) {
             break;
         }
-        betree_var_t variable_id = attr_var.var;
         size_t target_subs_count = count_subs_with_variable(
-            (const struct sub**)lnode->subs, lnode->sub_count, variable_id);
+            (const struct sub**)lnode->subs, lnode->sub_count, var);
         if(target_subs_count < config->partition_min_size) {
             break;
         }
-        struct pnode* pnode = create_pdir(config, attr_var.attr, variable_id, cnode);
+        const char* attr = config->attr_domains[var]->attr_var.attr;
+        struct pnode* pnode = create_pdir(config, attr, var, cnode);
         for(size_t i = 0; i < lnode->sub_count; i++) {
             const struct sub* sub = lnode->subs[i];
-            if(sub_has_attribute(sub, variable_id)) {
+            if(sub_has_attribute(sub, var)) {
                 struct cdir* cdir = insert_cdir(config, sub, pnode->cdir);
                 move(sub, lnode, cdir->cnode->lnode);
                 i--;
@@ -1028,13 +1023,11 @@ static void space_clustering(const struct config* config, struct cdir* cdir)
         cdir->rchild = create_cdir_with_cdir_parent(config, cdir, bounds.rbound);
         for(size_t i = 0; i < lnode->sub_count; i++) {
             const struct sub* sub = lnode->subs[i];
-            if(sub_is_enclosed(
-                   (const struct attr_domain**)config->attr_domains, sub, cdir->lchild)) {
+            if(sub_is_enclosed((const struct attr_domain**)config->attr_domains, sub, cdir->lchild)) {
                 move(sub, lnode, cdir->lchild->cnode->lnode);
                 i--;
             }
-            else if(sub_is_enclosed(
-                        (const struct attr_domain**)config->attr_domains, sub, cdir->rchild)) {
+            else if(sub_is_enclosed((const struct attr_domain**)config->attr_domains, sub, cdir->rchild)) {
                 move(sub, lnode, cdir->rchild->cnode->lnode);
                 i--;
             }
@@ -1046,7 +1039,7 @@ static void space_clustering(const struct config* config, struct cdir* cdir)
     update_cluster_capacity(config, lnode);
 }
 
-static bool search_delete_cdir(
+static bool search_delete_cdir(size_t attr_domains_count,
     const struct attr_domain** attr_domains, struct sub* sub, struct cdir* cdir);
 
 static bool delete_sub_from_leaf(betree_sub_t sub, struct lnode* lnode)
@@ -1111,9 +1104,6 @@ void free_sub(struct sub* sub)
 {
     if(sub == NULL) {
         return;
-    }
-    for(size_t i = 0; i < sub->attr_var_count; i++) {
-        free((char*)sub->attr_vars[i].attr);
     }
     free(sub->attr_vars);
     sub->attr_vars = NULL;
@@ -1217,17 +1207,20 @@ static void free_pnode(struct pnode* pnode)
     free(pnode);
 }
 
-bool betree_delete_inner(
+bool betree_delete_inner(size_t attr_domains_count,
     const struct attr_domain** attr_domains, struct sub* sub, struct cnode* cnode)
 {
     struct pnode* pnode = NULL;
     bool isFound = delete_sub_from_leaf(sub->id, cnode->lnode);
     if(!isFound) {
-        for(size_t i = 0; i < sub->attr_var_count; i++) {
-            betree_var_t variable_id = sub->attr_vars[i].var;
+        for(size_t i = 0; i < attr_domains_count; i++) {
+            if(test_bit(sub->attr_vars, i) == false) {
+                continue;
+            }
+            betree_var_t variable_id = i;
             pnode = search_pdir(variable_id, cnode->pdir);
             if(pnode != NULL) {
-                isFound = search_delete_cdir(attr_domains, sub, pnode->cdir);
+                isFound = search_delete_cdir(attr_domains_count, attr_domains, sub, pnode->cdir);
             }
             if(isFound) {
                 break;
@@ -1330,18 +1323,18 @@ static void try_remove_cdir_from_parent(struct cdir* cdir)
     }
 }
 
-static bool search_delete_cdir(
+static bool search_delete_cdir(size_t attr_domains_count,
     const struct attr_domain** attr_domains, struct sub* sub, struct cdir* cdir)
 {
     bool isFound = false;
     if(sub_is_enclosed(attr_domains, sub, cdir->lchild)) {
-        isFound = search_delete_cdir(attr_domains, sub, cdir->lchild);
+        isFound = search_delete_cdir(attr_domains_count, attr_domains, sub, cdir->lchild);
     }
     else if(sub_is_enclosed(attr_domains, sub, cdir->rchild)) {
-        isFound = search_delete_cdir(attr_domains, sub, cdir->rchild);
+        isFound = search_delete_cdir(attr_domains_count, attr_domains, sub, cdir->rchild);
     }
     else {
-        isFound = betree_delete_inner(attr_domains, sub, cdir->cnode);
+        isFound = betree_delete_inner(attr_domains_count, attr_domains, sub, cdir->cnode);
     }
     if(isFound) {
         if(is_empty(cdir->lchild)) {
@@ -1375,33 +1368,7 @@ struct betree_variable* make_pred(const char* attr, betree_var_t variable_id, st
 
 static void fill_pred_attr_var(struct sub* sub, struct attr_var attr_var)
 {
-    bool is_found = false;
-    for(size_t i = 0; i < sub->attr_var_count; i++) {
-        if(sub->attr_vars[i].var == attr_var.var) {
-            is_found = true;
-            break;
-        }
-    }
-    if(!is_found) {
-        if(sub->attr_var_count == 0) {
-            sub->attr_vars = calloc(1, sizeof(*sub->attr_vars));
-            if(sub->attr_vars == NULL) {
-                fprintf(stderr, "%s calloc failed\n", __func__);
-                abort();
-            }
-        }
-        else {
-            struct attr_var* attr_vars
-                = realloc(sub->attr_vars, sizeof(*sub->attr_vars) * (sub->attr_var_count + 1));
-            if(sub == NULL) {
-                fprintf(stderr, "%s realloc failed\n", __func__);
-                abort();
-            }
-            sub->attr_vars = attr_vars;
-        }
-        sub->attr_vars[sub->attr_var_count] = copy_attr_var(attr_var);
-        sub->attr_var_count++;
-    }
+    set_bit(sub->attr_vars, attr_var.var);
 }
 
 void fill_pred(struct sub* sub, const struct ast_node* expr)
@@ -1480,19 +1447,6 @@ void fill_pred(struct sub* sub, const struct ast_node* expr)
             switch_default_error("Invalid expr type");
         }
     }
-}
-
-struct sub* make_empty_sub(betree_sub_t id)
-{
-    struct sub* sub = calloc(1, sizeof(*sub));
-    if(sub == NULL) {
-        fprintf(stderr, "%s calloc failed\n", __func__);
-        abort();
-    }
-    sub->id = id;
-    sub->attr_var_count = 0;
-    sub->attr_vars = NULL;
-    return sub;
 }
 
 static enum short_circuit_e short_circuit_for_attr_var(
@@ -1613,10 +1567,16 @@ static void fill_short_circuit(struct config* config, struct sub* sub)
 
 struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* expr)
 {
-    struct sub* sub = make_empty_sub(id);
+    struct sub* sub = calloc(1, sizeof(*sub));
+    if(sub == NULL) {
+        fprintf(stderr, "%s calloc failed\n", __func__);
+        abort();
+    }
+    sub->id = id;
+    size_t count = config->attr_domain_count / 64 + 1;
+    sub->attr_vars = calloc(count, sizeof(*sub->attr_vars));
     sub->expr = expr;
     fill_pred(sub, sub->expr);
-    size_t count = config->attr_domain_count / 64 + 1;
     sub->short_circuit.count = count;
     sub->short_circuit.pass = calloc(count, sizeof(*sub->short_circuit.pass));
     sub->short_circuit.fail = calloc(count, sizeof(*sub->short_circuit.fail));
