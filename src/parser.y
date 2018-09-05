@@ -134,6 +134,10 @@ num_comp_expr       : ident TCGT num_comp_value             { $$ = ast_compare_e
                     | ident TCGE num_comp_value             { $$ = ast_compare_expr_create(AST_COMPARE_GE, $1, $3); free($1); }
                     | ident TCLT num_comp_value             { $$ = ast_compare_expr_create(AST_COMPARE_LT, $1, $3); free($1); }
                     | ident TCLE num_comp_value             { $$ = ast_compare_expr_create(AST_COMPARE_LE, $1, $3); free($1); }
+                    | num_comp_value TCLT ident             { $$ = ast_compare_expr_create(AST_COMPARE_GT, $3, $1); free($3); }
+                    | num_comp_value TCLE ident             { $$ = ast_compare_expr_create(AST_COMPARE_GE, $3, $1); free($3); }
+                    | num_comp_value TCGT ident             { $$ = ast_compare_expr_create(AST_COMPARE_LT, $3, $1); free($3); }
+                    | num_comp_value TCGE ident             { $$ = ast_compare_expr_create(AST_COMPARE_LE, $3, $1); free($3); }
 ;       
 
 eq_value            : integer                               { $$.value_type = AST_EQUALITY_VALUE_INTEGER; $$.integer_value = $1; }
@@ -143,6 +147,8 @@ eq_value            : integer                               { $$.value_type = AS
 
 eq_expr             : ident TCEQ eq_value                   { $$ = ast_equality_expr_create(AST_EQUALITY_EQ, $1, $3); free($1); }
                     | ident TCNE eq_value                   { $$ = ast_equality_expr_create(AST_EQUALITY_NE, $1, $3); free($1); }
+                    | eq_value TCEQ ident                   { $$ = ast_equality_expr_create(AST_EQUALITY_EQ, $3, $1); free($3); }
+                    | eq_value TCNE ident                   { $$ = ast_equality_expr_create(AST_EQUALITY_NE, $3, $1); free($3); }
 ;       
 
 variable_value      : ident                                 { $$ = make_attr_var($1, NULL); free($1); }

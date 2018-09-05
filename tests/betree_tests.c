@@ -1344,6 +1344,35 @@ int test_api()
     return 0;
 }
 
+int test_inverted_binop()
+{
+    struct betree* tree = betree_make();
+    betree_add_integer_variable(tree, "i", false, 0, 30);
+
+    {
+        mu_assert(betree_insert(tree, 1, "20 < i"), "");
+        mu_assert(betree_insert(tree, 2, "i > 20"), "");
+        struct report* report = make_report();
+        betree_search(tree, "{\"i\": 20}", report);
+        mu_assert(report->matched == 0, "no match");
+        free_report(report);
+        empty_tree(tree);
+    }
+    {
+        mu_assert(betree_insert(tree, 1, "20 < i"), "");
+        mu_assert(betree_insert(tree, 2, "i > 20"), "");
+        struct report* report = make_report();
+        betree_search(tree, "{\"i\": 21}", report);
+        mu_assert(report->matched == 2, "all match");
+        free_report(report);
+        empty_tree(tree);
+    }
+
+    betree_free(tree);
+
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_sub_has_attribute);
@@ -1379,6 +1408,7 @@ int all_tests()
     mu_run_test(test_set_bug_cdir);
     mu_run_test(test_undefined_cdir_search);
     mu_run_test(test_api);
+    mu_run_test(test_inverted_binop);
 
     return 0;
 }
