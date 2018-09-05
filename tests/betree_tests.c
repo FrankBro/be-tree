@@ -1373,6 +1373,29 @@ int test_inverted_binop()
     return 0;
 }
 
+int test_float_no_point_in_expr()
+{
+    struct betree* tree = betree_make();
+    betree_add_float_variable(tree, "f", false, 0, 20.);
+
+    mu_assert(betree_insert(tree, 1, "f = 20"), "");
+
+    struct betree_event* event = betree_make_event(tree);
+    betree_set_variable(event, 0, betree_make_float_variable("f", 20.));
+
+    struct report* report = make_report();
+
+    betree_search_with_event(tree, event, report);
+
+    mu_assert(report->matched == 1, "found 1");
+
+    betree_free(tree);
+    free_report(report);
+
+
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_sub_has_attribute);
@@ -1409,6 +1432,7 @@ int all_tests()
     mu_run_test(test_undefined_cdir_search);
     mu_run_test(test_api);
     mu_run_test(test_inverted_binop);
+    mu_run_test(test_float_no_point_in_expr);
 
     return 0;
 }

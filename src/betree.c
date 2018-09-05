@@ -64,6 +64,42 @@ bool betree_insert_all(struct betree* tree, size_t count, const char** exprs)
     return betree_insert(tree, count - 1, exprs[count - 1]);
 }
 */
+
+static void fix_float_with_no_fractions(struct config* config, struct ast_node* node)
+{
+    switch(node->type) {
+        case AST_TYPE_COMPARE_EXPR: {
+            bool is_value_int = 
+                node->compare_expr.value.value_type == AST_COMPARE_VALUE_INTEGER;
+            bool is_domain_float = 
+                config->attr_domains[node->compare_expr.attr_var.var]->bound.value_type == BETREE_FLOAT;
+            if(is_value_int && is_domain_float) {
+                node->compare_expr.value.value_type = AST_COMPARE_VALUE_FLOAT;
+                node->compare_expr.value.float_value = node->compare_expr.value.integer_value;
+            }
+            return;
+        }
+        case AST_TYPE_EQUALITY_EXPR: {
+            bool is_value_int = 
+                node->equality_expr.value.value_type == AST_EQUALITY_VALUE_INTEGER;
+            bool is_domain_float = 
+                config->attr_domains[node->equality_expr.attr_var.var]->bound.value_type == BETREE_FLOAT;
+            if(is_value_int && is_domain_float) {
+                node->equality_expr.value.value_type = AST_EQUALITY_VALUE_FLOAT;
+                node->equality_expr.value.float_value = node->equality_expr.value.integer_value;
+            }
+            return;
+        }
+        case AST_TYPE_BOOL_EXPR:
+        case AST_TYPE_SET_EXPR:
+        case AST_TYPE_LIST_EXPR:
+        case AST_TYPE_SPECIAL_EXPR:
+        case AST_TYPE_UNDEFINED_EXPR:
+        default:
+            return;
+    }
+}
+
 bool betree_insert_with_constants(struct betree* tree,
     betree_sub_t id,
     size_t constant_count,
@@ -84,6 +120,7 @@ bool betree_insert_with_constants(struct betree* tree,
     assign_variable_id(tree->config, node);
     assign_str_id(tree->config, node);
     sort_lists(node);
+    fix_float_with_no_fractions(tree->config, node);
     assign_pred_id(tree->config, node);
     struct sub* sub = make_sub(tree->config, id, node);
     return insert_be_tree(tree->config, sub, tree->cnode, NULL);
