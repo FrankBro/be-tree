@@ -257,7 +257,9 @@ void free_segment(struct betree_segment* value)
 void free_segments(struct betree_segments* value)
 {
     for(size_t i = 0; i < value->size; i++) {
-        free(value->content[i]);
+        if(value->content[i] != NULL) {
+            free(value->content[i]);
+        }
     }
     free(value->content);
     free(value);
@@ -272,7 +274,9 @@ void free_frequency_cap(struct betree_frequency_cap* value)
 void free_frequency_caps(struct betree_frequency_caps* value)
 {
     for(size_t i = 0; i < value->size; i++) {
-        free_frequency_cap(value->content[i]);
+        if(value->content[i] != NULL) {
+            free_frequency_cap(value->content[i]);
+        }
     }
     free(value->content);
     free(value);
