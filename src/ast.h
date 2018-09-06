@@ -246,7 +246,15 @@ struct ast_special_expr {
     };
 };
 
-struct ast_undefined_expr {
+// Is null
+
+enum ast_is_null_e {
+    AST_IS_NULL,
+    AST_IS_NOT_NULL,
+};
+
+struct ast_is_null_expr {
+    enum ast_is_null_e type;
     struct attr_var attr_var;
 };
 
@@ -259,7 +267,7 @@ enum ast_node_type_e {
     AST_TYPE_SET_EXPR,
     AST_TYPE_LIST_EXPR,
     AST_TYPE_SPECIAL_EXPR,
-    AST_TYPE_UNDEFINED_EXPR,
+    AST_TYPE_IS_NULL_EXPR,
 };
 
 struct ast_node {
@@ -272,7 +280,7 @@ struct ast_node {
         struct ast_set_expr set_expr;
         struct ast_list_expr list_expr;
         struct ast_special_expr special_expr;
-        struct ast_undefined_expr undefined_expr;
+        struct ast_is_null_expr is_null_expr;
     };
 };
 
@@ -303,7 +311,7 @@ struct ast_node* ast_special_geo_create(
 struct ast_node* ast_special_string_create(
     enum ast_special_string_e op, const char* name, const char* pattern);
 
-struct ast_node* ast_undefined_expr_create(const char* name);
+struct ast_node* ast_is_null_expr_create(enum ast_is_null_e type, const char* name);
 
 void free_ast_node(struct ast_node* node);
 

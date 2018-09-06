@@ -120,7 +120,7 @@ void write_expr(FILE* f, const struct ast_node* node)
             fprintf(stderr, "should never happen for now");
             abort();
         }
-        case(AST_TYPE_UNDEFINED_EXPR): {
+        case(AST_TYPE_IS_NULL_EXPR): {
             fprintf(stderr, "should never happen for now");
             abort();
         }

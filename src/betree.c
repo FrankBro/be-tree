@@ -94,7 +94,7 @@ static void fix_float_with_no_fractions(struct config* config, struct ast_node* 
         case AST_TYPE_SET_EXPR:
         case AST_TYPE_LIST_EXPR:
         case AST_TYPE_SPECIAL_EXPR:
-        case AST_TYPE_UNDEFINED_EXPR:
+        case AST_TYPE_IS_NULL_EXPR:
         default:
             return;
     }

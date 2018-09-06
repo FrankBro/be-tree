@@ -253,12 +253,13 @@ static struct ast_node* clone_special(betree_pred_t id, struct ast_special_expr 
     return clone;
 }
 
-static struct ast_node* clone_undefined(betree_pred_t id, struct ast_undefined_expr orig)
+static struct ast_node* clone_is_null(betree_pred_t id, struct ast_is_null_expr orig)
 {
     struct ast_node* clone = ast_node_create();
     clone->id = id;
-    clone->type = AST_TYPE_UNDEFINED_EXPR;
-    clone->undefined_expr.attr_var = clone_attr_var(orig.attr_var);
+    clone->type = AST_TYPE_IS_NULL_EXPR;
+    clone->is_null_expr.type = orig.type;
+    clone->is_null_expr.attr_var = clone_attr_var(orig.attr_var);
     return clone;
 }
 
@@ -284,8 +285,8 @@ struct ast_node* clone_node(const struct ast_node* node)
         case AST_TYPE_SPECIAL_EXPR:
             clone = clone_special(node->id, node->special_expr);
             break;
-        case AST_TYPE_UNDEFINED_EXPR:
-            clone = clone_undefined(node->id, node->undefined_expr);
+        case AST_TYPE_IS_NULL_EXPR:
+            clone = clone_is_null(node->id, node->is_null_expr);
             break;
         default:
             switch_default_error("Invalid node type");
@@ -293,3 +294,4 @@ struct ast_node* clone_node(const struct ast_node* node)
     }
     return clone;
 }
+

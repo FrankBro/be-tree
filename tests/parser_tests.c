@@ -9,14 +9,14 @@
 
 int parse(const char* text, struct ast_node** node);
 
-int test_undefined()
+int test_is_null()
 {
     struct ast_node* node = NULL;
-    parse("?a", &node);
-    mu_assert(node->type == AST_TYPE_UNDEFINED_EXPR && strcmp(node->undefined_expr.attr_var.attr, "a") == 0, "no space");
+    parse("a is null", &node);
+    mu_assert(node->type == AST_TYPE_IS_NULL_EXPR && node->is_null_expr.type == AST_IS_NULL && strcmp(node->is_null_expr.attr_var.attr, "a") == 0, "is null");
     free_ast_node(node);
-    parse("? a", &node);
-    mu_assert(node->type == AST_TYPE_UNDEFINED_EXPR && strcmp(node->undefined_expr.attr_var.attr, "a") == 0, "with space");
+    parse("a is not null", &node);
+    mu_assert(node->type == AST_TYPE_IS_NULL_EXPR && node->is_null_expr.type == AST_IS_NOT_NULL && strcmp(node->is_null_expr.attr_var.attr, "a") == 0, "is not null");
     free_ast_node(node);
     return 0;
 }
@@ -422,7 +422,7 @@ int all_tests()
     mu_run_test(test_integer_list);
     mu_run_test(test_string_list);
     mu_run_test(test_special);
-    mu_run_test(test_undefined);
+    mu_run_test(test_is_null);
 
     return 0;
 }

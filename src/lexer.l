@@ -59,7 +59,8 @@
 "||"                        return TOKEN(TOR);
 "or"                        return TOKEN(TOR);
 "not"                       return TOKEN(TNOT);
-"?"                         return TOKEN(TUNDEFINED);
+"is not null"               return TOKEN(TISNOTNULL);
+"is null"                   return TOKEN(TISNULL);
 "true"                      return TOKEN(TTRUE);
 "false"                     return TOKEN(TFALSE);
 \"(\\.|[^"\\])*\"           SAVE_STRING; return TSTRING;

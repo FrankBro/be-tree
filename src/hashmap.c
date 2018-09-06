@@ -188,11 +188,20 @@ static void assign_special_pred(struct pred_map* pred_map, struct ast_special_ex
     }
 }
 
-static void assign_undefined_pred(struct pred_map* pred_map, struct ast_undefined_expr* typed, struct ast_node* node)
+static void assign_is_null_pred(struct pred_map* pred_map, struct ast_is_null_expr* typed, struct ast_node* node)
 {
-    (void)typed;
-    struct pred_undefined_map* m = &pred_map->undefined_map;
-    match_or_insert(pred_map, &m->undefined_preds, node);
+    struct pred_is_null_map* m = &pred_map->is_null_map;
+    switch(typed->type) {
+        case AST_IS_NULL:
+            match_or_insert(pred_map, &m->is_null_preds, node);
+            break;
+        case AST_IS_NOT_NULL:
+            match_or_insert(pred_map, &m->is_not_null_preds, node);
+            break;
+        default:
+            switch_default_error("Invalid is null type");
+            break;
+    }
 }
 
 void assign_pred(struct pred_map* pred_map, struct ast_node* node)
@@ -225,8 +234,8 @@ void assign_pred(struct pred_map* pred_map, struct ast_node* node)
         case AST_TYPE_SPECIAL_EXPR:
             assign_special_pred(pred_map, &node->special_expr, node);
             break;
-        case AST_TYPE_UNDEFINED_EXPR:
-            assign_undefined_pred(pred_map, &node->undefined_expr, node);
+        case AST_TYPE_IS_NULL_EXPR:
+            assign_is_null_pred(pred_map, &node->is_null_expr, node);
             break;
         default:
             switch_default_error("Invalid node type");

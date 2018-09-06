@@ -26,18 +26,22 @@ struct ast_node* parse_and_assign(const char* expr, struct config* config)
     return node;
 }
 
-int test_undefined()
+int test_is_null()
 {
     struct config* config = make_default_config();
     add_attr_domain_bounded_i(config, "i", false, 0, 10);
 
     {
-        fprintf(stderr, "first\n");
-        struct ast_node* a = parse_and_assign("?i", config);
-        fprintf(stderr, "a = %p\n", a);
-        struct ast_node* b = parse_and_assign("?i", config);
-        fprintf(stderr, "b = %p\n", b);
-        mu_assert(eq_expr(a, b), "undefined");
+        struct ast_node* a = parse_and_assign("i is null", config);
+        struct ast_node* b = parse_and_assign("i is null", config);
+        mu_assert(eq_expr(a, b), "is null");
+        free_ast_node(a);
+        free_ast_node(b);
+    }
+    {
+        struct ast_node* a = parse_and_assign("i is not null", config);
+        struct ast_node* b = parse_and_assign("i is not null", config);
+        mu_assert(eq_expr(a, b), "is not null");
         free_ast_node(a);
         free_ast_node(b);
     }
@@ -901,7 +905,7 @@ int all_tests()
     mu_run_test(test_special_string);
     mu_run_test(test_bool);
     mu_run_test(test_bool_wrong);
-    mu_run_test(test_undefined);
+    mu_run_test(test_is_null);
 
     return 0;
 }

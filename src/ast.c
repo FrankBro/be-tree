@@ -28,11 +28,12 @@ struct ast_node* ast_node_create()
     return node;
 }
 
-struct ast_node* ast_undefined_expr_create(const char* name)
+struct ast_node* ast_is_null_expr_create(enum ast_is_null_e type, const char* name)
 {
     struct ast_node* node = ast_node_create();
-    node->type = AST_TYPE_UNDEFINED_EXPR;
-    node->undefined_expr.attr_var = make_attr_var(name, NULL);
+    node->type = AST_TYPE_IS_NULL_EXPR;
+    node->is_null_expr.type = type;
+    node->is_null_expr.attr_var = make_attr_var(name, NULL);
     return node;
 }
 
@@ -98,7 +99,7 @@ enum scores {
 static uint64_t score_node(struct ast_node* node)
 {
     switch(node->type) {
-        case AST_TYPE_UNDEFINED_EXPR:
+        case AST_TYPE_IS_NULL_EXPR:
             // faster than instant
             return instant_cost - 1;
         case AST_TYPE_COMPARE_EXPR:
@@ -363,8 +364,8 @@ void free_ast_node(struct ast_node* node)
         return;
     }
     switch(node->type) {
-        case AST_TYPE_UNDEFINED_EXPR:
-            free_attr_var(node->undefined_expr.attr_var);
+        case AST_TYPE_IS_NULL_EXPR:
+            free_attr_var(node->is_null_expr.attr_var);
             break;
         case AST_TYPE_SPECIAL_EXPR:
             free_special_expr(node->special_expr);
@@ -1066,12 +1067,20 @@ static bool match_bool_expr(const struct betree_variable** preds,
     }
 }
 
-static bool match_undefined_expr(const struct betree_variable** preds,
-    const struct ast_undefined_expr undefined_expr)
+static bool match_is_null_expr(const struct betree_variable** preds,
+    const struct ast_is_null_expr is_null_expr)
 {
     struct value variable;
-    bool is_variable_defined = get_variable(undefined_expr.attr_var.var, preds, &variable);
-    return !is_variable_defined;
+    bool is_variable_defined = get_variable(is_null_expr.attr_var.var, preds, &variable);
+    switch(is_null_expr.type) {
+        case AST_IS_NULL:
+            return !is_variable_defined;
+        case AST_IS_NOT_NULL:
+            return is_variable_defined;
+        default:
+            switch_default_error("Invalid is null operation");
+            return false;
+    }
 }
 
 static bool match_node_inner(const struct betree_variable** preds,
@@ -1091,8 +1100,8 @@ static bool match_node_inner(const struct betree_variable** preds,
     }
     bool result;
     switch(node->type) {
-        case AST_TYPE_UNDEFINED_EXPR:
-            result = match_undefined_expr(preds, node->undefined_expr);
+        case AST_TYPE_IS_NULL_EXPR:
+            result = match_is_null_expr(preds, node->is_null_expr);
             break;
         case AST_TYPE_SPECIAL_EXPR: {
             result = match_special_expr(preds, node->special_expr);
@@ -1157,7 +1166,7 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
         return;
     }
     switch(node->type) {
-        case AST_TYPE_UNDEFINED_EXPR:
+        case AST_TYPE_IS_NULL_EXPR:
             return;
         case AST_TYPE_SPECIAL_EXPR:
             return;
@@ -2012,7 +2021,7 @@ bool assign_constants(
     size_t constant_count, const struct betree_constant** constants, struct ast_node* node)
 {
     switch(node->type) {
-        case AST_TYPE_UNDEFINED_EXPR:
+        case AST_TYPE_IS_NULL_EXPR:
         case AST_TYPE_COMPARE_EXPR:
         case AST_TYPE_EQUALITY_EXPR:
         case AST_TYPE_SET_EXPR:
@@ -2068,10 +2077,10 @@ bool assign_constants(
 void assign_variable_id(struct config* config, struct ast_node* node)
 {
     switch(node->type) {
-        case AST_TYPE_UNDEFINED_EXPR: {
+        case AST_TYPE_IS_NULL_EXPR: {
             betree_var_t variable_id
-                = try_get_id_for_attr(config, node->undefined_expr.attr_var.attr);
-            node->undefined_expr.attr_var.var = variable_id;
+                = try_get_id_for_attr(config, node->is_null_expr.attr_var.attr);
+            node->is_null_expr.attr_var.var = variable_id;
             return;
         }
         case(AST_TYPE_SPECIAL_EXPR): {
@@ -2204,7 +2213,7 @@ void assign_variable_id(struct config* config, struct ast_node* node)
 void assign_str_id(struct config* config, struct ast_node* node)
 {
     switch(node->type) {
-        case AST_TYPE_UNDEFINED_EXPR:
+        case AST_TYPE_IS_NULL_EXPR:
             return;
         case(AST_TYPE_SPECIAL_EXPR): {
             switch(node->special_expr.type) {
@@ -2497,8 +2506,8 @@ bool eq_expr(const struct ast_node* a, const struct ast_node* b)
         return false;
     }
     switch(a->type) {
-        case AST_TYPE_UNDEFINED_EXPR:
-            return a->undefined_expr.attr_var.var == b->undefined_expr.attr_var.var;
+        case AST_TYPE_IS_NULL_EXPR:
+            return a->is_null_expr.attr_var.var == b->is_null_expr.attr_var.var;
         case AST_TYPE_COMPARE_EXPR: {
             return a->compare_expr.attr_var.var == b->compare_expr.attr_var.var
                 && a->compare_expr.op == b->compare_expr.op
@@ -2555,7 +2564,7 @@ void assign_pred_id(struct config* config, struct ast_node* node)
 void sort_lists(struct ast_node* node)
 {
     switch(node->type) {
-        case AST_TYPE_UNDEFINED_EXPR:
+        case AST_TYPE_IS_NULL_EXPR:
         case AST_TYPE_COMPARE_EXPR:
         case AST_TYPE_EQUALITY_EXPR:
             return;
@@ -2646,8 +2655,8 @@ bool var_exists(const struct config* config, const char* attr)
 bool all_variables_in_config(const struct config* config, const struct ast_node* node)
 {
     switch(node->type) {
-        case  AST_TYPE_UNDEFINED_EXPR:
-            return var_exists(config, node->undefined_expr.attr_var.attr);
+        case  AST_TYPE_IS_NULL_EXPR:
+            return var_exists(config, node->is_null_expr.attr_var.attr);
         case AST_TYPE_COMPARE_EXPR:
             return var_exists(config, node->compare_expr.attr_var.attr);
         case AST_TYPE_EQUALITY_EXPR:
@@ -2785,7 +2794,7 @@ static bool strs_valid(
 bool all_bounded_strings_valid(const struct config* config, const struct ast_node* node)
 {
     switch(node->type) {
-        case AST_TYPE_UNDEFINED_EXPR:
+        case AST_TYPE_IS_NULL_EXPR:
         case AST_TYPE_COMPARE_EXPR:
             return true;
         case AST_TYPE_EQUALITY_EXPR:
