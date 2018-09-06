@@ -142,28 +142,29 @@ static const struct betree_variable** make_environment(size_t attr_domain_count,
     return preds;
 }
 
-static void betree_search_with_event_filled(const struct betree* betree, struct betree_event* event, struct report* report)
+static bool betree_search_with_event_filled(const struct betree* betree, struct betree_event* event, struct report* report)
 {
     const struct betree_variable** variables
         = make_environment(betree->config->attr_domain_count, event);
     if(validate_variables(betree->config, variables) == false) {
         fprintf(stderr, "Failed to validate event\n");
-        abort();
+        return false;
     }
-    betree_search_with_preds(betree->config, variables, betree->cnode, report);
+    return betree_search_with_preds(betree->config, variables, betree->cnode, report);
 }
 
-void betree_search(const struct betree* tree, const char* event_str, struct report* report)
+bool betree_search(const struct betree* tree, const char* event_str, struct report* report)
 {
     struct betree_event* event = make_event_from_string(tree, event_str);
-    betree_search_with_event_filled(tree, event, report);
+    bool result = betree_search_with_event_filled(tree, event, report);
     free_event(event);
+    return result;
 }
 
-void betree_search_with_event(const struct betree* betree, struct betree_event* event, struct report* report)
+bool betree_search_with_event(const struct betree* betree, struct betree_event* event, struct report* report)
 {
     fill_event(betree->config, event);
-    betree_search_with_event_filled(betree, event, report);
+    return betree_search_with_event_filled(betree, event, report);
 }
 
 struct report* make_report()

@@ -103,8 +103,8 @@ void betree_set_variable(struct betree_event* event, size_t index, struct betree
 bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr);
 bool betree_insert_with_constants(struct betree* tree, betree_sub_t id, size_t constant_count, const struct betree_constant** constants, const char* expr);
 
-void betree_search(const struct betree* betree, const char* event, struct report* report);
-void betree_search_with_event(const struct betree* betree, struct betree_event* event, struct report* report);
+bool betree_search(const struct betree* betree, const char* event, struct report* report);
+bool betree_search_with_event(const struct betree* betree, struct betree_event* event, struct report* report);
 
 bool betree_delete(struct betree* betree, betree_sub_t id);
 

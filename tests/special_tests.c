@@ -50,7 +50,10 @@ frequency(
         abort();
     }
     struct report* report = make_report();
-    betree_search(tree, event_str, report);
+    if(betree_search(tree, event_str, report) == false) {
+        fprintf(stderr, "Failed to search for event\n");
+        abort();
+    }
     bool result = report->matched == 1;
     free(expr);
     free(event_str);
@@ -241,7 +244,10 @@ segment(bool has_not, enum segment_function_type func_type,
         abort();
     }
     struct report* report = make_report();
-    betree_search(tree, event_str, report);
+    if(betree_search(tree, event_str, report) == false) {
+        fprintf(stderr, "Failed to search for event\n");
+        abort();
+    }
     bool result = report->matched == 1;
     free(expr);
     free(event_str);
@@ -312,7 +318,10 @@ static bool geo(bool has_not, const char* latitude, const char* longitude, const
         abort();
     }
     struct report* report = make_report();
-    betree_search(tree, event_str, report);
+    if(betree_search(tree, event_str, report) == false) {
+        fprintf(stderr, "Failed to search for event\n");
+        abort();
+    }
     bool result = report->matched == 1;
     free(expr);
     free(event_str);
@@ -358,7 +367,10 @@ static bool contains(bool has_not, const char* attr, bool allow_undefined, const
         abort();
     }
     struct report* report = make_report();
-    betree_search(tree, event_str, report);
+    if(betree_search(tree, event_str, report) == false) {
+        fprintf(stderr, "Failed to search for event\n");
+        abort();
+    }
     bool result = report->matched == 1;
     free(expr);
     free(event_str);
@@ -414,7 +426,10 @@ static bool starts_with(bool has_not, const char* attr, bool allow_undefined, co
         abort();
     }
     struct report* report = make_report();
-    betree_search(tree, event_str, report);
+    if(betree_search(tree, event_str, report) == false) {
+        fprintf(stderr, "Failed to search for event\n");
+        abort();
+    }
     bool result = report->matched == 1;
     free(expr);
     free(event_str);
@@ -465,7 +480,10 @@ static bool ends_with(bool has_not, const char* attr, bool allow_undefined, cons
         abort();
     }
     struct report* report = make_report();
-    betree_search(tree, event_str, report);
+    if(betree_search(tree, event_str, report) == false) {
+        fprintf(stderr, "Failed to search for event\n");
+        abort();
+    }
     bool result = report->matched == 1;
     free(expr);
     free(event_str);

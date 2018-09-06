@@ -192,7 +192,10 @@ int main(int argc, char** argv)
 
             char* event = events.events[i];
             struct report* report = make_report();
-            betree_search(tree, event, report);
+            if(betree_search(tree, event, report) == false) {
+                fprintf(stderr, "Failed to search with event\n");
+                abort();
+            }
 
             clock_gettime(CLOCK_MONOTONIC_RAW, &search_done);
 

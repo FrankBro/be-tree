@@ -70,13 +70,13 @@ int test_match_single_cnode()
 
     {
         struct report* report = make_report();
-        betree_search(tree, "{\"a\": 0}", report);
+        mu_assert(betree_search(tree, "{\"a\": 0}", report), "");
         mu_assert(report_has_sub1(report, sub_id), "good event");
         free_report(report);
     }
     {
         struct report* report = make_report();
-        betree_search(tree, "{\"a\": 1}", report);
+        mu_assert(betree_search(tree, "{\"a\": 1}", report), "");
         mu_assert(report_has_sub0(report), "bad event");
         free_report(report);
     }
@@ -317,7 +317,7 @@ int test_match_deeper()
     mu_assert(lnode_b->sub_count == 3, "lnode in 'a' has one sub");
 
     struct report* report = make_report();
-    betree_search(tree, "{\"a\": 0, \"b\": 1}", report);
+    mu_assert(betree_search(tree, "{\"a\": 0, \"b\": 1}", report), "");
     mu_assert(report->matched == 1 && report->subs[0] == 4, "goodEvent");
 
     free_report(report);
@@ -340,7 +340,7 @@ int test_large_cdir_split()
     }
 
     struct report* report = make_report();
-    betree_search(tree, "{\"a\": 0}", report);
+    mu_assert(betree_search(tree, "{\"a\": 0}", report), "");
 
     mu_assert(report->matched == 1, "matched one");
 
@@ -407,7 +407,7 @@ int test_allow_undefined()
     }
 
     struct report* report = make_report();
-    betree_search(tree, "{\"b\": 0}", report);
+    mu_assert(betree_search(tree, "{\"b\": 0}", report), "");
 
     mu_assert(tree->cnode->lnode->sub_count == 2 && tree->cnode->pdir != NULL
             && tree->cnode->pdir->pnode_count == 1
@@ -484,7 +484,7 @@ int test_string()
     mu_assert(betree_insert(tree, 0, "a = \"a\""), "");
 
     struct report* report = make_report();
-    betree_search(tree, "{\"a\": \"a\"}", report);
+    mu_assert(betree_search(tree, "{\"a\": \"a\"}", report), "");
 
     mu_assert(report->matched == 1, "found our sub");
 
@@ -587,7 +587,7 @@ int test_integer_set()
         mu_assert(betree_insert(tree, 0, "a in (1, 2, 0)"), "");
 
         struct report* report = make_report();
-        betree_search(tree, "{\"a\": 0}", report);
+        mu_assert(betree_search(tree, "{\"a\": 0}", report), "");
 
         mu_assert(report->matched == 1, "found our sub");
 
@@ -599,7 +599,7 @@ int test_integer_set()
         mu_assert(betree_insert(tree, 0, "a not in (1, 2, 0)"), "");
 
         struct report* report = make_report();
-        betree_search(tree, "{\"a\": 0}", report);
+        mu_assert(betree_search(tree, "{\"a\": 0}", report), "");
 
         mu_assert(report->matched == 0, "did not find our sub");
 
@@ -623,7 +623,7 @@ int test_integer_set_reverse()
         mu_assert(betree_insert(tree, 0, "0 in a"), "");
 
         struct report* report = make_report();
-        betree_search(tree, event, report);
+        mu_assert(betree_search(tree, event, report), "");
 
         mu_assert(report->matched == 1, "found our sub");
 
@@ -635,7 +635,7 @@ int test_integer_set_reverse()
         mu_assert(betree_insert(tree, 0, "0 not in a"), "");
 
         struct report* report = make_report();
-        betree_search(tree, event, report);
+        mu_assert(betree_search(tree, event, report), "");
 
         mu_assert(report->matched == 0, "did not find our sub");
 
@@ -659,7 +659,7 @@ int test_string_set()
         mu_assert(betree_insert(tree, 0, "a in (\"b\", \"c\", \"a\")"), "");
 
         struct report* report = make_report();
-        betree_search(tree, event, report);
+        mu_assert(betree_search(tree, event, report), "");
 
         mu_assert(report->matched == 1, "found our sub");
 
@@ -671,7 +671,7 @@ int test_string_set()
         mu_assert(betree_insert(tree, 0, "a not in (\"b\", \"c\", \"a\")"), "");
 
         struct report* report = make_report();
-        betree_search(tree, event, report);
+        mu_assert(betree_search(tree, event, report), "");
 
         mu_assert(report->matched == 0, "did not find our sub");
 
@@ -695,7 +695,7 @@ int test_string_set_reverse()
         mu_assert(betree_insert(tree, 0, "\"0\" in a"), "");
 
         struct report* report = make_report();
-        betree_search(tree, event, report);
+        mu_assert(betree_search(tree, event, report), "");
 
         mu_assert(report->matched == 1, "found our sub");
 
@@ -707,7 +707,7 @@ int test_string_set_reverse()
         mu_assert(betree_insert(tree, 0, "\"0\" not in a"), "");
 
         struct report* report = make_report();
-        betree_search(tree, event, report);
+        mu_assert(betree_search(tree, event, report), "");
 
         mu_assert(report->matched == 0, "did not find our sub");
 
@@ -731,7 +731,7 @@ int test_integer_list()
         const char* event = "{\"a\": [1, 2, 0]}";
 
         struct report* report = make_report();
-        betree_search(tree, event, report);
+        mu_assert(betree_search(tree, event, report), "");
 
         mu_assert(report->matched == 1, "found our sub");
 
@@ -745,7 +745,7 @@ int test_integer_list()
         const char* event = "{\"a\": [4, 5, 3]}";
 
         struct report* report = make_report();
-        betree_search(tree, event, report);
+        mu_assert(betree_search(tree, event, report), "");
 
         mu_assert(report->matched == 0, "found no sub");
 
@@ -759,7 +759,7 @@ int test_integer_list()
         const char* event = "{\"a\": [4, 5, 3]}";
 
         struct report* report = make_report();
-        betree_search(tree, event, report);
+        mu_assert(betree_search(tree, event, report), "");
 
         mu_assert(report->matched == 1, "found our sub");
 
@@ -773,7 +773,7 @@ int test_integer_list()
         const char* event = "{\"a\": [1, 2, 0]}";
 
         struct report* report = make_report();
-        betree_search(tree, event, report);
+        mu_assert(betree_search(tree, event, report), "");
 
         mu_assert(report->matched == 0, "found no sub");
 
@@ -787,7 +787,7 @@ int test_integer_list()
         const char* event = "{\"a\": [1, 2, 0]}";
 
         struct report* report = make_report();
-        betree_search(tree, event, report);
+        mu_assert(betree_search(tree, event, report), "");
 
         mu_assert(report->matched == 1, "found our sub");
 
@@ -801,7 +801,7 @@ int test_integer_list()
         const char* event = "{\"a\": [1, 2, 3]}";
 
         struct report* report = make_report();
-        betree_search(tree, event, report);
+        mu_assert(betree_search(tree, event, report), "");
 
         mu_assert(report->matched == 0, "found no sub");
 
@@ -825,7 +825,7 @@ int test_string_list()
         const char* event = "{\"a\": [\"1\", \"2\", \"0\"]}";
 
         struct report* report = make_report();
-        betree_search(tree, event, report);
+        mu_assert(betree_search(tree, event, report), "");
 
         mu_assert(report->matched == 1, "found our sub");
 
@@ -839,7 +839,7 @@ int test_string_list()
         const char* event = "{\"a\": [\"4\", \"5\", \"3\"]}";
 
         struct report* report = make_report();
-        betree_search(tree, event, report);
+        mu_assert(betree_search(tree, event, report), "");
 
         mu_assert(report->matched == 0, "found no sub");
 
@@ -853,7 +853,7 @@ int test_string_list()
         const char* event = "{\"a\": [\"4\", \"5\", \"3\"]}";
 
         struct report* report = make_report();
-        betree_search(tree, event, report);
+        mu_assert(betree_search(tree, event, report), "");
 
         mu_assert(report->matched == 1, "found our sub");
 
@@ -867,7 +867,7 @@ int test_string_list()
         const char* event = "{\"a\": [\"1\", \"2\", \"0\"]}";
 
         struct report* report = make_report();
-        betree_search(tree, event, report);
+        mu_assert(betree_search(tree, event, report), "");
 
         mu_assert(report->matched == 0, "found no sub");
 
@@ -881,7 +881,7 @@ int test_string_list()
         const char* event = "{\"a\": [\"1\", \"2\", \"0\"]}";
 
         struct report* report = make_report();
-        betree_search(tree, event, report);
+        mu_assert(betree_search(tree, event, report), "");
 
         mu_assert(report->matched == 1, "found our sub");
 
@@ -895,7 +895,7 @@ int test_string_list()
         const char* event = "{\"a\": [\"1\", \"2\", \"3\"]}";
 
         struct report* report = make_report();
-        betree_search(tree, event, report);
+        mu_assert(betree_search(tree, event, report), "");
 
         mu_assert(report->matched == 0, "found no sub");
 
@@ -918,7 +918,7 @@ int test_parenthesis()
     {
         mu_assert(betree_insert(tree, 1, "a || (b && c)"), "");
         struct report* report = make_report();
-        betree_search(tree, "{\"a\":true,\"b\":false,\"c\":false}", report);
+        mu_assert(betree_search(tree, "{\"a\":true,\"b\":false,\"c\":false}", report), "");
         mu_assert(report->matched == 1, "");
         empty_tree(tree);
         free_report(report);
@@ -926,7 +926,7 @@ int test_parenthesis()
     {
         mu_assert(betree_insert(tree, 1, "(a || b) && c"), "");
         struct report* report = make_report();
-        betree_search(tree, "{\"a\":true,\"b\":false,\"c\":false}", report);
+        mu_assert(betree_search(tree, "{\"a\":true,\"b\":false,\"c\":false}", report), "");
         mu_assert(report->matched == 0, "");
         empty_tree(tree);
         free_report(report);
@@ -934,7 +934,7 @@ int test_parenthesis()
     {
         mu_assert(betree_insert(tree, 1, "a || (b && c)"), "");
         struct report* report = make_report();
-        betree_search(tree, "{\"a\":false,\"b\":true,\"c\":true}", report);
+        mu_assert(betree_search(tree, "{\"a\":false,\"b\":true,\"c\":true}", report), "");
         mu_assert(report->matched == 1, "");
         empty_tree(tree);
         free_report(report);
@@ -970,7 +970,7 @@ int test_splitable_string_domain()
             "rchild has 2 subs");
 
         struct report* report = make_report();
-        betree_search(tree, "{\"s\": \"1\"}", report);
+        mu_assert(betree_search(tree, "{\"s\": \"1\"}", report), "");
 
         mu_assert(report->matched == 1, "matched 1");
         mu_assert(report->evaluated == 3, "only had to evaluate lchild");
@@ -1000,7 +1000,7 @@ int test_splitable_string_domain()
             "cdir split as expected");
 
         struct report* report = make_report();
-        betree_search(tree, "{\"s\": \"2\"}", report);
+        mu_assert(betree_search(tree, "{\"s\": \"2\"}", report), "");
 
         mu_assert(report->matched == 1, "matched 1");
         mu_assert(report->evaluated == 1, "only had to evaluate top");
@@ -1032,7 +1032,7 @@ int test_not_domain_changing()
             "lchild and rchild contain our subs");
 
         struct report* report = make_report();
-        betree_search(tree, "{\"i\": 1}", report);
+        mu_assert(betree_search(tree, "{\"i\": 1}", report), "");
 
         mu_assert(report->matched == 1 && report->subs[0] == 1 && report->evaluated == 1,
             "only evaluated and found the correct expressions");
@@ -1055,7 +1055,7 @@ int test_not_domain_changing()
             "lchild and rchild contain our subs");
 
         struct report* report = make_report();
-        betree_search(tree, "{\"i\": 1}", report);
+        mu_assert(betree_search(tree, "{\"i\": 1}", report), "");
 
         mu_assert(report->matched == 1 && report->subs[0] == 1 && report->evaluated == 1,
             "only evaluated and found the correct expressions");
@@ -1090,7 +1090,7 @@ int test_insert_all()
       tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3, "split");
 
     struct report* report = make_report();
-    betree_search(tree, "{\"i1\": 0}", report);
+    mu_assert(betree_search(tree, "{\"i1\": 0}", report), "");
     mu_assert(report->matched == 3, "correct match");
 
     free_report(report);
@@ -1110,7 +1110,7 @@ int test_bug_cases()
     mu_assert(betree_insert(tree, 2, "b && i < 8"), "");
 
     struct report* report = make_report();
-    betree_search(tree, "{\"b\": true, \"i\": 9}", report);
+    mu_assert(betree_search(tree, "{\"b\": true, \"i\": 9}", report), "");
     mu_assert(report->matched == 1, "correct match");
 
     free_report(report);
@@ -1140,7 +1140,7 @@ int test_splitable_integer_list_domain()
             "rchild has 2 subs");
 
         struct report* report = make_report();
-        betree_search(tree, "{\"il\": [2]}", report);
+        mu_assert(betree_search(tree, "{\"il\": [2]}", report), "");
 
         mu_assert(report->matched == 1, "matched 1");
         mu_assert(report->evaluated == 3, "only had to evaluate lchild");
@@ -1176,7 +1176,7 @@ int test_splitable_string_list_domain()
             "rchild has 2 subs");
 
         struct report* report = make_report();
-        betree_search(tree, "{\"sl\": [\"1\"]}", report);
+        mu_assert(betree_search(tree, "{\"sl\": [\"1\"]}", report), "");
 
         mu_assert(report->matched == 1, "matched 1");
         mu_assert(report->evaluated == 3, "only had to evaluate lchild");
@@ -1209,7 +1209,7 @@ int test_set_bug_cdir()
         "rchild has 3 subs");
 
     struct report* report = make_report();
-    betree_search(tree, "{\"s\": \"c\"}", report);
+    mu_assert(betree_search(tree, "{\"s\": \"c\"}", report), "");
 
     mu_assert(report->matched == 2, "matched 2");
     mu_assert(report->evaluated == 3, "only had to evaluate lchild");
@@ -1232,7 +1232,7 @@ int test_undefined_cdir_search()
     struct report* report;
     report = make_report();
 
-    betree_search(tree, event, report);
+    mu_assert(betree_search(tree, event, report), "");
 
     mu_assert(
         report->evaluated == 1 && report->matched == 1, "true because false on undef, then not");
@@ -1270,7 +1270,7 @@ int test_undefined_cdir_search()
         "expected structure, split on b, all went in lchild for only false, first then i and split "
         "into lchild/rchild");
 
-    betree_search(tree, event, report);
+    mu_assert(betree_search(tree, event, report), "");
 
     mu_assert(report->evaluated == 1 && report->matched == 1, "still true");
 
@@ -1334,7 +1334,7 @@ int test_api()
     betree_set_variable(event, 8, betree_make_integer_variable("now", 0));
 
     struct report* report = make_report();
-    betree_search_with_event(tree, event, report);
+    mu_assert(betree_search_with_event(tree, event, report), "");
 
     mu_assert(report->matched == 1, "found 1");
 
@@ -1353,7 +1353,7 @@ int test_inverted_binop()
         mu_assert(betree_insert(tree, 1, "20 < i"), "");
         mu_assert(betree_insert(tree, 2, "i > 20"), "");
         struct report* report = make_report();
-        betree_search(tree, "{\"i\": 20}", report);
+        mu_assert(betree_search(tree, "{\"i\": 20}", report), "");
         mu_assert(report->matched == 0, "no match");
         free_report(report);
         empty_tree(tree);
@@ -1362,7 +1362,7 @@ int test_inverted_binop()
         mu_assert(betree_insert(tree, 1, "20 < i"), "");
         mu_assert(betree_insert(tree, 2, "i > 20"), "");
         struct report* report = make_report();
-        betree_search(tree, "{\"i\": 21}", report);
+        mu_assert(betree_search(tree, "{\"i\": 21}", report), "");
         mu_assert(report->matched == 2, "all match");
         free_report(report);
         empty_tree(tree);
@@ -1385,7 +1385,7 @@ int test_float_no_point_in_expr()
 
     struct report* report = make_report();
 
-    betree_search_with_event(tree, event, report);
+    mu_assert(betree_search_with_event(tree, event, report), "");
 
     mu_assert(report->matched == 1, "found 1");
 

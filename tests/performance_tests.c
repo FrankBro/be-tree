@@ -36,7 +36,7 @@ int test_cdir_split()
 
     struct report* report = make_report();
     const char* event = "{\"a\": 0}";
-    betree_search(tree, event, report);
+    mu_assert(betree_search(tree, event, report), "");
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &search_done);
 
@@ -90,7 +90,7 @@ int test_pdir_split()
 
     const char* event = "{\"a0\": 0}";
     struct report* report = make_report();
-    betree_search(tree, event, report);
+    mu_assert(betree_search(tree, event, report), "");
 
     clock_gettime(CLOCK_MONOTONIC_RAW, &search_done);
 

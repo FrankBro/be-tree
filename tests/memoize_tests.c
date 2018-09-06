@@ -21,7 +21,10 @@ struct report* test(const char* expr_a, const char* expr_b, const char* event, s
     betree_insert(tree, 1, expr_a);
     betree_insert(tree, 2, expr_b);
     struct report* report = make_report();
-    betree_search(tree, event, report);
+    if(betree_search(tree, event, report) == false) {
+        fprintf(stderr, "Failed to search for event\n");
+        abort();
+    }
     free_cnode(tree->cnode);
     tree->cnode = make_cnode(tree->config, NULL);
     free_pred_map(tree->config->pred_map);

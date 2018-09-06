@@ -1705,7 +1705,7 @@ static uint64_t* make_undefined(size_t attr_domain_count, const struct betree_va
     return undefined;
 }
 
-void betree_search_with_preds(const struct config* config,
+bool betree_search_with_preds(const struct config* config,
     const struct betree_variable** preds,
     const struct cnode* cnode,
     struct report* report)
@@ -1728,6 +1728,7 @@ void betree_search_with_preds(const struct config* config,
     free_memoize(memoize);
     free(undefined);
     free(preds);
+    return true;
 }
 
 static void sort_event_lists(struct betree_event* event)
