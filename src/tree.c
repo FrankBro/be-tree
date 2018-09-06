@@ -1472,7 +1472,14 @@ static enum short_circuit_e short_circuit_for_node(
 {
     switch(node->type) {
         case AST_TYPE_IS_NULL_EXPR:
-            return short_circuit_for_attr_var(id, !inverted, node->is_null_expr.attr_var);
+            switch(node->is_null_expr.type) {
+                case AST_IS_NULL:
+                    return short_circuit_for_attr_var(id, !inverted, node->is_null_expr.attr_var);
+                case AST_IS_NOT_NULL:
+                    return short_circuit_for_attr_var(id, inverted, node->is_null_expr.attr_var);
+                default:
+                    abort();
+            }
         case AST_TYPE_COMPARE_EXPR:
             return short_circuit_for_attr_var(id, inverted, node->compare_expr.attr_var);
         case AST_TYPE_EQUALITY_EXPR:
