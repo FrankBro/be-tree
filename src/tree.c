@@ -1534,17 +1534,39 @@ static enum short_circuit_e short_circuit_for_node(
             return short_circuit_for_attr_var(id, inverted, node->list_expr.attr_var);
         case AST_TYPE_SPECIAL_EXPR:
             switch(node->special_expr.type) {
-                case AST_SPECIAL_FREQUENCY:
-                    return short_circuit_for_attr_var(
-                        id, inverted, node->special_expr.frequency.attr_var);
-                case AST_SPECIAL_SEGMENT:
-                    return short_circuit_for_attr_var(
-                        id, inverted, node->special_expr.segment.attr_var);
-                case AST_SPECIAL_GEO:
-                    return short_circuit_for_attr_var(
-                               id, inverted, node->special_expr.geo.latitude_var)
-                        || short_circuit_for_attr_var(
-                               id, inverted, node->special_expr.geo.longitude_var);
+                case AST_SPECIAL_FREQUENCY: {
+                    enum short_circuit_e frequency = short_circuit_for_attr_var(id, inverted, node->special_expr.frequency.attr_var);
+                    enum short_circuit_e now = short_circuit_for_attr_var(id, inverted, node->special_expr.frequency.now);
+                    if(frequency == SHORT_CIRCUIT_FAIL || now == SHORT_CIRCUIT_FAIL) {
+                        return SHORT_CIRCUIT_FAIL;
+                    }
+                    if(frequency == SHORT_CIRCUIT_PASS && now == SHORT_CIRCUIT_PASS) {
+                        return SHORT_CIRCUIT_PASS;
+                    }
+                    return SHORT_CIRCUIT_NONE;
+                }
+                case AST_SPECIAL_SEGMENT: {
+                    enum short_circuit_e frequency = short_circuit_for_attr_var(id, inverted, node->special_expr.segment.attr_var);
+                    enum short_circuit_e now = short_circuit_for_attr_var(id, inverted, node->special_expr.segment.now);
+                    if(frequency == SHORT_CIRCUIT_FAIL || now == SHORT_CIRCUIT_FAIL) {
+                        return SHORT_CIRCUIT_FAIL;
+                    }
+                    if(frequency == SHORT_CIRCUIT_PASS && now == SHORT_CIRCUIT_PASS) {
+                        return SHORT_CIRCUIT_PASS;
+                    }
+                    return SHORT_CIRCUIT_NONE;
+                }
+                case AST_SPECIAL_GEO: {
+                    enum short_circuit_e latitude = short_circuit_for_attr_var(id, inverted, node->special_expr.geo.latitude_var);
+                    enum short_circuit_e longitude = short_circuit_for_attr_var(id, inverted, node->special_expr.geo.longitude_var);
+                    if(latitude == SHORT_CIRCUIT_FAIL || longitude == SHORT_CIRCUIT_FAIL) {
+                        return SHORT_CIRCUIT_FAIL;
+                    }
+                    if(latitude == SHORT_CIRCUIT_PASS && longitude == SHORT_CIRCUIT_PASS) {
+                        return SHORT_CIRCUIT_PASS;
+                    }
+                    return SHORT_CIRCUIT_NONE;
+                }
                 case AST_SPECIAL_STRING:
                     return short_circuit_for_attr_var(
                         id, inverted, node->special_expr.string.attr_var);
