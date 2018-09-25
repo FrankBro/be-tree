@@ -251,6 +251,7 @@ struct ast_special_expr {
 enum ast_is_null_e {
     AST_IS_NULL,
     AST_IS_NOT_NULL,
+    AST_IS_EMPTY,
 };
 
 struct ast_is_null_expr {

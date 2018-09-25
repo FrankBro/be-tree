@@ -1477,6 +1477,8 @@ static enum short_circuit_e short_circuit_for_node(
                     return short_circuit_for_attr_var(id, !inverted, node->is_null_expr.attr_var);
                 case AST_IS_NOT_NULL:
                     return short_circuit_for_attr_var(id, inverted, node->is_null_expr.attr_var);
+                case AST_IS_EMPTY:
+                    return short_circuit_for_attr_var(id, inverted, node->is_null_expr.attr_var);
                 default:
                     abort();
             }

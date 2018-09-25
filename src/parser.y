@@ -54,7 +54,7 @@
 %token<token> TSEGMENTWITHIN TSEGMENTBEFORE 
 %token<token> TGEOWITHINRADIUS 
 %token<token> TCONTAINS TSTARTSWITH TENDSWITH 
-%token<token> TISNOTNULL TISNULL
+%token<token> TISNOTNULL TISNULL TISEMPTY
 %token<token> TTRUE TFALSE
 
 %token<string> TSTRING TIDENTIFIER
@@ -126,6 +126,7 @@ expr                : TLPAREN expr TRPAREN                  { $$ = $2; }
 
 is_null_expr        : ident TISNULL                         { $$ = ast_is_null_expr_create(AST_IS_NULL, $1); free($1); }
                     | ident TISNOTNULL                      { $$ = ast_is_null_expr_create(AST_IS_NOT_NULL, $1); free($1); }
+                    | ident TISEMPTY                        { $$ = ast_is_null_expr_create(AST_IS_EMPTY, $1); free($1); }
 ;
 
 num_comp_value      : integer                               { $$.value_type = AST_COMPARE_VALUE_INTEGER; $$.integer_value = $1; }

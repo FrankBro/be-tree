@@ -1073,12 +1073,12 @@ static bool match_is_null_expr(const struct betree_variable** preds,
     struct value variable;
     bool is_variable_defined = get_variable(is_null_expr.attr_var.var, preds, &variable);
     switch(is_null_expr.type) {
-        case AST_IS_NULL: {
-            // TEMPORARY: Empty list = NULL for tests to match old behavior
-            return !is_variable_defined || is_empty_list(variable);
-        }
+        case AST_IS_NULL:
+            return !is_variable_defined;
         case AST_IS_NOT_NULL:
             return is_variable_defined;
+        case AST_IS_EMPTY:
+            return is_variable_defined && is_empty_list(variable);
         default:
             switch_default_error("Invalid is null operation");
             return false;

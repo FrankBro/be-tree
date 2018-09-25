@@ -198,6 +198,9 @@ static void assign_is_null_pred(struct pred_map* pred_map, struct ast_is_null_ex
         case AST_IS_NOT_NULL:
             match_or_insert(pred_map, &m->is_not_null_preds, node);
             break;
+        case AST_IS_EMPTY:
+            match_or_insert(pred_map, &m->is_empty_preds, node);
+            break;
         default:
             switch_default_error("Invalid is null type");
             break;

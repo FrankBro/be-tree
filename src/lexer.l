@@ -61,6 +61,7 @@
 "not"                       return TOKEN(TNOT);
 "is not null"               return TOKEN(TISNOTNULL);
 "is null"                   return TOKEN(TISNULL);
+"is empty"                  return TOKEN(TISEMPTY);
 "true"                      return TOKEN(TTRUE);
 "false"                     return TOKEN(TFALSE);
 \"(\\.|[^"\\])*\"           SAVE_STRING; return TSTRING;

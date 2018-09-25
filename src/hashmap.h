@@ -50,6 +50,7 @@ struct pred_special_map {
 struct pred_is_null_map {
     struct pred_container is_null_preds;
     struct pred_container is_not_null_preds;
+    struct pred_container is_empty_preds;
 };
 
 struct pred_map {
