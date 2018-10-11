@@ -24,6 +24,7 @@ The expressions supported are as follow:
     * value `in` variable. Here value is an integer or a string.
     * variable `in` list. Here list is a list of integers or strings.
 * List: `one of`, `none of` and `all of`. They work on lists of integers or strings.
+* Null/Empty: `is null`, `is not null` for variables and `is empty` for lists.
 * Special: Very specific.
 
 ## Configuring
@@ -64,6 +65,7 @@ Here are the steps when you insert an expression in the three:
 * Assign var ids: Every variables is assigned an id for quick fetching in the events later
 * Assign str ids: Every string is assigned an id (unique to each variable) to compare on instead of doing string comparison
 * Sort lists: Sort the integer and string lists in the expression, to speed up searching in it but also to make sure in the next step, the same list is registered as the same predicate.
+* Fix floats with no fractions: Some expressions will use float variable to compare with what would be parsed as an integer. We will fix these to make sure the constants are floats.
 * Assign pred ids: We give a predicate id to every sub-expression that is present more than once, this will be used later by the memoize
 * Create the sub, which will create the short-circuit bitmap explained later, and insert it in the tree
 
