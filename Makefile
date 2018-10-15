@@ -6,7 +6,7 @@ CFLAGS := -O3 -std=gnu11 -D_GNU_SOURCE -Wall -Wextra -Wshadow -Wfloat-equal -Wun
 	-Wwrite-strings -Wunreachable-code -Wformat=2 -Wswitch-enum \
 	-Wswitch-default -Winit-self -Wno-strict-aliasing
 
-LDFLAGS := -lm -lgsl -lgslcblas -fPIC
+LDFLAGS := -lm -fPIC #-lgsl -lgslcblas 
 
 LEX_SOURCES=$(wildcard src/*.l) 
 LEX_OBJECTS=$(patsubst %.l,%.c,${LEX_SOURCES}) $(patsubst %.l,%.h,${LEX_SOURCES})
