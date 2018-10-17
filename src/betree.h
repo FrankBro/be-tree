@@ -6,7 +6,13 @@
 
 typedef uint64_t betree_sub_t;
 
-struct betree;
+struct config;
+struct cnode;
+
+struct betree {
+    struct config* config;
+    struct cnode* cnode;
+};
 
 struct report {
     size_t evaluated;

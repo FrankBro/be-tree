@@ -112,11 +112,6 @@ struct memoize make_memoize(size_t pred_count);
 void free_memoize(struct memoize memoize);
 void free_sub(struct sub* sub);
 
-struct betree {
-    struct config* config;
-    struct cnode* cnode;
-};
-
 struct betree_constant {
     const char* name;
     struct value value;
