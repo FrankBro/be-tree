@@ -6,7 +6,8 @@ CFLAGS := -O3 -std=gnu11 -D_GNU_SOURCE -Wall -Wextra -Wshadow -Wfloat-equal -Wun
 	-Wwrite-strings -Wunreachable-code -Wformat=2 -Wswitch-enum \
 	-Wswitch-default -Winit-self -Wno-strict-aliasing
 
-LDFLAGS := -lm -fPIC #-lgsl -lgslcblas 
+LDFLAGS := -lm -fPIC 
+LDFLAGS_TESTS := $(LDFLAGS) -lgsl -lgslcblas 
 
 LEX_SOURCES=$(wildcard src/*.l) 
 LEX_OBJECTS=$(patsubst %.l,%.c,${LEX_SOURCES}) $(patsubst %.l,%.h,${LEX_SOURCES})
@@ -105,7 +106,7 @@ build/tests:
 	mkdir -p build/tests
 
 $(TEST_OBJECTS): %: %.c build/tests build/libbetree.so
-	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/libbetree.so $(LDFLAGS)
+	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/libbetree.so $(LDFLAGS_TESTS)
 
 clean:
 	rm -rf build/libbetree.so $(OBJECTS) $(LEX_OBJECTS) $(YACC_OBJECTS)

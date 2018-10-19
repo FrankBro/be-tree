@@ -7,4 +7,4 @@ addons:
     packages:
       - libgsl0-dev
       - valgrind
-script: make all
+script: make dev
