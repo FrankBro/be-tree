@@ -74,6 +74,7 @@ struct betree_variable_definition {
 /*
  * Initialization
  */
+void betree_init(struct betree* betree);
 struct betree* betree_make();
 struct betree* betree_make_with_parameters(uint64_t lnode_max_cap, uint64_t min_partition_size);
 
@@ -120,6 +121,7 @@ void free_report(struct report* report);
 /*
  * Destruction
  */
+void betree_deinit(struct betree* betree);
 void betree_free(struct betree* betree);
 
 void betree_free_constant(struct betree_constant* constant);

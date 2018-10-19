@@ -188,6 +188,18 @@ void free_report(struct report* report)
     free(report);
 }
 
+static void betree_init_with_config(struct betree* betree, struct config* config)
+{
+    betree->config = config;
+    betree->cnode = make_cnode(betree->config, NULL);
+}
+
+void betree_init(struct betree* betree)
+{
+    struct config* config = make_default_config();
+    betree_init_with_config(betree, config);
+}
+
 static struct betree* betree_make_with_config(struct config* config)
 {
     struct betree* tree = calloc(1, sizeof(*tree));
@@ -195,8 +207,7 @@ static struct betree* betree_make_with_config(struct config* config)
         fprintf(stderr, "%s calloc failed\n", __func__);
         abort();
     }
-    tree->config = config;
-    tree->cnode = make_cnode(tree->config, NULL);
+    betree_init_with_config(tree, config);
     return tree;
 }
 
@@ -212,10 +223,15 @@ struct betree* betree_make_with_parameters(uint64_t lnode_max_cap, uint64_t min_
     return betree_make_with_config(config);
 }
 
+void betree_deinit(struct betree* betree)
+{
+    free_cnode(betree->cnode);
+    free_config(betree->config);
+}
+
 void betree_free(struct betree* tree)
 {
-    free_cnode(tree->cnode);
-    free_config(tree->config);
+    betree_deinit(tree);
     free(tree);
 }
 
