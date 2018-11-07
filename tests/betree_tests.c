@@ -1242,7 +1242,7 @@ int test_undefined_cdir_search()
 
     mu_assert(betree_insert(tree, 1, "not b && i = 10"), "");
 
-    write_dot_file_tree(tree);
+    write_dot_file(tree);
 
     mu_assert(tree->cnode->lnode->sub_count == 0 && tree->cnode->pdir != NULL
             && tree->cnode->pdir->pnode_count == 1

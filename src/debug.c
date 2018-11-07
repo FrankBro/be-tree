@@ -130,9 +130,10 @@ static void print_cnode(const struct config* config, const struct cnode* cnode, 
     }
 }
 
-void print_be_tree(const struct config* config, const struct cnode* root)
+void print_be_tree(const struct betree* tree)
 {
-    print_cnode(config, root, 0);
+    print_cnode(tree->config, tree->cnode, 0);
+    printf("\n");
 }
 
 // -----------------------------------------------------------------------------
@@ -889,8 +890,10 @@ static void gather_subs_cnode(const struct cnode* cnode, struct gathered_subs* g
     }
 }
 
-void write_dot_file(const struct config* config, const struct cnode* root)
+void write_dot_file(const struct betree* tree)
 {
+    const struct config* config = tree->config;
+    const struct cnode* root = tree->cnode;
     FILE* f = fopen("betree.dot", "w");
     if(f == NULL) {
         fprintf(stderr, "Can't open a file to write the dot_file");
@@ -906,7 +909,3 @@ void write_dot_file(const struct config* config, const struct cnode* root)
     fprintf(f, "}\n");
 }
 
-void write_dot_file_tree(const struct betree* tree)
-{
-    write_dot_file(tree->config, tree->cnode);
-}

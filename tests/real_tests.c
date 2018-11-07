@@ -244,7 +244,7 @@ int main(int argc, char** argv)
     printf("| %lu | %.1f | %.1f | %.1f | %.1f | %.1f | %.1f | |\n", insert_us, search_us_min, search_us_mean, search_us_max, search_us_90, search_us_95, search_us_99);
 
     // DEBUG
-    write_dot_file(tree->config, tree->cnode);
+    write_dot_file(tree);
     // DEBUG
     
     free(events.events);
