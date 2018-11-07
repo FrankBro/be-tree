@@ -106,7 +106,7 @@ static struct pnode* search_pdir(betree_var_t variable_id, const struct pdir* pd
 static void search_cdir(const struct attr_domain** attr_domains,
     const struct betree_variable** preds,
     struct cdir* cdir,
-    struct subs_to_eval* subs);
+    struct subs_to_eval* subs, bool open_left, bool open_right);
 
 static bool event_contains_variable(const struct betree_variable** preds, betree_var_t variable_id)
 {
@@ -126,13 +126,13 @@ void match_be_tree(const struct attr_domain** attr_domains,
                 = get_attr_domain(attr_domains, pnode->attr_var.var);
             if(attr_domain->allow_undefined
                 || event_contains_variable(preds, pnode->attr_var.var)) {
-                search_cdir(attr_domains, preds, pnode->cdir, subs);
+                search_cdir(attr_domains, preds, pnode->cdir, subs, true, true);
             }
         }
     }
 }
 
-static bool is_event_enclosed(const struct betree_variable** preds, const struct cdir* cdir)
+static bool is_event_enclosed(const struct betree_variable** preds, const struct cdir* cdir, bool open_left, bool open_right)
 {
     if(cdir == NULL) {
         return false;
@@ -143,28 +143,25 @@ static bool is_event_enclosed(const struct betree_variable** preds, const struct
     }
     switch(pred->value.value_type) {
         case BETREE_BOOLEAN:
-            return cdir->bound.bmin <= pred->value.bvalue && cdir->bound.bmax >= pred->value.bvalue;
+            return (cdir->bound.bmin <= pred->value.bvalue) && (cdir->bound.bmax >= pred->value.bvalue);
         case BETREE_INTEGER:
-            return cdir->bound.imin <= pred->value.ivalue && cdir->bound.imax >= pred->value.ivalue;
+            return (open_left || cdir->bound.imin <= pred->value.ivalue) && (open_right || cdir->bound.imax >= pred->value.ivalue);
         case BETREE_FLOAT:
-            return cdir->bound.fmin <= pred->value.fvalue && cdir->bound.fmax >= pred->value.fvalue;
+            return (open_left || cdir->bound.fmin <= pred->value.fvalue) && (open_right || cdir->bound.fmax >= pred->value.fvalue);
         case BETREE_STRING:
-            return cdir->bound.smin <= pred->value.svalue.str
-                && cdir->bound.smax >= pred->value.svalue.str;
+            return (cdir->bound.smin <= pred->value.svalue.str) && (cdir->bound.smax >= pred->value.svalue.str);
         case BETREE_INTEGER_LIST:
             if(pred->value.ilvalue->count != 0) {
-                return cdir->bound.imin <= pred->value.ilvalue->integers[0]
-                    && cdir->bound.imax
-                    >= pred->value.ilvalue->integers[pred->value.ilvalue->count - 1];
+                return (open_left || cdir->bound.imin <= pred->value.ilvalue->integers[0])
+                    && (open_right || cdir->bound.imax >= pred->value.ilvalue->integers[pred->value.ilvalue->count - 1]);
             }
             else {
                 return true;
             }
         case BETREE_STRING_LIST:
             if(pred->value.slvalue->count != 0) {
-                return cdir->bound.smin <= pred->value.slvalue->strings[0].str
-                    && cdir->bound.smax
-                    >= pred->value.slvalue->strings[pred->value.slvalue->count - 1].str;
+                return (cdir->bound.smin <= pred->value.slvalue->strings[0].str)
+                    && (cdir->bound.smax >= pred->value.slvalue->strings[pred->value.slvalue->count - 1].str);
             }
             else {
                 return true;
@@ -222,14 +219,14 @@ bool sub_is_enclosed(const struct attr_domain** attr_domains, const struct sub* 
 static void search_cdir(const struct attr_domain** attr_domains,
     const struct betree_variable** preds,
     struct cdir* cdir,
-    struct subs_to_eval* subs)
+    struct subs_to_eval* subs, bool open_left, bool open_right)
 {
     match_be_tree(attr_domains, preds, cdir->cnode, subs);
-    if(is_event_enclosed(preds, cdir->lchild)) {
-        search_cdir(attr_domains, preds, cdir->lchild, subs);
+    if(is_event_enclosed(preds, cdir->lchild, open_left, false)) {
+        search_cdir(attr_domains, preds, cdir->lchild, subs, open_left, false);
     }
-    if(is_event_enclosed(preds, cdir->rchild)) {
-        search_cdir(attr_domains, preds, cdir->rchild, subs);
+    if(is_event_enclosed(preds, cdir->rchild, false, open_right)) {
+        search_cdir(attr_domains, preds, cdir->rchild, subs, false, open_right);
     }
 }
 

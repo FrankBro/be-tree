@@ -1419,6 +1419,57 @@ int test_is_null()
     return 0;
 }
 
+int test_bug_geo()
+{
+    struct betree* tree = betree_make();
+    add_attr_domain_i(tree->config, "exchange", false);
+    add_attr_domain_i(tree->config, "member_id", false);
+    add_attr_domain_f(tree->config, "latitude", true);
+    add_attr_domain_f(tree->config, "longitude", true);
+    add_attr_domain_i(tree->config, "width", false);
+    add_attr_domain_i(tree->config, "height", false);
+    add_attr_domain_il(tree->config, "types", false);
+
+    mu_assert(betree_insert(tree, 0, "(((width is not null and width = 100) and (height is not null and height = 200) "
+        "and (types is not null and 1 in types) and true and true)) and (((exchange is not null and exchange = 2) "
+        "and (member_id is not null and member_id = 0) and true))"), "");
+    mu_assert(betree_insert(tree, 1, "(((width is not null and width = 100) and (height is not null and height = 200) "
+        "and (types is not null and 1 in types) and true and true)) and (((exchange is not null and exchange = 2) "
+        "and (member_id is not null and member_id = 0) and true)) and geo_within_radius(100.0, 100.0, 10.0)"), "");
+
+    struct report* report = make_report();
+    mu_assert(betree_search(tree, "{\"latitude\": 100.0, \"longitude\": 100.0, \"exchange\": 2, \"member_id\": 0, \"width\": 100, \"height\": 200, \"types\": [1]}", report), "");
+
+    mu_assert(report->matched == 2, "");
+
+    betree_free(tree);
+    free_report(report);
+    return 0;
+}
+
+int test_event_out_of_bound()
+{
+    struct betree* tree = betree_make();
+    add_attr_domain_bounded_i(tree->config, "i", false, 0, 10);
+
+    mu_assert(betree_insert(tree, 0, "i > 9"), "");
+    mu_assert(betree_insert(tree, 1, "i > 9"), "");
+    mu_assert(betree_insert(tree, 2, "i > 9"), "");
+    mu_assert(betree_insert(tree, 3, "i > 9"), "");
+
+    struct report* report = make_report();
+    mu_assert(betree_search(tree, "{\"i\": 15}", report), "");
+
+    print_be_tree(tree);
+
+    fprintf(stderr, "matched: %lu\n", report->matched);
+    mu_assert(report->matched == 4, "");
+
+    betree_free(tree);
+
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_sub_has_attribute);
@@ -1457,8 +1508,11 @@ int all_tests()
     mu_run_test(test_inverted_binop);
     mu_run_test(test_float_no_point_in_expr);
     mu_run_test(test_is_null);
+    mu_run_test(test_bug_geo);
+    mu_run_test(test_event_out_of_bound);
 
     return 0;
 }
 
 RUN_TESTS()
+
