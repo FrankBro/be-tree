@@ -3,7 +3,6 @@ echo "Unit Tests"
 
 real_tests="build/tests/real_tests"
 
-
 # Loop over compiled tests and run them.
 for test_file in build/tests/*_tests
 do
