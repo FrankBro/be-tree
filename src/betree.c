@@ -100,6 +100,332 @@ static void fix_float_with_no_fractions(struct config* config, struct ast_node* 
     }
 }
 
+static struct value_bound boolean_bound(bool value)
+{
+    struct value_bound bound;
+    bound.value_type = BETREE_BOOLEAN;
+    bound.bmin = value;
+    bound.bmax = value;
+    return bound;
+}
+
+static struct value_bound integer_bound(int64_t value) 
+{
+    struct value_bound bound;
+    bound.value_type = BETREE_INTEGER;
+    bound.imin = value;
+    bound.imax = value;
+    return bound;
+}
+
+static struct value_bound integer_list_bound(int64_t min, int64_t max) 
+{
+    struct value_bound bound;
+    bound.value_type = BETREE_INTEGER_LIST;
+    bound.imin = min;
+    bound.imax = max;
+    return bound;
+}
+
+static struct value_bound float_bound(double value) 
+{
+    struct value_bound bound;
+    bound.value_type = BETREE_FLOAT;
+    bound.fmin = value;
+    bound.fmax = value;
+    return bound;
+}
+
+static struct value_bound string_bound(size_t value) 
+{
+    struct value_bound bound;
+    bound.value_type = BETREE_STRING;
+    bound.smin = value;
+    bound.smax = value;
+    return bound;
+}
+
+static struct value_bound string_list_bound(size_t min, size_t max) 
+{
+    struct value_bound bound;
+    bound.value_type = BETREE_STRING_LIST;
+    bound.smin = min;
+    bound.smax = max;
+    return bound;
+}
+
+static struct value_bound compare_simple_bound(struct compare_value value, enum ast_compare_e op, bool inverted)
+{
+    switch(value.value_type) {
+        case AST_COMPARE_VALUE_INTEGER: {
+            int64_t i = value.integer_value;
+            switch(op) {
+                case AST_COMPARE_LT: return inverted ? compare_simple_bound(value, AST_COMPARE_GE, false) : integer_bound(i - 1);
+                case AST_COMPARE_LE: return inverted ? compare_simple_bound(value, AST_COMPARE_GT, false) : integer_bound(i);
+                case AST_COMPARE_GT: return inverted ? compare_simple_bound(value, AST_COMPARE_LE, false) : integer_bound(i + 1);
+                case AST_COMPARE_GE: return inverted ? compare_simple_bound(value, AST_COMPARE_LT, false) : integer_bound(i);
+                default: abort();
+            }
+        }
+        case AST_COMPARE_VALUE_FLOAT: {
+            double f = value.float_value;
+            switch(op) {
+                case AST_COMPARE_LT: return inverted ? compare_simple_bound(value, AST_COMPARE_GE, false) : float_bound(f - __DBL_EPSILON__);
+                case AST_COMPARE_LE: return inverted ? compare_simple_bound(value, AST_COMPARE_GT, false) : float_bound(f);
+                case AST_COMPARE_GT: return inverted ? compare_simple_bound(value, AST_COMPARE_LE, false) : float_bound(f + __DBL_EPSILON__);
+                case AST_COMPARE_GE: return inverted ? compare_simple_bound(value, AST_COMPARE_LT, false) : float_bound(f);
+                default: abort();
+            }
+        }
+        default: abort();
+    }
+}
+
+static struct value_bound equality_simple_bound(struct equality_value value)
+{
+    switch(value.value_type) {
+        case AST_EQUALITY_VALUE_INTEGER: return integer_bound(value.integer_value);
+        case AST_EQUALITY_VALUE_FLOAT:   return float_bound(value.float_value);
+        case AST_EQUALITY_VALUE_STRING:  return string_bound(value.string_value.str);
+        default: abort();
+    }
+}
+
+static struct value_bound set_simple_bound(struct set_left_value left_value, struct set_right_value right_value)
+{
+    if(left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
+        switch(right_value.value_type) {
+            case AST_SET_RIGHT_VALUE_INTEGER_LIST: {
+                int64_t imin = right_value.integer_list_value->integers[0];
+                int64_t imax = right_value.integer_list_value->integers[right_value.integer_list_value->count - 1];
+                return integer_list_bound(imin, imax);
+            }
+            case AST_SET_RIGHT_VALUE_STRING_LIST: {
+                size_t smin = right_value.string_list_value->strings[0].str;
+                size_t smax = right_value.string_list_value->strings[right_value.string_list_value->count - 1].str;
+                return string_list_bound(smin, smax);
+            }
+            case AST_SET_RIGHT_VALUE_VARIABLE:
+            default: abort ();
+        }
+    }
+    else {
+        switch(left_value.value_type) {
+            case AST_SET_LEFT_VALUE_INTEGER: 
+                return integer_bound(left_value.integer_value);
+            case AST_SET_LEFT_VALUE_STRING:  
+                return string_bound(left_value.string_value.str);
+            case AST_SET_LEFT_VALUE_VARIABLE:
+            default: abort();
+        }
+    }
+}
+
+static struct value_bound list_simple_bound(struct list_value value)
+{
+    switch(value.value_type) {
+        case AST_LIST_VALUE_INTEGER_LIST: {
+            int64_t imin = value.integer_list_value->integers[0];
+            int64_t imax = value.integer_list_value->integers[value.integer_list_value->count - 1];
+            return integer_list_bound(imin, imax);
+        }
+        case AST_LIST_VALUE_STRING_LIST: {
+            size_t smin = value.string_list_value->strings[0].str;
+            size_t smax = value.string_list_value->strings[value.string_list_value->count - 1].str;
+            return string_list_bound(smin, smax);
+        }
+        default: abort();
+    }
+}
+
+static bool might_be_affected(const struct ast_node* node, betree_var_t var)
+{
+    switch(node->type) {
+        case AST_TYPE_COMPARE_EXPR: return node->compare_expr.attr_var.var == var;
+        case AST_TYPE_EQUALITY_EXPR: return node->equality_expr.attr_var.var == var;
+        case AST_TYPE_BOOL_EXPR:
+            return
+                node->bool_expr.op == AST_BOOL_OR || node->bool_expr.op == AST_BOOL_AND || node->bool_expr.op == AST_BOOL_NOT
+                 || (node->bool_expr.op == AST_BOOL_VARIABLE && node->bool_expr.variable.var == var);
+        case AST_TYPE_SET_EXPR: 
+            return 
+                (node->set_expr.left_value.value_type  == AST_SET_LEFT_VALUE_VARIABLE  && node->set_expr.left_value.variable_value.var  == var) ||
+                (node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE && node->set_expr.right_value.variable_value.var == var);
+        case AST_TYPE_LIST_EXPR: return node->list_expr.attr_var.var == var;
+        case AST_TYPE_SPECIAL_EXPR: return false;
+        case AST_TYPE_IS_NULL_EXPR: return false;
+        default: abort();
+    }
+}
+
+static bool get_simple_variable_bound(betree_var_t var, const struct ast_node* node, bool inverted, struct value_bound* bound)
+{
+    if(!might_be_affected(node, var)) {
+        return false;
+    }
+    switch(node->type) {
+        case AST_TYPE_COMPARE_EXPR:
+            *bound = compare_simple_bound(node->compare_expr.value, node->compare_expr.op, inverted);
+            return true;
+        case AST_TYPE_EQUALITY_EXPR:
+            *bound = equality_simple_bound(node->equality_expr.value);
+            return true;
+        case AST_TYPE_BOOL_EXPR:
+            switch(node->bool_expr.op) {
+                case AST_BOOL_OR: 
+                case AST_BOOL_AND: {
+                    struct value_bound lbound, rbound;
+                    bool ltouched = get_simple_variable_bound(var, node->bool_expr.binary.lhs, inverted, &lbound);
+                    bool rtouched = get_simple_variable_bound(var, node->bool_expr.binary.rhs, inverted, &rbound);
+                    if((ltouched || rtouched) == false) {
+                        return false;
+                    }
+                    if(ltouched == false) {
+                        *bound = rbound;
+                        return true;
+                    }
+                    if(rtouched == false) {
+                        *bound = lbound;
+                        return true;
+                    }
+                    bound->value_type = lbound.value_type;
+                    switch(bound->value_type) {
+                        case BETREE_BOOLEAN:
+                            bound->bmin = lbound.bmin < rbound.bmin ? lbound.bmin : rbound.bmin;
+                            bound->bmax = lbound.bmax > rbound.bmax ? lbound.bmax : rbound.bmax;
+                            break;
+                        case BETREE_INTEGER:
+                            bound->imin = lbound.imin < rbound.imin ? lbound.imin : rbound.imin;
+                            bound->imax = lbound.imax > rbound.imax ? lbound.imax : rbound.imax;
+                            break;
+                        case BETREE_FLOAT:
+                            bound->fmin = lbound.fmin < rbound.fmin ? lbound.fmin : rbound.fmin;
+                            bound->fmax = lbound.fmax > rbound.fmax ? lbound.fmax : rbound.fmax;
+                            break;
+                        case BETREE_STRING:
+                            bound->smin = lbound.smin < rbound.smin ? lbound.smin : rbound.smin;
+                            bound->smax = lbound.smax > rbound.smax ? lbound.smax : rbound.smax;
+                            break;
+                        case BETREE_INTEGER_LIST:
+                            bound->imin = lbound.imin < rbound.imin ? lbound.imin : rbound.imin;
+                            bound->imax = lbound.imax > rbound.imax ? lbound.imax : rbound.imax;
+                            break;
+                        case BETREE_STRING_LIST:
+                            bound->smin = lbound.smin < rbound.smin ? lbound.smin : rbound.smin;
+                            bound->smax = lbound.smax > rbound.smax ? lbound.smax : rbound.smax;
+                            break;
+                        case BETREE_SEGMENTS:
+                        case BETREE_FREQUENCY_CAPS:
+                        default: abort();
+                    }
+                    return true;
+                }
+                case AST_BOOL_NOT:
+                    return get_simple_variable_bound(var, node->bool_expr.unary.expr, !inverted, bound);
+                case AST_BOOL_VARIABLE:
+                    *bound = boolean_bound(!inverted);
+                    return true;
+                case AST_BOOL_LITERAL:
+                    return false;
+                default:
+                    abort();
+            }
+            break;
+        case AST_TYPE_SET_EXPR:
+            *bound = set_simple_bound(node->set_expr.left_value, node->set_expr.right_value);
+            return true;
+        case AST_TYPE_LIST_EXPR:
+            *bound = list_simple_bound(node->list_expr.value);
+            return true;
+        case AST_TYPE_SPECIAL_EXPR:
+            return false;
+        case AST_TYPE_IS_NULL_EXPR:
+            return false;
+        default: 
+            abort();
+    }
+    return false;
+}
+
+static void change_boundaries(struct config* config, const struct ast_node* node) 
+{
+    // Use function to extract boundaries, THEN apply them to the config
+    for(size_t i = 0; i < config->attr_domain_count; i++) {
+        struct attr_domain* attr_domain = config->attr_domains[i];
+        if(attr_domain->bound.value_type == BETREE_BOOLEAN || attr_domain->bound.value_type == BETREE_SEGMENTS || attr_domain->bound.value_type == BETREE_FREQUENCY_CAPS) {
+            continue;
+        }
+        struct value_bound bound;
+        bool will_affect = get_simple_variable_bound(attr_domain->attr_var.var, node, false, &bound);
+        if(!will_affect) {
+            continue;
+        }
+        switch(attr_domain->bound.value_type) {
+            case BETREE_BOOLEAN:
+                attr_domain->bound.bmin = bound.bmin < attr_domain->bound.bmin ? bound.bmin : attr_domain->bound.bmin;
+                attr_domain->bound.bmax = bound.bmax < attr_domain->bound.bmax ? bound.bmax : attr_domain->bound.bmax;
+                break;
+            case BETREE_INTEGER:
+            case BETREE_INTEGER_LIST:
+                if(attr_domain->bound.imin != INT64_MIN) {
+                    attr_domain->bound.imin = bound.imin < attr_domain->bound.imin ? bound.imin : attr_domain->bound.imin;
+                }
+                else {
+                    attr_domain->bound.imin = bound.imin;
+                }
+                if(attr_domain->bound.imax != INT64_MAX) {
+                    attr_domain->bound.imax = bound.imax > attr_domain->bound.imax ? bound.imax : attr_domain->bound.imax;
+                }
+                else {
+                    attr_domain->bound.imax = bound.imax;
+                }
+                break;
+            case BETREE_FLOAT:
+                if(fne(attr_domain->bound.fmin, -DBL_MAX)) {
+                    attr_domain->bound.fmin = bound.fmin < attr_domain->bound.fmin ? bound.fmin : attr_domain->bound.fmin;
+                }
+                else {
+                    attr_domain->bound.fmin = bound.fmin;
+                }
+                if(fne(attr_domain->bound.fmax, DBL_MAX)) {
+                    attr_domain->bound.fmax = bound.fmax > attr_domain->bound.fmax ? bound.fmax : attr_domain->bound.fmax;
+                }
+                else {
+                    attr_domain->bound.fmax = bound.fmax;
+                }
+                break;
+            case BETREE_STRING:
+            case BETREE_STRING_LIST:
+                for(size_t j = 0; j < config->string_map_count; j++) {
+                    if(config->string_maps[j].attr_var.var == attr_domain->attr_var.var) {
+                        attr_domain->bound.smax = config->string_maps[j].string_value_count - 1;
+                    }
+                }
+                break;
+            case BETREE_SEGMENTS:
+                break;
+            case BETREE_FREQUENCY_CAPS:
+                break;
+            default:
+                break;
+        }
+    }
+}
+
+bool betree_change_boundaries(struct betree* tree, const char* expr)
+{
+    struct ast_node* node;
+    if(parse(expr, &node) != 0) {
+        return false;
+    }
+    assign_variable_id(tree->config, node);
+    assign_str_id(tree->config, node, true);
+    sort_lists(node);
+    fix_float_with_no_fractions(tree->config, node);
+    change_boundaries(tree->config, node);
+    return true;
+}
+
 bool betree_insert_with_constants(struct betree* tree,
     betree_sub_t id,
     size_t constant_count,

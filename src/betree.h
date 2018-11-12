@@ -87,6 +87,8 @@ void betree_add_string_list_variable(struct betree* betree, const char* name, bo
 void betree_add_segments_variable(struct betree* betree, const char* name, bool allow_undefined);
 void betree_add_frequency_caps_variable(struct betree* betree, const char* name, bool allow_undefined);
 
+bool betree_change_boundaries(struct betree* betree, const char* expr);
+
 /*
  * Runtime
  */
