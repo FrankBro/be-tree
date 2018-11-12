@@ -96,15 +96,106 @@ size_t read_betree_exprs(struct betree* tree)
 
     FILE* f = fopen("betree_exprs", "r");
 
-    //char* lines[MAX_EXPRS];
-    char line[10000]; // Arbitrary from what I've seen
+    char* lines[MAX_EXPRS];
     size_t count = 0;
-    while(fgets(line, sizeof(line), f)) {
+    {
+        char line[10000]; // Arbitrary from what I've seen
+        while(fgets(line, sizeof(line), f)) {
+            lines[count] = malloc(10000);
+            strcpy(lines[count], line);
+            count++;
+        }
+    }
+    count--;
+
+    /*for(size_t i = 0; i < count; i++) {*/
+        /*char* line = lines[i];*/
+        /*betree_change_boundaries(tree, line);*/
+    /*}*/
+
+    /*
+    for(size_t i = 0; i < tree->config->attr_domain_count; i++) {
+        struct attr_domain* attr_domain = tree->config->attr_domains[i];
+        switch(attr_domain->bound.value_type) {
+            case BETREE_BOOLEAN:
+                fprintf(stderr, "%s|boolean|%s\n", 
+                  attr_domain->attr_var.attr, attr_domain->allow_undefined ? "true" : "false");
+                break;
+            case BETREE_INTEGER:
+                if(attr_domain->bound.imin == INT64_MIN || attr_domain->bound.imax == INT64_MAX) {
+                    fprintf(stderr, "%s|integer|%s\n", 
+                      attr_domain->attr_var.attr, attr_domain->allow_undefined ? "true" : "false");
+                }
+                else {
+                    fprintf(stderr, "%s|integer|%s|%ld|%ld\n", 
+                      attr_domain->attr_var.attr, attr_domain->allow_undefined ? "true" : "false", 
+                      attr_domain->bound.imin, attr_domain->bound.imax);
+                }
+                break;
+            case BETREE_FLOAT:
+                if(feq(attr_domain->bound.fmin, -DBL_MAX) || feq(attr_domain->bound.fmax, DBL_MAX)) {
+                    fprintf(stderr, "%s|float|%s\n", 
+                      attr_domain->attr_var.attr, attr_domain->allow_undefined ? "true" : "false");
+                }
+                else {
+                    fprintf(stderr, "%s|float|%s|%.2f|%.2f\n", 
+                      attr_domain->attr_var.attr, attr_domain->allow_undefined ? "true" : "false", 
+                      attr_domain->bound.fmin, attr_domain->bound.fmax);
+                }
+                break;
+            case BETREE_STRING:
+                if(attr_domain->bound.smax == SIZE_MAX) {
+                    fprintf(stderr, "%s|string|%s\n", 
+                      attr_domain->attr_var.attr, attr_domain->allow_undefined ? "true" : "false");
+                }
+                else {
+                    fprintf(stderr, "%s|string|%s|%zu\n", 
+                      attr_domain->attr_var.attr, attr_domain->allow_undefined ? "true" : "false", 
+                      attr_domain->bound.smax);
+                }
+                break;
+            case BETREE_INTEGER_LIST:
+                if(attr_domain->bound.imin == INT64_MIN || attr_domain->bound.imax == INT64_MAX) {
+                    fprintf(stderr, "%s|integer list|%s\n", 
+                      attr_domain->attr_var.attr, attr_domain->allow_undefined ? "true" : "false");
+                }
+                else {
+                    fprintf(stderr, "%s|integer list|%s|%ld|%ld\n", 
+                      attr_domain->attr_var.attr, attr_domain->allow_undefined ? "true" : "false", 
+                      attr_domain->bound.imin, attr_domain->bound.imax);
+                }
+                break;
+            case BETREE_STRING_LIST:
+                if(attr_domain->bound.smax == SIZE_MAX) {
+                    fprintf(stderr, "%s|string list|%s\n", 
+                      attr_domain->attr_var.attr, attr_domain->allow_undefined ? "true" : "false");
+                }
+                else {
+                    fprintf(stderr, "%s|string list|%s|%zu\n", 
+                      attr_domain->attr_var.attr, attr_domain->allow_undefined ? "true" : "false", 
+                      attr_domain->bound.smax);
+                }
+                break;
+            case BETREE_SEGMENTS:
+                fprintf(stderr, "%s|segments|%s\n", 
+                  attr_domain->attr_var.attr, attr_domain->allow_undefined ? "true" : "false");
+                break;
+            case BETREE_FREQUENCY_CAPS:
+                fprintf(stderr, "%s|frequency|%s\n", 
+                  attr_domain->attr_var.attr, attr_domain->allow_undefined ? "true" : "false");
+                break;
+            default:
+                break;
+        }
+    }
+    */
+
+    for(size_t i = 0; i < count; i++) {
+        char* line = lines[i];
         if(!betree_insert_with_constants(tree, count, constant_count, constants, line)) {
             printf("Can't insert expr %zu: %s\n", count, line);
             abort();
         }
-        count++;
         if(MAX_EXPRS != 0 && count == MAX_EXPRS) {
             break;
         }
@@ -128,7 +219,7 @@ size_t read_betree_exprs(struct betree* tree)
 
 void read_betree_defs(struct betree* tree)
 {
-    FILE* f = fopen("betree_defs", "r");
+    FILE* f = fopen("betree_defs.with_bounds", "r");
 
     char line[LINE_MAX];
     while(fgets(line, sizeof(line), f)) {
