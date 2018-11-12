@@ -15,7 +15,7 @@ int parse(const char *text, struct ast_node **node);
 void assign_expr(struct config* config, struct ast_node* node)
 {
     assign_variable_id(config, node);
-    assign_str_id(config, node);
+    assign_str_id(config, node, false);
 }
 
 struct ast_node* parse_and_assign(const char* expr, struct config* config)

@@ -17,7 +17,7 @@ struct value_bound get_bound(struct config* config, const char* expr)
     struct ast_node* node;
     parse(expr, &node);
     assign_variable_id(config, node);
-    assign_str_id(config, node);
+    assign_str_id(config, node, false);
     struct value_bound bound = get_variable_bound(config->attr_domains[0], node);
     free_ast_node(node);
     return bound;

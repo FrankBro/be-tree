@@ -2212,7 +2212,7 @@ void assign_variable_id(struct config* config, struct ast_node* node)
     }
 }
 
-void assign_str_id(struct config* config, struct ast_node* node)
+void assign_str_id(struct config* config, struct ast_node* node, bool always_assign)
 {
     switch(node->type) {
         case AST_TYPE_IS_NULL_EXPR:
@@ -2222,7 +2222,7 @@ void assign_str_id(struct config* config, struct ast_node* node)
                 case AST_SPECIAL_FREQUENCY: {
                     betree_str_t str_id = get_id_for_string(config,
                         node->special_expr.frequency.attr_var,
-                        node->special_expr.frequency.ns.string);
+                        node->special_expr.frequency.ns.string, always_assign);
                     node->special_expr.frequency.ns.var = node->special_expr.frequency.attr_var.var;
                     node->special_expr.frequency.ns.str = str_id;
                     return;
@@ -2249,7 +2249,7 @@ void assign_str_id(struct config* config, struct ast_node* node)
             if(node->equality_expr.value.value_type == AST_EQUALITY_VALUE_STRING) {
                 betree_str_t str_id = get_id_for_string(config,
                     node->equality_expr.attr_var,
-                    node->equality_expr.value.string_value.string);
+                    node->equality_expr.value.string_value.string, always_assign);
                 node->equality_expr.value.string_value.var = node->equality_expr.attr_var.var;
                 node->equality_expr.value.string_value.str = str_id;
             }
@@ -2260,13 +2260,13 @@ void assign_str_id(struct config* config, struct ast_node* node)
                 case AST_BOOL_LITERAL:
                     return;
                 case AST_BOOL_NOT: {
-                    assign_str_id(config, node->bool_expr.unary.expr);
+                    assign_str_id(config, node->bool_expr.unary.expr, always_assign);
                     return;
                 }
                 case AST_BOOL_OR:
                 case AST_BOOL_AND: {
-                    assign_str_id(config, node->bool_expr.binary.lhs);
-                    assign_str_id(config, node->bool_expr.binary.rhs);
+                    assign_str_id(config, node->bool_expr.binary.lhs, always_assign);
+                    assign_str_id(config, node->bool_expr.binary.rhs, always_assign);
                     return;
                 }
                 case AST_BOOL_VARIABLE: {
@@ -2282,7 +2282,7 @@ void assign_str_id(struct config* config, struct ast_node* node)
                 for(size_t i = 0; i < node->list_expr.value.string_list_value->count; i++) {
                     betree_str_t str_id = get_id_for_string(config,
                         node->list_expr.attr_var,
-                        node->list_expr.value.string_list_value->strings[i].string);
+                        node->list_expr.value.string_list_value->strings[i].string, always_assign);
                     node->list_expr.value.string_list_value->strings[i].var
                         = node->list_expr.attr_var.var;
                     node->list_expr.value.string_list_value->strings[i].str = str_id;
@@ -2294,7 +2294,7 @@ void assign_str_id(struct config* config, struct ast_node* node)
             if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_STRING) {
                 betree_str_t str_id = get_id_for_string(config,
                     node->set_expr.right_value.variable_value,
-                    node->set_expr.left_value.string_value.string);
+                    node->set_expr.left_value.string_value.string, always_assign);
                 node->set_expr.left_value.string_value.var
                     = node->set_expr.right_value.variable_value.var;
                 node->set_expr.left_value.string_value.str = str_id;
@@ -2303,7 +2303,7 @@ void assign_str_id(struct config* config, struct ast_node* node)
                 for(size_t i = 0; i < node->set_expr.right_value.string_list_value->count; i++) {
                     betree_str_t str_id = get_id_for_string(config,
                         node->set_expr.left_value.variable_value,
-                        node->set_expr.right_value.string_list_value->strings[i].string);
+                        node->set_expr.right_value.string_list_value->strings[i].string, always_assign);
                     node->set_expr.right_value.string_list_value->strings[i].var
                         = node->set_expr.left_value.variable_value.var;
                     node->set_expr.right_value.string_list_value->strings[i].str = str_id;

@@ -253,7 +253,7 @@ betree_str_t try_get_id_for_string(
     return INVALID_STR;
 }
 
-betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, const char* string)
+betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, const char* string, bool always_assign)
 {
     char* copy = strdup(string);
     struct string_map* string_map = NULL;
@@ -275,7 +275,7 @@ betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, 
     }
     const struct attr_domain* attr_domain
         = get_attr_domain((const struct attr_domain**)config->attr_domains, attr_var.var);
-    if(attr_domain->bound.smax + 1 == string_map->string_value_count) {
+    if(!always_assign && attr_domain->bound.smax + 1 == string_map->string_value_count) {
         free(copy);
         return INVALID_STR;
     }

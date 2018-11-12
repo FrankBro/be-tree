@@ -118,7 +118,7 @@ bool betree_insert_with_constants(struct betree* tree,
         return false;
     }
     assign_variable_id(tree->config, node);
-    assign_str_id(tree->config, node);
+    assign_str_id(tree->config, node, false);
     sort_lists(node);
     fix_float_with_no_fractions(tree->config, node);
     assign_pred_id(tree->config, node);

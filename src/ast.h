@@ -327,7 +327,7 @@ struct value_bound get_variable_bound(
 bool assign_constants(
     size_t constant_count, const struct betree_constant** constants, struct ast_node* node);
 void assign_variable_id(struct config* config, struct ast_node* node);
-void assign_str_id(struct config* config, struct ast_node* node);
+void assign_str_id(struct config* config, struct ast_node* node, bool always_assign);
 void assign_pred_id(struct config* config, struct ast_node* node);
 void sort_lists(struct ast_node* node);
 
