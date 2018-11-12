@@ -482,7 +482,7 @@ void print_attr_domain(const struct attr_domain* domain)
             else {
                 printf("%.2f, ", domain->bound.fmin);
             }
-            if(feq(domain->bound.imax, DBL_MAX)) {
+            if(feq(domain->bound.fmax, DBL_MAX)) {
                 printf("DBL_MAX]\n");
             }
             else {
@@ -492,7 +492,7 @@ void print_attr_domain(const struct attr_domain* domain)
         case BETREE_STRING:
             printf("%s (string%s) [", domain->attr_var.attr,
               domain->allow_undefined ? "?" : "");
-            if(domain->bound.smax == SIZE_MAX) {
+            if(domain->bound.smax >= SIZE_MAX - 1) {
                 printf("SIZE_MAX]\n");
             }
             else {
@@ -518,7 +518,7 @@ void print_attr_domain(const struct attr_domain* domain)
         case BETREE_STRING_LIST:
             printf("%s (string list%s) [", domain->attr_var.attr,
               domain->allow_undefined ? "?" : "");
-            if(domain->bound.smax == SIZE_MAX) {
+            if(domain->bound.smax >= SIZE_MAX - 1) {
                 printf("SIZE_MAX]\n");
             }
             else {
