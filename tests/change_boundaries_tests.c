@@ -261,14 +261,41 @@ int test_complex()
     return 0;
 }
 
+int test_normal()
+{
+    struct betree* tree = betree_make();
+    add_attr_domain_i(tree->config, "i", false);
+
+    const char* expr1 = "i = 1"; 
+    const char* expr2 = "i = 2"; 
+    const char* expr3 = "i = 3"; 
+    const char* expr4 = "i = 4"; 
+    const char* expr5 = "i = 5"; 
+
+    betree_change_boundaries(tree, expr1);
+    betree_change_boundaries(tree, expr2);
+    betree_change_boundaries(tree, expr3);
+    betree_change_boundaries(tree, expr4);
+    betree_change_boundaries(tree, expr5);
+
+    struct value_bound bound = tree->config->attr_domains[0]->bound;
+    mu_assert(bound.imin == 1, "");
+    mu_assert(bound.imax == 5, "");
+
+    betree_free(tree);
+
+    return 0;
+}
+
 int all_tests()
 {
-    /*mu_run_test(test_integer);*/
-    /*mu_run_test(test_float);*/
-    /*mu_run_test(test_string);*/
-    /*mu_run_test(test_integer_set_left);*/
-    /*mu_run_test(test_integer_set_right);*/
+    mu_run_test(test_integer);
+    mu_run_test(test_float);
+    mu_run_test(test_string);
+    mu_run_test(test_integer_set_left);
+    mu_run_test(test_integer_set_right);
     mu_run_test(test_complex);
+    mu_run_test(test_normal);
 
     return 0;
 }

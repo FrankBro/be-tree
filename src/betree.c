@@ -399,7 +399,7 @@ static void change_boundaries(struct config* config, const struct ast_node* node
                 for(size_t j = 0; j < config->string_map_count; j++) {
                     if(config->string_maps[j].attr_var.var == attr_domain->attr_var.var) {
                         size_t smax = config->string_maps[j].string_value_count - 1;
-                        if(attr_domain->bound.smax != SIZE_MAX) {
+                        if(attr_domain->bound.smax < SIZE_MAX - 1) {
                             attr_domain->bound.smax = smax > attr_domain->bound.smax ? smax : attr_domain->bound.smax;
                         }
                         else {
