@@ -1,3 +1,4 @@
+#include <float.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -444,6 +445,96 @@ void print_variable(const struct betree_variable* v)
     printf("\n");
     if(inner != NULL) {
         free(inner);
+    }
+}
+
+void print_attr_domain(const struct attr_domain* domain)
+{
+    switch(domain->bound.value_type) {
+        case BETREE_BOOLEAN:
+            printf("%s (bool%s) [%s, %s]\n", domain->attr_var.attr,
+              domain->allow_undefined ? "?" : "",
+              domain->bound.bmin ? "true" : "false",
+              domain->bound.bmax ? "true" : "false");
+            break;
+        case BETREE_INTEGER:
+            printf("%s (integer%s) [", domain->attr_var.attr,
+              domain->allow_undefined ? "?" : "");
+            if(domain->bound.imin == INT64_MIN) {
+                printf("INT64_MIN, ");
+            }
+            else {
+                printf("%ld, ", domain->bound.imin);
+            }
+            if(domain->bound.imax == INT64_MAX) {
+                printf("INT64_MAX]\n");
+            }
+            else {
+                printf("%ld]\n", domain->bound.imax);
+            }
+            break;
+        case BETREE_FLOAT:
+            printf("%s (float%s) [", domain->attr_var.attr,
+              domain->allow_undefined ? "?" : "");
+            if(feq(domain->bound.fmin, -DBL_MAX)) {
+                printf("-DBL_MAX, ");
+            }
+            else {
+                printf("%.2f, ", domain->bound.fmin);
+            }
+            if(feq(domain->bound.imax, DBL_MAX)) {
+                printf("DBL_MAX]\n");
+            }
+            else {
+                printf("%.2f]\n", domain->bound.fmax);
+            }
+            break;
+        case BETREE_STRING:
+            printf("%s (string%s) [", domain->attr_var.attr,
+              domain->allow_undefined ? "?" : "");
+            if(domain->bound.smax == SIZE_MAX) {
+                printf("SIZE_MAX]\n");
+            }
+            else {
+                printf("%zu]\n", domain->bound.smax);
+            }
+            break;
+        case BETREE_INTEGER_LIST:
+            printf("%s (integer list%s) [", domain->attr_var.attr,
+              domain->allow_undefined ? "?" : "");
+            if(domain->bound.imin == INT64_MIN) {
+                printf("INT64_MIN, ");
+            }
+            else {
+                printf("%ld, ", domain->bound.imin);
+            }
+            if(domain->bound.imax == INT64_MAX) {
+                printf("INT64_MAX]\n");
+            }
+            else {
+                printf("%ld]\n", domain->bound.imax);
+            }
+            break;
+        case BETREE_STRING_LIST:
+            printf("%s (string list%s) [", domain->attr_var.attr,
+              domain->allow_undefined ? "?" : "");
+            if(domain->bound.smax == SIZE_MAX) {
+                printf("SIZE_MAX]\n");
+            }
+            else {
+                printf("%zu]\n", domain->bound.smax);
+            }
+            break;
+        case BETREE_SEGMENTS:
+            printf("%s (segments%s)\n", domain->attr_var.attr,
+              domain->allow_undefined ? "?" : "");
+            break;
+        case BETREE_FREQUENCY_CAPS:
+            printf("%s (frequency caps%s)\n", domain->attr_var.attr,
+              domain->allow_undefined ? "?" : "");
+            break;
+        default:
+            abort();
     }
 }
 
