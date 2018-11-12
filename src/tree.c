@@ -368,9 +368,9 @@ static size_t domain_bound_diff(const struct attr_domain* attr_domain)
 static double get_attr_domain_score(const struct attr_domain* attr_domain)
 {
     size_t diff = domain_bound_diff(attr_domain);
-    /*if(diff == 0) {*/
-        /*diff = 1;*/
-    /*}*/
+    if(diff == 0) {
+        diff = 1;
+    }
     double num = attr_domain->allow_undefined ? 1. : 10.;
     double bound_score = num / (double)diff;
     return bound_score;
@@ -412,8 +412,7 @@ bool insert_be_tree(
     bool foundPartition = false;
     struct pnode* max_pnode = NULL;
     if(cnode->pdir != NULL) {
-        /*float max_score = -DBL_MAX;*/
-        float max_score = -1.;
+        float max_score = -DBL_MAX;
         for(size_t i = 0; i < config->attr_domain_count; i++) {
             if(test_bit(sub->attr_vars, i) == false) {
                 continue;
