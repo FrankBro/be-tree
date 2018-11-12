@@ -15,6 +15,7 @@
 #include "debug.h"
 #include "hashmap.h"
 #include "helper.h"
+#include "printer.h"
 #include "tree.h"
 #include "utils.h"
 
@@ -99,6 +100,18 @@ size_t read_betree_exprs(struct betree* tree)
     //char* lines[MAX_EXPRS];
     char line[10000]; // Arbitrary from what I've seen
     size_t count = 0;
+    while(fgets(line, sizeof(line), f)) {
+        if(!betree_change_boundaries(tree, line)) {
+            printf("Can't change boundaries expr %zu: %s\n", count, line);
+            abort();
+        }
+    }
+    for(size_t i = 0; i < tree->config->attr_domain_count; i++) {
+        const struct attr_domain* attr_domain = tree->config->attr_domains[i];
+        print_attr_domain(attr_domain);
+    }
+    fclose(f);
+    f = fopen("betree_exprs", "r");
     while(fgets(line, sizeof(line), f)) {
         if(!betree_insert_with_constants(tree, count, constant_count, constants, line)) {
             printf("Can't insert expr %zu: %s\n", count, line);
