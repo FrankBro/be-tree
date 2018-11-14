@@ -282,6 +282,18 @@ int test_normal()
     mu_assert(bound.imin == 1, "");
     mu_assert(bound.imax == 5, "");
 
+    mu_assert(betree_insert(tree, 1, expr1), "");
+    mu_assert(betree_insert(tree, 2, expr2), "");
+    mu_assert(betree_insert(tree, 3, expr3), "");
+    mu_assert(betree_insert(tree, 4, expr4), "");
+    mu_assert(betree_insert(tree, 5, expr5), "");
+
+    struct report* report = make_report();
+    mu_assert(betree_search(tree, "{\"i\": 2}", report), "");
+
+    fprintf(stderr, "DEBUG: evaluated = %zu\n", report->evaluated);
+    mu_assert(report->evaluated != 5 && report->matched == 1, "");
+
     betree_free(tree);
 
     return 0;

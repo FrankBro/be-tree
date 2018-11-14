@@ -1447,6 +1447,49 @@ int test_bug_geo()
     return 0;
 }
 
+int test_list_bug1()
+{
+    struct betree* tree = betree_make();
+    add_attr_domain_bounded_il(tree->config, "il", false, 1, 2);
+
+    for(size_t i = 0; i < 5; i++) {
+        mu_assert(betree_insert(tree, i, "1 in il"), "");
+    }
+
+    struct report* report = make_report();
+    mu_assert(betree_search(tree, "{\"il\": [1,2]}", report), "");
+
+    fprintf(stderr, "evaluated = %zu, matched = %zu\n", report->evaluated, report->matched);
+    print_be_tree(tree);
+
+    mu_assert(report->evaluated != 0, "");
+    mu_assert(report->matched == 5, "");
+
+    free_report(report);
+    betree_free(tree);
+    return 0;
+}
+
+int test_list_bug2()
+{
+    struct betree* tree = betree_make();
+    add_attr_domain_bounded_il(tree->config, "il", false, 1, 5);
+
+    for(size_t i = 0; i < 5; i++) {
+        mu_assert(betree_insert(tree, i, "il one of (1)"), "");
+    }
+
+    struct report* report = make_report();
+    mu_assert(betree_search(tree, "{\"il\": [1,2,3,4,5]}", report), "");
+
+    mu_assert(report->evaluated != 0, "");
+    mu_assert(report->matched == 5, "");
+
+    free_report(report);
+    betree_free(tree);
+    return 0;
+}
+
 int test_event_out_of_bound()
 {
     struct betree* tree = betree_make();
@@ -1459,8 +1502,6 @@ int test_event_out_of_bound()
 
     struct report* report = make_report();
     mu_assert(betree_search(tree, "{\"i\": 15}", report), "");
-
-    print_be_tree(tree);
 
     fprintf(stderr, "matched: %lu\n", report->matched);
     mu_assert(report->matched == 4, "");
@@ -1510,6 +1551,8 @@ int all_tests()
     mu_run_test(test_is_null);
     mu_run_test(test_bug_geo);
     mu_run_test(test_event_out_of_bound);
+    mu_run_test(test_list_bug1);
+    mu_run_test(test_list_bug2);
 
     return 0;
 }

@@ -152,16 +152,20 @@ static bool is_event_enclosed(const struct betree_variable** preds, const struct
             return (cdir->bound.smin <= pred->value.svalue.str) && (cdir->bound.smax >= pred->value.svalue.str);
         case BETREE_INTEGER_LIST:
             if(pred->value.ilvalue->count != 0) {
-                return (open_left || cdir->bound.imin <= pred->value.ilvalue->integers[0])
-                    && (open_right || cdir->bound.imax >= pred->value.ilvalue->integers[pred->value.ilvalue->count - 1]);
+                int64_t min = pred->value.ilvalue->integers[0];
+                int64_t max = pred->value.ilvalue->integers[pred->value.ilvalue->count - 1];
+                return (cdir->bound.imin <= min && cdir->bound.imax >= max)
+                    || (min <= cdir->bound.imin && max >= cdir->bound.imax);
             }
             else {
                 return true;
             }
         case BETREE_STRING_LIST:
             if(pred->value.slvalue->count != 0) {
-                return (cdir->bound.smin <= pred->value.slvalue->strings[0].str)
-                    && (cdir->bound.smax >= pred->value.slvalue->strings[pred->value.slvalue->count - 1].str);
+                size_t min = pred->value.slvalue->strings[0].str;
+                size_t max = pred->value.slvalue->strings[pred->value.slvalue->count - 1].str;
+                return (cdir->bound.smin <= min && cdir->bound.smax >= max)
+                    || (min <= cdir->bound.smin && max >= cdir->bound.smax);
             }
             else {
                 return true;
