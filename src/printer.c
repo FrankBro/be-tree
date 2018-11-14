@@ -538,3 +538,80 @@ void print_attr_domain(const struct attr_domain* domain)
     }
 }
 
+void print_cdir(const struct cdir* cdir)
+{
+    switch(cdir->bound.value_type) {
+        case BETREE_BOOLEAN:
+            printf("%s (bool) [%s, %s]\n", cdir->attr_var.attr,
+              cdir->bound.bmin ? "true" : "false",
+              cdir->bound.bmax ? "true" : "false");
+            break;
+        case BETREE_INTEGER:
+            printf("%s (integer) [", cdir->attr_var.attr);
+            if(cdir->bound.imin == INT64_MIN) {
+                printf("INT64_MIN, ");
+            }
+            else {
+                printf("%ld, ", cdir->bound.imin);
+            }
+            if(cdir->bound.imax == INT64_MAX) {
+                printf("INT64_MAX]\n");
+            }
+            else {
+                printf("%ld]\n", cdir->bound.imax);
+            }
+            break;
+        case BETREE_FLOAT:
+            printf("%s (float) [", cdir->attr_var.attr);
+            if(feq(cdir->bound.fmin, -DBL_MAX)) {
+                printf("-DBL_MAX, ");
+            }
+            else {
+                printf("%.2f, ", cdir->bound.fmin);
+            }
+            if(feq(cdir->bound.fmax, DBL_MAX)) {
+                printf("DBL_MAX]\n");
+            }
+            else {
+                printf("%.2f]\n", cdir->bound.fmax);
+            }
+            break;
+        case BETREE_STRING:
+            printf("%s (string) [", cdir->attr_var.attr);
+            if(cdir->bound.smax >= SIZE_MAX - 1) {
+                printf("SIZE_MAX]\n");
+            }
+            else {
+                printf("%zu]\n", cdir->bound.smax);
+            }
+            break;
+        case BETREE_INTEGER_LIST:
+            printf("%s (integer list) [", cdir->attr_var.attr);
+            if(cdir->bound.imin == INT64_MIN) {
+                printf("INT64_MIN, ");
+            }
+            else {
+                printf("%ld, ", cdir->bound.imin);
+            }
+            if(cdir->bound.imax == INT64_MAX) {
+                printf("INT64_MAX]\n");
+            }
+            else {
+                printf("%ld]\n", cdir->bound.imax);
+            }
+            break;
+        case BETREE_STRING_LIST:
+            printf("%s (string list) [", cdir->attr_var.attr);
+            if(cdir->bound.smax >= SIZE_MAX - 1) {
+                printf("SIZE_MAX]\n");
+            }
+            else {
+                printf("%zu]\n", cdir->bound.smax);
+            }
+            break;
+        case BETREE_SEGMENTS: abort();
+        case BETREE_FREQUENCY_CAPS: abort();
+        default: abort();
+    }
+}
+
