@@ -128,7 +128,7 @@ callgrind:
 	$(CALLGRIND) build/tests/real_tests 1
 
 cachegrind:
-	$(CACHEGRIND) build/tests/real_tests
+	$(CACHEGRIND) build/tests/real_tests 1
 
 massif:
 	$(MASSIF) build/tests/real_tests
