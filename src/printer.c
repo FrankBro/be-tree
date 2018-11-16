@@ -64,6 +64,11 @@ static const char* equality_value_to_string(struct equality_value value)
                 abort();
             }
             break;
+        case AST_EQUALITY_VALUE_INTEGER_ENUM:
+            if(asprintf(&expr, "%ld", value.integer_enum_value.integer) < 0) {
+                abort();
+            }
+            break;
         default:
             switch_default_error("Invalid equality value type");
             break;
@@ -129,6 +134,14 @@ static const char* set_right_value_to_string(struct set_right_value value)
         }
         case AST_SET_RIGHT_VALUE_STRING_LIST: {
             const char* list = string_list_value_to_string(value.string_list_value);
+            if(asprintf(&expr, "(%s)", list) < 0) {
+                abort();
+            }
+            free((char*)list);
+            break;
+        }
+        case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM: {
+            const char* list = integer_list_enum_value_to_string(value.integer_list_enum_value);
             if(asprintf(&expr, "(%s)", list) < 0) {
                 abort();
             }
@@ -396,6 +409,8 @@ static const char* value_type_to_string(enum betree_value_type_e e)
         case BETREE_STRING_LIST: return "string_list";
         case BETREE_SEGMENTS: return "segments";
         case BETREE_FREQUENCY_CAPS: return "frequency_caps";
+        case BETREE_INTEGER_ENUM: return "integer_enum";
+        case BETREE_INTEGER_LIST_ENUM: return "integer_list_enum";
         default: return "INVALID";
     }
 }
@@ -428,6 +443,13 @@ void print_variable(const struct betree_variable* v)
             break;
         case BETREE_STRING_LIST:
             inner = string_list_value_to_string(v->value.slvalue);
+            printf("%s", inner);
+            break;
+        case BETREE_INTEGER_ENUM:
+            printf("%ld", v->value.ievalue.integer);
+            break;
+        case BETREE_INTEGER_LIST_ENUM:
+            inner = integer_list_enum_value_to_string(v->value.ilevalue);
             printf("%s", inner);
             break;
         case BETREE_SEGMENTS:
@@ -525,6 +547,26 @@ void print_attr_domain(const struct attr_domain* domain)
                 printf("%zu]\n", domain->bound.smax);
             }
             break;
+        case BETREE_INTEGER_ENUM:
+            printf("%s (integer enum%s) [", domain->attr_var.attr,
+              domain->allow_undefined ? "?" : "");
+            if(domain->bound.smax >= SIZE_MAX - 1) {
+                printf("SIZE_MAX]\n");
+            }
+            else {
+                printf("%zu]\n", domain->bound.smax);
+            }
+            break;
+        case BETREE_INTEGER_LIST_ENUM:
+            printf("%s (integer list enum%s) [", domain->attr_var.attr,
+              domain->allow_undefined ? "?" : "");
+            if(domain->bound.smax >= SIZE_MAX - 1) {
+                printf("SIZE_MAX]\n");
+            }
+            else {
+                printf("%zu]\n", domain->bound.smax);
+            }
+            break;
         case BETREE_SEGMENTS:
             printf("%s (segments%s)\n", domain->attr_var.attr,
               domain->allow_undefined ? "?" : "");
@@ -577,7 +619,7 @@ void print_cdir(const struct cdir* cdir)
             }
             break;
         case BETREE_STRING:
-            printf("%s (string) [", cdir->attr_var.attr);
+            printf("%s (string) [%zu, ", cdir->attr_var.attr, cdir->bound.smin);
             if(cdir->bound.smax >= SIZE_MAX - 1) {
                 printf("SIZE_MAX]\n");
             }
@@ -601,7 +643,25 @@ void print_cdir(const struct cdir* cdir)
             }
             break;
         case BETREE_STRING_LIST:
-            printf("%s (string list) [", cdir->attr_var.attr);
+            printf("%s (string list) [%zu, ", cdir->attr_var.attr, cdir->bound.smin);
+            if(cdir->bound.smax >= SIZE_MAX - 1) {
+                printf("SIZE_MAX]\n");
+            }
+            else {
+                printf("%zu]\n", cdir->bound.smax);
+            }
+            break;
+        case BETREE_INTEGER_ENUM:
+            printf("%s (integer enum) [%zu, ", cdir->attr_var.attr, cdir->bound.smin);
+            if(cdir->bound.smax >= SIZE_MAX - 1) {
+                printf("SIZE_MAX]\n");
+            }
+            else {
+                printf("%zu]\n", cdir->bound.smax);
+            }
+            break;
+        case BETREE_INTEGER_LIST_ENUM:
+            printf("%s (integer list enum) [%zu, ", cdir->attr_var.attr, cdir->bound.smin);
             if(cdir->bound.smax >= SIZE_MAX - 1) {
                 printf("SIZE_MAX]\n");
             }
@@ -611,6 +671,29 @@ void print_cdir(const struct cdir* cdir)
             break;
         case BETREE_SEGMENTS: abort();
         case BETREE_FREQUENCY_CAPS: abort();
+        default: abort();
+    }
+}
+
+void print_report(const struct report* report)
+{
+    fprintf(stderr, "evaluated = %zu, matched = %zu, memoized = %zu, shorted = %zu\n",
+        report->evaluated, report->matched, report->memoized, report->shorted);
+}
+
+void print_value_type(enum betree_value_type_e value_type)
+{
+    switch(value_type) {
+        case BETREE_BOOLEAN: printf("BETREE_BOOLEAN\n"); break;
+        case BETREE_INTEGER: printf("BETREE_INTEGER\n"); break;
+        case BETREE_FLOAT: printf("BETREE_FLOAT\n"); break;
+        case BETREE_STRING: printf("BETREE_STRING\n"); break;
+        case BETREE_INTEGER_LIST: printf("BETREE_INTEGER_LIST\n"); break;
+        case BETREE_STRING_LIST: printf("BETREE_STRING_LIST\n"); break;
+        case BETREE_SEGMENTS: printf("BETREE_SEGMENTS\n"); break;
+        case BETREE_FREQUENCY_CAPS: printf("BETREE_FREQUENCY_CAPS\n"); break;
+        case BETREE_INTEGER_ENUM: printf("BETREE_INTEGER_ENUM\n"); break;
+        case BETREE_INTEGER_LIST_ENUM: printf("BETREE_INTEGER_LIST_ENUM\n"); break;
         default: abort();
     }
 }
