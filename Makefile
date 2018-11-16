@@ -36,7 +36,7 @@ MASSIF=valgrind --tool=massif
 # all: build/betree.a build/betree.so $(OBJECTS) tool test dot
 # all: build/betree.a build/betree.so $(OBJECTS) tool test
 all: build/libbetree.so 
-dev: build/libbetree.so tool test
+dev: build/libbetree.so test
 
 dot:
 	# dot -Tpng betree.dot -o betree.png
