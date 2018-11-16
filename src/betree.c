@@ -681,6 +681,11 @@ void betree_add_integer_list_variable(
     add_attr_domain_bounded_il(betree->config, name, allow_undefined, min, max);
 }
 
+void betree_add_integer_enum_variable(struct betree* betree, const char* name, bool allow_undefined, size_t count)
+{
+    add_attr_domain_bounded_ie(betree->config, name, allow_undefined, count);
+}
+
 void betree_add_string_list_variable(
     struct betree* betree, const char* name, bool allow_undefined, size_t count)
 {

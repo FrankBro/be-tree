@@ -85,6 +85,7 @@ void betree_add_integer_variable(struct betree* betree, const char* name, bool a
 void betree_add_float_variable(struct betree* betree, const char* name, bool allow_undefined, double min, double max);
 void betree_add_string_variable(struct betree* betree, const char* name, bool allow_undefined, size_t count);
 void betree_add_integer_list_variable(struct betree* betree, const char* name, bool allow_undefined, int64_t min, int64_t max);
+void betree_add_integer_enum_variable(struct betree* betree, const char* name, bool allow_undefined, size_t max);
 void betree_add_string_list_variable(struct betree* betree, const char* name, bool allow_undefined, size_t count);
 void betree_add_segments_variable(struct betree* betree, const char* name, bool allow_undefined);
 void betree_add_frequency_caps_variable(struct betree* betree, const char* name, bool allow_undefined);
