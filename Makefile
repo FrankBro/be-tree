@@ -19,8 +19,6 @@ SOURCES=$(filter-out ${YACC_OBJECTS},$(filter-out ${LEX_OBJECTS},$(wildcard src/
 OBJECTS=$(patsubst %.c,%.o,${SOURCES}) $(patsubst %.l,%.o,${LEX_SOURCES}) $(patsubst %.y,%.o,${YACC_SOURCES})
 TEST_SOURCES=$(wildcard tests/*_tests.c)
 TEST_OBJECTS=$(patsubst %.c,%,${TEST_SOURCES})
-TOOL_SOURCES=$(wildcard tools/*.c)
-TOOL_OBJECTS=$(patsubst %.c,%,${TOOL_SOURCES})
 
 LEX?=flex
 YACC?=bison
@@ -81,18 +79,6 @@ src/event_parser.c: src/event_parser.y
 
 src/%.o: src/%.c
 	$(CC) $(CFLAGS) -c -o $@ $^ $(LDFLAGS)
-
-################################################################################
-# Tools
-################################################################################
-
-tool: $(TOOL_OBJECTS)
-
-build/tools:
-	mkdir -p build/tools
-
-$(TOOL_OBJECTS): %: %.c build/tools
-	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/libbetree.so $(LDFLAGS)
 
 ################################################################################
 # Tests
