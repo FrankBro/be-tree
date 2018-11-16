@@ -27,6 +27,7 @@ void betree_assert(bool abort, enum error_e error, bool expr);
 
 int icmpfunc(const void *a, const void *b);
 int scmpfunc(const void *a, const void *b);
+int iecmpfunc(const void *a, const void *b);
 
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)

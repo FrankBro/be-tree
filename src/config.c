@@ -114,6 +114,11 @@ void add_attr_domain_i(struct config* config, const char* attr, bool allow_undef
     add_attr_domain_bounded_i(config, attr, allow_undefined, INT64_MIN, INT64_MAX);
 }
 
+void add_attr_domain_ie(struct config* config, const char* attr, bool allow_undefined)
+{
+    add_attr_domain_bounded_ie(config, attr, allow_undefined, SIZE_MAX);
+}
+
 void add_attr_domain_bounded_f(
     struct config* config, const char* attr, bool allow_undefined, double min, double max)
 {
@@ -141,6 +146,13 @@ void add_attr_domain_bounded_s(
     struct config* config, const char* attr, bool allow_undefined, size_t max)
 {
     struct value_bound bound = { .value_type = BETREE_STRING, .smin = 0, .smax = max - 1 };
+    add_attr_domain(config, attr, bound, allow_undefined);
+}
+
+void add_attr_domain_bounded_ie(
+    struct config* config, const char* attr, bool allow_undefined, size_t max)
+{
+    struct value_bound bound = { .value_type = BETREE_INTEGER_ENUM, .smin = 0, .smax = max - 1 };
     add_attr_domain(config, attr, bound, allow_undefined);
 }
 
@@ -186,6 +198,31 @@ const struct attr_domain* get_attr_domain(
     return attr_domains[variable_id];
 }
 
+static void add_integer_map(struct attr_var attr_var, struct config* config)
+{
+    if(config->integer_map_count == 0) {
+        config->integer_maps = calloc(1, sizeof(*config->integer_maps));
+        if(config->integer_maps == NULL) {
+            fprintf(stderr, "%s calloc failed\n", __func__);
+            abort();
+        }
+    }
+    else {
+        struct integer_map* integer_maps
+            = realloc(config->integer_maps, sizeof(*integer_maps) * (config->integer_map_count + 1));
+        if(integer_maps == NULL) {
+            fprintf(stderr, "%s realloc failed\n", __func__);
+            abort();
+        }
+        config->integer_maps = integer_maps;
+    }
+    config->integer_maps[config->integer_map_count].attr_var.attr = strdup(attr_var.attr);
+    config->integer_maps[config->integer_map_count].attr_var.var = attr_var.var;
+    config->integer_maps[config->integer_map_count].integer_value_count = 0;
+    config->integer_maps[config->integer_map_count].integer_values = 0;
+    config->integer_map_count++;
+}
+
 static void add_string_map(struct attr_var attr_var, struct config* config)
 {
     if(config->string_map_count == 0) {
@@ -211,6 +248,28 @@ static void add_string_map(struct attr_var attr_var, struct config* config)
     config->string_map_count++;
 }
 
+static void add_to_integer_map(struct integer_map* integer_map, int64_t integer)
+{
+    if(integer_map->integer_value_count == 0) {
+        integer_map->integer_values = calloc(1, sizeof(*integer_map->integer_values));
+        if(integer_map->integer_values == NULL) {
+            fprintf(stderr, "%s calloc failed\n", __func__);
+            abort();
+        }
+    }
+    else {
+        int64_t* integer_values = realloc(integer_map->integer_values,
+            sizeof(*integer_values) * (integer_map->integer_value_count + 1));
+        if(integer_values == NULL) {
+            fprintf(stderr, "%s realloc failed\n", __func__);
+            abort();
+        }
+        integer_map->integer_values = integer_values;
+    }
+    integer_map->integer_values[integer_map->integer_value_count] = integer;
+    integer_map->integer_value_count++;
+}
+
 static void add_to_string_map(struct string_map* string_map, char* copy)
 {
     if(string_map->string_value_count == 0) {
@@ -233,6 +292,23 @@ static void add_to_string_map(struct string_map* string_map, char* copy)
     string_map->string_value_count++;
 }
 
+betree_ienum_t try_get_id_for_ienum(
+    const struct config* config, struct attr_var attr_var, int64_t integer)
+{
+    for(size_t i = 0; i < config->integer_map_count; i++) {
+        if(config->integer_maps[i].attr_var.var == attr_var.var) {
+            struct integer_map* integer_map = integer_map = &config->integer_maps[i];
+            for(size_t j = 0; j < integer_map->integer_value_count; j++) {
+                if(integer_map->integer_values[j] == integer) {
+                    return j;
+                }
+            }
+            break;
+        }
+    }
+    return INVALID_IENUM;
+}
+
 betree_str_t try_get_id_for_string(
     const struct config* config, struct attr_var attr_var, const char* string)
 {
@@ -251,6 +327,33 @@ betree_str_t try_get_id_for_string(
     }
     free(copy);
     return INVALID_STR;
+}
+
+betree_ienum_t get_id_for_ienum(struct config* config, struct attr_var attr_var, int64_t integer, bool always_assign)
+{
+    struct integer_map* integer_map = NULL;
+    for(size_t i = 0; i < config->integer_map_count; i++) {
+        if(config->integer_maps[i].attr_var.var == attr_var.var) {
+            integer_map = &config->integer_maps[i];
+            for(size_t j = 0; j < integer_map->integer_value_count; j++) {
+                if(integer_map->integer_values[j] == integer) {
+                    return j;
+                }
+            }
+            break;
+        }
+    }
+    if(integer_map == NULL) {
+        add_integer_map(attr_var, config);
+        integer_map = &config->integer_maps[config->integer_map_count - 1];
+    }
+    const struct attr_domain* attr_domain
+        = get_attr_domain((const struct attr_domain**)config->attr_domains, attr_var.var);
+    if(!always_assign && attr_domain->bound.smax + 1 == integer_map->integer_value_count) {
+        return INVALID_IENUM;
+    }
+    add_to_integer_map(integer_map, integer);
+    return integer_map->integer_value_count - 1;
 }
 
 betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, const char* string, bool always_assign)

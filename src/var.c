@@ -35,6 +35,17 @@ bool get_string_var(
     return false;
 }
 
+bool get_integer_enum_var(
+    betree_var_t var, const struct betree_variable** preds, struct integer_enum_value* ret)
+{
+    const struct betree_variable* pred = preds[var];
+    if(pred != NULL) {
+        *ret = pred->value.ievalue;
+        return true;
+    }
+    return false;
+}
+
 bool get_integer_var(betree_var_t var, const struct betree_variable** preds, int64_t* ret)
 {
     const struct betree_variable* pred = preds[var];

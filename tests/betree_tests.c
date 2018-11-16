@@ -8,6 +8,7 @@
 #include "debug.h"
 #include "helper.h"
 #include "minunit.h"
+#include "printer.h"
 #include "tree.h"
 #include "utils.h"
 
@@ -1459,9 +1460,6 @@ int test_list_bug1()
     struct report* report = make_report();
     mu_assert(betree_search(tree, "{\"il\": [1,2]}", report), "");
 
-    fprintf(stderr, "evaluated = %zu, matched = %zu\n", report->evaluated, report->matched);
-    print_be_tree(tree);
-
     mu_assert(report->evaluated != 0, "");
     mu_assert(report->matched == 5, "");
 
@@ -1503,7 +1501,6 @@ int test_event_out_of_bound()
     struct report* report = make_report();
     mu_assert(betree_search(tree, "{\"i\": 15}", report), "");
 
-    fprintf(stderr, "matched: %lu\n", report->matched);
     mu_assert(report->matched == 4, "");
 
     betree_free(tree);
@@ -1511,8 +1508,49 @@ int test_event_out_of_bound()
     return 0;
 }
 
+int test_int_enum()
+{
+    struct betree* tree = betree_make();
+    add_attr_domain_ie(tree->config, "i", false);
+
+    const char* expr1 = "i = 7822930";
+    const char* expr2 = "i = 9";
+    const char* expr3 = "i = 86428";
+    const char* expr4 = "i = 984981931";
+    const char* expr5 = "i = 828";
+
+    mu_assert(betree_change_boundaries(tree, expr1), "");
+    mu_assert(betree_change_boundaries(tree, expr2), "");
+    mu_assert(betree_change_boundaries(tree, expr3), "");
+    mu_assert(betree_change_boundaries(tree, expr4), "");
+    mu_assert(betree_change_boundaries(tree, expr5), "");
+
+    mu_assert(tree->config->attr_domains[0]->bound.value_type == BETREE_INTEGER_ENUM
+      && tree->config->attr_domains[0]->bound.smax == 4, "Managed to influence the boundaries");
+
+    mu_assert(betree_insert(tree, 1, expr1), "");
+    mu_assert(betree_insert(tree, 2, expr2), "");
+    mu_assert(betree_insert(tree, 3, expr3), "");
+    mu_assert(betree_insert(tree, 4, expr4), "");
+    mu_assert(betree_insert(tree, 5, expr5), "");
+
+    mu_assert(tree->cnode->pdir != NULL, "Managed to split");
+
+    struct report* report = make_report();
+    mu_assert(betree_search(tree, "{\"i\": 9}", report), "");
+
+    mu_assert(report->matched == 1, "Found our item");
+    mu_assert(report->evaluated == 3, "Did not evaluate everything");
+
+    free_report(report);
+    betree_free(tree);
+
+    return 0;
+}
+
 int all_tests()
 {
+    mu_run_test(test_int_enum);
     mu_run_test(test_sub_has_attribute);
     mu_run_test(test_match_single_cnode);
     mu_run_test(test_insert_first_split);

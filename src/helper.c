@@ -53,6 +53,15 @@ void add_variable_from_string(struct betree* betree, const char* line)
             add_attr_domain_s(config, name, allow_undefined);
         }
     }
+    else if(strcmp(type, "integer enum") == 0) {
+        if(min_str != NULL) {
+            size_t max = atoi(min_str);
+            add_attr_domain_bounded_ie(config, name, allow_undefined, max);
+        }
+        else {
+            add_attr_domain_ie(config, name, allow_undefined);
+        }
+    }
     else if(strcmp(type, "integer list") == 0) {
         int64_t min = INT64_MIN, max = INT64_MAX;
         if(min_str != NULL) {

@@ -18,6 +18,18 @@ struct betree_integer_list* make_integer_list()
     return value;
 }
 
+struct betree_integer_list_enum* make_integer_list_enum(size_t count)
+{
+    struct betree_integer_list_enum* value = calloc(1, sizeof(*value));
+    if(value == NULL) {
+        fprintf(stderr, "%s calloc failed", __func__);
+        abort();
+    }
+    value->count = count;
+    value->integers = calloc(count, sizeof(*value->integers));
+    return value;
+}
+
 struct betree_string_list* make_string_list()
 {
     struct betree_string_list* value = calloc(1, sizeof(*value));
@@ -133,6 +145,27 @@ char* string_list_value_to_string(struct betree_string_list* list)
     return string;
 }
 
+char* integer_list_enum_value_to_string(struct betree_integer_list_enum* list)
+{
+    char* string = NULL;
+    for(size_t i = 0; i < list->count; i++) {
+        char* new_string;
+        if(i != 0) {
+            if(asprintf(&new_string, "%s, %ld", string, list->integers[i].integer) < 0) {
+                abort();
+            }
+            free(string);
+        }
+        else {
+            if(asprintf(&new_string, "%ld", list->integers[i].integer) < 0) {
+                abort();
+            }
+        }
+        string = new_string;
+    }
+    return string;
+}
+
 void add_segment(struct betree_segment* segment, struct betree_segments* list)
 {
     if(list->size == 0) {
@@ -240,6 +273,12 @@ void free_integer_list(struct betree_integer_list* value)
     free(value);
 }
 
+void free_integer_list_enum(struct betree_integer_list_enum* value)
+{
+    free(value->integers);
+    free(value);
+}
+
 void free_string_list(struct betree_string_list* value)
 {
     for(size_t i = 0; i < value->count; i++) {
@@ -289,6 +328,9 @@ void free_value(struct value value)
             free_integer_list(value.ilvalue);
             break;
         }
+        case BETREE_INTEGER_LIST_ENUM:
+            free_integer_list_enum(value.ilevalue);
+            break;
         case BETREE_STRING_LIST: {
             free_string_list(value.slvalue);
             break;
@@ -298,6 +340,7 @@ void free_value(struct value value)
         }
         case BETREE_BOOLEAN:
         case BETREE_INTEGER:
+        case BETREE_INTEGER_ENUM:
         case BETREE_FLOAT: {
             break;
         }

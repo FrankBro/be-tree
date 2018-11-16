@@ -13,6 +13,7 @@
 #include "error.h"
 #include "hashmap.h"
 #include "memoize.h"
+#include "printer.h"
 #include "tree.h"
 #include "utils.h"
 
@@ -150,6 +151,18 @@ static bool is_event_enclosed(const struct betree_variable** preds, const struct
             return (open_left || cdir->bound.fmin <= pred->value.fvalue) && (open_right || cdir->bound.fmax >= pred->value.fvalue);
         case BETREE_STRING:
             return (cdir->bound.smin <= pred->value.svalue.str) && (cdir->bound.smax >= pred->value.svalue.str);
+        case BETREE_INTEGER_ENUM:
+            return (cdir->bound.smin <= pred->value.ievalue.ienum) && (cdir->bound.smax >= pred->value.ievalue.ienum);
+        case BETREE_INTEGER_LIST_ENUM:
+            if(pred->value.ilevalue->count != 0) {
+                size_t min = pred->value.ilevalue->integers[0].ienum;
+                size_t max = pred->value.ilevalue->integers[pred->value.ilevalue->count - 1].ienum;
+                return (cdir->bound.smin <= min && cdir->bound.smax >= max)
+                    || (min <= cdir->bound.smin && max >= cdir->bound.smax);
+            }
+            else {
+                return true;
+            }
         case BETREE_INTEGER_LIST:
             if(pred->value.ilvalue->count != 0) {
                 int64_t min = pred->value.ilvalue->integers[0];
@@ -200,6 +213,8 @@ bool sub_is_enclosed(const struct attr_domain** attr_domains, const struct sub* 
             }
             case(BETREE_STRING):
             case(BETREE_STRING_LIST):
+            case(BETREE_INTEGER_ENUM):
+            case(BETREE_INTEGER_LIST_ENUM):
                 return cdir->bound.smin <= bound.smin && cdir->bound.smax >= bound.smax;
             case(BETREE_SEGMENTS): {
                 fprintf(
@@ -361,6 +376,8 @@ static size_t domain_bound_diff(const struct attr_domain* attr_domain)
             }
         case BETREE_STRING:
         case BETREE_STRING_LIST:
+        case BETREE_INTEGER_ENUM:
+        case BETREE_INTEGER_LIST_ENUM:
             return b->smax - b->smin;
         case BETREE_SEGMENTS:
         case BETREE_FREQUENCY_CAPS:
@@ -736,6 +753,8 @@ static bool splitable_attr_domain(
             return true;
         case BETREE_STRING:
         case BETREE_STRING_LIST:
+        case BETREE_INTEGER_ENUM:
+        case BETREE_INTEGER_LIST_ENUM:
             if(attr_domain->bound.smax == SIZE_MAX) {
                 return false;
             }
@@ -854,6 +873,8 @@ static bool is_atomic(const struct cdir* cdir)
         }
         case(BETREE_STRING):
         case(BETREE_STRING_LIST):
+        case(BETREE_INTEGER_ENUM):
+        case(BETREE_INTEGER_LIST_ENUM):
             return cdir->bound.smin == cdir->bound.smax;
         case(BETREE_SEGMENTS): {
             fprintf(stderr, "%s a segments value cdir should never happen for now\n", __func__);
@@ -971,7 +992,9 @@ static struct value_bounds split_value_bound(struct value_bound bound)
             break;
         }
         case(BETREE_STRING):
-        case(BETREE_STRING_LIST): {
+        case(BETREE_STRING_LIST): 
+        case(BETREE_INTEGER_ENUM): 
+        case(BETREE_INTEGER_LIST_ENUM):{
             size_t start = bound.smin, end = bound.smax;
             lbound.smin = start;
             rbound.smax = end;
@@ -1683,6 +1706,16 @@ void event_to_string(const struct betree_event* event, char* buffer)
                 length += sprintf(buffer + length, "%s = \"%s\"", attr, pred->value.svalue.string);
                 break;
             }
+            case(BETREE_INTEGER_ENUM): {
+                length += sprintf(buffer + length, "%s = %ld", attr, pred->value.ievalue.integer);
+                break;
+            }
+            case(BETREE_INTEGER_LIST_ENUM): {
+                const char* integer_list_enum = integer_list_enum_value_to_string(pred->value.ilevalue);
+                length += sprintf(buffer + length, "%s = (%s)", attr, integer_list_enum);
+                free((char*)integer_list_enum);
+                break;
+            }
             case(BETREE_INTEGER_LIST): {
                 const char* integer_list = integer_list_value_to_string(pred->value.ilvalue);
                 length += sprintf(buffer + length, "%s = (%s)", attr, integer_list);
@@ -1766,10 +1799,13 @@ bool betree_search_with_preds(const struct config* config,
     return true;
 }
 
-static void sort_event_lists(struct betree_event* event)
+void sort_event_lists(struct betree_event* event)
 {
     for(size_t i = 0; i < event->variable_count; i++) {
         struct betree_variable* pred = event->variables[i];
+        if(pred == NULL) {
+            continue;
+        }
         if(pred->value.value_type == BETREE_INTEGER_LIST) {
             qsort(pred->value.ilvalue->integers,
                 pred->value.ilvalue->count,
@@ -1781,6 +1817,12 @@ static void sort_event_lists(struct betree_event* event)
                 pred->value.slvalue->count,
                 sizeof(*pred->value.slvalue->strings),
                 scmpfunc);
+        }
+        else if(pred->value.value_type == BETREE_INTEGER_LIST_ENUM) {
+            qsort(pred->value.ilevalue->integers,
+                pred->value.ilevalue->count,
+                sizeof(*pred->value.ilevalue->integers),
+                iecmpfunc);
         }
     }
 }
@@ -1859,6 +1901,8 @@ void fill_event(const struct config* config, struct betree_event* event)
             abort();
         }
         pred->attr_var.var = var;
+        struct attr_domain* domain = config->attr_domains[var];
+        pred->value.value_type = domain->bound.value_type;
         switch(pred->value.value_type) {
             case BETREE_BOOLEAN:
             case BETREE_INTEGER:
@@ -1866,6 +1910,22 @@ void fill_event(const struct config* config, struct betree_event* event)
             case BETREE_INTEGER_LIST:
             case BETREE_SEGMENTS:
                 break;
+            case BETREE_INTEGER_ENUM: {
+                betree_ienum_t ienum
+                    = try_get_id_for_ienum(config, pred->attr_var, pred->value.ievalue.integer);
+                pred->value.ievalue.var = pred->attr_var.var;
+                pred->value.ievalue.ienum = ienum;
+                break;
+            }
+            case BETREE_INTEGER_LIST_ENUM: {
+                for(size_t j = 0; j < pred->value.ilevalue->count; j++) {
+                    betree_ienum_t ienum = try_get_id_for_ienum(
+                        config, pred->attr_var, pred->value.ilevalue->integers[j].integer);
+                    pred->value.ilevalue->integers[j].var = pred->attr_var.var;
+                    pred->value.ilevalue->integers[j].ienum = ienum;
+                }
+                break;
+            }
             case BETREE_STRING: {
                 betree_str_t str
                     = try_get_id_for_string(config, pred->attr_var, pred->value.svalue.string);

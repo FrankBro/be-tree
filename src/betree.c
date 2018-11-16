@@ -27,14 +27,59 @@ bool betree_delete(struct betree* betree, betree_sub_t id)
 int parse(const char* text, struct ast_node** node);
 int event_parse(const char* text, struct betree_event** event);
 
+static bool all_integer_enums_valid(const struct config* config, const struct ast_node* node)
+{
+    switch(node->type) {
+        case AST_TYPE_COMPARE_EXPR:
+            return config->attr_domains[node->compare_expr.attr_var.var]->bound.value_type != BETREE_INTEGER_ENUM;
+        case AST_TYPE_BOOL_EXPR:
+            switch(node->bool_expr.op) {
+                case AST_BOOL_OR:
+                case AST_BOOL_AND: {
+                    bool lhs = all_integer_enums_valid(config, node->bool_expr.binary.lhs);
+                    bool rhs = all_integer_enums_valid(config, node->bool_expr.binary.rhs);
+                    return lhs && rhs;
+                }
+                case AST_BOOL_NOT:
+                    return all_integer_enums_valid(config, node->bool_expr.unary.expr);
+                case AST_BOOL_VARIABLE:
+                case AST_BOOL_LITERAL:
+                    return true;
+                default: abort();
+            }
+        case AST_TYPE_EQUALITY_EXPR:
+        case AST_TYPE_SET_EXPR:
+        case AST_TYPE_LIST_EXPR:
+        case AST_TYPE_SPECIAL_EXPR:
+        case AST_TYPE_IS_NULL_EXPR:
+            return true;
+        default: abort();
+    }
+}
+
 static bool is_valid(const struct config* config, const struct ast_node* node)
 {
     bool var = all_variables_in_config(config, node);
     if(!var) {
+        fprintf(stderr, "Missing variable in config\n");
         return false;
     }
     bool str = all_bounded_strings_valid(config, node);
-    return str;
+    if(!str) {
+        fprintf(stderr, "Out of bound string\n");
+        return false;
+    }
+    bool nocmpienum = all_integer_enums_valid(config, node);
+    if(!nocmpienum) {
+        fprintf(stderr, "Integer enum used in comparison\n");
+        return false;
+    }
+    bool ienum = all_bounded_strings_valid(config, node);
+    if(!ienum) {
+        fprintf(stderr, "Out of bound integer enum\n");
+        return false;
+    }
+    return true;
 }
 
 /*
@@ -154,6 +199,24 @@ static struct value_bound string_list_bound(size_t min, size_t max)
     return bound;
 }
 
+static struct value_bound integer_enum_bound(size_t value) 
+{
+    struct value_bound bound;
+    bound.value_type = BETREE_INTEGER_ENUM;
+    bound.smin = value;
+    bound.smax = value;
+    return bound;
+}
+
+static struct value_bound integer_list_enum_bound(size_t min, size_t max) 
+{
+    struct value_bound bound;
+    bound.value_type = BETREE_INTEGER_LIST_ENUM;
+    bound.smin = min;
+    bound.smax = max;
+    return bound;
+}
+
 static struct value_bound compare_simple_bound(struct compare_value value, enum ast_compare_e op, bool inverted)
 {
     switch(value.value_type) {
@@ -187,6 +250,7 @@ static struct value_bound equality_simple_bound(struct equality_value value)
         case AST_EQUALITY_VALUE_INTEGER: return integer_bound(value.integer_value);
         case AST_EQUALITY_VALUE_FLOAT:   return float_bound(value.float_value);
         case AST_EQUALITY_VALUE_STRING:  return string_bound(value.string_value.str);
+        case AST_EQUALITY_VALUE_INTEGER_ENUM: return integer_enum_bound(value.integer_enum_value.ienum);
         default: abort();
     }
 }
@@ -204,6 +268,11 @@ static struct value_bound set_simple_bound(struct set_left_value left_value, str
                 size_t smin = right_value.string_list_value->strings[0].str;
                 size_t smax = right_value.string_list_value->strings[right_value.string_list_value->count - 1].str;
                 return string_list_bound(smin, smax);
+            }
+            case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM: {
+                size_t smin = right_value.integer_list_enum_value->integers[0].ienum;
+                size_t smax = right_value.integer_list_enum_value->integers[right_value.integer_list_enum_value->count - 1].ienum;
+                return integer_list_enum_bound(smin, smax);
             }
             case AST_SET_RIGHT_VALUE_VARIABLE:
             default: abort ();
@@ -295,6 +364,7 @@ static bool get_simple_variable_bound(betree_var_t var, const struct ast_node* n
                             bound->bmax = lbound.bmax > rbound.bmax ? lbound.bmax : rbound.bmax;
                             break;
                         case BETREE_INTEGER:
+                        case BETREE_INTEGER_LIST:
                             bound->imin = lbound.imin < rbound.imin ? lbound.imin : rbound.imin;
                             bound->imax = lbound.imax > rbound.imax ? lbound.imax : rbound.imax;
                             break;
@@ -303,14 +373,9 @@ static bool get_simple_variable_bound(betree_var_t var, const struct ast_node* n
                             bound->fmax = lbound.fmax > rbound.fmax ? lbound.fmax : rbound.fmax;
                             break;
                         case BETREE_STRING:
-                            bound->smin = lbound.smin < rbound.smin ? lbound.smin : rbound.smin;
-                            bound->smax = lbound.smax > rbound.smax ? lbound.smax : rbound.smax;
-                            break;
-                        case BETREE_INTEGER_LIST:
-                            bound->imin = lbound.imin < rbound.imin ? lbound.imin : rbound.imin;
-                            bound->imax = lbound.imax > rbound.imax ? lbound.imax : rbound.imax;
-                            break;
                         case BETREE_STRING_LIST:
+                        case BETREE_INTEGER_ENUM:
+                        case BETREE_INTEGER_LIST_ENUM:
                             bound->smin = lbound.smin < rbound.smin ? lbound.smin : rbound.smin;
                             bound->smax = lbound.smax > rbound.smax ? lbound.smax : rbound.smax;
                             break;
@@ -408,6 +473,20 @@ static void change_boundaries(struct config* config, const struct ast_node* node
                     }
                 }
                 break;
+            case BETREE_INTEGER_ENUM:
+            case BETREE_INTEGER_LIST_ENUM:
+                for(size_t j = 0; j < config->integer_map_count; j++) {
+                    if(config->integer_maps[j].attr_var.var == attr_domain->attr_var.var) {
+                        size_t smax = config->integer_maps[j].integer_value_count - 1;
+                        if(attr_domain->bound.smax < SIZE_MAX - 1) {
+                            attr_domain->bound.smax = smax > attr_domain->bound.smax ? smax : attr_domain->bound.smax;
+                        }
+                        else {
+                            attr_domain->bound.smax = smax;
+                        }
+                    }
+                }
+                break;
             case BETREE_SEGMENTS:
                 break;
             case BETREE_FREQUENCY_CAPS:
@@ -426,6 +505,7 @@ bool betree_change_boundaries(struct betree* tree, const char* expr)
     }
     assign_variable_id(tree->config, node);
     assign_str_id(tree->config, node, true);
+    assign_ienum_id(tree->config, node, true);
     sort_lists(node);
     fix_float_with_no_fractions(tree->config, node);
     change_boundaries(tree->config, node);
@@ -440,17 +520,21 @@ bool betree_insert_with_constants(struct betree* tree,
 {
     struct ast_node* node;
     if(parse(expr, &node) != 0) {
+        fprintf(stderr, "Can't parse %ld\n", id);
         return false;
     }
+    assign_variable_id(tree->config, node);
     if(!is_valid(tree->config, node)) {
+        fprintf(stderr, "Can't validate %ld\n", id);
         free_ast_node(node);
         return false;
     }
     if(!assign_constants(constant_count, constants, node)) {
+        fprintf(stderr, "Can't assign constants %ld\n", id);
         return false;
     }
-    assign_variable_id(tree->config, node);
     assign_str_id(tree->config, node, false);
+    assign_ienum_id(tree->config, node, true);
     sort_lists(node);
     fix_float_with_no_fractions(tree->config, node);
     assign_pred_id(tree->config, node);
@@ -496,6 +580,7 @@ bool betree_search(const struct betree* tree, const char* event_str, struct repo
 bool betree_search_with_event(const struct betree* betree, struct betree_event* event, struct report* report)
 {
     fill_event(betree->config, event);
+    sort_event_lists(event);
     return betree_search_with_event_filled(betree, event, report);
 }
 

@@ -57,6 +57,9 @@ static struct equality_value clone_equality_value(struct equality_value orig)
         case AST_EQUALITY_VALUE_STRING:
             clone.string_value = clone_string_value(orig.string_value);
             break;
+        case AST_EQUALITY_VALUE_INTEGER_ENUM:
+            clone.integer_enum_value = orig.integer_enum_value;
+            break;
         default:
             switch_default_error("Invalid equality value type");
             break;
@@ -153,6 +156,15 @@ static struct betree_string_list* clone_string_list(struct betree_string_list* l
     return clone;
 }
 
+static struct betree_integer_list_enum* clone_integer_list_enum(struct betree_integer_list_enum* list)
+{
+    struct betree_integer_list_enum* clone = make_integer_list_enum(list->count);
+    for(size_t i = 0; i < list->count; i++) {
+        clone->integers[i] = list->integers[i];
+    }
+    return clone;
+}
+
 static struct set_right_value clone_set_right_value(struct set_right_value orig)
 {
     struct set_right_value clone = { .value_type = orig.value_type };
@@ -165,6 +177,9 @@ static struct set_right_value clone_set_right_value(struct set_right_value orig)
             break;
         case AST_SET_RIGHT_VALUE_VARIABLE:
             clone.variable_value = clone_attr_var(orig.variable_value);
+            break;
+        case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM:
+            clone.integer_list_enum_value = clone_integer_list_enum(orig.integer_list_enum_value);
             break;
         default:
             switch_default_error("Invalid set right value type");

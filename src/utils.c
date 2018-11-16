@@ -109,3 +109,14 @@ int scmpfunc(const void *a, const void *b)
   return 0;
 }
 
+int iecmpfunc(const void *a, const void *b) 
+{
+  const struct integer_enum_value* x = (struct integer_enum_value*)a;
+  const struct integer_enum_value* y = (struct integer_enum_value*)b;
+  if (x->ienum < y->ienum)
+    return -1;
+  if (x->ienum > y->ienum)
+    return 1;
+  return 0;
+}
+

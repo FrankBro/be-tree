@@ -19,9 +19,14 @@
 #include "tree.h"
 #include "utils.h"
 
-#define MAX_EXPRS 5000
-#define MAX_EVENTS 1000
+#define MAX_EXPRS 10000
+#define MAX_EVENTS 5000
 #define DEFAULT_SEARCH_COUNT 10
+
+// wc -L filename
+#define MAX_EVENT_CHARACTERS 20000
+#define MAX_EXPR_CHARACTERS 17000
+#define MAX_CONSTANT_CHARACTERS 20
 
 struct betree_events {
     size_t count;
@@ -72,7 +77,7 @@ size_t read_betree_events(struct betree_events* events)
     FILE* f = fopen("betree_events", "r");
     size_t count = 0;
 
-    char line[22000]; // Arbitrary from what I've seen
+    char line[MAX_EVENT_CHARACTERS]; // Arbitrary from what I've seen
     while(fgets(line, sizeof(line), f)) {
         if(MAX_EVENTS != 0 && events->count == MAX_EVENTS) {
             break;
@@ -87,18 +92,11 @@ size_t read_betree_events(struct betree_events* events)
 
 size_t read_betree_exprs(struct betree* tree)
 {
-    enum e { constant_count = 4 };
-    const struct betree_constant* constants[constant_count] = {
-        betree_make_integer_constant("flight_id", 10),
-        betree_make_integer_constant("advertiser_id", 20),
-        betree_make_integer_constant("campaign_id", 30),
-        betree_make_integer_constant("product_id", 40),
-    };
 
     FILE* f = fopen("betree_exprs", "r");
 
     //char* lines[MAX_EXPRS];
-    char line[10000]; // Arbitrary from what I've seen
+    char line[MAX_EXPR_CHARACTERS]; // Arbitrary from what I've seen
     size_t count = 0;
     while(fgets(line, sizeof(line), f)) {
         if(!betree_change_boundaries(tree, line)) {
@@ -106,13 +104,27 @@ size_t read_betree_exprs(struct betree* tree)
             abort();
         }
     }
-    for(size_t i = 0; i < tree->config->attr_domain_count; i++) {
-        const struct attr_domain* attr_domain = tree->config->attr_domains[i];
-        print_attr_domain(attr_domain);
-    }
-    fclose(f);
-    f = fopen("betree_exprs", "r");
+    /*for(size_t i = 0; i < tree->config->attr_domain_count; i++) {*/
+        /*const struct attr_domain* attr_domain = tree->config->attr_domains[i];*/
+        /*print_attr_domain(attr_domain);*/
+    /*}*/
+    rewind(f);
+    FILE* constants_f = fopen("betree_constants", "r");
+    char constants_line[MAX_CONSTANT_CHARACTERS];
+    enum e { constant_count = 6 };
     while(fgets(line, sizeof(line), f)) {
+        char* ignore = fgets(constants_line, sizeof(constants_line), constants_f);
+        (void)ignore;
+        char* copy = strdup(constants_line);
+        char* rest = copy;
+        int64_t campaign_id = strtoll(strtok_r(rest, ",", &rest), NULL, 10);
+        int64_t advertiser_id = strtoll(strtok_r(rest, ",", &rest), NULL, 10);
+        int64_t flight_id = strtoll(strtok_r(rest, "\n", &rest), NULL, 10);
+        const struct betree_constant* constants[constant_count] = {
+            betree_make_integer_constant("campaign_id", campaign_id),
+            betree_make_integer_constant("advertiser_id", advertiser_id),
+            betree_make_integer_constant("flight_id", flight_id),
+        };
         if(!betree_insert_with_constants(tree, count, constant_count, constants, line)) {
             printf("Can't insert expr %zu: %s\n", count, line);
             abort();
@@ -122,18 +134,6 @@ size_t read_betree_exprs(struct betree* tree)
             break;
         }
     }
-
-    /*
-    while(fgets(line, sizeof(line), f)) {
-        lines[count] = strdup(line);
-        count++;
-        if(MAX_EXPRS != 0 && count == MAX_EXPRS) {
-            break;
-        }
-    }
-
-    betree_insert_all(tree, count, (const char**)lines);
-    */
 
     fclose(f);
     return count;

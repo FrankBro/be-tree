@@ -127,3 +127,5 @@ bool betree_search_with_preds(const struct config* config,
 
 bool insert_be_tree(const struct config* config, const struct sub* sub, struct cnode* cnode, struct cdir* cdir);
 
+void sort_event_lists(struct betree_event* event);
+

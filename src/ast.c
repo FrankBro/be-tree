@@ -334,6 +334,9 @@ static void free_set_expr(struct ast_set_expr set_expr)
             free_attr_var(set_expr.right_value.variable_value);
             break;
         }
+        case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM:
+            free_integer_list_enum(set_expr.right_value.integer_list_enum_value);
+            break;
         default: {
             switch_default_error("Invalid set right value type");
         }
@@ -456,6 +459,25 @@ bool sbinary_search(struct string_value arr[], size_t count, betree_str_t to_fin
     return false;
 }
 
+bool iebinary_search(struct integer_enum_value arr[], size_t count, betree_ienum_t to_find)
+{
+    int imin = 0;
+    int imax = (int)count - 1;
+    while(imax >= imin) {
+        int imid = imin + ((imax - imin) / 2);
+        if(arr[imid].ienum == to_find) {
+            return true;
+        }
+        else if(arr[imid].ienum < to_find) {
+            imin = imid + 1;
+        }
+        else {
+            imax = imid - 1;
+        }
+    }
+    return false;
+}
+
 static bool integer_in_integer_list(int64_t integer, struct betree_integer_list* list)
 {
     return d64binary_search(list->integers, list->count, integer);
@@ -464,6 +486,11 @@ static bool integer_in_integer_list(int64_t integer, struct betree_integer_list*
 static bool string_in_string_list(struct string_value string, struct betree_string_list* list)
 {
     return sbinary_search(list->strings, list->count, string.str);
+}
+
+static bool integer_enum_in_integer_list_enum(struct integer_enum_value ienum, struct betree_integer_list_enum* list)
+{
+    return iebinary_search(list->integers, list->count, ienum.ienum);
 }
 
 static bool compare_value_matches(enum ast_compare_value_e a, enum betree_value_type_e b)
@@ -476,7 +503,8 @@ static bool equality_value_matches(enum ast_equality_value_e a, enum betree_valu
 {
     return (a == AST_EQUALITY_VALUE_INTEGER && b == BETREE_INTEGER)
         || (a == AST_EQUALITY_VALUE_FLOAT && b == BETREE_FLOAT)
-        || (a == AST_EQUALITY_VALUE_STRING && b == BETREE_STRING);
+        || (a == AST_EQUALITY_VALUE_STRING && b == BETREE_STRING)
+        || (a == AST_EQUALITY_VALUE_INTEGER_ENUM && b == BETREE_INTEGER_ENUM);
 }
 
 static bool list_value_matches(enum ast_list_value_e a, enum betree_value_type_e b)
@@ -865,6 +893,15 @@ static bool match_set_expr(const struct betree_variable** preds, const struct as
         }
         is_in = string_in_string_list(variable, right.string_list_value);
     }
+    else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE
+      && right.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM) {
+        struct integer_enum_value variable;
+        bool is_variable_defined = get_integer_enum_var(left.variable_value.var, preds, &variable);
+        if(is_variable_defined == false) {
+            return false;
+        }
+        is_in = integer_enum_in_integer_list_enum(variable, right.integer_list_enum_value);
+    }
     else {
         invalid_expr("invalid set expression");
         return false;
@@ -986,6 +1023,10 @@ static bool match_equality_expr(
                     bool result = variable.svalue.str == equality_expr.value.string_value.str;
                     return result;
                 }
+                case AST_EQUALITY_VALUE_INTEGER_ENUM: {
+                    bool result = variable.ievalue.ienum == equality_expr.value.integer_enum_value.ienum;
+                    return result;
+                }
                 default: {
                     switch_default_error("Invalid equality value type");
                     return false;
@@ -1004,6 +1045,10 @@ static bool match_equality_expr(
                 }
                 case AST_EQUALITY_VALUE_STRING: {
                     bool result = variable.svalue.str != equality_expr.value.string_value.str;
+                    return result;
+                }
+                case AST_EQUALITY_VALUE_INTEGER_ENUM: {
+                    bool result = variable.ievalue.ienum != equality_expr.value.integer_enum_value.ienum;
                     return result;
                 }
                 default: {
@@ -1552,6 +1597,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                                 break;
                             case BETREE_STRING:
                             case BETREE_STRING_LIST:
+                            case BETREE_INTEGER_ENUM:
+                            case BETREE_INTEGER_LIST_ENUM:
                                 bound->smin = smin(lbound.smin, rbound.smin);
                                 break;
                             case BETREE_SEGMENTS:
@@ -1575,6 +1622,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                                 break;
                             case BETREE_STRING:
                             case BETREE_STRING_LIST:
+                            case BETREE_INTEGER_ENUM:
+                            case BETREE_INTEGER_LIST_ENUM:
                                 bound->smax = smax(lbound.smax, rbound.smax);
                                 break;
                             case BETREE_SEGMENTS:
@@ -1633,6 +1682,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                                 break;
                             case BETREE_STRING:
                             case BETREE_STRING_LIST:
+                            case BETREE_INTEGER_ENUM:
+                            case BETREE_INTEGER_LIST_ENUM:
                                 if(ldirty.min_dirty == true && rdirty.min_dirty == true) {
                                     bound->smin = smin(lbound.smin, rbound.smin);
                                 }
@@ -1688,6 +1739,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                                 break;
                             case BETREE_STRING:
                             case BETREE_STRING_LIST:
+                            case BETREE_INTEGER_ENUM:
+                            case BETREE_INTEGER_LIST_ENUM:
                                 if(ldirty.max_dirty == true && rdirty.max_dirty == true) {
                                     bound->smax = smax(lbound.smax, rbound.smax);
                                 }
@@ -1752,6 +1805,16 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                                 dirty->max_dirty = true;
                             }
                             break;
+                        case AST_EQUALITY_VALUE_INTEGER_ENUM:
+                            if(is_reversed) {
+                            }
+                            else {
+                                bound->smin = node->equality_expr.value.integer_enum_value.ienum;
+                                dirty->min_dirty = true;
+                                bound->smax = node->equality_expr.value.integer_enum_value.ienum;
+                                dirty->max_dirty = true;
+                            }
+                            break;
                         default:
                             switch_default_error("Invalid equality value type");
                             break;
@@ -1784,6 +1847,16 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                                 bound->smin = node->equality_expr.value.string_value.str;
                                 dirty->min_dirty = true;
                                 bound->smax = node->equality_expr.value.string_value.str;
+                                dirty->max_dirty = true;
+                            }
+                            else {
+                            }
+                            break;
+                        case AST_EQUALITY_VALUE_INTEGER_ENUM:
+                            if(is_reversed) {
+                                bound->smin = node->equality_expr.value.integer_enum_value.ienum;
+                                dirty->min_dirty = true;
+                                bound->smax = node->equality_expr.value.integer_enum_value.ienum;
                                 dirty->max_dirty = true;
                             }
                             else {
@@ -1966,6 +2039,8 @@ struct value_bound get_variable_bound(const struct attr_domain* domain, const st
             break;
         case BETREE_STRING:
         case BETREE_STRING_LIST:
+        case BETREE_INTEGER_ENUM:
+        case BETREE_INTEGER_LIST_ENUM:
             if(dirty.min_dirty == false) {
                 bound.smin = domain->bound.smin;
             }
@@ -2200,12 +2275,79 @@ void assign_variable_id(struct config* config, struct ast_node* node)
                     node->set_expr.right_value.variable_value.var = variable_id;
                     break;
                 }
+                case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM:
+                    break;
                 default: {
                     switch_default_error("Invalid set right value type");
                 }
             }
             return;
         }
+        default: {
+            switch_default_error("Invalid expr type");
+        }
+    }
+}
+
+void assign_ienum_id(struct config* config, struct ast_node* node, bool always_assign)
+{
+    switch(node->type) {
+        case AST_TYPE_IS_NULL_EXPR:
+        case AST_TYPE_SPECIAL_EXPR: 
+        case AST_TYPE_COMPARE_EXPR: 
+        case AST_TYPE_LIST_EXPR:
+            return;
+        case AST_TYPE_EQUALITY_EXPR:
+            if(node->equality_expr.value.value_type == AST_EQUALITY_VALUE_INTEGER
+              && config->attr_domains[node->equality_expr.attr_var.var]->bound.value_type == BETREE_INTEGER_ENUM) {
+                betree_ienum_t ienum_id = get_id_for_ienum(config,
+                    node->equality_expr.attr_var,
+                    node->equality_expr.value.integer_value, always_assign);
+                node->equality_expr.value.value_type = AST_EQUALITY_VALUE_INTEGER_ENUM;
+                node->equality_expr.value.integer_enum_value.integer = node->equality_expr.value.integer_value;
+                node->equality_expr.value.integer_enum_value.var = node->equality_expr.attr_var.var;
+                node->equality_expr.value.integer_enum_value.ienum = ienum_id;
+            }
+            return;
+        case AST_TYPE_BOOL_EXPR:
+            switch(node->bool_expr.op) {
+                case AST_BOOL_LITERAL:
+                    return;
+                case AST_BOOL_NOT: {
+                    assign_ienum_id(config, node->bool_expr.unary.expr, always_assign);
+                    return;
+                }
+                case AST_BOOL_OR:
+                case AST_BOOL_AND: {
+                    assign_ienum_id(config, node->bool_expr.binary.lhs, always_assign);
+                    assign_ienum_id(config, node->bool_expr.binary.rhs, always_assign);
+                    return;
+                }
+                case AST_BOOL_VARIABLE: {
+                    return;
+                }
+                default:
+                    switch_default_error("Invalid bool expr operation");
+                    return;
+            }
+        case AST_TYPE_SET_EXPR:
+            if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE
+              && config->attr_domains[node->set_expr.left_value.variable_value.var]->bound.value_type == BETREE_INTEGER_ENUM) {
+                struct betree_integer_list_enum* integer_list_enum = make_integer_list_enum(node->set_expr.right_value.integer_list_value->count);
+                for(size_t i = 0; i < node->list_expr.value.string_list_value->count; i++) {
+                    betree_ienum_t ienum_id = get_id_for_ienum(config,
+                        node->set_expr.left_value.variable_value,
+                        node->set_expr.right_value.integer_list_value->integers[i], always_assign);
+                    integer_list_enum->integers[i].var = node->set_expr.left_value.variable_value.var;
+                    integer_list_enum->integers[i].ienum = ienum_id;
+                    integer_list_enum->integers[i].integer = node->set_expr.left_value.variable_value.var;
+                }
+                node->set_expr.right_value.value_type = AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM;
+                free_integer_list(node->set_expr.right_value.integer_list_value);
+                node->set_expr.right_value.integer_list_enum_value = integer_list_enum;
+
+            }
+            return;
         default: {
             switch_default_error("Invalid expr type");
         }
@@ -2346,6 +2488,9 @@ static bool eq_equality_value(struct equality_value a, struct equality_value b)
         case AST_EQUALITY_VALUE_STRING:
             return a.string_value.var == b.string_value.var
                 && a.string_value.str == b.string_value.str;
+        case AST_EQUALITY_VALUE_INTEGER_ENUM:
+            return a.integer_enum_value.var == b.integer_enum_value.var
+                && a.integer_enum_value.ienum == b.integer_enum_value.ienum;
         default:
             switch_default_error("Invalid equality value type");
             return false;
@@ -2418,6 +2563,19 @@ static bool eq_string_list(struct betree_string_list* a, struct betree_string_li
     return true;
 }
 
+static bool eq_integer_list_enum(struct betree_integer_list_enum* a, struct betree_integer_list_enum* b)
+{
+    if(a->count != b->count) {
+        return false;
+    }
+    for(size_t i = 0; i < a->count; i++) {
+        if(a->integers[i].var == b->integers[i].var && a->integers[i].ienum != b->integers[i].ienum) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static bool eq_set_right_value(struct set_right_value a, struct set_right_value b)
 {
     if(a.value_type != b.value_type) {
@@ -2430,6 +2588,8 @@ static bool eq_set_right_value(struct set_right_value a, struct set_right_value 
             return eq_string_list(a.string_list_value, b.string_list_value);
         case AST_SET_RIGHT_VALUE_VARIABLE:
             return a.variable_value.var == b.variable_value.var;
+        case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM:
+            return eq_integer_list_enum(a.integer_list_enum_value, b.integer_list_enum_value);
         default:
             switch_default_error("Invalid right value type");
             return false;
@@ -2602,6 +2762,12 @@ void sort_lists(struct ast_node* node)
                             scmpfunc);
                         return;
                     case AST_SET_RIGHT_VALUE_VARIABLE:
+                    case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM:
+                        qsort(node->set_expr.right_value.integer_list_enum_value->integers,
+                            node->set_expr.right_value.integer_list_enum_value->count,
+                            sizeof(*node->set_expr.right_value.integer_list_enum_value->integers),
+                            iecmpfunc);
+                        return;
                     default:
                         fprintf(stderr, "Invalid set expr");
                         abort();
@@ -2657,12 +2823,12 @@ bool var_exists(const struct config* config, const char* attr)
 bool all_variables_in_config(const struct config* config, const struct ast_node* node)
 {
     switch(node->type) {
-        case  AST_TYPE_IS_NULL_EXPR:
-            return var_exists(config, node->is_null_expr.attr_var.attr);
+        case AST_TYPE_IS_NULL_EXPR:
+            return node->is_null_expr.attr_var.var != INVALID_VAR;
         case AST_TYPE_COMPARE_EXPR:
-            return var_exists(config, node->compare_expr.attr_var.attr);
+            return node->compare_expr.attr_var.var != INVALID_VAR;
         case AST_TYPE_EQUALITY_EXPR:
-            return var_exists(config, node->equality_expr.attr_var.attr);
+            return node->equality_expr.attr_var.var != INVALID_VAR;
         case AST_TYPE_BOOL_EXPR:
             switch(node->bool_expr.op) {
                 case AST_BOOL_OR:
@@ -2672,7 +2838,7 @@ bool all_variables_in_config(const struct config* config, const struct ast_node*
                 case AST_BOOL_NOT:
                     return all_variables_in_config(config, node->bool_expr.unary.expr);
                 case AST_BOOL_VARIABLE:
-                    return var_exists(config, node->bool_expr.variable.attr);
+                    return node->bool_expr.variable.var != INVALID_VAR;
                 case AST_BOOL_LITERAL:
                     return true;
                 default:
@@ -2681,26 +2847,28 @@ bool all_variables_in_config(const struct config* config, const struct ast_node*
             }
         case AST_TYPE_SET_EXPR:
             if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
-                return var_exists(config, node->set_expr.left_value.variable_value.attr);
+                return node->set_expr.left_value.variable_value.var != INVALID_VAR;
             }
             if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
-                return var_exists(config, node->set_expr.right_value.variable_value.attr);
+                return node->set_expr.right_value.variable_value.var != INVALID_VAR;
             }
             fprintf(stderr, "Invalid set expr");
             abort();
             return false;
         case AST_TYPE_LIST_EXPR:
-            return var_exists(config, node->list_expr.attr_var.attr);
+            return node->list_expr.attr_var.var != INVALID_VAR;
         case AST_TYPE_SPECIAL_EXPR:
             switch(node->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY:
-                    return var_exists(config, node->special_expr.frequency.attr_var.attr);
+                    return node->special_expr.frequency.attr_var.var != INVALID_VAR
+                        && node->special_expr.frequency.now.var != INVALID_VAR;
                 case AST_SPECIAL_SEGMENT:
-                    return var_exists(config, node->special_expr.segment.attr_var.attr);
+                    return node->special_expr.segment.attr_var.var != INVALID_VAR
+                        && node->special_expr.segment.now.var != INVALID_VAR;
                 case AST_SPECIAL_GEO:
                     return true;
                 case AST_SPECIAL_STRING:
-                    return var_exists(config, node->special_expr.string.attr_var.attr);
+                    return node->special_expr.string.attr_var.var != INVALID_VAR;
                 default:
                     switch_default_error("Invalid special expr type");
                     return false;

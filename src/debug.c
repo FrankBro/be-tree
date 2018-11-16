@@ -56,6 +56,8 @@ static void print_cdir(const struct config* config, const struct cdir* cdir, uin
         }
         case(BETREE_STRING):
         case(BETREE_STRING_LIST):
+        case(BETREE_INTEGER_ENUM):
+        case(BETREE_INTEGER_LIST_ENUM):
             printf(" cdir [%zu , %zu]", cdir->bound.smin, cdir->bound.smax);
             break;
         case(BETREE_SEGMENTS): {
@@ -231,6 +233,8 @@ static const char* get_path_cdir(const struct config* config, const struct cdir*
         }
         case(BETREE_STRING):
         case(BETREE_STRING_LIST):
+        case(BETREE_INTEGER_ENUM):
+        case(BETREE_INTEGER_LIST_ENUM):
             if(asprintf(&name, "%s_%zu_%zu", parent_path, cdir->bound.smin, cdir->bound.smax) < 0) {
                 abort();
             }
@@ -407,6 +411,8 @@ static void write_dot_file_cdir_td(FILE* f,
                 }
                 case(BETREE_STRING):
                 case(BETREE_STRING_LIST):
+                case(BETREE_INTEGER_ENUM):
+                case(BETREE_INTEGER_LIST_ENUM):
                     fprintf(f,
                         "<td colspan=\"%" PRIu64 "\" port=\"%s\">[%zu, %zu]</td>\n",
                         colspan,

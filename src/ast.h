@@ -49,6 +49,7 @@ enum ast_equality_value_e {
     AST_EQUALITY_VALUE_INTEGER,
     AST_EQUALITY_VALUE_FLOAT,
     AST_EQUALITY_VALUE_STRING,
+    AST_EQUALITY_VALUE_INTEGER_ENUM,
 };
 
 struct equality_value {
@@ -57,6 +58,7 @@ struct equality_value {
         int64_t integer_value;
         double float_value;
         struct string_value string_value;
+        struct integer_enum_value integer_enum_value;
     };
 };
 
@@ -123,6 +125,7 @@ enum set_right_value_e {
     AST_SET_RIGHT_VALUE_INTEGER_LIST,
     AST_SET_RIGHT_VALUE_STRING_LIST,
     AST_SET_RIGHT_VALUE_VARIABLE,
+    AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM,
 };
 
 struct set_right_value {
@@ -131,6 +134,7 @@ struct set_right_value {
         struct betree_integer_list* integer_list_value;
         struct betree_string_list* string_list_value;
         struct attr_var variable_value;
+        struct betree_integer_list_enum* integer_list_enum_value;
     };
 };
 
@@ -328,6 +332,7 @@ bool assign_constants(
     size_t constant_count, const struct betree_constant** constants, struct ast_node* node);
 void assign_variable_id(struct config* config, struct ast_node* node);
 void assign_str_id(struct config* config, struct ast_node* node, bool always_assign);
+void assign_ienum_id(struct config* config, struct ast_node* node, bool always_assign);
 void assign_pred_id(struct config* config, struct ast_node* node);
 void sort_lists(struct ast_node* node);
 
