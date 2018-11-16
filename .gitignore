@@ -35,3 +35,4 @@ tags
 domains.txt
 perf.md
 *.swp
+olddata/*
