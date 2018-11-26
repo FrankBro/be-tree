@@ -905,7 +905,7 @@ void write_dot_file(const struct betree* tree)
 {
     const struct config* config = tree->config;
     const struct cnode* root = tree->cnode;
-    FILE* f = fopen("betree.dot", "w");
+    FILE* f = fopen("data/betree.dot", "w");
     if(f == NULL) {
         fprintf(stderr, "Can't open a file to write the dot_file");
         abort();

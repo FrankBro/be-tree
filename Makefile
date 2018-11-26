@@ -39,11 +39,11 @@ all: build/libbetree.so
 dev: build/libbetree.so test
 
 dot:
-	# dot -Tpng betree.dot -o betree.png
-	dot -Tsvg betree.dot -o betree.svg
+	# dot -Tpng data/betree.dot -o data/betree.png
+	dot -Tsvg data/betree.dot -o data/betree.svg
 
 neato:
-	neato -Tsvg betree.dot -o betree.svg
+	neato -Tsvg data/betree.dot -o data/betree.svg
 
 ################################################################################
 # Binaries

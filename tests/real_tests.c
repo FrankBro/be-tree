@@ -74,7 +74,7 @@ int event_parse(const char* text, struct betree_event** event);
 
 size_t read_betree_events(struct betree_events* events)
 {
-    FILE* f = fopen("betree_events", "r");
+    FILE* f = fopen("data/betree_events", "r");
     size_t count = 0;
 
     char line[MAX_EVENT_CHARACTERS]; // Arbitrary from what I've seen
@@ -93,7 +93,7 @@ size_t read_betree_events(struct betree_events* events)
 size_t read_betree_exprs(struct betree* tree)
 {
 
-    FILE* f = fopen("betree_exprs", "r");
+    FILE* f = fopen("data/betree_exprs", "r");
 
     //char* lines[MAX_EXPRS];
     char line[MAX_EXPR_CHARACTERS]; // Arbitrary from what I've seen
@@ -109,7 +109,7 @@ size_t read_betree_exprs(struct betree* tree)
         /*print_attr_domain(attr_domain);*/
     /*}*/
     rewind(f);
-    FILE* constants_f = fopen("betree_constants", "r");
+    FILE* constants_f = fopen("data/betree_constants", "r");
     char constants_line[MAX_CONSTANT_CHARACTERS];
     enum e { constant_count = 6 };
     while(fgets(line, sizeof(line), f)) {
@@ -141,7 +141,7 @@ size_t read_betree_exprs(struct betree* tree)
 
 void read_betree_defs(struct betree* tree)
 {
-    FILE* f = fopen("betree_defs", "r");
+    FILE* f = fopen("data/betree_defs", "r");
 
     char line[LINE_MAX];
     while(fgets(line, sizeof(line), f)) {
@@ -163,8 +163,8 @@ int main(int argc, char** argv)
     if(argc > 1) {
         search_count = atoi(argv[1]);
     }
-    if(access("betree_defs", F_OK) == -1 || access("betree_events", F_OK) == -1
-        || access("betree_exprs", F_OK) == -1) {
+    if(access("data/betree_defs", F_OK) == -1 || access("data/betree_events", F_OK) == -1
+        || access("data/betree_exprs", F_OK) == -1 || access("data/betree_constants", F_OK) == -1) {
         fprintf(stderr, "Missing files, skipping the tests");
         return 0;
     }
