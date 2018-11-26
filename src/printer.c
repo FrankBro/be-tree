@@ -314,10 +314,7 @@ char* ast_to_string(const struct ast_node* node)
                     }
                 }
                 case AST_BOOL_VARIABLE: {
-                    if(asprintf(&expr, "%s", node->bool_expr.variable.attr) < 0) {
-                        abort();
-                    }
-                    return expr;
+                    return strdup(node->bool_expr.variable.attr);
                 }
                 case AST_BOOL_NOT: {
                     const char* a = ast_to_string(node->bool_expr.unary.expr);
