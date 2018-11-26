@@ -1396,15 +1396,10 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                             if(is_reversed) {
                             }
                             else {
-                                if(node->set_expr.right_value.integer_list_value->count != 0) {
-                                    bound->imin = node->set_expr.left_value.integer_value;
-                                    dirty->min_dirty = true;
-                                    bound->imax = node->set_expr.left_value.integer_value;
-                                    dirty->max_dirty = true;
-                                }
-                                else {
-                                    return;
-                                }
+                                bound->imin = node->set_expr.left_value.integer_value;
+                                dirty->min_dirty = true;
+                                bound->imax = node->set_expr.left_value.integer_value;
+                                dirty->max_dirty = true;
                             }
                             return;
                         }
@@ -1414,15 +1409,10 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                             if(is_reversed) {
                             }
                             else {
-                                if(node->set_expr.right_value.string_list_value->count != 0) {
-                                    bound->smin = node->set_expr.left_value.string_value.str;
-                                    dirty->min_dirty = true;
-                                    bound->smax = node->set_expr.left_value.string_value.str;
-                                    dirty->max_dirty = true;
-                                }
-                                else {
-                                    return;
-                                }
+                                bound->smin = node->set_expr.left_value.string_value.str;
+                                dirty->min_dirty = true;
+                                bound->smax = node->set_expr.left_value.string_value.str;
+                                dirty->max_dirty = true;
                             }
                             return;
                         }
@@ -1499,15 +1489,10 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                             && node->set_expr.left_value.value_type
                                 == AST_SET_LEFT_VALUE_INTEGER) {
                             if(is_reversed) {
-                                if(node->set_expr.right_value.integer_list_value->count != 0) {
-                                    bound->imin = node->set_expr.left_value.integer_value;
-                                    dirty->min_dirty = true;
-                                    bound->imax = node->set_expr.left_value.integer_value;
-                                    dirty->max_dirty = true;
-                                }
-                                else {
-                                    return;
-                                }
+                                bound->imin = node->set_expr.left_value.integer_value;
+                                dirty->min_dirty = true;
+                                bound->imax = node->set_expr.left_value.integer_value;
+                                dirty->max_dirty = true;
                             }
                             else {
                             }
@@ -1517,15 +1502,10 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                             && node->set_expr.left_value.value_type
                                 == AST_SET_LEFT_VALUE_STRING) {
                             if(is_reversed) {
-                                if(node->set_expr.right_value.string_list_value->count != 0) {
-                                    bound->smin = node->set_expr.left_value.string_value.str;
-                                    dirty->min_dirty = true;
-                                    bound->smax = node->set_expr.left_value.string_value.str;
-                                    dirty->max_dirty = true;
-                                }
-                                else {
-                                    return;
-                                }
+                                bound->smin = node->set_expr.left_value.string_value.str;
+                                dirty->min_dirty = true;
+                                bound->smax = node->set_expr.left_value.string_value.str;
+                                dirty->max_dirty = true;
                             }
                             else {
                             }
