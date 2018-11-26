@@ -142,6 +142,11 @@ void print_be_tree(const struct betree* tree)
 // dot
 // -----------------------------------------------------------------------------
 
+static bool is_cnode_empty(const struct cnode* cnode)
+{
+    return cnode->pdir == NULL && cnode->lnode->sub_count == 0;
+}
+
 static const char* get_path_cnode(const struct config* config, const struct cnode* cnode);
 
 static const char* escape_name(const char* input)
@@ -464,7 +469,7 @@ static void write_dot_file_cdir_inner_names(FILE* f,
 static void write_dot_file_cdir_cnode_names(
     FILE* f, const struct config* config, const struct cdir* cdir, uint64_t level)
 {
-    if(cdir->cnode != NULL) {
+    if(cdir->cnode != NULL && !is_cnode_empty(cdir->cnode)) {
         write_dot_file_cnode_names(f, config, cdir->cnode, level);
     }
     if(cdir->lchild != NULL) {
@@ -616,7 +621,7 @@ static void write_dot_file_cdir_links(FILE* f,
     const char* table_name)
 {
     const char* cdir_name = get_name_cdir(config, cdir);
-    if(cdir->cnode != NULL) {
+    if(cdir->cnode != NULL && !is_cnode_empty(cdir->cnode)) {
         const char* cnode_name = get_name_cnode(config, cdir->cnode);
         print_spaces(f, level);
         fprintf(f, "%s:%s -> \"%s\"\n", table_name, cdir_name, cnode_name);
@@ -785,7 +790,7 @@ static void write_dot_file_cdir_ranks(
         write_dot_file_cdir_cnode_ranks(f, config, cdir, level, true);
         fprintf(f, " }\n");
     }
-    if(cdir->cnode != NULL) {
+    if(cdir->cnode != NULL && !is_cnode_empty(cdir->cnode)) {
         write_dot_file_cnode_ranks(f, config, cdir->cnode, level);
     }
     if(cdir->lchild != NULL) {
