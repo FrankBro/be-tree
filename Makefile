@@ -101,6 +101,7 @@ clean:
 valgrind:
 	$(VALGRIND) build/tests/betree_tests
 	$(VALGRIND) build/tests/bound_tests
+	$(VALGRIND) build/tests/change_boundaries_tests
 	$(VALGRIND) build/tests/eq_expr_tests
 	$(VALGRIND) build/tests/event_parser_tests
 	$(VALGRIND) build/tests/memoize_tests
@@ -117,5 +118,5 @@ cachegrind:
 	$(CACHEGRIND) build/tests/real_tests 1
 
 massif:
-	$(MASSIF) build/tests/real_tests
+	$(MASSIF) build/tests/real_tests 1
 
