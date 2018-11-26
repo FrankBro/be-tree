@@ -25,6 +25,7 @@ struct ast_node* ast_node_create()
         abort();
     }
     node->id = INVALID_PRED;
+    node->use_pred = false;
     return node;
 }
 
@@ -1135,7 +1136,7 @@ static bool match_node_inner(const struct betree_variable** preds,
     struct memoize* memoize,
     struct report* report)
 {
-    if(unlikely(node->id != INVALID_PRED)) {
+    if(node->use_pred && node->id != INVALID_PRED) {
         if(test_bit(memoize->pass, node->id)) {
             report->memoized++;
             return true;
@@ -1179,7 +1180,7 @@ static bool match_node_inner(const struct betree_variable** preds,
             return false;
         }
     }
-    if(unlikely(node->id != INVALID_PRED)) {
+    if(node->use_pred && node->id != INVALID_PRED) {
         if(result) {
             set_bit(memoize->pass, node->id);
         }
