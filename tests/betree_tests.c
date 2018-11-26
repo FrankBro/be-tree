@@ -1563,7 +1563,6 @@ int all_tests()
     mu_run_test(test_min_partition);
     mu_run_test(test_allow_undefined);
     mu_run_test(test_float);
-    // mu_run_test(test_bool);
     mu_run_test(test_string);
     mu_run_test(test_string_wont_split);
     mu_run_test(test_negative_int);
@@ -1577,7 +1576,6 @@ int all_tests()
     mu_run_test(test_parenthesis);
     mu_run_test(test_splitable_string_domain);
     mu_run_test(test_not_domain_changing);
-    /*mu_run_test(test_insert_all);*/
     mu_run_test(test_bug_cases);
     mu_run_test(test_splitable_integer_list_domain);
     mu_run_test(test_splitable_string_list_domain);
@@ -1591,6 +1589,8 @@ int all_tests()
     mu_run_test(test_event_out_of_bound);
     mu_run_test(test_list_bug1);
     mu_run_test(test_list_bug2);
+    /*mu_run_test(test_bool);*/
+    /*mu_run_test(test_insert_all);*/
 
     return 0;
 }
