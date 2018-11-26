@@ -19,6 +19,7 @@ bool parse_and_compare(const char* expr)
         printf("%s != %s\n", expr, printed);
     }
     free(printed);
+    free_ast_node(node);
     return result;
 }
 

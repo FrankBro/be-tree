@@ -333,6 +333,8 @@ int test_complex_bounds()
     mu_assert(match_integer(tree->config, "i > 5 and b", 6, 10), "and l");
     mu_assert(match_integer(tree->config, "i > 5 or b", 0, 10), "or l");
 
+    betree_free(tree);
+
     return 0;
 }
 

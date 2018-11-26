@@ -1311,6 +1311,9 @@ int test_api()
         betree_make_integer_constant("product_id", 40),
     };
     mu_assert(betree_insert_with_constants(tree, 0, constant_count, constants, expr), "");
+    for(size_t i = 0; i < constant_count; i++) {
+        betree_free_constant((struct betree_constant*)constants[i]);
+    }
 
     struct betree_event* event = betree_make_event(tree);
     betree_set_variable(event, 0, betree_make_boolean_variable("b", true));
@@ -1339,6 +1342,7 @@ int test_api()
 
     mu_assert(report->matched == 1, "found 1");
 
+    betree_free_event(event);
     betree_free(tree);
     free_report(report);
 
@@ -1390,6 +1394,7 @@ int test_float_no_point_in_expr()
 
     mu_assert(report->matched == 1, "found 1");
 
+    betree_free_event(event);
     betree_free(tree);
     free_report(report);
 
@@ -1414,6 +1419,7 @@ int test_is_null()
 
     mu_assert(report->matched == 0, "found none");
 
+    betree_free_event(event);
     betree_free(tree);
     free_report(report);
 
@@ -1503,6 +1509,7 @@ int test_event_out_of_bound()
 
     mu_assert(report->matched == 4, "");
 
+    free_report(report);
     betree_free(tree);
 
     return 0;

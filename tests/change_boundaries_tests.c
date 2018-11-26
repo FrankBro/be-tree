@@ -228,39 +228,6 @@ int test_integer_list()
     return 0;
 }
 
-int test_complex() 
-{
-    struct betree* tree = betree_make();
-    add_attr_domain_b(tree->config, "private", false);
-    add_attr_domain_i(tree->config, "exchange", false);
-    add_attr_domain_i(tree->config, "member_id", false);
-    add_attr_domain_i(tree->config, "exchange_seller_site_id", false);
-    add_attr_domain_i(tree->config, "publisher_id", false);
-    add_attr_domain_s(tree->config, "country", false);
-    add_attr_domain_s(tree->config, "region", false);
-    add_attr_domain_il(tree->config, "iab_categories", false);
-    add_attr_domain_il(tree->config, "ias_segments", false);
-    add_attr_domain_s(tree->config, "impression_type", false);
-    add_attr_domain_il(tree->config, "sitelist_ids", false);
-    add_attr_domain_i(tree->config, "device_type_id", false);
-    add_attr_domain_il(tree->config, "exchange_seat_ids", false);
-
-    const char* expr1 = "(((not private)) and (((exchange <> 6 or exchange = 6 and member_id <> 22 or exchange = 6 and member_id = 22 and exchange_seller_site_id <> 1145) and (exchange <> 6 or exchange = 6 and member_id <> 22 or exchange = 6 and member_id = 22 and exchange_seller_site_id <> 1146))) and (((exchange <> 6 or exchange = 6 and member_id <> 22 or exchange = 6 and member_id = 22 and publisher_id = 68) or (exchange <> 6 or exchange = 6 and member_id <> 22 or exchange = 6 and member_id = 22 and publisher_id = 69))))";
-    const char* expr2 = "((((not private)) and ((country = \"CA\" and region = \"QC\")) and ((exchange not in (2,5,14,16,7,9,3,11) or exchange in (2,5,14,16,7,9,3,11) and iab_categories none of (240000,260000,250000))) and (ias_segments all of (502,504,506,508,510,512,532)) and (((impression_type <> 'site' or sitelist_ids none of (637)) and (impression_type <> 'site' or sitelist_ids one of (2200)))) and ((device_type_id = 3 or device_type_id = 1)) and ((segment_within(20198, 604800) and not (segment_within(20202, 604800) or segment_within(20192, 604800))))) and (exchange <> 4 or exchange = 4 and 2 in exchange_seat_ids)) and ((within_frequency_cap(\"campaign\", \"849922\", 24, 2592000) and within_frequency_cap(\"campaign\", \"853821\", 1, 60))) and (within_frequency_cap(\"advertiser\", \"3049521\", 15, 86400))";
-
-    betree_change_boundaries(tree, expr1);
-    betree_change_boundaries(tree, expr2);
-
-    for(size_t i = 0; i < tree->config->attr_domain_count; i++) {
-        struct attr_domain* domain = tree->config->attr_domains[i];
-        print_attr_domain(domain);
-    }
-
-    betree_free(tree);
-
-    return 0;
-}
-
 int test_normal()
 {
     struct betree* tree = betree_make();
@@ -291,9 +258,9 @@ int test_normal()
     struct report* report = make_report();
     mu_assert(betree_search(tree, "{\"i\": 2}", report), "");
 
-    fprintf(stderr, "DEBUG: evaluated = %zu\n", report->evaluated);
     mu_assert(report->evaluated != 5 && report->matched == 1, "");
 
+    free_report(report);
     betree_free(tree);
 
     return 0;
@@ -306,7 +273,6 @@ int all_tests()
     mu_run_test(test_string);
     mu_run_test(test_integer_set_left);
     mu_run_test(test_integer_set_right);
-    mu_run_test(test_complex);
     mu_run_test(test_normal);
 
     return 0;

@@ -55,6 +55,9 @@ frequency(
         abort();
     }
     bool result = report->matched == 1;
+    for(size_t i = 0; i < constant_count; i++) {
+        betree_free_constant((struct betree_constant*)constants[i]);
+    }
     free(expr);
     free(event_str);
     free_report(report);

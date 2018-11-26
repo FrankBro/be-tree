@@ -509,6 +509,7 @@ bool betree_change_boundaries(struct betree* tree, const char* expr)
     sort_lists(node);
     fix_float_with_no_fractions(tree->config, node);
     change_boundaries(tree->config, node);
+    free_ast_node(node);
     return true;
 }
 

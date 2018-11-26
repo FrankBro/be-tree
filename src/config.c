@@ -44,6 +44,14 @@ void free_config(struct config* config)
         free(config->attr_domains);
         config->attr_domains = NULL;
     }
+    if(config->integer_maps != NULL) {
+        for(size_t i = 0; i < config->integer_map_count; i++) {
+            free((char*)config->integer_maps[i].attr_var.attr);
+            free(config->integer_maps[i].integer_values);
+        }
+        free(config->integer_maps);
+        config->integer_maps = NULL;
+    }
     if(config->string_maps != NULL) {
         for(size_t i = 0; i < config->string_map_count; i++) {
             free((char*)config->string_maps[i].attr_var.attr);
