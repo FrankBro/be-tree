@@ -27,10 +27,11 @@ static struct compare_value clone_compare_value(struct compare_value orig)
     return clone;
 }
 
-static struct ast_node* clone_compare(betree_pred_t id, struct ast_compare_expr orig)
+static struct ast_node* clone_compare(betree_pred_t global_id, betree_pred_t memoize_id, struct ast_compare_expr orig)
 {
     struct ast_node* clone = ast_node_create();
-    clone->id = id;
+    clone->global_id = global_id;
+    clone->memoize_id = memoize_id;
     clone->type = AST_TYPE_COMPARE_EXPR;
     clone->compare_expr.attr_var = clone_attr_var(orig.attr_var);
     clone->compare_expr.op = orig.op;
@@ -67,10 +68,11 @@ static struct equality_value clone_equality_value(struct equality_value orig)
     return clone;
 }
 
-static struct ast_node* clone_equality(betree_pred_t id, struct ast_equality_expr orig)
+static struct ast_node* clone_equality(betree_pred_t global_id, betree_pred_t memoize_id, struct ast_equality_expr orig)
 {
     struct ast_node* clone = ast_node_create();
-    clone->id = id;
+    clone->global_id = global_id;
+    clone->memoize_id = memoize_id;
     clone->type = AST_TYPE_EQUALITY_EXPR;
     clone->equality_expr.attr_var = clone_attr_var(orig.attr_var);
     clone->equality_expr.op = orig.op;
@@ -80,10 +82,11 @@ static struct ast_node* clone_equality(betree_pred_t id, struct ast_equality_exp
 
 struct ast_node* clone_node(const struct ast_node* node);
 
-static struct ast_node* clone_bool(betree_pred_t id, struct ast_bool_expr orig)
+static struct ast_node* clone_bool(betree_pred_t global_id, betree_pred_t memoize_id, struct ast_bool_expr orig)
 {
     struct ast_node* clone = ast_node_create();
-    clone->id = id;
+    clone->global_id = global_id;
+    clone->memoize_id = memoize_id;
     clone->type = AST_TYPE_BOOL_EXPR;
     clone->bool_expr.op = orig.op;
     switch(orig.op) {
@@ -188,10 +191,11 @@ static struct set_right_value clone_set_right_value(struct set_right_value orig)
     return clone;
 }
 
-static struct ast_node* clone_set(betree_pred_t id, struct ast_set_expr orig)
+static struct ast_node* clone_set(betree_pred_t global_id, betree_pred_t memoize_id, struct ast_set_expr orig)
 {
     struct ast_node* clone = ast_node_create();
-    clone->id = id;
+    clone->global_id = global_id;
+    clone->memoize_id = memoize_id;
     clone->type = AST_TYPE_SET_EXPR;
     clone->set_expr.op = orig.op;
     clone->set_expr.left_value = clone_set_left_value(orig.left_value);
@@ -216,10 +220,11 @@ static struct list_value clone_list_value(struct list_value orig)
     return clone;
 }
 
-static struct ast_node* clone_list(betree_pred_t id, struct ast_list_expr orig)
+static struct ast_node* clone_list(betree_pred_t global_id, betree_pred_t memoize_id, struct ast_list_expr orig)
 {
     struct ast_node* clone = ast_node_create();
-    clone->id = id;
+    clone->global_id = global_id;
+    clone->memoize_id = memoize_id;
     clone->type = AST_TYPE_LIST_EXPR;
     clone->list_expr.attr_var = clone_attr_var(orig.attr_var);
     clone->list_expr.op = orig.op;
@@ -227,10 +232,11 @@ static struct ast_node* clone_list(betree_pred_t id, struct ast_list_expr orig)
     return clone;
 }
 
-static struct ast_node* clone_special(betree_pred_t id, struct ast_special_expr orig)
+static struct ast_node* clone_special(betree_pred_t global_id, betree_pred_t memoize_id, struct ast_special_expr orig)
 {
     struct ast_node* clone = ast_node_create();
-    clone->id = id;
+    clone->global_id = global_id;
+    clone->memoize_id = memoize_id;
     clone->type = AST_TYPE_SPECIAL_EXPR;
     clone->special_expr.type = orig.type;
     switch(orig.type) {
@@ -268,10 +274,11 @@ static struct ast_node* clone_special(betree_pred_t id, struct ast_special_expr 
     return clone;
 }
 
-static struct ast_node* clone_is_null(betree_pred_t id, struct ast_is_null_expr orig)
+static struct ast_node* clone_is_null(betree_pred_t global_id, betree_pred_t memoize_id, struct ast_is_null_expr orig)
 {
     struct ast_node* clone = ast_node_create();
-    clone->id = id;
+    clone->global_id = global_id;
+    clone->memoize_id = memoize_id;
     clone->type = AST_TYPE_IS_NULL_EXPR;
     clone->is_null_expr.type = orig.type;
     clone->is_null_expr.attr_var = clone_attr_var(orig.attr_var);
@@ -283,25 +290,25 @@ struct ast_node* clone_node(const struct ast_node* node)
     struct ast_node* clone = NULL;
     switch(node->type) {
         case AST_TYPE_COMPARE_EXPR:
-            clone = clone_compare(node->id, node->compare_expr);
+            clone = clone_compare(node->global_id, node->memoize_id, node->compare_expr);
             break;
         case AST_TYPE_EQUALITY_EXPR:
-            clone = clone_equality(node->id, node->equality_expr);
+            clone = clone_equality(node->global_id, node->memoize_id, node->equality_expr);
             break;
         case AST_TYPE_BOOL_EXPR:
-            clone = clone_bool(node->id, node->bool_expr);
+            clone = clone_bool(node->global_id, node->memoize_id, node->bool_expr);
             break;
         case AST_TYPE_SET_EXPR:
-            clone = clone_set(node->id, node->set_expr);
+            clone = clone_set(node->global_id, node->memoize_id, node->set_expr);
             break;
         case AST_TYPE_LIST_EXPR:
-            clone = clone_list(node->id, node->list_expr);
+            clone = clone_list(node->global_id, node->memoize_id, node->list_expr);
             break;
         case AST_TYPE_SPECIAL_EXPR:
-            clone = clone_special(node->id, node->special_expr);
+            clone = clone_special(node->global_id, node->memoize_id, node->special_expr);
             break;
         case AST_TYPE_IS_NULL_EXPR:
-            clone = clone_is_null(node->id, node->is_null_expr);
+            clone = clone_is_null(node->global_id, node->memoize_id, node->is_null_expr);
             break;
         default:
             switch_default_error("Invalid node type");

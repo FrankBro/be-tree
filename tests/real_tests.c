@@ -234,11 +234,12 @@ int main(int argc, char** argv)
     double matched_average = (double)matched_sum / (double)MAX_EVENTS;
     double memoized_average = (double)memoized_sum / (double)MAX_EVENTS;
     double shorted_average = (double)shorted_sum / (double)MAX_EVENTS;
-    printf("%zu searches, %zu expressions, %zu events, %zu preds. Evaluated %.2f, matched %.2f, memoized %.2f, shorted %.2f\n",
+    printf("%zu searches, %zu expressions, %zu events, %zu preds, %zu memoize preds. Evaluated %.2f, matched %.2f, memoized %.2f, shorted %.2f\n",
         search_us_count,
         expr_count,
         event_count,
         tree->config->pred_map->pred_count,
+        tree->config->pred_map->memoize_count,
         evaluated_average / search_count,
         matched_average / search_count,
         memoized_average / search_count,

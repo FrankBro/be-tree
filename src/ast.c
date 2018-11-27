@@ -24,8 +24,8 @@ struct ast_node* ast_node_create()
         fprintf(stderr, "%s calloc failed", __func__);
         abort();
     }
-    node->id = INVALID_PRED;
-    node->use_pred = false;
+    node->global_id = INVALID_PRED;
+    node->memoize_id = INVALID_PRED;
     return node;
 }
 
@@ -1136,12 +1136,12 @@ static bool match_node_inner(const struct betree_variable** preds,
     struct memoize* memoize,
     struct report* report)
 {
-    if(node->use_pred && node->id != INVALID_PRED) {
-        if(test_bit(memoize->pass, node->id)) {
+    if(node->memoize_id != INVALID_PRED) {
+        if(test_bit(memoize->pass, node->memoize_id)) {
             report->memoized++;
             return true;
         }
-        if(test_bit(memoize->fail, node->id)) {
+        if(test_bit(memoize->fail, node->memoize_id)) {
             report->memoized++;
             return false;
         }
@@ -1180,12 +1180,12 @@ static bool match_node_inner(const struct betree_variable** preds,
             return false;
         }
     }
-    if(node->use_pred && node->id != INVALID_PRED) {
+    if(node->memoize_id != INVALID_PRED) {
         if(result) {
-            set_bit(memoize->pass, node->id);
+            set_bit(memoize->pass, node->memoize_id);
         }
         else {
-            set_bit(memoize->fail, node->id);
+            set_bit(memoize->fail, node->memoize_id);
         }
     }
     return result;
@@ -2689,14 +2689,14 @@ bool fast_eq_expr(const struct ast_node* a, const struct ast_node* b)
     }
     if(a->type == AST_TYPE_BOOL_EXPR) {
         if(a->bool_expr.op == AST_BOOL_NOT) {
-            return a->bool_expr.unary.expr->id == b->bool_expr.unary.expr->id;
+            return a->bool_expr.unary.expr->global_id == b->bool_expr.unary.expr->global_id;
         }
         if(a->bool_expr.op == AST_BOOL_AND || a->bool_expr.op == AST_BOOL_OR) {
-            return a->bool_expr.binary.lhs->id == b->bool_expr.binary.lhs->id
-                && a->bool_expr.binary.rhs->id == b->bool_expr.binary.rhs->id;
+            return a->bool_expr.binary.lhs->global_id == b->bool_expr.binary.lhs->global_id
+                && a->bool_expr.binary.rhs->global_id == b->bool_expr.binary.rhs->global_id;
         }
     }
-    return a->id == b->id;
+    return a->global_id == b->global_id;
 }
 
 void assign_pred_id(struct config* config, struct ast_node* node)

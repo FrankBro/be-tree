@@ -1779,7 +1779,7 @@ bool betree_search_with_preds(const struct config* config,
     struct report* report)
 {
     uint64_t* undefined = make_undefined(config->attr_domain_count, preds);
-    struct memoize memoize = make_memoize(config->pred_map->pred_count);
+    struct memoize memoize = make_memoize(config->pred_map->memoize_count);
     struct subs_to_eval subs;
     init_subs_to_eval(&subs);
     match_be_tree((const struct attr_domain**)config->attr_domains, preds, cnode, &subs);

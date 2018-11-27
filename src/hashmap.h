@@ -11,6 +11,7 @@ typedef map_t(struct ast_node*) expr_map_t;
 
 struct pred_map {
     betree_pred_t pred_count;
+    betree_pred_t memoize_count;
     expr_map_t m;
 };
 

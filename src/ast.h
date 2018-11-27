@@ -276,8 +276,8 @@ enum ast_node_type_e {
 };
 
 struct ast_node {
-    betree_pred_t id;
-    bool use_pred;
+    betree_pred_t global_id;
+    betree_pred_t memoize_id;
     enum ast_node_type_e type;
     union {
         struct ast_compare_expr compare_expr;
