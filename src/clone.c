@@ -1,12 +1,13 @@
 #include <string.h>
 
+#include "alloc.h"
 #include "ast.h"
 #include "clone.h"
 #include "utils.h"
 
 static struct attr_var clone_attr_var(struct attr_var orig)
 {
-    struct attr_var clone = { .attr = strdup(orig.attr), .var = orig.var };
+    struct attr_var clone = { .attr = bstrdup(orig.attr), .var = orig.var };
     return clone;
 }
 
@@ -41,7 +42,7 @@ static struct ast_node* clone_compare(betree_pred_t global_id, betree_pred_t mem
 
 static struct string_value clone_string_value(struct string_value orig)
 {
-    struct string_value clone = { .string = strdup(orig.string), .var = orig.var, .str = orig.str };
+    struct string_value clone = { .string = bstrdup(orig.string), .var = orig.var, .str = orig.str };
     return clone;
 }
 
@@ -140,7 +141,7 @@ static struct betree_integer_list* clone_integer_list(struct betree_integer_list
 {
     struct betree_integer_list* clone = make_integer_list();
     clone->count = list->count;
-    clone->integers = malloc(sizeof(*clone->integers) * clone->count);
+    clone->integers = bmalloc(sizeof(*clone->integers) * clone->count);
     for(size_t i = 0; i < list->count; i++) {
         clone->integers[i] = list->integers[i];
     }
@@ -151,7 +152,7 @@ static struct betree_string_list* clone_string_list(struct betree_string_list* l
 {
     struct betree_string_list* clone = make_string_list();
     clone->count = list->count;
-    clone->strings = malloc(sizeof(*clone->strings) * clone->count);
+    clone->strings = bmalloc(sizeof(*clone->strings) * clone->count);
     for(size_t i = 0; i < list->count; i++) {
         struct string_value string_clone = clone_string_value(list->strings[i]);
         clone->strings[i] = string_clone;
@@ -265,7 +266,7 @@ static struct ast_node* clone_special(betree_pred_t global_id, betree_pred_t mem
         case AST_SPECIAL_STRING:
             clone->special_expr.string.attr_var = clone_attr_var(orig.string.attr_var);
             clone->special_expr.string.op = orig.string.op;
-            clone->special_expr.string.pattern = strdup(orig.string.pattern);
+            clone->special_expr.string.pattern = bstrdup(orig.string.pattern);
             break;
         default:
             switch_default_error("Invalid special expr type");

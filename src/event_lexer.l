@@ -1,9 +1,10 @@
 %{
     #include <stdlib.h>
+    #include "alloc.h"
     #include "ast.h"
     #include "event_parser.h"
     #define SAVE_STRING {\
-        yylval->string = malloc(yyleng - 1);\
+        yylval->string = bmalloc(yyleng - 1);\
         memcpy(yylval->string, yytext + 1, yyleng - 2);\
         yylval->string[yyleng - 2] = 0;\
     }

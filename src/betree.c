@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "ast.h"
 #include "betree.h"
 #include "error.h"
@@ -86,7 +87,7 @@ static bool is_valid(const struct config* config, const struct ast_node* node)
 bool betree_insert_all(struct betree* tree, size_t count, const char** exprs)
 {
     // Hackish a bit for now, insert all except the last manually, then insert the last one legit
-    struct sub** subs = calloc(count - 1, sizeof(*subs));
+    struct sub** subs = bcalloc(count - 1, sizeof(*subs));
     for(size_t i = 0; i < count - 1; i++) {
         const char* expr = exprs[i];
         struct ast_node* node;
@@ -550,7 +551,7 @@ bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr)
 
 static const struct betree_variable** make_environment(size_t attr_domain_count, const struct betree_event* event)
 {
-    const struct betree_variable** preds = calloc(attr_domain_count, sizeof(*preds));
+    const struct betree_variable** preds = bcalloc(attr_domain_count * sizeof(*preds));
     for(size_t i = 0; i < event->variable_count; i++) {
         if(event->variables[i] != NULL) {
             preds[event->variables[i]->attr_var.var] = event->variables[i];
@@ -587,9 +588,9 @@ bool betree_search_with_event(const struct betree* betree, struct betree_event* 
 
 struct report* make_report()
 {
-    struct report* report = calloc(1, sizeof(*report));
+    struct report* report = bcalloc(sizeof(*report));
     if(report == NULL) {
-        fprintf(stderr, "%s calloc failed\n", __func__);
+        fprintf(stderr, "%s bcalloc failed\n", __func__);
         abort();
     }
     report->evaluated = 0;
@@ -602,8 +603,8 @@ struct report* make_report()
 
 void free_report(struct report* report)
 {
-    free(report->subs);
-    free(report);
+    bfree(report->subs);
+    bfree(report);
 }
 
 static void betree_init_with_config(struct betree* betree, struct config* config)
@@ -620,9 +621,9 @@ void betree_init(struct betree* betree)
 
 static struct betree* betree_make_with_config(struct config* config)
 {
-    struct betree* tree = calloc(1, sizeof(*tree));
+    struct betree* tree = bcalloc(sizeof(*tree));
     if(tree == NULL) {
-        fprintf(stderr, "%s calloc failed\n", __func__);
+        fprintf(stderr, "%s bcalloc failed\n", __func__);
         abort();
     }
     betree_init_with_config(tree, config);
@@ -650,7 +651,7 @@ void betree_deinit(struct betree* betree)
 void betree_free(struct betree* tree)
 {
     betree_deinit(tree);
-    free(tree);
+    bfree(tree);
 }
 
 void betree_add_boolean_variable(struct betree* betree, const char* name, bool allow_undefined)
@@ -706,12 +707,12 @@ void betree_add_frequency_caps_variable(
 
 struct betree_constant* betree_make_integer_constant(const char* name, int64_t ivalue)
 {
-    struct betree_constant* constant = malloc(sizeof(*constant));
+    struct betree_constant* constant = bmalloc(sizeof(*constant));
     if(constant == NULL) {
-        fprintf(stderr, "%s malloc failed", __func__);
+        fprintf(stderr, "%s bmalloc failed", __func__);
         abort();
     }
-    constant->name = strdup(name);
+    constant->name = bstrdup(name);
     struct value value = { .value_type = BETREE_INTEGER, .ivalue = ivalue };
     constant->value = value;
     return constant;
@@ -720,8 +721,8 @@ struct betree_constant* betree_make_integer_constant(const char* name, int64_t i
 void betree_free_constant(struct betree_constant* constant)
 {
     free_value(constant->value);
-    free((char*)constant->name);
-    free(constant);
+    bfree((char*)constant->name);
+    bfree(constant);
 }
 
 void betree_free_constants(size_t count, struct betree_constant** constants)
@@ -733,9 +734,9 @@ void betree_free_constants(size_t count, struct betree_constant** constants)
 
 struct betree_integer_list* betree_make_integer_list(size_t count)
 {
-    struct betree_integer_list* list = malloc(sizeof(*list));
+    struct betree_integer_list* list = bmalloc(sizeof(*list));
     list->count = count;
-    list->integers = calloc(count, sizeof(*list->integers));
+    list->integers = bcalloc(count * sizeof(*list->integers));
     return list;
 }
 
@@ -746,23 +747,23 @@ void betree_add_integer(struct betree_integer_list* list, size_t index, int64_t 
 
 struct betree_string_list* betree_make_string_list(size_t count)
 {
-    struct betree_string_list* list = malloc(sizeof(*list));
+    struct betree_string_list* list = bmalloc(sizeof(*list));
     list->count = count;
-    list->strings = calloc(count, sizeof(*list->strings));
+    list->strings = bcalloc(count * sizeof(*list->strings));
     return list;
 }
 
 void betree_add_string(struct betree_string_list* list, size_t index, const char* value)
 {
-    struct string_value s = { .string = strdup(value) };
+    struct string_value s = { .string = bstrdup(value) };
     list->strings[index] = s;
 }
 
 struct betree_segments* betree_make_segments(size_t count)
 {
-    struct betree_segments* segments = malloc(sizeof(*segments));
+    struct betree_segments* segments = bmalloc(sizeof(*segments));
     segments->size = count;
-    segments->content = calloc(count, sizeof(*segments->content));
+    segments->content = bcalloc(count * sizeof(*segments->content));
     return segments;
 }
 
@@ -780,9 +781,9 @@ void betree_add_segment(
 
 struct betree_frequency_caps* betree_make_frequency_caps(size_t count)
 {
-    struct betree_frequency_caps* frequency_caps = malloc(sizeof(*frequency_caps));
+    struct betree_frequency_caps* frequency_caps = bmalloc(sizeof(*frequency_caps));
     frequency_caps->size = count;
-    frequency_caps->content = calloc(count, sizeof(*frequency_caps->content));
+    frequency_caps->content = bcalloc(count * sizeof(*frequency_caps->content));
     return frequency_caps;
 }
 
@@ -794,7 +795,7 @@ struct betree_frequency_cap* betree_make_frequency_cap(const char* stype,
     uint32_t value)
 {
     struct string_value namespace
-        = { .string = strdup(ns), .str = INVALID_STR, .var = INVALID_VAR };
+        = { .string = bstrdup(ns), .str = INVALID_STR, .var = INVALID_VAR };
     return make_frequency_cap(stype, id, namespace, timestamp_defined, timestamp, value);
 }
 
@@ -808,7 +809,7 @@ void betree_add_frequency_cap(struct betree_frequency_caps* frequency_caps,
 static struct betree_variable* betree_make_variable(const char* name, struct value value)
 {
     struct attr_var attr_var = make_attr_var(name, NULL);
-    struct betree_variable* var = malloc(sizeof(*var));
+    struct betree_variable* var = bmalloc(sizeof(*var));
     var->attr_var = attr_var;
     var->value = value;
     return var;
@@ -834,7 +835,7 @@ struct betree_variable* betree_make_float_variable(const char* name, double valu
 
 struct betree_variable* betree_make_string_variable(const char* name, const char* value)
 {
-    struct string_value svalue = { .string = strdup(value), .var = INVALID_VAR, .str = INVALID_STR };
+    struct string_value svalue = { .string = bstrdup(value), .var = INVALID_VAR, .str = INVALID_STR };
     struct value v = { .value_type = BETREE_STRING, .svalue = svalue };
     return betree_make_variable(name, v);
 }
@@ -876,9 +877,9 @@ struct betree_variable_definition betree_get_variable_definition(struct betree* 
 
 void betree_free_variable(struct betree_variable* variable)
 {
-    free((char*)variable->attr_var.attr);
+    bfree((char*)variable->attr_var.attr);
     free_value(variable->value);
-    free(variable);
+    bfree(variable);
 }
 
 void betree_free_event(struct betree_event* event)
@@ -918,9 +919,9 @@ void betree_free_frequency_caps(struct betree_frequency_caps* value)
 
 struct betree_event* betree_make_event(const struct betree* betree)
 {
-    struct betree_event* event = malloc(sizeof(*event));
+    struct betree_event* event = bmalloc(sizeof(*event));
     event->variable_count = betree->config->attr_domain_count;
-    event->variables = calloc(event->variable_count, sizeof(*event->variables));
+    event->variables = bcalloc(event->variable_count * sizeof(*event->variables));
     return event;
 }
 

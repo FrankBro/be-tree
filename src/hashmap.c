@@ -1,5 +1,6 @@
 #include <stdio.h>
 
+#include "alloc.h"
 #include "ast.h"
 #include "clone.h"
 #include "hashmap.h"
@@ -12,14 +13,14 @@ void assign_pred(struct pred_map* pred_map, struct ast_node* node)
     char* str;
     if(node->type == AST_TYPE_BOOL_EXPR && node->bool_expr.op == AST_BOOL_NOT) {
         assign_pred(pred_map, node->bool_expr.unary.expr);
-        if(asprintf(&str, "not %zu", node->bool_expr.unary.expr->global_id) < 0) {
+        if(basprintf(&str, "not %zu", node->bool_expr.unary.expr->global_id) < 0) {
             abort();
         }
     }
     else if (node->type == AST_TYPE_BOOL_EXPR && node->bool_expr.op == AST_BOOL_OR) {
         assign_pred(pred_map, node->bool_expr.binary.lhs);
         assign_pred(pred_map, node->bool_expr.binary.rhs);
-        if(asprintf(&str, "or %zu %zu", 
+        if(basprintf(&str, "or %zu %zu", 
               node->bool_expr.binary.lhs->global_id, 
               node->bool_expr.binary.rhs->global_id) < 0) {
             abort();
@@ -28,7 +29,7 @@ void assign_pred(struct pred_map* pred_map, struct ast_node* node)
     else if (node->type == AST_TYPE_BOOL_EXPR && node->bool_expr.op == AST_BOOL_AND) {
         assign_pred(pred_map, node->bool_expr.binary.lhs);
         assign_pred(pred_map, node->bool_expr.binary.rhs);
-        if(asprintf(&str, "and %zu %zu", 
+        if(basprintf(&str, "and %zu %zu", 
               node->bool_expr.binary.lhs->global_id, 
               node->bool_expr.binary.rhs->global_id) < 0) {
             abort();
@@ -54,14 +55,14 @@ void assign_pred(struct pred_map* pred_map, struct ast_node* node)
         node->global_id = global_id;
         map_set(&pred_map->m, str, node);
     }
-    free(str);
+    bfree(str);
 }
 
 struct pred_map* make_pred_map()
 {
-    struct pred_map* pred_map = calloc(1, sizeof(*pred_map));
+    struct pred_map* pred_map = bcalloc(sizeof(*pred_map));
     if(pred_map == NULL) {
-        fprintf(stderr, "%s calloc failed\n", __func__);
+        fprintf(stderr, "%s bcalloc failed\n", __func__);
         abort();
     }
     pred_map->pred_count = 0;
@@ -75,9 +76,9 @@ void free_pred_map(struct pred_map* pred_map)
     /*map_iter_t iter = map_iter(&pred_map->m);*/
 
     /*while ((key = map_next(&pred_map->m, &iter))) {*/
-        /*free((char*)key);*/
+        /*bfree((char*)key);*/
     /*}*/
     map_deinit(&pred_map->m);
-    free(pred_map);
+    bfree(pred_map);
 }
 

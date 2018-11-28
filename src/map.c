@@ -7,6 +7,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+
+#include "alloc.h"
 #include "map.h"
 
 struct map_node_t {
@@ -31,7 +33,7 @@ static map_node_t *map_newnode(const char *key, void *value, int vsize) {
   map_node_t *node;
   int ksize = strlen(key) + 1;
   int voffset = ksize + ((sizeof(void*) - ksize) % sizeof(void*));
-  node = malloc(sizeof(*node) + voffset + vsize);
+  node = bmalloc(sizeof(*node) + voffset + vsize);
   if (!node) return NULL;
   memcpy(node + 1, key, ksize);
   node->hash = map_hash(key);
@@ -72,7 +74,7 @@ static int map_resize(map_base_t *m, int nbuckets) {
     }
   }
   /* Reset buckets */
-  buckets = realloc(m->buckets, sizeof(*m->buckets) * nbuckets);
+  buckets = brealloc(m->buckets, sizeof(*m->buckets) * nbuckets);
   if (buckets != NULL) {
     m->buckets = buckets;
     m->nbuckets = nbuckets;
@@ -87,7 +89,7 @@ static int map_resize(map_base_t *m, int nbuckets) {
       node = next;
     }
   }
-  /* Return error code if realloc() failed */
+  /* Return error code if brealloc() failed */
   return (buckets == NULL) ? -1 : 0;
 }
 
@@ -116,11 +118,11 @@ void map_deinit_(map_base_t *m) {
     node = m->buckets[i];
     while (node) {
       next = node->next;
-      free(node);
+      bfree(node);
       node = next;
     }
   }
-  free(m->buckets);
+  bfree(m->buckets);
 }
 
 
@@ -151,7 +153,7 @@ int map_set_(map_base_t *m, const char *key, void *value, int vsize) {
   m->nnodes++;
   return 0;
   fail:
-  if (node) free(node);
+  if (node) bfree(node);
   return -1;
 }
 
@@ -162,7 +164,7 @@ void map_remove_(map_base_t *m, const char *key) {
   if (next) {
     node = *next;
     *next = (*next)->next;
-    free(node);
+    bfree(node);
     m->nnodes--;
   }
 }

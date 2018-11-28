@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "ast.h"
 #include "printer.h"
 #include "tree.h"
@@ -12,12 +13,12 @@ static const char* compare_value_to_string(struct compare_value value)
     char* expr;
     switch(value.value_type) {
         case AST_COMPARE_VALUE_INTEGER:
-            if(asprintf(&expr, "%ld", value.integer_value) < 0) {
+            if(basprintf(&expr, "%ld", value.integer_value) < 0) {
                 abort();
             }
             break;
         case AST_COMPARE_VALUE_FLOAT:
-            if(asprintf(&expr, "%.2f", value.float_value) < 0) {
+            if(basprintf(&expr, "%.2f", value.float_value) < 0) {
                 abort();
             }
             break;
@@ -50,22 +51,22 @@ static const char* equality_value_to_string(struct equality_value value)
     char* expr;
     switch(value.value_type) {
         case AST_EQUALITY_VALUE_INTEGER:
-            if(asprintf(&expr, "%ld", value.integer_value) < 0) {
+            if(basprintf(&expr, "%ld", value.integer_value) < 0) {
                 abort();
             }
             break;
         case AST_EQUALITY_VALUE_FLOAT:
-            if(asprintf(&expr, "%.2f", value.float_value) < 0) {
+            if(basprintf(&expr, "%.2f", value.float_value) < 0) {
                 abort();
             }
             break;
         case AST_EQUALITY_VALUE_STRING:
-            if(asprintf(&expr, "\"%s\"", value.string_value.string) < 0) {
+            if(basprintf(&expr, "\"%s\"", value.string_value.string) < 0) {
                 abort();
             }
             break;
         case AST_EQUALITY_VALUE_INTEGER_ENUM:
-            if(asprintf(&expr, "%ld", value.integer_enum_value.integer) < 0) {
+            if(basprintf(&expr, "%ld", value.integer_enum_value.integer) < 0) {
                 abort();
             }
             break;
@@ -94,17 +95,17 @@ static const char* set_left_value_to_string(struct set_left_value value)
     char* expr;
     switch(value.value_type) {
         case AST_SET_LEFT_VALUE_INTEGER:
-            if(asprintf(&expr, "%ld", value.integer_value) < 0) {
+            if(basprintf(&expr, "%ld", value.integer_value) < 0) {
                 abort();
             }
             break;
         case AST_SET_LEFT_VALUE_STRING:
-            if(asprintf(&expr, "\"%s\"", value.string_value.string) < 0) {
+            if(basprintf(&expr, "\"%s\"", value.string_value.string) < 0) {
                 abort();
             }
             break;
         case AST_SET_LEFT_VALUE_VARIABLE:
-            if(asprintf(&expr, "%s", value.variable_value.attr) < 0) {
+            if(basprintf(&expr, "%s", value.variable_value.attr) < 0) {
                 abort();
             }
             break;
@@ -120,32 +121,32 @@ static const char* set_right_value_to_string(struct set_right_value value)
     char* expr;
     switch(value.value_type) {
         case AST_SET_RIGHT_VALUE_VARIABLE:
-            if(asprintf(&expr, "%s", value.variable_value.attr) < 0) {
+            if(basprintf(&expr, "%s", value.variable_value.attr) < 0) {
                 abort();
             }
             break;
         case AST_SET_RIGHT_VALUE_INTEGER_LIST: {
             const char* list = integer_list_value_to_string(value.integer_list_value);
-            if(asprintf(&expr, "(%s)", list) < 0) {
+            if(basprintf(&expr, "(%s)", list) < 0) {
                 abort();
             }
-            free((char*)list);
+            bfree((char*)list);
             break;
         }
         case AST_SET_RIGHT_VALUE_STRING_LIST: {
             const char* list = string_list_value_to_string(value.string_list_value);
-            if(asprintf(&expr, "(%s)", list) < 0) {
+            if(basprintf(&expr, "(%s)", list) < 0) {
                 abort();
             }
-            free((char*)list);
+            bfree((char*)list);
             break;
         }
         case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM: {
             const char* list = integer_list_enum_value_to_string(value.integer_list_enum_value);
-            if(asprintf(&expr, "(%s)", list) < 0) {
+            if(basprintf(&expr, "(%s)", list) < 0) {
                 abort();
             }
-            free((char*)list);
+            bfree((char*)list);
             break;
         }
         default:
@@ -174,18 +175,18 @@ static const char* list_value_to_string(struct list_value value)
     switch(value.value_type) {
         case AST_LIST_VALUE_INTEGER_LIST: {
             const char* inner = integer_list_value_to_string(value.integer_list_value);
-            if(asprintf(&list, "(%s)", inner) < 0) {
+            if(basprintf(&list, "(%s)", inner) < 0) {
                 abort();
             }
-            free((char*)inner);
+            bfree((char*)inner);
             break;
         }
         case AST_LIST_VALUE_STRING_LIST: {
             const char* inner = string_list_value_to_string(value.string_list_value);
-            if(asprintf(&list, "(%s)", inner) < 0) {
+            if(basprintf(&list, "(%s)", inner) < 0) {
                 abort();
             }
-            free((char*)inner);
+            bfree((char*)inner);
             break;
         }
         default: {
@@ -220,14 +221,14 @@ char* ast_to_string(const struct ast_node* node)
     char* expr;
     switch(node->type) {
         case AST_TYPE_IS_NULL_EXPR:
-            if(asprintf(&expr, "?%s", node->is_null_expr.attr_var.attr) < 0) {
+            if(basprintf(&expr, "?%s", node->is_null_expr.attr_var.attr) < 0) {
                 abort();
             }
             return expr;
         case(AST_TYPE_SPECIAL_EXPR): {
             switch(node->special_expr.type) {
                 case AST_SPECIAL_FREQUENCY:
-                    if(asprintf(&expr,
+                    if(basprintf(&expr,
                            "within_frequency_cap(\"%s\", \"%s\", %ld, %zu)",
                            frequency_type_to_string(node->special_expr.frequency.type),
                            node->special_expr.frequency.ns.string,
@@ -250,7 +251,7 @@ char* ast_to_string(const struct ast_node* node)
                             switch_default_error("Invalid special segment op");
                             return NULL;
                     }
-                    if(asprintf(&expr,
+                    if(basprintf(&expr,
                            "%s(%s, %lu, %ld)",
                            op,
                            node->special_expr.segment.attr_var.attr,
@@ -262,7 +263,7 @@ char* ast_to_string(const struct ast_node* node)
                     return expr;
                 }
                 case AST_SPECIAL_GEO: {
-                    if(asprintf(&expr,
+                    if(basprintf(&expr,
                            "geo_within_radius(%.2f, %.2f, %.2f)",
                            node->special_expr.geo.latitude,
                            node->special_expr.geo.longitude,
@@ -288,7 +289,7 @@ char* ast_to_string(const struct ast_node* node)
                             switch_default_error("Invalid special string op");
                             return NULL;
                     }
-                    if(asprintf(&expr,
+                    if(basprintf(&expr,
                            "%s(%s, \"%s\")",
                            op,
                            node->special_expr.string.attr_var.attr,
@@ -307,41 +308,41 @@ char* ast_to_string(const struct ast_node* node)
             switch(node->bool_expr.op) {
                 case AST_BOOL_LITERAL: {
                     if(node->bool_expr.literal == true) {
-                        return strdup("true");
+                        return bstrdup("true");
                     }
                     else {
-                        return strdup("false");
+                        return bstrdup("false");
                     }
                 }
                 case AST_BOOL_VARIABLE: {
-                    return strdup(node->bool_expr.variable.attr);
+                    return bstrdup(node->bool_expr.variable.attr);
                 }
                 case AST_BOOL_NOT: {
                     const char* a = ast_to_string(node->bool_expr.unary.expr);
-                    if(asprintf(&expr, "(not (%s))", a) < 0) {
+                    if(basprintf(&expr, "(not (%s))", a) < 0) {
                         abort();
                     }
-                    free((char*)a);
+                    bfree((char*)a);
                     return expr;
                 }
                 case AST_BOOL_OR: {
                     const char* a = ast_to_string(node->bool_expr.binary.lhs);
                     const char* b = ast_to_string(node->bool_expr.binary.rhs);
-                    if(asprintf(&expr, "((%s) or (%s))", a, b) < 0) {
+                    if(basprintf(&expr, "((%s) or (%s))", a, b) < 0) {
                         abort();
                     }
-                    free((char*)a);
-                    free((char*)b);
+                    bfree((char*)a);
+                    bfree((char*)b);
                     return expr;
                 }
                 case AST_BOOL_AND: {
                     const char* a = ast_to_string(node->bool_expr.binary.lhs);
                     const char* b = ast_to_string(node->bool_expr.binary.rhs);
-                    if(asprintf(&expr, "((%s) and (%s))", a, b) < 0) {
+                    if(basprintf(&expr, "((%s) and (%s))", a, b) < 0) {
                         abort();
                     }
-                    free((char*)a);
-                    free((char*)b);
+                    bfree((char*)a);
+                    bfree((char*)b);
                     return expr;
                 }
                 default: {
@@ -354,38 +355,38 @@ char* ast_to_string(const struct ast_node* node)
             const char* left = set_left_value_to_string(node->set_expr.left_value);
             const char* right = set_right_value_to_string(node->set_expr.right_value);
             const char* op = set_op_to_string(node->set_expr.op);
-            if(asprintf(&expr, "%s %s %s", left, op, right) < 0) {
+            if(basprintf(&expr, "%s %s %s", left, op, right) < 0) {
                 abort();
             }
-            free((char*)left);
-            free((char*)right);
+            bfree((char*)left);
+            bfree((char*)right);
             return expr;
         }
         case(AST_TYPE_LIST_EXPR): {
             const char* value = list_value_to_string(node->list_expr.value);
             const char* op = list_op_to_string(node->list_expr.op);
-            if(asprintf(&expr, "%s %s %s", node->list_expr.attr_var.attr, op, value) < 0) {
+            if(basprintf(&expr, "%s %s %s", node->list_expr.attr_var.attr, op, value) < 0) {
                 abort();
             }
-            free((char*)value);
+            bfree((char*)value);
             return expr;
         }
         case(AST_TYPE_EQUALITY_EXPR): {
             const char* value = equality_value_to_string(node->equality_expr.value);
             const char* op = equality_op_to_string(node->equality_expr.op);
-            if(asprintf(&expr, "%s %s %s", node->equality_expr.attr_var.attr, op, value) < 0) {
+            if(basprintf(&expr, "%s %s %s", node->equality_expr.attr_var.attr, op, value) < 0) {
                 abort();
             }
-            free((char*)value);
+            bfree((char*)value);
             return expr;
         }
         case(AST_TYPE_COMPARE_EXPR): {
             const char* value = compare_value_to_string(node->compare_expr.value);
             const char* op = compare_op_to_string(node->compare_expr.op);
-            if(asprintf(&expr, "%s %s %s", node->compare_expr.attr_var.attr, op, value) < 0) {
+            if(basprintf(&expr, "%s %s %s", node->compare_expr.attr_var.attr, op, value) < 0) {
                 abort();
             }
-            free((char*)value);
+            bfree((char*)value);
             return expr;
         }
         default: {
@@ -463,7 +464,7 @@ void print_variable(const struct betree_variable* v)
     }
     printf("\n");
     if(inner != NULL) {
-        free(inner);
+        bfree(inner);
     }
 }
 

@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "betree.h"
 #include "debug.h"
 #include "helper.h"
@@ -333,7 +334,7 @@ int test_large_cdir_split()
 
     for(size_t i = 0; i < 100; i++) {
         char* expr;
-        if(asprintf(&expr, "a = %zu", i) < 0) {
+        if(basprintf(&expr, "a = %zu", i) < 0) {
             abort();
         }
         mu_assert(betree_insert(tree, i, expr), "");
@@ -430,7 +431,7 @@ int test_float()
     for(size_t i = 0; i < 4; i++) {
         double value = i < 3 ? 0. : 7.;
         char* expr;
-        if(asprintf(&expr, "a = %.1f", value) < 0) {
+        if(basprintf(&expr, "a = %.1f", value) < 0) {
             abort();
         }
         mu_assert(betree_insert(tree, i, expr), "");
@@ -522,7 +523,7 @@ int test_negative_int()
     for(size_t i = 0; i < 4; i++) {
         int64_t value = i < 3 ? -6 : -12;
         char* expr;
-        if(asprintf(&expr, "a = %ld", value) < 0) {
+        if(basprintf(&expr, "a = %ld", value) < 0) {
             abort();
         }
         mu_assert(betree_insert(tree, i, expr), "");
@@ -556,7 +557,7 @@ int test_negative_float()
     for(size_t i = 0; i < 4; i++) {
         double value = i < 3 ? -6. : -12.;
         char* expr;
-        if(asprintf(&expr, "a = %.1f", value) < 0) {
+        if(basprintf(&expr, "a = %.1f", value) < 0) {
             abort();
         }
         mu_assert(betree_insert(tree, i, expr), "");

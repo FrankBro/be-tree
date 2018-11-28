@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "ast.h"
 #include "betree.h"
 #include "error.h"
@@ -19,9 +20,9 @@
 
 struct ast_node* ast_node_create()
 {
-    struct ast_node* node = calloc(1, sizeof(*node));
+    struct ast_node* node = bcalloc(sizeof(*node));
     if(node == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
+        fprintf(stderr, "%s bcalloc failed", __func__);
         abort();
     }
     node->global_id = INVALID_PRED;
@@ -273,7 +274,7 @@ struct ast_node* ast_special_string_create(
 {
     struct ast_node* node = ast_special_expr_create();
     struct ast_special_string string
-        = { .op = op, .attr_var = make_attr_var(name, NULL), .pattern = strdup(pattern) };
+        = { .op = op, .attr_var = make_attr_var(name, NULL), .pattern = bstrdup(pattern) };
     node->special_expr.type = AST_SPECIAL_STRING;
     node->special_expr.string = string;
     return node;
@@ -285,7 +286,7 @@ static void free_special_expr(struct ast_special_expr special_expr)
         case AST_SPECIAL_FREQUENCY:
             free_attr_var(special_expr.frequency.attr_var);
             free_attr_var(special_expr.frequency.now);
-            free((char*)special_expr.frequency.ns.string);
+            bfree((char*)special_expr.frequency.ns.string);
             break;
         case AST_SPECIAL_SEGMENT:
             free_attr_var(special_expr.segment.attr_var);
@@ -297,7 +298,7 @@ static void free_special_expr(struct ast_special_expr special_expr)
             break;
         case AST_SPECIAL_STRING:
             free_attr_var(special_expr.string.attr_var);
-            free((char*)special_expr.string.pattern);
+            bfree((char*)special_expr.string.pattern);
             break;
         default:
             switch_default_error("Invalid special expr type");
@@ -311,7 +312,7 @@ static void free_set_expr(struct ast_set_expr set_expr)
             break;
         }
         case AST_SET_LEFT_VALUE_STRING: {
-            free((char*)set_expr.left_value.string_value.string);
+            bfree((char*)set_expr.left_value.string_value.string);
             break;
         }
         case AST_SET_LEFT_VALUE_VARIABLE: {
@@ -380,7 +381,7 @@ void free_ast_node(struct ast_node* node)
         case AST_TYPE_EQUALITY_EXPR:
             free_attr_var(node->equality_expr.attr_var);
             if(node->equality_expr.value.value_type == AST_EQUALITY_VALUE_STRING) {
-                free((char*)node->equality_expr.value.string_value.string);
+                bfree((char*)node->equality_expr.value.string_value.string);
             }
             break;
         case AST_TYPE_BOOL_EXPR:
@@ -413,7 +414,7 @@ void free_ast_node(struct ast_node* node)
             switch_default_error("Invalid expr type");
         }
     }
-    free(node);
+    bfree(node);
 }
 
 static void invalid_expr(const char* msg)

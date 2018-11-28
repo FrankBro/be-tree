@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "ast.h"
 #include "betree.h"
 #include "error.h"
@@ -26,7 +27,7 @@ struct subs_to_eval {
 static void init_subs_to_eval(struct subs_to_eval* subs)
 {
     size_t init = 10;
-    subs->subs = malloc(init * sizeof(*subs->subs));
+    subs->subs = bmalloc(init * sizeof(*subs->subs));
     subs->capacity = init;
     subs->count = 0;
 }
@@ -35,7 +36,7 @@ static void add_sub_to_eval(struct sub* sub, struct subs_to_eval* subs)
 {
     if(subs->capacity == subs->count) {
         subs->capacity *= 2;
-        subs->subs = realloc(subs->subs, sizeof(*subs->subs) * subs->capacity);
+        subs->subs = brealloc(subs->subs, sizeof(*subs->subs) * subs->capacity);
     }
 
     subs->subs[subs->count] = sub;
@@ -306,16 +307,16 @@ static bool is_used_cnode(betree_var_t variable_id, const struct cnode* cnode)
 static void insert_sub(const struct sub* sub, struct lnode* lnode)
 {
     if(lnode->sub_count == 0) {
-        lnode->subs = calloc(1, sizeof(*lnode->subs));
+        lnode->subs = bcalloc(sizeof(*lnode->subs));
         if(lnode->subs == NULL) {
-            fprintf(stderr, "%s calloc failed\n", __func__);
+            fprintf(stderr, "%s bcalloc failed\n", __func__);
             abort();
         }
     }
     else {
-        struct sub** subs = realloc(lnode->subs, sizeof(*subs) * (lnode->sub_count + 1));
+        struct sub** subs = brealloc(lnode->subs, sizeof(*subs) * (lnode->sub_count + 1));
         if(subs == NULL) {
-            fprintf(stderr, "%s realloc failed\n", __func__);
+            fprintf(stderr, "%s brealloc failed\n", __func__);
             abort();
         }
         lnode->subs = subs;
@@ -519,13 +520,13 @@ static bool remove_sub(betree_sub_t sub, struct lnode* lnode)
             }
             lnode->sub_count--;
             if(lnode->sub_count == 0) {
-                free(lnode->subs);
+                bfree(lnode->subs);
                 lnode->subs = NULL;
             }
             else {
-                struct sub** subs = realloc(lnode->subs, sizeof(*lnode->subs) * lnode->sub_count);
+                struct sub** subs = brealloc(lnode->subs, sizeof(*lnode->subs) * lnode->sub_count);
                 if(subs == NULL) {
-                    fprintf(stderr, "%s realloc failed\n", __func__);
+                    fprintf(stderr, "%s brealloc failed\n", __func__);
                     abort();
                 }
                 lnode->subs = subs;
@@ -544,17 +545,17 @@ static void move(const struct sub* sub, struct lnode* origin, struct lnode* dest
         abort();
     }
     if(destination->sub_count == 0) {
-        destination->subs = calloc(1, sizeof(*destination->subs));
+        destination->subs = bcalloc(sizeof(*destination->subs));
         if(destination->subs == NULL) {
-            fprintf(stderr, "%s calloc failed\n", __func__);
+            fprintf(stderr, "%s bcalloc failed\n", __func__);
             abort();
         }
     }
     else {
         struct sub** subs
-            = realloc(destination->subs, sizeof(*destination->subs) * (destination->sub_count + 1));
+            = brealloc(destination->subs, sizeof(*destination->subs) * (destination->sub_count + 1));
         if(subs == NULL) {
-            fprintf(stderr, "%s realloc failed\n", __func__);
+            fprintf(stderr, "%s brealloc failed\n", __func__);
             abort();
         }
         destination->subs = subs;
@@ -568,12 +569,12 @@ static struct cdir* create_cdir(const struct config* config,
     betree_var_t variable_id,
     struct value_bound bound)
 {
-    struct cdir* cdir = calloc(1, sizeof(*cdir));
+    struct cdir* cdir = bcalloc(sizeof(*cdir));
     if(cdir == NULL) {
-        fprintf(stderr, "%s calloc failed\n", __func__);
+        fprintf(stderr, "%s bcalloc failed\n", __func__);
         abort();
     }
-    cdir->attr_var.attr = strdup(attr);
+    cdir->attr_var.attr = bstrdup(attr);
     cdir->attr_var.var = variable_id;
     cdir->bound = bound;
     cdir->cnode = make_cnode(config, cdir);
@@ -609,9 +610,9 @@ struct pnode* create_pdir(
     }
     struct pdir* pdir = cnode->pdir;
     if(cnode->pdir == NULL) {
-        pdir = calloc(1, sizeof(*pdir));
+        pdir = bcalloc(sizeof(*pdir));
         if(pdir == NULL) {
-            fprintf(stderr, "%s pdir calloc failed\n", __func__);
+            fprintf(stderr, "%s pdir bcalloc failed\n", __func__);
             abort();
         }
         pdir->parent = cnode;
@@ -620,14 +621,14 @@ struct pnode* create_pdir(
         cnode->pdir = pdir;
     }
 
-    struct pnode* pnode = calloc(1, sizeof(*pnode));
+    struct pnode* pnode = bcalloc(sizeof(*pnode));
     if(pnode == NULL) {
-        fprintf(stderr, "%s pnode calloc failed\n", __func__);
+        fprintf(stderr, "%s pnode bcalloc failed\n", __func__);
         abort();
     }
     pnode->cdir = NULL;
     pnode->parent = pdir;
-    pnode->attr_var.attr = strdup(attr);
+    pnode->attr_var.attr = bstrdup(attr);
     pnode->attr_var.var = variable_id;
     pnode->score = 0.f;
     struct value_bound bound;
@@ -647,16 +648,16 @@ struct pnode* create_pdir(
     pnode->cdir = create_cdir_with_pnode_parent(config, pnode, bound);
 
     if(pdir->pnode_count == 0) {
-        pdir->pnodes = calloc(1, sizeof(*pdir->pnodes));
+        pdir->pnodes = bcalloc(sizeof(*pdir->pnodes));
         if(pdir->pnodes == NULL) {
-            fprintf(stderr, "%s pnodes calloc failed\n", __func__);
+            fprintf(stderr, "%s pnodes bcalloc failed\n", __func__);
             abort();
         }
     }
     else {
-        struct pnode** pnodes = realloc(pdir->pnodes, sizeof(*pnodes) * (pdir->pnode_count + 1));
+        struct pnode** pnodes = brealloc(pdir->pnodes, sizeof(*pnodes) * (pdir->pnode_count + 1));
         if(pnodes == NULL) {
-            fprintf(stderr, "%s realloc failed\n", __func__);
+            fprintf(stderr, "%s brealloc failed\n", __func__);
             abort();
         }
         pdir->pnodes = pnodes;
@@ -893,9 +894,9 @@ static bool is_atomic(const struct cdir* cdir)
 
 struct lnode* make_lnode(const struct config* config, struct cnode* parent)
 {
-    struct lnode* lnode = calloc(1, sizeof(*lnode));
+    struct lnode* lnode = bcalloc(sizeof(*lnode));
     if(lnode == NULL) {
-        fprintf(stderr, "%s calloc failed\n", __func__);
+        fprintf(stderr, "%s bcalloc failed\n", __func__);
         abort();
     }
     lnode->parent = parent;
@@ -907,9 +908,9 @@ struct lnode* make_lnode(const struct config* config, struct cnode* parent)
 
 struct cnode* make_cnode(const struct config* config, struct cdir* parent)
 {
-    struct cnode* cnode = calloc(1, sizeof(*cnode));
+    struct cnode* cnode = bcalloc(sizeof(*cnode));
     if(cnode == NULL) {
-        fprintf(stderr, "%s calloc failed\n", __func__);
+        fprintf(stderr, "%s bcalloc failed\n", __func__);
         abort();
     }
     cnode->parent = parent;
@@ -1114,9 +1115,9 @@ static void free_pdir(struct pdir* pdir)
         struct pnode* pnode = pdir->pnodes[i];
         free_pnode(pnode);
     }
-    free(pdir->pnodes);
+    bfree(pdir->pnodes);
     pdir->pnodes = NULL;
-    free(pdir);
+    bfree(pdir);
 }
 
 static void free_pred(struct betree_variable* pred)
@@ -1124,9 +1125,9 @@ static void free_pred(struct betree_variable* pred)
     if(pred == NULL) {
         return;
     }
-    free((char*)pred->attr_var.attr);
+    bfree((char*)pred->attr_var.attr);
     free_value(pred->value);
-    free(pred);
+    bfree(pred);
 }
 
 void free_sub(struct sub* sub)
@@ -1134,13 +1135,13 @@ void free_sub(struct sub* sub)
     if(sub == NULL) {
         return;
     }
-    free(sub->attr_vars);
+    bfree(sub->attr_vars);
     sub->attr_vars = NULL;
     free_ast_node((struct ast_node*)sub->expr);
     sub->expr = NULL;
-    free(sub->short_circuit.pass);
-    free(sub->short_circuit.fail);
-    free(sub);
+    bfree(sub->short_circuit.pass);
+    bfree(sub->short_circuit.fail);
+    bfree(sub);
 }
 
 void free_event(struct betree_event* event)
@@ -1154,8 +1155,8 @@ void free_event(struct betree_event* event)
             free_pred((struct betree_variable*)pred);
         }
     }
-    free(event->variables);
-    free(event);
+    bfree(event->variables);
+    bfree(event);
 }
 
 void free_lnode(struct lnode* lnode)
@@ -1167,9 +1168,9 @@ void free_lnode(struct lnode* lnode)
         const struct sub* sub = lnode->subs[i];
         free_sub((struct sub*)sub);
     }
-    free(lnode->subs);
+    bfree(lnode->subs);
     lnode->subs = NULL;
-    free(lnode);
+    bfree(lnode);
 }
 
 void free_cnode(struct cnode* cnode)
@@ -1181,7 +1182,7 @@ void free_cnode(struct cnode* cnode)
     cnode->lnode = NULL;
     free_pdir(cnode->pdir);
     cnode->pdir = NULL;
-    free(cnode);
+    bfree(cnode);
 }
 
 static void free_cdir(struct cdir* cdir)
@@ -1189,14 +1190,14 @@ static void free_cdir(struct cdir* cdir)
     if(cdir == NULL) {
         return;
     }
-    free((char*)cdir->attr_var.attr);
+    bfree((char*)cdir->attr_var.attr);
     free_cnode(cdir->cnode);
     cdir->cnode = NULL;
     free_cdir(cdir->lchild);
     cdir->lchild = NULL;
     free_cdir(cdir->rchild);
     cdir->rchild = NULL;
-    free(cdir);
+    bfree(cdir);
 }
 
 static void try_remove_pnode_from_parent(const struct pnode* pnode)
@@ -1209,13 +1210,13 @@ static void try_remove_pnode_from_parent(const struct pnode* pnode)
             }
             pdir->pnode_count--;
             if(pdir->pnode_count == 0) {
-                free(pdir->pnodes);
+                bfree(pdir->pnodes);
                 pdir->pnodes = NULL;
             }
             else {
-                struct pnode** pnodes = realloc(pdir->pnodes, sizeof(*pnodes) * pdir->pnode_count);
+                struct pnode** pnodes = brealloc(pdir->pnodes, sizeof(*pnodes) * pdir->pnode_count);
                 if(pnodes == NULL) {
-                    fprintf(stderr, "%s realloc failed\n", __func__);
+                    fprintf(stderr, "%s brealloc failed\n", __func__);
                     abort();
                 }
                 pdir->pnodes = pnodes;
@@ -1230,10 +1231,10 @@ static void free_pnode(struct pnode* pnode)
     if(pnode == NULL) {
         return;
     }
-    free((char*)pnode->attr_var.attr);
+    bfree((char*)pnode->attr_var.attr);
     free_cdir(pnode->cdir);
     pnode->cdir = NULL;
-    free(pnode);
+    bfree(pnode);
 }
 
 bool betree_delete_inner(size_t attr_domains_count,
@@ -1384,12 +1385,12 @@ static bool search_delete_cdir(size_t attr_domains_count,
 
 struct betree_variable* make_pred(const char* attr, betree_var_t variable_id, struct value value)
 {
-    struct betree_variable* pred = calloc(1, sizeof(*pred));
+    struct betree_variable* pred = bcalloc(sizeof(*pred));
     if(pred == NULL) {
-        fprintf(stderr, "%s calloc failed\n", __func__);
+        fprintf(stderr, "%s bcalloc failed\n", __func__);
         abort();
     }
-    pred->attr_var.attr = strdup(attr);
+    pred->attr_var.attr = bstrdup(attr);
     pred->attr_var.var = variable_id;
     pred->value = value;
     return pred;
@@ -1627,27 +1628,27 @@ static void fill_short_circuit(struct config* config, struct sub* sub)
 
 struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* expr)
 {
-    struct sub* sub = calloc(1, sizeof(*sub));
+    struct sub* sub = bcalloc(sizeof(*sub));
     if(sub == NULL) {
-        fprintf(stderr, "%s calloc failed\n", __func__);
+        fprintf(stderr, "%s bcalloc failed\n", __func__);
         abort();
     }
     sub->id = id;
     size_t count = config->attr_domain_count / 64 + 1;
-    sub->attr_vars = calloc(count, sizeof(*sub->attr_vars));
+    sub->attr_vars = bcalloc(count * sizeof(*sub->attr_vars));
     sub->expr = expr;
     fill_pred(sub, sub->expr);
-    sub->short_circuit.pass = calloc(count, sizeof(*sub->short_circuit.pass));
-    sub->short_circuit.fail = calloc(count, sizeof(*sub->short_circuit.fail));
+    sub->short_circuit.pass = bcalloc(count * sizeof(*sub->short_circuit.pass));
+    sub->short_circuit.fail = bcalloc(count * sizeof(*sub->short_circuit.fail));
     fill_short_circuit(config, sub);
     return sub;
 }
 
 struct betree_event* make_empty_event()
 {
-    struct betree_event* event = calloc(1, sizeof(*event));
+    struct betree_event* event = bcalloc(sizeof(*event));
     if(event == NULL) {
-        fprintf(stderr, "%s event calloc failed\n", __func__);
+        fprintf(stderr, "%s event bcalloc failed\n", __func__);
         abort();
     }
     event->variable_count = 0;
@@ -1665,17 +1666,17 @@ const char* get_attr_for_id(const struct config* config, betree_var_t variable_i
 
 betree_var_t try_get_id_for_attr(const struct config* config, const char* attr)
 {
-    char* copy = strdup(attr);
+    char* copy = bstrdup(attr);
     for(size_t i = 0; copy[i]; i++) {
         copy[i] = tolower(copy[i]);
     }
     for(size_t i = 0; i < config->attr_domain_count; i++) {
         if(strcmp(config->attr_domains[i]->attr_var.attr, copy) == 0) {
-            free(copy);
+            bfree(copy);
             return i;
         }
     }
-    free(copy);
+    bfree(copy);
     return INVALID_VAR;
 }
 
@@ -1713,13 +1714,13 @@ void event_to_string(const struct betree_event* event, char* buffer)
             case(BETREE_INTEGER_LIST_ENUM): {
                 const char* integer_list_enum = integer_list_enum_value_to_string(pred->value.ilevalue);
                 length += sprintf(buffer + length, "%s = (%s)", attr, integer_list_enum);
-                free((char*)integer_list_enum);
+                bfree((char*)integer_list_enum);
                 break;
             }
             case(BETREE_INTEGER_LIST): {
                 const char* integer_list = integer_list_value_to_string(pred->value.ilvalue);
                 length += sprintf(buffer + length, "%s = (%s)", attr, integer_list);
-                free((char*)integer_list);
+                bfree((char*)integer_list);
                 break;
             }
             case(BETREE_SEGMENTS):
@@ -1731,7 +1732,7 @@ void event_to_string(const struct betree_event* event, char* buffer)
             case(BETREE_STRING_LIST): {
                 const char* string_list = string_list_value_to_string(pred->value.slvalue);
                 length += sprintf(buffer + length, "%s = (%s)", attr, string_list);
-                free((char*)string_list);
+                bfree((char*)string_list);
                 break;
             }
             default: {
@@ -1749,22 +1750,22 @@ struct memoize make_memoize(size_t pred_count)
 {
     size_t count = pred_count / 64 + 1;
     struct memoize memoize = {
-        .pass = calloc(count, sizeof(*memoize.pass)),
-        .fail = calloc(count, sizeof(*memoize.fail)),
+        .pass = bcalloc(count * sizeof(*memoize.pass)),
+        .fail = bcalloc(count * sizeof(*memoize.fail)),
     };
     return memoize;
 }
 
 void free_memoize(struct memoize memoize)
 {
-    free(memoize.pass);
-    free(memoize.fail);
+    bfree(memoize.pass);
+    bfree(memoize.fail);
 }
 
 static uint64_t* make_undefined(size_t attr_domain_count, const struct betree_variable** preds)
 {
     size_t count = attr_domain_count / 64 + 1;
-    uint64_t* undefined = calloc(count, sizeof(*undefined));
+    uint64_t* undefined = bcalloc(count * sizeof(*undefined));
     for(size_t i = 0; i < attr_domain_count; i++) {
         if(preds[i] == NULL) {
             set_bit(undefined, i);
@@ -1783,7 +1784,7 @@ bool betree_search_with_preds(const struct config* config,
     struct subs_to_eval subs;
     init_subs_to_eval(&subs);
     match_be_tree((const struct attr_domain**)config->attr_domains, preds, cnode, &subs);
-    report->subs = malloc(sizeof(*report->subs) * subs.count);
+    report->subs = bmalloc(sizeof(*report->subs) * subs.count);
     report->evaluated = subs.count;
     for(size_t i = 0; i < subs.count; i++) {
         const struct sub* sub = subs.subs[i];
@@ -1792,10 +1793,10 @@ bool betree_search_with_preds(const struct config* config,
             report->matched++;
         }
     }
-    free(subs.subs);
+    bfree(subs.subs);
     free_memoize(memoize);
-    free(undefined);
-    free(preds);
+    bfree(undefined);
+    bfree(preds);
     return true;
 }
 
@@ -1842,7 +1843,7 @@ struct betree_event* make_event_from_string(const struct betree* betree, const c
 struct attr_var make_attr_var(const char* attr, struct config* config)
 {
     struct attr_var attr_var;
-    attr_var.attr = attr == NULL ? NULL : strdup(attr);
+    attr_var.attr = attr == NULL ? NULL : bstrdup(attr);
     if(config == NULL) {
         attr_var.var = INVALID_VAR;
     }
@@ -1854,12 +1855,12 @@ struct attr_var make_attr_var(const char* attr, struct config* config)
 
 void free_attr_var(struct attr_var attr_var)
 {
-    free((char*)attr_var.attr);
+    bfree((char*)attr_var.attr);
 }
 
 struct attr_var copy_attr_var(struct attr_var attr_var)
 {
-    struct attr_var copy = { .attr = strdup(attr_var.attr), .var = attr_var.var };
+    struct attr_var copy = { .attr = bstrdup(attr_var.attr), .var = attr_var.var };
     return copy;
 }
 
@@ -1869,17 +1870,17 @@ void add_variable(struct betree_variable* variable, struct betree_event* event)
         return;
     }
     if(event->variable_count == 0) {
-        event->variables = calloc(1, sizeof(*event->variables));
+        event->variables = bcalloc(sizeof(*event->variables));
         if(event->variables == NULL) {
-            fprintf(stderr, "%s calloc failed\n", __func__);
+            fprintf(stderr, "%s bcalloc failed\n", __func__);
             abort();
         }
     }
     else {
         struct betree_variable** variables
-            = realloc(event->variables, sizeof(*variables) * (event->variable_count + 1));
+            = brealloc(event->variables, sizeof(*variables) * (event->variable_count + 1));
         if(variables == NULL) {
-            fprintf(stderr, "%s realloc failed\n", __func__);
+            fprintf(stderr, "%s brealloc failed\n", __func__);
             abort();
         }
         event->variables = variables;
