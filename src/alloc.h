@@ -1,6 +1,7 @@
 #pragma once
 
 #ifdef NIF
+#include <erl_nif.h>
 #define bmalloc enif_alloc
 #define bcalloc enif_calloc
 #define brealloc enif_realloc

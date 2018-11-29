@@ -34,6 +34,7 @@ ERL_INTERFACE_INCLUDE_DIR ?= $(shell erl -noshell -s init stop -eval "io:format(
 ERL_INTERFACE_LIB_DIR ?= $(shell erl -noshell -s init stop -eval "io:format(\"~ts\", [code:lib_dir(erl_interface, lib)]).")
 
 ifdef NIF
+	DEFINES += -DNIF
 	CFLAGS += -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
 	LDFLAGS += -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei
 endif
@@ -87,7 +88,7 @@ src/event_parser.c: src/event_parser.y
 ################################################################################
 
 src/%.o: src/%.c
-	$(CC) $(CFLAGS) -c -o $@ $^ $(LDFLAGS)
+	$(CC) $(DEFINES) $(CFLAGS) -c -o $@ $^ $(LDFLAGS)
 
 ################################################################################
 # Tests
