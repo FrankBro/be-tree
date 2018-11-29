@@ -2,13 +2,14 @@
 #include <float.h>
 #include <stdio.h>
 
+#include "alloc.h"
 #include "hashmap.h"
 #include "tree.h"
 
 void add_variable_from_string(struct betree* betree, const char* line)
 {
     struct config* config = betree->config;
-    char* domain_copy = strdup(line);
+    char* domain_copy = bstrdup(line);
     char* line_rest = domain_copy;
     const char* name = strtok_r(line_rest, "|", &line_rest);
     const char* type = strtok_r(line_rest, "|", &line_rest);
@@ -90,7 +91,7 @@ void add_variable_from_string(struct betree* betree, const char* line)
         fprintf(stderr, "Unknown definition type");
         abort();
     }
-    free(domain_copy);
+    bfree(domain_copy);
 }
 
 void empty_tree(struct betree* betree)

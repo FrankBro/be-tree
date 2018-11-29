@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "ast.h"
 #include "betree.h"
 #include "parser.h"
@@ -40,13 +41,13 @@ frequency(
     }
     int64_t usec = 1000 * 1000;
     const char* type_value = frequency_type_to_string(type);
-    if(asprintf(&expr, "%swithin_frequency_cap(\"%s\", \"%s\", %" PRId64 ", %" PRId64 ")", pre, type_value, ns, value, length) < 0) {
+    if(basprintf(&expr, "%swithin_frequency_cap(\"%s\", \"%s\", %" PRId64 ", %" PRId64 ")", pre, type_value, ns, value, length) < 0) {
         abort();
     }
     betree_insert_with_constants(tree, 1, constant_count, constants, expr);
     char* event_str;
     const char* cap_type_value = frequency_type_to_string(cap_type);
-    if(asprintf(&event_str, "{\"now\": %ld, \"frequency_caps\": [[\"%s\", %u, \"%s\", %ld, %d]]}", now, cap_type_value, cap_id, cap_ns, timestamp * usec, cap_value) < 0) {
+    if(basprintf(&event_str, "{\"now\": %ld, \"frequency_caps\": [[\"%s\", %u, \"%s\", %ld, %d]]}", now, cap_type_value, cap_id, cap_ns, timestamp * usec, cap_value) < 0) {
         abort();
     }
     struct report* report = make_report();
@@ -238,12 +239,12 @@ segment(bool has_not, enum segment_function_type func_type,
             break;
     }
     int64_t usec = 1000 * 1000;
-    if(asprintf(&expr, "%s%s(%s%" PRId64 ", %" PRId64 ")", pre, func, var, id, seconds) < 0) {
+    if(basprintf(&expr, "%s%s(%s%" PRId64 ", %" PRId64 ")", pre, func, var, id, seconds) < 0) {
         abort();
     }
     betree_insert(tree, 1, expr);
     char* event_str;
-    if(asprintf(&event_str, "{\"now\": 40, \"seg_a\": [[1, %ld]], \"seg_b\": [[1, %ld]], \"segments_with_timestamp\": [[%ld, %ld]]}", 30 * usec, 10 * usec, segment_id, segment_seconds * usec) < 0) {
+    if(basprintf(&event_str, "{\"now\": 40, \"seg_a\": [[1, %ld]], \"seg_b\": [[1, %ld]], \"segments_with_timestamp\": [[%ld, %ld]]}", 30 * usec, 10 * usec, segment_id, segment_seconds * usec) < 0) {
         abort();
     }
     struct report* report = make_report();
@@ -312,12 +313,12 @@ static bool geo(bool has_not, const char* latitude, const char* longitude, const
     else {
         pre = "";
     }
-    if(asprintf(&expr, "%sgeo_within_radius(%s, %s, %s)", pre, latitude, longitude, radius) < 0) {
+    if(basprintf(&expr, "%sgeo_within_radius(%s, %s, %s)", pre, latitude, longitude, radius) < 0) {
         abort();
     }
     betree_insert(tree, 1, expr);
     char* event_str;
-    if(asprintf(&event_str, "{\"latitude\": %.1f, \"longitude\": %.1f}", latitude_value, longitude_value) < 0) {
+    if(basprintf(&event_str, "{\"latitude\": %.1f, \"longitude\": %.1f}", latitude_value, longitude_value) < 0) {
         abort();
     }
     struct report* report = make_report();
@@ -360,13 +361,13 @@ static bool contains(bool has_not, const char* attr, bool allow_undefined, const
     else {
         pre = "";
     }
-    if(asprintf(&expr, "%scontains(%s, \"%s\")", pre, attr, pattern) < 0) {
+    if(basprintf(&expr, "%scontains(%s, \"%s\")", pre, attr, pattern) < 0) {
         abort();
     }
     betree_insert(tree, 1, expr);
     const char* event_attr = allow_undefined ? "a" : attr;
     char* event_str;
-    if(asprintf(&event_str, "{\"%s\": \"%s\"}", event_attr, value) < 0) {
+    if(basprintf(&event_str, "{\"%s\": \"%s\"}", event_attr, value) < 0) {
         abort();
     }
     struct report* report = make_report();
@@ -419,13 +420,13 @@ static bool starts_with(bool has_not, const char* attr, bool allow_undefined, co
     else {
         pre = "";
     }
-    if(asprintf(&expr, "%sstarts_with(%s, \"%s\")", pre, attr, pattern) < 0) {
+    if(basprintf(&expr, "%sstarts_with(%s, \"%s\")", pre, attr, pattern) < 0) {
         abort();
     }
     betree_insert(tree, 1, expr);
     const char* event_attr = allow_undefined ? "a" : attr;
     char* event_str;
-    if(asprintf(&event_str, "{\"%s\": \"%s\"}", event_attr, value) < 0) {
+    if(basprintf(&event_str, "{\"%s\": \"%s\"}", event_attr, value) < 0) {
         abort();
     }
     struct report* report = make_report();
@@ -473,13 +474,13 @@ static bool ends_with(bool has_not, const char* attr, bool allow_undefined, cons
     else {
         pre = "";
     }
-    if(asprintf(&expr, "%sends_with(%s, \"%s\")", pre, attr, pattern) < 0) {
+    if(basprintf(&expr, "%sends_with(%s, \"%s\")", pre, attr, pattern) < 0) {
         abort();
     }
     betree_insert(tree, 1, expr);
     const char* event_attr = allow_undefined ? "a" : attr;
     char* event_str;
-    if(asprintf(&event_str, "{\"%s\": \"%s\"}", event_attr, value) < 0) {
+    if(basprintf(&event_str, "{\"%s\": \"%s\"}", event_attr, value) < 0) {
         abort();
     }
     struct report* report = make_report();

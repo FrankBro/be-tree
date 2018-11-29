@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "config.h"
 #include "error.h"
 #include "hashmap.h"
@@ -10,9 +11,9 @@
 
 struct config* make_config(uint8_t lnode_max_cap, uint8_t partition_min_size)
 {
-    struct config* config = calloc(1, sizeof(*config));
+    struct config* config = bcalloc(sizeof(*config));
     if(config == NULL) {
-        fprintf(stderr, "%s calloc failed\n", __func__);
+        fprintf(stderr, "%s bcalloc failed\n", __func__);
         abort();
     }
     config->attr_domain_count = 0;
@@ -38,47 +39,47 @@ void free_config(struct config* config)
     }
     if(config->attr_domains != NULL) {
         for(size_t i = 0; i < config->attr_domain_count; i++) {
-            free((char*)config->attr_domains[i]->attr_var.attr);
-            free(config->attr_domains[i]);
+            bfree((char*)config->attr_domains[i]->attr_var.attr);
+            bfree(config->attr_domains[i]);
         }
-        free(config->attr_domains);
+        bfree(config->attr_domains);
         config->attr_domains = NULL;
     }
     if(config->integer_maps != NULL) {
         for(size_t i = 0; i < config->integer_map_count; i++) {
-            free((char*)config->integer_maps[i].attr_var.attr);
-            free(config->integer_maps[i].integer_values);
+            bfree((char*)config->integer_maps[i].attr_var.attr);
+            bfree(config->integer_maps[i].integer_values);
         }
-        free(config->integer_maps);
+        bfree(config->integer_maps);
         config->integer_maps = NULL;
     }
     if(config->string_maps != NULL) {
         for(size_t i = 0; i < config->string_map_count; i++) {
-            free((char*)config->string_maps[i].attr_var.attr);
+            bfree((char*)config->string_maps[i].attr_var.attr);
             for(size_t j = 0; j < config->string_maps[i].string_value_count; j++) {
-                free(config->string_maps[i].string_values[j]);
+                bfree(config->string_maps[i].string_values[j]);
             }
-            free(config->string_maps[i].string_values);
+            bfree(config->string_maps[i].string_values);
         }
-        free(config->string_maps);
+        bfree(config->string_maps);
         config->string_maps = NULL;
     }
     if(config->pred_map != NULL) {
         free_pred_map(config->pred_map);
         config->pred_map = NULL;
     }
-    free(config);
+    bfree(config);
 }
 
 static struct attr_domain* make_attr_domain(
     const char* attr, betree_var_t variable_id, struct value_bound bound, bool allow_undefined)
 {
-    struct attr_domain* attr_domain = calloc(1, sizeof(*attr_domain));
+    struct attr_domain* attr_domain = bcalloc(sizeof(*attr_domain));
     if(attr_domain == NULL) {
-        fprintf(stderr, "%s calloc faild\n", __func__);
+        fprintf(stderr, "%s bcalloc faild\n", __func__);
         abort();
     }
-    attr_domain->attr_var.attr = strdup(attr);
+    attr_domain->attr_var.attr = bstrdup(attr);
     attr_domain->attr_var.var = variable_id;
     attr_domain->bound = bound;
     attr_domain->allow_undefined = allow_undefined;
@@ -91,17 +92,17 @@ static void add_attr_domain(
     betree_var_t variable_id = config->attr_domain_count;
     struct attr_domain* attr_domain = make_attr_domain(attr, variable_id, bound, allow_undefined);
     if(config->attr_domain_count == 0) {
-        config->attr_domains = calloc(1, sizeof(*config->attr_domains));
+        config->attr_domains = bcalloc(sizeof(*config->attr_domains));
         if(config->attr_domains == NULL) {
-            fprintf(stderr, "%s calloc failed\n", __func__);
+            fprintf(stderr, "%s bcalloc failed\n", __func__);
             abort();
         }
     }
     else {
-        struct attr_domain** attr_domains = realloc(
+        struct attr_domain** attr_domains = brealloc(
             config->attr_domains, sizeof(*attr_domains) * (config->attr_domain_count + 1));
         if(attr_domains == NULL) {
-            fprintf(stderr, "%s realloc failed\n", __func__);
+            fprintf(stderr, "%s brealloc failed\n", __func__);
             abort();
         }
         config->attr_domains = attr_domains;
@@ -209,22 +210,22 @@ const struct attr_domain* get_attr_domain(
 static void add_integer_map(struct attr_var attr_var, struct config* config)
 {
     if(config->integer_map_count == 0) {
-        config->integer_maps = calloc(1, sizeof(*config->integer_maps));
+        config->integer_maps = bcalloc(sizeof(*config->integer_maps));
         if(config->integer_maps == NULL) {
-            fprintf(stderr, "%s calloc failed\n", __func__);
+            fprintf(stderr, "%s bcalloc failed\n", __func__);
             abort();
         }
     }
     else {
         struct integer_map* integer_maps
-            = realloc(config->integer_maps, sizeof(*integer_maps) * (config->integer_map_count + 1));
+            = brealloc(config->integer_maps, sizeof(*integer_maps) * (config->integer_map_count + 1));
         if(integer_maps == NULL) {
-            fprintf(stderr, "%s realloc failed\n", __func__);
+            fprintf(stderr, "%s brealloc failed\n", __func__);
             abort();
         }
         config->integer_maps = integer_maps;
     }
-    config->integer_maps[config->integer_map_count].attr_var.attr = strdup(attr_var.attr);
+    config->integer_maps[config->integer_map_count].attr_var.attr = bstrdup(attr_var.attr);
     config->integer_maps[config->integer_map_count].attr_var.var = attr_var.var;
     config->integer_maps[config->integer_map_count].integer_value_count = 0;
     config->integer_maps[config->integer_map_count].integer_values = 0;
@@ -234,22 +235,22 @@ static void add_integer_map(struct attr_var attr_var, struct config* config)
 static void add_string_map(struct attr_var attr_var, struct config* config)
 {
     if(config->string_map_count == 0) {
-        config->string_maps = calloc(1, sizeof(*config->string_maps));
+        config->string_maps = bcalloc(sizeof(*config->string_maps));
         if(config->string_maps == NULL) {
-            fprintf(stderr, "%s calloc failed\n", __func__);
+            fprintf(stderr, "%s bcalloc failed\n", __func__);
             abort();
         }
     }
     else {
         struct string_map* string_maps
-            = realloc(config->string_maps, sizeof(*string_maps) * (config->string_map_count + 1));
+            = brealloc(config->string_maps, sizeof(*string_maps) * (config->string_map_count + 1));
         if(string_maps == NULL) {
-            fprintf(stderr, "%s realloc failed\n", __func__);
+            fprintf(stderr, "%s brealloc failed\n", __func__);
             abort();
         }
         config->string_maps = string_maps;
     }
-    config->string_maps[config->string_map_count].attr_var.attr = strdup(attr_var.attr);
+    config->string_maps[config->string_map_count].attr_var.attr = bstrdup(attr_var.attr);
     config->string_maps[config->string_map_count].attr_var.var = attr_var.var;
     config->string_maps[config->string_map_count].string_value_count = 0;
     config->string_maps[config->string_map_count].string_values = 0;
@@ -259,17 +260,17 @@ static void add_string_map(struct attr_var attr_var, struct config* config)
 static void add_to_integer_map(struct integer_map* integer_map, int64_t integer)
 {
     if(integer_map->integer_value_count == 0) {
-        integer_map->integer_values = calloc(1, sizeof(*integer_map->integer_values));
+        integer_map->integer_values = bcalloc(sizeof(*integer_map->integer_values));
         if(integer_map->integer_values == NULL) {
-            fprintf(stderr, "%s calloc failed\n", __func__);
+            fprintf(stderr, "%s bcalloc failed\n", __func__);
             abort();
         }
     }
     else {
-        int64_t* integer_values = realloc(integer_map->integer_values,
+        int64_t* integer_values = brealloc(integer_map->integer_values,
             sizeof(*integer_values) * (integer_map->integer_value_count + 1));
         if(integer_values == NULL) {
-            fprintf(stderr, "%s realloc failed\n", __func__);
+            fprintf(stderr, "%s brealloc failed\n", __func__);
             abort();
         }
         integer_map->integer_values = integer_values;
@@ -281,17 +282,17 @@ static void add_to_integer_map(struct integer_map* integer_map, int64_t integer)
 static void add_to_string_map(struct string_map* string_map, char* copy)
 {
     if(string_map->string_value_count == 0) {
-        string_map->string_values = calloc(1, sizeof(*string_map->string_values));
+        string_map->string_values = bcalloc(sizeof(*string_map->string_values));
         if(string_map->string_values == NULL) {
-            fprintf(stderr, "%s calloc failed\n", __func__);
+            fprintf(stderr, "%s bcalloc failed\n", __func__);
             abort();
         }
     }
     else {
-        char** string_values = realloc(string_map->string_values,
+        char** string_values = brealloc(string_map->string_values,
             sizeof(*string_values) * (string_map->string_value_count + 1));
         if(string_values == NULL) {
-            fprintf(stderr, "%s realloc failed\n", __func__);
+            fprintf(stderr, "%s brealloc failed\n", __func__);
             abort();
         }
         string_map->string_values = string_values;
@@ -320,20 +321,20 @@ betree_ienum_t try_get_id_for_ienum(
 betree_str_t try_get_id_for_string(
     const struct config* config, struct attr_var attr_var, const char* string)
 {
-    char* copy = strdup(string);
+    char* copy = bstrdup(string);
     for(size_t i = 0; i < config->string_map_count; i++) {
         if(config->string_maps[i].attr_var.var == attr_var.var) {
             struct string_map* string_map = string_map = &config->string_maps[i];
             for(size_t j = 0; j < string_map->string_value_count; j++) {
                 if(strcmp(string_map->string_values[j], copy) == 0) {
-                    free(copy);
+                    bfree(copy);
                     return j;
                 }
             }
             break;
         }
     }
-    free(copy);
+    bfree(copy);
     return INVALID_STR;
 }
 
@@ -366,14 +367,14 @@ betree_ienum_t get_id_for_ienum(struct config* config, struct attr_var attr_var,
 
 betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, const char* string, bool always_assign)
 {
-    char* copy = strdup(string);
+    char* copy = bstrdup(string);
     struct string_map* string_map = NULL;
     for(size_t i = 0; i < config->string_map_count; i++) {
         if(config->string_maps[i].attr_var.var == attr_var.var) {
             string_map = &config->string_maps[i];
             for(size_t j = 0; j < string_map->string_value_count; j++) {
                 if(strcmp(string_map->string_values[j], copy) == 0) {
-                    free(copy);
+                    bfree(copy);
                     return j;
                 }
             }
@@ -387,7 +388,7 @@ betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, 
     const struct attr_domain* attr_domain
         = get_attr_domain((const struct attr_domain**)config->attr_domains, attr_var.var);
     if(!always_assign && attr_domain->bound.smax + 1 == string_map->string_value_count) {
-        free(copy);
+        bfree(copy);
         return INVALID_STR;
     }
     add_to_string_map(string_map, copy);
@@ -398,3 +399,4 @@ bool is_variable_allow_undefined(const struct config* config, const betree_var_t
 {
     return config->attr_domains[variable_id]->allow_undefined;
 }
+

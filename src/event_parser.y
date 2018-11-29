@@ -3,6 +3,7 @@
     #include <stdbool.h>
     #include <stdio.h>
     #include <string.h>
+    #include "alloc.h"
     #include "ast.h"
     #include "betree.h"
     #include "event_parser.h"
@@ -96,8 +97,8 @@ variable_loop       : variable                              { $$ = make_empty_ev
                     | variable_loop EVENT_COMMA variable    { add_variable($3, $1); $$ = $1; }
 ;       
 
-variable            : EVENT_STRING EVENT_COLON value        { $$ = make_pred($1, INVALID_VAR, $3); free($1); }
-                    | EVENT_STRING EVENT_COLON EVENT_NULL   { $$ = NULL; free($1); }
+variable            : EVENT_STRING EVENT_COLON value        { $$ = make_pred($1, INVALID_VAR, $3); bfree($1); }
+                    | EVENT_STRING EVENT_COLON EVENT_NULL   { $$ = NULL; bfree($1); }
 ;
 
 value               : boolean                               { $$.value_type = BETREE_BOOLEAN; $$.bvalue = $1; }
@@ -122,7 +123,7 @@ float               : EVENT_FLOAT                           { $$ = $1; }
                     | EVENT_MINUS EVENT_FLOAT               { $$ = - $2; }
 ;       
 
-string              : EVENT_STRING                          { $$.string = strdup($1); $$.str = INVALID_STR; free($1); }
+string              : EVENT_STRING                          { $$.string = bstrdup($1); $$.str = INVALID_STR; bfree($1); }
 
 empty_list_value    : EVENT_LSQUARE EVENT_RSQUARE           { $$ = make_integer_list(); }
 
@@ -160,9 +161,9 @@ frequencies_loop    : frequency_value                       { $$ = make_frequenc
 ;
 
 frequency_value     : EVENT_LSQUARE EVENT_STRING EVENT_COMMA integer EVENT_COMMA string EVENT_COMMA integer EVENT_COMMA integer EVENT_RSQUARE
-                                                            { $$ = make_frequency_cap($2, $4, $6, true, $8, $10); free($2); }
+                                                            { $$ = make_frequency_cap($2, $4, $6, true, $8, $10); bfree($2); }
                     | EVENT_LSQUARE EVENT_LSQUARE EVENT_STRING EVENT_COMMA integer EVENT_COMMA string EVENT_RSQUARE EVENT_COMMA integer EVENT_COMMA integer EVENT_RSQUARE
-                                                            { $$ = make_frequency_cap($3, $5, $7, true, $10, $12); free($3); }
+                                                            { $$ = make_frequency_cap($3, $5, $7, true, $10, $12); bfree($3); }
 ;
 
 %%

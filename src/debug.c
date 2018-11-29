@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "ast.h"
 #include "betree.h"
 #include "tree.h"
@@ -152,9 +153,9 @@ static const char* get_path_cnode(const struct config* config, const struct cnod
 static const char* escape_name(const char* input)
 {
     size_t len = strlen(input);
-    char* escaped = calloc(len + 1, sizeof(*escaped));
+    char* escaped = bcalloc((len + 1) * sizeof(*escaped));
     if(escaped == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
+        fprintf(stderr, "%s bcalloc failed", __func__);
         abort();
     }
     for(size_t i = 0; i < len; i++) {
@@ -174,17 +175,17 @@ static const char* get_path_pnode(const struct config* config, const struct pnod
     char* name;
     const char* parent_path = get_path_cnode(config, pnode->parent->parent);
     const char* escaped_attr = escape_name(pnode->attr_var.attr);
-    if(asprintf(&name, "%s_%s", parent_path, escaped_attr) < 0) {
+    if(basprintf(&name, "%s_%s", parent_path, escaped_attr) < 0) {
         abort();
     }
-    free((char*)parent_path);
-    free((char*)escaped_attr);
+    bfree((char*)parent_path);
+    bfree((char*)escaped_attr);
     return name;
 }
 
 static const char* get_path_cdir(const struct config* config, const struct cdir* cdir, bool first)
 {
-    const char* parent_path;
+    const char* parent_path = NULL;
     switch(cdir->parent_type) {
         case(CNODE_PARENT_CDIR): {
             if(first) {
@@ -212,7 +213,7 @@ static const char* get_path_cdir(const struct config* config, const struct cdir*
     switch(cdir->bound.value_type) {
         case(BETREE_INTEGER):
         case(BETREE_INTEGER_LIST):
-            if(asprintf(&name,
+            if(basprintf(&name,
                    "%s_%" PRIu64 "_%" PRIu64,
                    parent_path,
                    cdir->bound.imin,
@@ -222,7 +223,7 @@ static const char* get_path_cdir(const struct config* config, const struct cdir*
             }
             break;
         case(BETREE_FLOAT): {
-            if(asprintf(&name, "%s_%.0f_%.0f", parent_path, cdir->bound.fmin, cdir->bound.fmax)
+            if(basprintf(&name, "%s_%.0f_%.0f", parent_path, cdir->bound.fmin, cdir->bound.fmax)
                 < 0) {
                 abort();
             }
@@ -231,7 +232,7 @@ static const char* get_path_cdir(const struct config* config, const struct cdir*
         case(BETREE_BOOLEAN): {
             const char* min = cdir->bound.bmin ? "true" : "false";
             const char* max = cdir->bound.bmax ? "true" : "false";
-            if(asprintf(&name, "%s_%s_%s", parent_path, min, max) < 0) {
+            if(basprintf(&name, "%s_%s_%s", parent_path, min, max) < 0) {
                 abort();
             }
             break;
@@ -240,7 +241,7 @@ static const char* get_path_cdir(const struct config* config, const struct cdir*
         case(BETREE_STRING_LIST):
         case(BETREE_INTEGER_ENUM):
         case(BETREE_INTEGER_LIST_ENUM):
-            if(asprintf(&name, "%s_%zu_%zu", parent_path, cdir->bound.smin, cdir->bound.smax) < 0) {
+            if(basprintf(&name, "%s_%zu_%zu", parent_path, cdir->bound.smin, cdir->bound.smax) < 0) {
                 abort();
             }
             break;
@@ -256,14 +257,14 @@ static const char* get_path_cdir(const struct config* config, const struct cdir*
             switch_default_error("Invalid bound value type");
         }
     }
-    free((char*)parent_path);
+    bfree((char*)parent_path);
     return name;
 }
 
 static const char* get_path_cnode(const struct config* config, const struct cnode* cnode)
 {
     if(cnode->parent == NULL) {
-        return strdup("");
+        return bstrdup("");
     }
     return get_path_cdir(config, cnode->parent, true);
 }
@@ -272,10 +273,10 @@ static const char* get_name_pnode(const struct config* config, const struct pnod
 {
     char* name;
     const char* path = get_path_pnode(config, pnode);
-    if(asprintf(&name, "pnode_%s", path) < 0) {
+    if(basprintf(&name, "pnode_%s", path) < 0) {
         abort();
     }
-    free((char*)path);
+    bfree((char*)path);
     return name;
 }
 
@@ -283,25 +284,25 @@ static const char* get_name_cdir(const struct config* config, const struct cdir*
 {
     char* name;
     const char* path = get_path_cdir(config, cdir, true);
-    if(asprintf(&name, "cdir_%s", path) < 0) {
+    if(basprintf(&name, "cdir_%s", path) < 0) {
         abort();
     }
-    free((char*)path);
+    bfree((char*)path);
     return name;
 }
 
 static const char* get_name_cnode(const struct config* config, const struct cnode* cnode)
 {
     if(cnode->parent == NULL) {
-        return strdup("cnode_root");
+        return bstrdup("cnode_root");
     }
     else {
         char* name;
         const char* path = get_path_cnode(config, cnode);
-        if(asprintf(&name, "cnode_%s", path) < 0) {
+        if(basprintf(&name, "cnode_%s", path) < 0) {
             abort();
         }
-        free((char*)path);
+        bfree((char*)path);
         return name;
     }
 }
@@ -310,10 +311,10 @@ static const char* get_name_lnode(const struct config* config, const struct lnod
 {
     char* name;
     const char* path = get_path_cnode(config, lnode->parent);
-    if(asprintf(&name, "lnode_%s", path) < 0) {
+    if(basprintf(&name, "lnode_%s", path) < 0) {
         abort();
     }
-    free((char*)path);
+    bfree((char*)path);
     return name;
 }
 
@@ -321,10 +322,10 @@ static const char* get_name_pdir(const struct config* config, const struct pdir*
 {
     char* name;
     const char* path = get_path_cnode(config, pdir->parent);
-    if(asprintf(&name, "pdir_%s", path) < 0) {
+    if(basprintf(&name, "pdir_%s", path) < 0) {
         abort();
     }
-    free((char*)path);
+    bfree((char*)path);
     return name;
 }
 
@@ -353,7 +354,7 @@ static void write_dot_file_lnode_names(
         }
         fprintf(f, "\\}>, color=lightblue1, fillcolor=lightblue1, style=filled, shape=record]\n");
     }
-    free((char*)name);
+    bfree((char*)name);
 }
 
 static void write_dot_file_cnode_names(
@@ -439,7 +440,7 @@ static void write_dot_file_cdir_td(FILE* f,
                     switch_default_error("Invalid bound value type");
                 }
             }
-            free((char*)name);
+            bfree((char*)name);
         }
     }
     else {
@@ -533,7 +534,7 @@ static void write_dot_file_cdir_names(
     level--;
     print_spaces(f, level);
     fprintf(f, "}\n");
-    free((char*)name);
+    bfree((char*)name);
     write_dot_file_cdir_cnode_names(f, config, cdir, level);
 }
 
@@ -551,7 +552,7 @@ static void write_dot_file_pnode_names(
         "\"%s_fake\" [label=\"p-node\", color=cyan2, fillcolor=cyan2, style=filled, shape=circle, "
         "fixedsize=true, width=0.8]\n",
         name);
-    free((char*)name);
+    bfree((char*)name);
     if(pnode->cdir != NULL) {
         write_dot_file_cdir_names(f, config, pnode->cdir, level);
     }
@@ -568,7 +569,7 @@ static void write_dot_file_pdir_inner_names(
             "\"%s\" [label=\"%s\", color=cyan2, fillcolor=cyan2, style=filled, shape=record]\n",
             name,
             pnode->attr_var.attr);
-        free((char*)name);
+        bfree((char*)name);
     }
 }
 
@@ -587,7 +588,7 @@ static void write_dot_file_pdir_names(
     level--;
     print_spaces(f, level);
     fprintf(f, "}\n");
-    free((char*)name);
+    bfree((char*)name);
     for(size_t i = 0; i < pdir->pnode_count; i++) {
         write_dot_file_pnode_names(f, config, pdir->pnodes[i], level);
     }
@@ -602,7 +603,7 @@ static void write_dot_file_cnode_names(
         "\"%s\" [label=\"c-node\", color=darkolivegreen3, fillcolor=darkolivegreen3, style=filled, "
         "shape=circle, fixedsize=true, width=0.8]\n",
         name);
-    free((char*)name);
+    bfree((char*)name);
     if(cnode->lnode != NULL) {
         write_dot_file_lnode_names(f, config, cnode->lnode, level);
     }
@@ -625,7 +626,7 @@ static void write_dot_file_cdir_links(FILE* f,
         const char* cnode_name = get_name_cnode(config, cdir->cnode);
         print_spaces(f, level);
         fprintf(f, "%s:%s -> \"%s\"\n", table_name, cdir_name, cnode_name);
-        free((char*)cnode_name);
+        bfree((char*)cnode_name);
         write_dot_file_cnode_links(f, config, cdir->cnode, level);
     }
     if(cdir->lchild != NULL) {
@@ -634,7 +635,7 @@ static void write_dot_file_cdir_links(FILE* f,
     if(cdir->rchild != NULL) {
         write_dot_file_cdir_links(f, config, cdir->rchild, level, table_name);
     }
-    free((char*)cdir_name);
+    bfree((char*)cdir_name);
 }
 
 static void write_dot_file_pnode_links(
@@ -648,9 +649,9 @@ static void write_dot_file_pnode_links(
         print_spaces(f, level);
         fprintf(
             f, "\"%s_fake\" -> \"%s\" [lhead=\"cluster%s\"]\n", pnode_name, cdir_name, cdir_name);
-        free((char*)pnode_name);
+        bfree((char*)pnode_name);
         write_dot_file_cdir_links(f, config, pnode->cdir, level, cdir_name);
-        free((char*)cdir_name);
+        bfree((char*)cdir_name);
     }
 }
 
@@ -675,18 +676,18 @@ static void write_dot_file_cnode_links(
             print_spaces(f, level);
             fprintf(f, "\"%s\" -> \"%s_subs\"\n", lnode_name, lnode_name);
         }
-        free((char*)lnode_name);
+        bfree((char*)lnode_name);
     }
     if(cnode->pdir != NULL && cnode->pdir->pnode_count > 0) {
         const char* pdir_name = get_name_pdir(config, cnode->pdir);
         const char* pnode_name = get_name_pnode(config, cnode->pdir->pnodes[0]);
         print_spaces(f, level);
         fprintf(f, "\"%s\" -> \"%s\" [lhead=\"cluster%s\"]\n", cnode_name, pnode_name, pdir_name);
-        free((char*)pdir_name);
-        free((char*)pnode_name);
+        bfree((char*)pdir_name);
+        bfree((char*)pnode_name);
         write_dot_file_pdir_links(f, config, cnode->pdir, level);
     }
-    free((char*)cnode_name);
+    bfree((char*)cnode_name);
 }
 
 static void write_dot_file_cdir_cnode_ranks(
@@ -698,7 +699,7 @@ static void write_dot_file_cdir_cnode_ranks(
             fprintf(f, ", ");
         }
         fprintf(f, "\"%s\"", cnode_name);
-        free((char*)cnode_name);
+        bfree((char*)cnode_name);
     }
     if(cdir->lchild != NULL) {
         write_dot_file_cdir_cnode_ranks(f, config, cdir->lchild, level, false);
@@ -717,16 +718,16 @@ struct cdir_acc {
 static void add_cdir(const struct cdir* cdir, struct cdir_acc* acc)
 {
     if(acc->count == 0) {
-        acc->cdirs = calloc(1, sizeof(*acc->cdirs));
+        acc->cdirs = bcalloc(1, sizeof(*acc->cdirs));
         if(acc->cdirs == NULL) {
-            fprintf(stderr, "%s calloc failed", __func__);
+            fprintf(stderr, "%s bcalloc failed", __func__);
             abort();
         }
     }
     else {
-        struct cdir** next_cdirs = realloc(acc->cdirs, sizeof(*next_cdirs) * (acc->count + 1));
+        struct cdir** next_cdirs = brealloc(acc->cdirs, sizeof(*next_cdirs) * (acc->count + 1));
         if(next_cdirs == NULL) {
-            fprintf(stderr, "%s realloc failed", __func__);
+            fprintf(stderr, "%s brealloc failed", __func__);
             abort();
         }
         acc->cdirs = next_cdirs;
@@ -771,7 +772,7 @@ static void write_dot_file_cdir_cdir_ranks(
             remaining++;
         }
         else {
-            free(acc.cdirs);
+            bfree(acc.cdirs);
             return;
         }
     }
@@ -820,7 +821,7 @@ static void write_dot_file_pdir_ranks(
             fprintf(f, ", ");
         }
         fprintf(f, "\"%s_fake\"", pnode_name);
-        free((char*)pnode_name);
+        bfree((char*)pnode_name);
     }
     fprintf(f, " }\n");
     for(size_t i = 0; i < pdir->pnode_count; i++) {
@@ -844,16 +845,16 @@ struct gathered_subs {
 static void add_sub(const struct sub* sub, struct gathered_subs* gatherer)
 {
     if(gatherer->count == 0) {
-        gatherer->subs = calloc(1, sizeof(*gatherer->subs));
+        gatherer->subs = bcalloc(sizeof(*gatherer->subs));
         if(gatherer->subs == NULL) {
-            fprintf(stderr, "%s calloc failed", __func__);
+            fprintf(stderr, "%s bcalloc failed", __func__);
             abort();
         }
     }
     else {
-        struct sub** subs = realloc(gatherer->subs, sizeof(*subs) * (gatherer->count + 1));
+        struct sub** subs = brealloc(gatherer->subs, sizeof(*subs) * (gatherer->count + 1));
         if(subs == NULL) {
-            fprintf(stderr, "%s realloc failed", __func__);
+            fprintf(stderr, "%s brealloc failed", __func__);
             abort();
         }
         gatherer->subs = subs;

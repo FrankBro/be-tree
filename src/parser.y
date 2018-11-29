@@ -3,6 +3,7 @@
     #include <stdbool.h>
     #include <stdio.h>
     #include <string.h>
+    #include "alloc.h"
     #include "ast.h"
     #include "betree.h"
     #include "parser.h"
@@ -10,6 +11,11 @@
     struct ast_node *root;
     extern int xxlex();
     void xxerror(void *scanner, const char *s) { (void)scanner; printf("ERROR: %s\n", s); }
+#ifdef NIF
+    #include "erl_nif.h"
+    #define YYMALLOC enif_alloc
+    #define YYFREE enif_free
+#endif
 #if defined(__GNUC__)
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wswitch-default"
@@ -100,7 +106,7 @@ float               : TFLOAT                                { $$ = $1; }
                     | TMINUS TFLOAT                         { $$ = - $2; }
 ;
 
-string              : TSTRING                               { $$.string = strdup($1); $$.str = INVALID_STR; free($1); }
+string              : TSTRING                               { $$.string = bstrdup($1); $$.str = INVALID_STR; bfree($1); }
 
 integer_list_value  : TLPAREN integer_list_loop TRPAREN     { $$ = $2; }
 
@@ -124,23 +130,23 @@ expr                : TLPAREN expr TRPAREN                  { $$ = $2; }
                     | is_null_expr                          { $$ = $1; }
 ;       
 
-is_null_expr        : ident TISNULL                         { $$ = ast_is_null_expr_create(AST_IS_NULL, $1); free($1); }
-                    | ident TISNOTNULL                      { $$ = ast_is_null_expr_create(AST_IS_NOT_NULL, $1); free($1); }
-                    | ident TISEMPTY                        { $$ = ast_is_null_expr_create(AST_IS_EMPTY, $1); free($1); }
+is_null_expr        : ident TISNULL                         { $$ = ast_is_null_expr_create(AST_IS_NULL, $1); bfree($1); }
+                    | ident TISNOTNULL                      { $$ = ast_is_null_expr_create(AST_IS_NOT_NULL, $1); bfree($1); }
+                    | ident TISEMPTY                        { $$ = ast_is_null_expr_create(AST_IS_EMPTY, $1); bfree($1); }
 ;
 
 num_comp_value      : integer                               { $$.value_type = AST_COMPARE_VALUE_INTEGER; $$.integer_value = $1; }
                     | float                                 { $$.value_type = AST_COMPARE_VALUE_FLOAT; $$.float_value = $1; }
 ;       
 
-num_comp_expr       : ident TCGT num_comp_value             { $$ = ast_compare_expr_create(AST_COMPARE_GT, $1, $3); free($1); }
-                    | ident TCGE num_comp_value             { $$ = ast_compare_expr_create(AST_COMPARE_GE, $1, $3); free($1); }
-                    | ident TCLT num_comp_value             { $$ = ast_compare_expr_create(AST_COMPARE_LT, $1, $3); free($1); }
-                    | ident TCLE num_comp_value             { $$ = ast_compare_expr_create(AST_COMPARE_LE, $1, $3); free($1); }
-                    | num_comp_value TCLT ident             { $$ = ast_compare_expr_create(AST_COMPARE_GT, $3, $1); free($3); }
-                    | num_comp_value TCLE ident             { $$ = ast_compare_expr_create(AST_COMPARE_GE, $3, $1); free($3); }
-                    | num_comp_value TCGT ident             { $$ = ast_compare_expr_create(AST_COMPARE_LT, $3, $1); free($3); }
-                    | num_comp_value TCGE ident             { $$ = ast_compare_expr_create(AST_COMPARE_LE, $3, $1); free($3); }
+num_comp_expr       : ident TCGT num_comp_value             { $$ = ast_compare_expr_create(AST_COMPARE_GT, $1, $3); bfree($1); }
+                    | ident TCGE num_comp_value             { $$ = ast_compare_expr_create(AST_COMPARE_GE, $1, $3); bfree($1); }
+                    | ident TCLT num_comp_value             { $$ = ast_compare_expr_create(AST_COMPARE_LT, $1, $3); bfree($1); }
+                    | ident TCLE num_comp_value             { $$ = ast_compare_expr_create(AST_COMPARE_LE, $1, $3); bfree($1); }
+                    | num_comp_value TCLT ident             { $$ = ast_compare_expr_create(AST_COMPARE_GT, $3, $1); bfree($3); }
+                    | num_comp_value TCLE ident             { $$ = ast_compare_expr_create(AST_COMPARE_GE, $3, $1); bfree($3); }
+                    | num_comp_value TCGT ident             { $$ = ast_compare_expr_create(AST_COMPARE_LT, $3, $1); bfree($3); }
+                    | num_comp_value TCGE ident             { $$ = ast_compare_expr_create(AST_COMPARE_LE, $3, $1); bfree($3); }
 ;       
 
 eq_value            : integer                               { $$.value_type = AST_EQUALITY_VALUE_INTEGER; $$.integer_value = $1; }
@@ -148,13 +154,13 @@ eq_value            : integer                               { $$.value_type = AS
                     | string                                { $$.value_type = AST_EQUALITY_VALUE_STRING; $$.string_value = $1; }
 ;       
 
-eq_expr             : ident TCEQ eq_value                   { $$ = ast_equality_expr_create(AST_EQUALITY_EQ, $1, $3); free($1); }
-                    | ident TCNE eq_value                   { $$ = ast_equality_expr_create(AST_EQUALITY_NE, $1, $3); free($1); }
-                    | eq_value TCEQ ident                   { $$ = ast_equality_expr_create(AST_EQUALITY_EQ, $3, $1); free($3); }
-                    | eq_value TCNE ident                   { $$ = ast_equality_expr_create(AST_EQUALITY_NE, $3, $1); free($3); }
+eq_expr             : ident TCEQ eq_value                   { $$ = ast_equality_expr_create(AST_EQUALITY_EQ, $1, $3); bfree($1); }
+                    | ident TCNE eq_value                   { $$ = ast_equality_expr_create(AST_EQUALITY_NE, $1, $3); bfree($1); }
+                    | eq_value TCEQ ident                   { $$ = ast_equality_expr_create(AST_EQUALITY_EQ, $3, $1); bfree($3); }
+                    | eq_value TCNE ident                   { $$ = ast_equality_expr_create(AST_EQUALITY_NE, $3, $1); bfree($3); }
 ;       
 
-variable_value      : ident                                 { $$ = make_attr_var($1, NULL); free($1); }
+variable_value      : ident                                 { $$ = make_attr_var($1, NULL); bfree($1); }
 
 set_left_value      : integer                               { $$.value_type = AST_SET_LEFT_VALUE_INTEGER; $$.integer_value = $1; }
                     | string                                { $$.value_type = AST_SET_LEFT_VALUE_STRING; $$.string_value = $1; }
@@ -174,15 +180,15 @@ list_value          : integer_list_value                    { $$.value_type = AS
                     | string_list_value                     { $$.value_type = AST_LIST_VALUE_STRING_LIST; $$.string_list_value = $1; }
 ;
 
-list_expr           : ident TONEOF list_value               { $$ = ast_list_expr_create(AST_LIST_ONE_OF, $1, $3); free($1);}
-                    | ident TNONEOF list_value              { $$ = ast_list_expr_create(AST_LIST_NONE_OF, $1, $3); free($1);}
-                    | ident TALLOF list_value               { $$ = ast_list_expr_create(AST_LIST_ALL_OF, $1, $3); free($1);}
+list_expr           : ident TONEOF list_value               { $$ = ast_list_expr_create(AST_LIST_ONE_OF, $1, $3); bfree($1);}
+                    | ident TNONEOF list_value              { $$ = ast_list_expr_create(AST_LIST_NONE_OF, $1, $3); bfree($1);}
+                    | ident TALLOF list_value               { $$ = ast_list_expr_create(AST_LIST_ALL_OF, $1, $3); bfree($1);}
 ;
 
 bool_expr           : expr TAND expr                        { $$ = ast_bool_expr_binary_create(AST_BOOL_AND, $1, $3); }
                     | expr TOR expr                         { $$ = ast_bool_expr_binary_create(AST_BOOL_OR, $1, $3); }
                     | TNOT expr                             { $$ = ast_bool_expr_unary_create($2); }
-                    | ident                                 { $$ = ast_bool_expr_variable_create($1); free($1); }
+                    | ident                                 { $$ = ast_bool_expr_variable_create($1); bfree($1); }
                     | TTRUE                                 { $$ = ast_bool_expr_literal_create(true); }
                     | TFALSE                                { $$ = ast_bool_expr_literal_create(false); }
 ;                       
@@ -194,17 +200,17 @@ special_expr        : s_frequency_expr                      { $$ = $1; }
 ;
 
 s_frequency_expr    : TWITHINFREQUENCYCAP TLPAREN TSTRING TCOMMA string TCOMMA integer TCOMMA integer TRPAREN
-                                                            { $$ = ast_special_frequency_create(AST_SPECIAL_WITHINFREQUENCYCAP, $3, $5, $7, $9); free($3); }
+                                                            { $$ = ast_special_frequency_create(AST_SPECIAL_WITHINFREQUENCYCAP, $3, $5, $7, $9); bfree($3); }
 ;
 
 s_segment_expr      : TSEGMENTWITHIN TLPAREN integer TCOMMA integer TRPAREN
                                                             { $$ = ast_special_segment_create(AST_SPECIAL_SEGMENTWITHIN, NULL, $3, $5); }
                     | TSEGMENTWITHIN TLPAREN ident TCOMMA integer TCOMMA integer TRPAREN
-                                                            { $$ = ast_special_segment_create(AST_SPECIAL_SEGMENTWITHIN, $3, $5, $7); free($3); }
+                                                            { $$ = ast_special_segment_create(AST_SPECIAL_SEGMENTWITHIN, $3, $5, $7); bfree($3); }
                     | TSEGMENTBEFORE TLPAREN integer TCOMMA integer TRPAREN
                                                             { $$ = ast_special_segment_create(AST_SPECIAL_SEGMENTBEFORE, NULL, $3, $5); }
                     | TSEGMENTBEFORE TLPAREN ident TCOMMA integer TCOMMA integer TRPAREN
-                                                            { $$ = ast_special_segment_create(AST_SPECIAL_SEGMENTBEFORE, $3, $5, $7); free($3); }
+                                                            { $$ = ast_special_segment_create(AST_SPECIAL_SEGMENTBEFORE, $3, $5, $7); bfree($3); }
 ;
 
 s_geo_expr          : TGEOWITHINRADIUS TLPAREN integer TCOMMA integer TCOMMA integer TRPAREN
@@ -214,11 +220,11 @@ s_geo_expr          : TGEOWITHINRADIUS TLPAREN integer TCOMMA integer TCOMMA int
 ;
 
 s_string_expr       : TCONTAINS TLPAREN ident TCOMMA string TRPAREN
-                                                            { $$ = ast_special_string_create(AST_SPECIAL_CONTAINS, $3, $5.string); free($3); free((char*)$5.string); }
+                                                            { $$ = ast_special_string_create(AST_SPECIAL_CONTAINS, $3, $5.string); bfree($3); bfree((char*)$5.string); }
                     | TSTARTSWITH TLPAREN ident TCOMMA string TRPAREN
-                                                            { $$ = ast_special_string_create(AST_SPECIAL_STARTSWITH, $3, $5.string); free($3); free((char*)$5.string); }
+                                                            { $$ = ast_special_string_create(AST_SPECIAL_STARTSWITH, $3, $5.string); bfree($3); bfree((char*)$5.string); }
                     | TENDSWITH TLPAREN ident TCOMMA string TRPAREN
-                                                            { $$ = ast_special_string_create(AST_SPECIAL_ENDSWITH, $3, $5.string); free($3); free((char*)$5.string); }
+                                                            { $$ = ast_special_string_create(AST_SPECIAL_ENDSWITH, $3, $5.string); bfree($3); bfree((char*)$5.string); }
 ;
 
 %%

@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "alloc.h"
 #include "ast.h"
 #include "betree.h"
 #include "value.h"
@@ -10,9 +11,9 @@
 
 struct betree_integer_list* make_integer_list()
 {
-    struct betree_integer_list* value = calloc(1, sizeof(*value));
+    struct betree_integer_list* value = bcalloc(sizeof(*value));
     if(value == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
+        fprintf(stderr, "%s bcalloc failed", __func__);
         abort();
     }
     return value;
@@ -20,21 +21,21 @@ struct betree_integer_list* make_integer_list()
 
 struct betree_integer_list_enum* make_integer_list_enum(size_t count)
 {
-    struct betree_integer_list_enum* value = calloc(1, sizeof(*value));
+    struct betree_integer_list_enum* value = bcalloc(sizeof(*value));
     if(value == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
+        fprintf(stderr, "%s bcalloc failed", __func__);
         abort();
     }
     value->count = count;
-    value->integers = calloc(count, sizeof(*value->integers));
+    value->integers = bcalloc(count * sizeof(*value->integers));
     return value;
 }
 
 struct betree_string_list* make_string_list()
 {
-    struct betree_string_list* value = calloc(1, sizeof(*value));
+    struct betree_string_list* value = bcalloc(sizeof(*value));
     if(value == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
+        fprintf(stderr, "%s bcalloc failed", __func__);
         abort();
     }
     return value;
@@ -42,9 +43,9 @@ struct betree_string_list* make_string_list()
 
 struct betree_segments* make_segments()
 {
-    struct betree_segments* value = calloc(1, sizeof(*value));
+    struct betree_segments* value = bcalloc(sizeof(*value));
     if(value == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
+        fprintf(stderr, "%s bcalloc failed", __func__);
         abort();
     }
     return value;
@@ -52,9 +53,9 @@ struct betree_segments* make_segments()
 
 struct betree_frequency_caps* make_frequency_caps()
 {
-    struct betree_frequency_caps* value = calloc(1, sizeof(*value));
+    struct betree_frequency_caps* value = bcalloc(sizeof(*value));
     if(value == NULL) {
-        fprintf(stderr, "%s calloc failed", __func__);
+        fprintf(stderr, "%s bcalloc failed", __func__);
         abort();
     }
     return value;
@@ -63,16 +64,16 @@ struct betree_frequency_caps* make_frequency_caps()
 void add_integer_list_value(int64_t integer, struct betree_integer_list* list)
 {
     if(list->count == 0) {
-        list->integers = calloc(1, sizeof(*list->integers));
+        list->integers = bcalloc(sizeof(*list->integers));
         if(list->integers == NULL) {
-            fprintf(stderr, "%s calloc failed", __func__);
+            fprintf(stderr, "%s bcalloc failed", __func__);
             abort();
         }
     }
     else {
-        int64_t* integers = realloc(list->integers, sizeof(*list->integers) * (list->count + 1));
+        int64_t* integers = brealloc(list->integers, sizeof(*list->integers) * (list->count + 1));
         if(integers == NULL) {
-            fprintf(stderr, "%s realloc failed", __func__);
+            fprintf(stderr, "%s brealloc failed", __func__);
             abort();
         }
         list->integers = integers;
@@ -87,13 +88,13 @@ char* integer_list_value_to_string(struct betree_integer_list* list)
     for(size_t i = 0; i < list->count; i++) {
         char* new_string;
         if(i != 0) {
-            if(asprintf(&new_string, "%s, %ld", string, list->integers[i]) < 0) {
+            if(basprintf(&new_string, "%s, %ld", string, list->integers[i]) < 0) {
                 abort();
             }
-            free(string);
+            bfree(string);
         }
         else {
-            if(asprintf(&new_string, "%ld", list->integers[i]) < 0) {
+            if(basprintf(&new_string, "%ld", list->integers[i]) < 0) {
                 abort();
             }
         }
@@ -105,17 +106,17 @@ char* integer_list_value_to_string(struct betree_integer_list* list)
 void add_string_list_value(struct string_value string, struct betree_string_list* list)
 {
     if(list->count == 0) {
-        list->strings = calloc(1, sizeof(*list->strings));
+        list->strings = bcalloc(sizeof(*list->strings));
         if(list->strings == NULL) {
-            fprintf(stderr, "%s calloc failed", __func__);
+            fprintf(stderr, "%s bcalloc failed", __func__);
             abort();
         }
     }
     else {
         struct string_value* strings
-            = realloc(list->strings, sizeof(*list->strings) * (list->count + 1));
+            = brealloc(list->strings, sizeof(*list->strings) * (list->count + 1));
         if(strings == NULL) {
-            fprintf(stderr, "%s realloc failed", __func__);
+            fprintf(stderr, "%s brealloc failed", __func__);
             abort();
         }
         list->strings = strings;
@@ -130,13 +131,13 @@ char* string_list_value_to_string(struct betree_string_list* list)
     for(size_t i = 0; i < list->count; i++) {
         char* new_string;
         if(i != 0) {
-            if(asprintf(&new_string, "%s, \"%s\"", string, list->strings[i].string) < 0) {
+            if(basprintf(&new_string, "%s, \"%s\"", string, list->strings[i].string) < 0) {
                 abort();
             }
-            free(string);
+            bfree(string);
         }
         else {
-            if(asprintf(&new_string, "\"%s\"", list->strings[i].string) < 0) {
+            if(basprintf(&new_string, "\"%s\"", list->strings[i].string) < 0) {
                 abort();
             }
         }
@@ -151,13 +152,13 @@ char* integer_list_enum_value_to_string(struct betree_integer_list_enum* list)
     for(size_t i = 0; i < list->count; i++) {
         char* new_string;
         if(i != 0) {
-            if(asprintf(&new_string, "%s, %ld", string, list->integers[i].integer) < 0) {
+            if(basprintf(&new_string, "%s, %ld", string, list->integers[i].integer) < 0) {
                 abort();
             }
-            free(string);
+            bfree(string);
         }
         else {
-            if(asprintf(&new_string, "%ld", list->integers[i].integer) < 0) {
+            if(basprintf(&new_string, "%ld", list->integers[i].integer) < 0) {
                 abort();
             }
         }
@@ -169,16 +170,16 @@ char* integer_list_enum_value_to_string(struct betree_integer_list_enum* list)
 void add_segment(struct betree_segment* segment, struct betree_segments* list)
 {
     if(list->size == 0) {
-        list->content = calloc(1, sizeof(*list->content));
+        list->content = bcalloc(sizeof(*list->content));
         if(list->content == NULL) {
-            fprintf(stderr, "%s calloc failed", __func__);
+            fprintf(stderr, "%s bcalloc failed", __func__);
             abort();
         }
     }
     else {
-        struct betree_segment** content = realloc(list->content, sizeof(*list->content) * (list->size + 1));
+        struct betree_segment** content = brealloc(list->content, sizeof(*list->content) * (list->size + 1));
         if(content == NULL) {
-            fprintf(stderr, "%s realloc failed", __func__);
+            fprintf(stderr, "%s brealloc failed", __func__);
             abort();
         }
         list->content = content;
@@ -190,17 +191,17 @@ void add_segment(struct betree_segment* segment, struct betree_segments* list)
 void add_frequency(struct betree_frequency_cap* frequency, struct betree_frequency_caps* list)
 {
     if(list->size == 0) {
-        list->content = calloc(1, sizeof(*list->content));
+        list->content = bcalloc(sizeof(*list->content));
         if(list->content == NULL) {
-            fprintf(stderr, "%s calloc failed", __func__);
+            fprintf(stderr, "%s bcalloc failed", __func__);
             abort();
         }
     }
     else {
         struct betree_frequency_cap** content
-            = realloc(list->content, sizeof(*list->content) * (list->size + 1));
+            = brealloc(list->content, sizeof(*list->content) * (list->size + 1));
         if(content == NULL) {
-            fprintf(stderr, "%s realloc failed", __func__);
+            fprintf(stderr, "%s brealloc failed", __func__);
             abort();
         }
         list->content = content;
@@ -211,7 +212,7 @@ void add_frequency(struct betree_frequency_cap* frequency, struct betree_frequen
 
 struct betree_segment* make_segment(int64_t id, int64_t timestamp)
 {
-    struct betree_segment* segment = malloc(sizeof(*segment));
+    struct betree_segment* segment = bmalloc(sizeof(*segment));
     segment->id = id;
     segment->timestamp = timestamp;
     return segment;
@@ -224,7 +225,7 @@ struct betree_frequency_cap* make_frequency_cap(const char* stype,
     int64_t timestamp,
     uint32_t value)
 {
-    struct betree_frequency_cap* frequency_cap = malloc(sizeof(*frequency_cap));
+    struct betree_frequency_cap* frequency_cap = bmalloc(sizeof(*frequency_cap));
     enum frequency_type_e type = get_type_from_string(stype);
     frequency_cap->type = type;
     frequency_cap->id = id;
@@ -269,45 +270,45 @@ enum frequency_type_e get_type_from_string(const char* stype)
 
 void free_integer_list(struct betree_integer_list* value)
 {
-    free(value->integers);
-    free(value);
+    bfree(value->integers);
+    bfree(value);
 }
 
 void free_integer_list_enum(struct betree_integer_list_enum* value)
 {
-    free(value->integers);
-    free(value);
+    bfree(value->integers);
+    bfree(value);
 }
 
 void free_string_list(struct betree_string_list* value)
 {
     for(size_t i = 0; i < value->count; i++) {
-        free((char*)value->strings[i].string);
+        bfree((char*)value->strings[i].string);
     }
-    free(value->strings);
-    free(value);
+    bfree(value->strings);
+    bfree(value);
 }
 
 void free_segment(struct betree_segment* value)
 {
-    free(value);
+    bfree(value);
 }
 
 void free_segments(struct betree_segments* value)
 {
     for(size_t i = 0; i < value->size; i++) {
         if(value->content[i] != NULL) {
-            free(value->content[i]);
+            bfree(value->content[i]);
         }
     }
-    free(value->content);
-    free(value);
+    bfree(value->content);
+    bfree(value);
 }
 
 void free_frequency_cap(struct betree_frequency_cap* value)
 {
-    free((char*)value->namespace.string);
-    free(value);
+    bfree((char*)value->namespace.string);
+    bfree(value);
 }
 
 void free_frequency_caps(struct betree_frequency_caps* value)
@@ -317,8 +318,8 @@ void free_frequency_caps(struct betree_frequency_caps* value)
             free_frequency_cap(value->content[i]);
         }
     }
-    free(value->content);
-    free(value);
+    bfree(value->content);
+    bfree(value);
 }
 
 void free_value(struct value value)
@@ -336,7 +337,7 @@ void free_value(struct value value)
             break;
         }
         case BETREE_STRING: {
-            free((char*)value.svalue.string);
+            bfree((char*)value.svalue.string);
         }
         case BETREE_BOOLEAN:
         case BETREE_INTEGER:
@@ -361,7 +362,7 @@ void free_value(struct value value)
 char* segment_value_to_string(struct betree_segment* segment)
 {
     char* string = NULL;
-    if(asprintf(&string, "[%ld, %ld]", segment->id, segment->timestamp) < 0) {
+    if(basprintf(&string, "[%ld, %ld]", segment->id, segment->timestamp) < 0) {
         abort();
     }
     return string;
@@ -374,17 +375,17 @@ char* segments_value_to_string(struct betree_segments* list)
         char* new_string;
         char* segment = segment_value_to_string(list->content[i]);
         if(i != 0) {
-            if(asprintf(&new_string, "%s, %s", string, segment) < 0) {
+            if(basprintf(&new_string, "%s, %s", string, segment) < 0) {
                 abort();
             }
-            free(string);
+            bfree(string);
         }
         else {
-            if(asprintf(&new_string, "%s", segment) < 0) {
+            if(basprintf(&new_string, "%s", segment) < 0) {
                 abort();
             }
         }
-        free(segment);
+        bfree(segment);
         string = new_string;
     }
     return string;
@@ -395,12 +396,12 @@ char* frequency_cap_to_string(struct betree_frequency_cap* cap)
     char* string = NULL;
     const char* type = frequency_type_to_string(cap->type);
     if(cap->timestamp_defined) {
-        if(asprintf(&string, "[[\"%s\", %u, \"%s\"], %u, %ld]", type, cap->id, cap->namespace.string, cap->value, cap->timestamp) < 0) {
+        if(basprintf(&string, "[[\"%s\", %u, \"%s\"], %u, %ld]", type, cap->id, cap->namespace.string, cap->value, cap->timestamp) < 0) {
             abort();
         }
     }
     else {
-        if(asprintf(&string, "[[\"%s\", %u, \"%s\"], %u, undefined]", type, cap->id, cap->namespace.string, cap->value) < 0) {
+        if(basprintf(&string, "[[\"%s\", %u, \"%s\"], %u, undefined]", type, cap->id, cap->namespace.string, cap->value) < 0) {
             abort();
         }
     }
@@ -414,17 +415,17 @@ char* frequency_caps_value_to_string(struct betree_frequency_caps* list)
         char* new_string;
         char* cap = frequency_cap_to_string(list->content[i]);
         if(i != 0) {
-            if(asprintf(&new_string, "%s, %s", string, cap) < 0) {
+            if(basprintf(&new_string, "%s, %s", string, cap) < 0) {
                 abort();
             }
-            free(string);
+            bfree(string);
         }
         else {
-            if(asprintf(&new_string, "%s", cap) < 0) {
+            if(basprintf(&new_string, "%s", cap) < 0) {
                 abort();
             }
         }
-        free(cap);
+        bfree(cap);
         string = new_string;
     }
     return string;

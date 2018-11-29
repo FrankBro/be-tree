@@ -5,6 +5,7 @@
 #include <string.h>
 #include <time.h>
 
+#include "alloc.h"
 #include "betree.h"
 #include "debug.h"
 #include "minunit.h"
@@ -25,7 +26,7 @@ int test_cdir_split()
 
     for(size_t i = 0; i < COUNT; i++) {
         char* expr;
-        if(asprintf(&expr, "a = %zu", i) < 0) {
+        if(basprintf(&expr, "a = %zu", i) < 0) {
             abort();
         }
         betree_insert(tree, i + 1, expr);
@@ -64,7 +65,7 @@ int test_pdir_split()
 
     for(size_t i = 0; i < COUNT; i++) {
         char* name;
-        if(asprintf(&name, "a%zu", i) < 0) {
+        if(basprintf(&name, "a%zu", i) < 0) {
             abort();
         }
         betree_add_integer_variable(tree, name, true, 0, 10);
@@ -79,7 +80,7 @@ int test_pdir_split()
 
     for(size_t i = 0; i < COUNT; i++) {
         char* expr;
-        if(asprintf(&expr, "a%zu = 0", i) < 0) {
+        if(basprintf(&expr, "a%zu = 0", i) < 0) {
             abort();
         }
         betree_insert(tree, i + 1, expr);
