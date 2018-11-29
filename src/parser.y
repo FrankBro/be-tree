@@ -11,6 +11,11 @@
     struct ast_node *root;
     extern int xxlex();
     void xxerror(void *scanner, const char *s) { (void)scanner; printf("ERROR: %s\n", s); }
+#ifdef NIF
+    #include "erl_nif.h"
+    #define YYMALLOC enif_alloc
+    #define YYFREE enif_free
+#endif
 #if defined(__GNUC__)
     #pragma GCC diagnostic push
     #pragma GCC diagnostic ignored "-Wswitch-default"

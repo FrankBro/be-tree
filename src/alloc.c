@@ -5,6 +5,17 @@
 
 #include "alloc.h"
 
+#ifdef NIF
+void* enif_calloc(size_t size)
+{
+    void* data = enif_alloc(size);
+    if(data != NULL) {
+        memset(ptr, 0, size);
+    }
+    return data;
+}
+#endif
+
 char* bstrdup(const char *s1)
 {
   char *str;

@@ -8,7 +8,7 @@
         memcpy(yylval->string, yytext + 1, yyleng - 2);\
         yylval->string[yyleng - 2] = 0;\
     }
-    #define SAVE_IDENTIFIER yylval->string = strndup(yytext, yyleng)
+    #define SAVE_IDENTIFIER yylval->string = bstrdup(yytext)
     #define SAVE_INTEGER yylval->integer_value = strtoll(yytext, NULL, 10)
     #define SAVE_FLOAT yylval->float_value = atof(yytext)
     #define TOKEN(t) (yylval->token = t)

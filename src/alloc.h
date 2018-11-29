@@ -2,9 +2,10 @@
 
 #ifdef NIF
 #define bmalloc enif_alloc
-#define bcalloc enif_alloc
+#define bcalloc enif_calloc
 #define brealloc enif_realloc
 #define bfree enif_free
+void* enif_calloc(size_t size);
 #else
 #define bmalloc malloc
 #define bcalloc(x) calloc(x, 1)
