@@ -1337,7 +1337,7 @@ int test_api()
     betree_set_variable(event, 8, betree_make_integer_variable("now", 0));
 
     struct report* report = make_report();
-    mu_assert(betree_search_with_event(tree, event, report), "");
+    mu_assert(betree_search_with_event(tree, 0, NULL, event, report), "");
 
     mu_assert(report->matched == 1, "found 1");
 
@@ -1389,7 +1389,7 @@ int test_float_no_point_in_expr()
 
     struct report* report = make_report();
 
-    mu_assert(betree_search_with_event(tree, event, report), "");
+    mu_assert(betree_search_with_event(tree, 0, NULL, event, report), "");
 
     mu_assert(report->matched == 1, "found 1");
 
@@ -1414,7 +1414,7 @@ int test_is_null()
 
     struct report* report = make_report();
 
-    mu_assert(betree_search_with_event(tree, event, report), "");
+    mu_assert(betree_search_with_event(tree, 0, NULL, event, report), "");
 
     mu_assert(report->matched == 0, "found none");
 
@@ -1554,6 +1554,60 @@ int test_int_enum()
     return 0;
 }
 
+int test_same_id()
+{
+    struct betree* tree = betree_make();
+    add_attr_domain_i(tree->config, "i", false);
+
+    mu_assert(betree_insert(tree, 1,  "i = 0"), "");
+    mu_assert(betree_insert(tree, 1,  "i = 0"), "");
+    mu_assert(betree_insert(tree, 1,  "i = 1"), "");
+
+    struct report* report = make_report();
+    mu_assert(betree_search(tree, "{\"i\": 0}", report), "");
+
+    mu_assert(report->matched == 2, "Found the same");
+
+    return 0;
+}
+
+int test_filters()
+{
+    struct betree* tree = betree_make();
+    add_attr_domain_i(tree->config, "i", false);
+
+    mu_assert(betree_insert(tree, 1, "i = 0"), "");
+    mu_assert(betree_insert(tree, 2, "i = 0"), "");
+    mu_assert(betree_insert(tree, 3, "i = 0"), "");
+
+    const char* event = "{\"i\": 0}";
+    struct report* report = make_report();
+    mu_assert(betree_search(tree, event, report), "");
+
+    mu_assert(report->matched == 3, "Found all");
+
+    free_report(report);
+    report = make_report();
+
+    betree_sub_t one[1] = { 1 };
+    mu_assert(betree_search_with_filter(tree, 1, one, event, report), "");
+
+    mu_assert(report->matched == 1 && report->filtered == 2, "Found one, filtered two");
+
+    free_report(report);
+    report = make_report();
+
+    betree_sub_t two[2] = { 1, 2 };
+    mu_assert(betree_search_with_filter(tree, 2, two, event, report), "");
+
+    mu_assert(report->matched == 2 && report->filtered == 1, "Found two, filtered one");
+
+    free_report(report);
+
+    betree_free(tree);
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_int_enum);
@@ -1597,6 +1651,8 @@ int all_tests()
     mu_run_test(test_list_bug2);
     /*mu_run_test(test_bool);*/
     /*mu_run_test(test_insert_all);*/
+    mu_run_test(test_same_id);
+    mu_run_test(test_filters);
 
     return 0;
 }

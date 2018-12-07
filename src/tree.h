@@ -121,6 +121,8 @@ bool betree_delete_inner(size_t attr_domains_count, const struct attr_domain** a
 struct sub* find_sub_id(betree_sub_t id, struct cnode* cnode);
 
 bool betree_search_with_preds(const struct config* config,
+    size_t filter_count,
+    betree_sub_t* filters,
     const struct betree_variable** preds,
     const struct cnode* cnode,
     struct report* report);

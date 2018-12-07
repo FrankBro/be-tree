@@ -19,6 +19,7 @@ struct report {
     size_t matched;
     size_t memoized;
     size_t shorted;
+    size_t filtered;
     betree_sub_t* subs;
 };
 
@@ -116,7 +117,8 @@ bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr);
 bool betree_insert_with_constants(struct betree* tree, betree_sub_t id, size_t constant_count, const struct betree_constant** constants, const char* expr);
 
 bool betree_search(const struct betree* betree, const char* event, struct report* report);
-bool betree_search_with_event(const struct betree* betree, struct betree_event* event, struct report* report);
+bool betree_search_with_filter(const struct betree* betree, size_t filter_count, betree_sub_t* filters, const char* event, struct report* report);
+bool betree_search_with_event(const struct betree* betree, size_t filter_count, betree_sub_t* filters, struct betree_event* event, struct report* report);
 
 bool betree_delete(struct betree* betree, betree_sub_t id);
 
