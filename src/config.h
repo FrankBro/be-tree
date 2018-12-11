@@ -5,6 +5,7 @@
 #include <stddef.h>
 
 #include "config.h"
+#include "map.h"
 #include "var.h"
 
 struct attr_domain {
@@ -16,12 +17,12 @@ struct attr_domain {
 struct ast_node;
 struct pred_map;
 
+typedef map_t(betree_str_t) str_map_t;
+
 struct string_map {
     struct attr_var attr_var;
-    struct {
-        size_t string_value_count;
-        char** string_values;
-    };
+    size_t string_value_count;
+    str_map_t m;
 };
 
 struct integer_map {

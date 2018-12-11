@@ -2894,10 +2894,9 @@ static bool str_valid(const struct config* config, const char* attr, const char*
     struct string_map* string_map = get_string_map_for_attr(config, attr);
     size_t space_left = string_map == NULL ? bound : bound - string_map->string_value_count;
     if(string_map != NULL) {
-        for(size_t j = 0; j < string_map->string_value_count; j++) {
-            if(strcmp(string, string_map->string_values[j]) == 0) {
-                return true;
-            }
+        betree_str_t* str = map_get(&string_map->m, string);
+        if(str != NULL) {
+            return true;
         }
     }
     bool within_bound = space_left > 0;
@@ -2924,11 +2923,9 @@ static bool strs_valid(
     if(string_map != NULL) {
         for(size_t i = 0; i < strings->count; i++) {
             const char* string = strings->strings[i].string;
-            for(size_t j = 0; j < string_map->string_value_count; j++) {
-                if(strcmp(string, string_map->string_values[j]) == 0) {
-                    found++;
-                    break;
-                }
+            betree_str_t* str = map_get(&string_map->m, string);
+            if(str != NULL) {
+                found++;
             }
         }
     }
