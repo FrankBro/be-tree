@@ -1568,6 +1568,9 @@ int test_same_id()
 
     mu_assert(report->matched == 2, "Found the same");
 
+    free_report(report);
+    betree_free(tree);
+
     return 0;
 }
 
