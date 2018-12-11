@@ -5,6 +5,7 @@
 #include <stddef.h>
 
 #include "config.h"
+#include "trie.h"
 #include "var.h"
 
 struct attr_domain {
@@ -18,10 +19,8 @@ struct pred_map;
 
 struct string_map {
     struct attr_var attr_var;
-    struct {
-        size_t string_value_count;
-        char** string_values;
-    };
+    betree_str_t string_value_count;
+    struct trie* trie;
 };
 
 struct integer_map {

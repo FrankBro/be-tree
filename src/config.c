@@ -56,10 +56,7 @@ void free_config(struct config* config)
     if(config->string_maps != NULL) {
         for(size_t i = 0; i < config->string_map_count; i++) {
             bfree((char*)config->string_maps[i].attr_var.attr);
-            for(size_t j = 0; j < config->string_maps[i].string_value_count; j++) {
-                bfree(config->string_maps[i].string_values[j]);
-            }
-            bfree(config->string_maps[i].string_values);
+            trie_free(config->string_maps[i].trie);
         }
         bfree(config->string_maps);
         config->string_maps = NULL;
@@ -253,7 +250,7 @@ static void add_string_map(struct attr_var attr_var, struct config* config)
     config->string_maps[config->string_map_count].attr_var.attr = bstrdup(attr_var.attr);
     config->string_maps[config->string_map_count].attr_var.var = attr_var.var;
     config->string_maps[config->string_map_count].string_value_count = 0;
-    config->string_maps[config->string_map_count].string_values = 0;
+    config->string_maps[config->string_map_count].trie = NULL;
     config->string_map_count++;
 }
 
@@ -279,25 +276,16 @@ static void add_to_integer_map(struct integer_map* integer_map, int64_t integer)
     integer_map->integer_value_count++;
 }
 
-static void add_to_string_map(struct string_map* string_map, char* copy)
+static void add_to_string_map(struct string_map* string_map, const char* str)
 {
     if(string_map->string_value_count == 0) {
-        string_map->string_values = bcalloc(sizeof(*string_map->string_values));
-        if(string_map->string_values == NULL) {
+        string_map->trie = trie_new();
+        if(string_map->trie == NULL) {
             fprintf(stderr, "%s bcalloc failed\n", __func__);
             abort();
         }
     }
-    else {
-        char** string_values = brealloc(string_map->string_values,
-            sizeof(*string_values) * (string_map->string_value_count + 1));
-        if(string_values == NULL) {
-            fprintf(stderr, "%s brealloc failed\n", __func__);
-            abort();
-        }
-        string_map->string_values = string_values;
-    }
-    string_map->string_values[string_map->string_value_count] = copy;
+    trie_insert(&string_map->trie, str, string_map->string_value_count);
     string_map->string_value_count++;
 }
 
@@ -321,20 +309,12 @@ betree_ienum_t try_get_id_for_ienum(
 betree_str_t try_get_id_for_string(
     const struct config* config, struct attr_var attr_var, const char* string)
 {
-    char* copy = bstrdup(string);
     for(size_t i = 0; i < config->string_map_count; i++) {
         if(config->string_maps[i].attr_var.var == attr_var.var) {
             struct string_map* string_map = string_map = &config->string_maps[i];
-            for(size_t j = 0; j < string_map->string_value_count; j++) {
-                if(strcmp(string_map->string_values[j], copy) == 0) {
-                    bfree(copy);
-                    return j;
-                }
-            }
-            break;
+            return trie_search(string_map->trie, string);
         }
     }
-    bfree(copy);
     return INVALID_STR;
 }
 
@@ -367,16 +347,13 @@ betree_ienum_t get_id_for_ienum(struct config* config, struct attr_var attr_var,
 
 betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, const char* string, bool always_assign)
 {
-    char* copy = bstrdup(string);
     struct string_map* string_map = NULL;
     for(size_t i = 0; i < config->string_map_count; i++) {
         if(config->string_maps[i].attr_var.var == attr_var.var) {
             string_map = &config->string_maps[i];
-            for(size_t j = 0; j < string_map->string_value_count; j++) {
-                if(strcmp(string_map->string_values[j], copy) == 0) {
-                    bfree(copy);
-                    return j;
-                }
+            betree_str_t id = trie_search(string_map->trie, string);
+            if(id != INVALID_STR) {
+                return id;
             }
             break;
         }
@@ -388,10 +365,9 @@ betree_str_t get_id_for_string(struct config* config, struct attr_var attr_var, 
     const struct attr_domain* attr_domain
         = get_attr_domain((const struct attr_domain**)config->attr_domains, attr_var.var);
     if(!always_assign && attr_domain->bound.smax + 1 == string_map->string_value_count) {
-        bfree(copy);
         return INVALID_STR;
     }
-    add_to_string_map(string_map, copy);
+    add_to_string_map(string_map, string);
     return string_map->string_value_count - 1;
 }
 
