@@ -2,60 +2,54 @@
 
 #include "alloc.h"
 #include "ast.h"
+#include "ast_compare.h"
 #include "clone.h"
 #include "hashmap.h"
+#include "jsw_rbtree.h"
 #include "map.h"
 #include "printer.h"
 #include "utils.h"
 
 void assign_pred(struct pred_map* pred_map, struct ast_node* node)
 {
-    char* str;
     if(node->type == AST_TYPE_BOOL_EXPR && node->bool_expr.op == AST_BOOL_NOT) {
         assign_pred(pred_map, node->bool_expr.unary.expr);
-        if(basprintf(&str, "not %zu", node->bool_expr.unary.expr->global_id) < 0) {
-            abort();
-        }
     }
     else if (node->type == AST_TYPE_BOOL_EXPR && node->bool_expr.op == AST_BOOL_OR) {
         assign_pred(pred_map, node->bool_expr.binary.lhs);
         assign_pred(pred_map, node->bool_expr.binary.rhs);
-        if(basprintf(&str, "or %zu %zu", 
-              node->bool_expr.binary.lhs->global_id, 
-              node->bool_expr.binary.rhs->global_id) < 0) {
-            abort();
-        }
     }
     else if (node->type == AST_TYPE_BOOL_EXPR && node->bool_expr.op == AST_BOOL_AND) {
         assign_pred(pred_map, node->bool_expr.binary.lhs);
         assign_pred(pred_map, node->bool_expr.binary.rhs);
-        if(basprintf(&str, "and %zu %zu", 
-              node->bool_expr.binary.lhs->global_id, 
-              node->bool_expr.binary.rhs->global_id) < 0) {
+    }
+    struct ast_node* find = jsw_rbfind(pred_map->m, node);
+    if(find == NULL) {
+        betree_pred_t global_id = pred_map->pred_count;
+        pred_map->pred_count++;
+        node->global_id = global_id;
+        int ret = jsw_rbinsert(pred_map->m, node);
+        if(ret == 0) {
             abort();
         }
     }
     else {
-        str = ast_to_string(node);
-    }
-    struct ast_node** in_map = map_get(&pred_map->m, str);
-    if(in_map != NULL) {
-        struct ast_node* original = *in_map;
-        node->global_id = original->global_id;
-        if(original->memoize_id == INVALID_PRED) {
+        node->global_id = find->global_id;
+        if(find->memoize_id == INVALID_PRED) {
             betree_pred_t memoize_id = pred_map->memoize_count;
             pred_map->memoize_count++;
-            original->memoize_id = memoize_id;
+            find->memoize_id = memoize_id;
         }
-        node->memoize_id = original->memoize_id;
+        node->memoize_id = find->memoize_id;
     }
-    else {
-        betree_pred_t global_id = pred_map->pred_count;
-        pred_map->pred_count++;
-        node->global_id = global_id;
-        map_set(&pred_map->m, str, node);
-    }
-    bfree(str);
+}
+
+static struct jsw_rbtree* exprmap_new()
+{
+    struct jsw_rbtree* rbtree;
+    rbtree = jsw_rbnew(expr_cmp);
+
+    return rbtree;
 }
 
 struct pred_map* make_pred_map()
@@ -66,19 +60,14 @@ struct pred_map* make_pred_map()
         abort();
     }
     pred_map->pred_count = 0;
-    map_init(&pred_map->m);
+    pred_map->m = exprmap_new();
     return pred_map;
 }
 
 void free_pred_map(struct pred_map* pred_map)
 {
-    /*const char *key;*/
-    /*map_iter_t iter = map_iter(&pred_map->m);*/
-
-    /*while ((key = map_next(&pred_map->m, &iter))) {*/
-        /*bfree((char*)key);*/
-    /*}*/
-    map_deinit(&pred_map->m);
+    jsw_rbdelete(pred_map->m);
     bfree(pred_map);
 }
+
 
