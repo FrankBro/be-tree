@@ -71,7 +71,9 @@ static bool match_sub(size_t attr_domains_count,
 {
     enum short_circuit_e short_circuit = try_short_circuit(attr_domains_count, &sub->short_circuit, undefined);
     if(short_circuit != SHORT_CIRCUIT_NONE) {
-        report->shorted++;
+        if(report != NULL) {
+            report->shorted++;
+        }
         if(short_circuit == SHORT_CIRCUIT_PASS) {
             return true;
         }
@@ -115,7 +117,7 @@ static bool event_contains_variable(const struct betree_variable** preds, betree
     return preds[variable_id] != NULL;
 }
 
-void match_be_tree(const struct attr_domain** attr_domains,
+static void match_be_tree(const struct attr_domain** attr_domains,
     const struct betree_variable** preds,
     const struct cnode* cnode,
     struct subs_to_eval* subs)
@@ -1813,6 +1815,27 @@ bool betree_search_with_preds(const struct config* config,
     bfree(undefined);
     bfree(preds);
     return true;
+}
+
+bool betree_exists_with_preds(const struct config* config, const struct betree_variable** preds, const struct cnode* cnode)
+{
+    uint64_t* undefined = make_undefined(config->attr_domain_count, preds);
+    struct memoize memoize = make_memoize(config->pred_map->memoize_count);
+    struct subs_to_eval subs;
+    init_subs_to_eval(&subs);
+    match_be_tree((const struct attr_domain**)config->attr_domains, preds, cnode, &subs);
+    bool result = false;
+    for(size_t i = 0; i < subs.count; i++) {
+        const struct sub* sub = subs.subs[i];
+        if(match_sub(config->attr_domain_count, preds, sub, NULL, &memoize, undefined) == true) {
+            result = true;
+            break;
+        }
+    }
+    free_memoize(memoize);
+    bfree(undefined);
+    bfree(preds);
+    return result;
 }
 
 void sort_event_lists(struct betree_event* event)

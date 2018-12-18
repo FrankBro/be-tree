@@ -126,6 +126,7 @@ bool betree_search_with_preds(const struct config* config,
     const struct betree_variable** preds,
     const struct cnode* cnode,
     struct report* report);
+bool betree_exists_with_preds(const struct config* config, const struct betree_variable** preds, const struct cnode* cnode);
 
 bool insert_be_tree(const struct config* config, const struct sub* sub, struct cnode* cnode, struct cdir* cdir);
 

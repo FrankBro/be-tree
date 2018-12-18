@@ -571,6 +571,27 @@ static bool betree_search_with_event_filled(const struct betree* betree, size_t 
     return betree_search_with_preds(betree->config, filter_count, filters, variables, betree->cnode, report);
 }
 
+static bool betree_exists_with_event_filled(const struct betree* betree, struct betree_event* event)
+{
+    const struct betree_variable** variables = make_environment(betree->config->attr_domain_count, event);
+    return betree_exists_with_preds(betree->config, variables, betree->cnode);
+}
+
+bool betree_exists(const struct betree* tree, const char* event_str)
+{
+    struct betree_event* event = make_event_from_string(tree, event_str);
+    bool result = betree_exists_with_event_filled(tree, event);
+    free_event(event);
+    return result;
+}
+
+bool betree_exists_with_event(const struct betree* betree, struct betree_event* event)
+{
+    fill_event(betree->config, event);
+    sort_event_lists(event);
+    return betree_exists_with_event_filled(betree, event);
+}
+
 bool betree_search(const struct betree* tree, const char* event_str, struct report* report)
 {
     return betree_search_with_filter(tree, 0, NULL, event_str, report);

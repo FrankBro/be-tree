@@ -1139,11 +1139,15 @@ static bool match_node_inner(const struct betree_variable** preds,
 {
     if(node->memoize_id != INVALID_PRED) {
         if(test_bit(memoize->pass, node->memoize_id)) {
-            report->memoized++;
+            if(report != NULL) {
+                report->memoized++;
+            }
             return true;
         }
         if(test_bit(memoize->fail, node->memoize_id)) {
-            report->memoized++;
+            if(report != NULL) {
+                report->memoized++;
+            }
             return false;
         }
     }

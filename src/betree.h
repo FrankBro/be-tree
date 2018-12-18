@@ -120,6 +120,9 @@ bool betree_search(const struct betree* betree, const char* event, struct report
 bool betree_search_with_filter(const struct betree* betree, size_t filter_count, betree_sub_t* filters, const char* event, struct report* report);
 bool betree_search_with_event(const struct betree* betree, size_t filter_count, betree_sub_t* filters, struct betree_event* event, struct report* report);
 
+bool betree_exists(const struct betree* betree, const char* event);
+bool betree_exists_with_event(const struct betree* betree, struct betree_event* event);
+
 bool betree_delete(struct betree* betree, betree_sub_t id);
 
 struct report* make_report();
