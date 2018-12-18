@@ -1777,8 +1777,6 @@ static uint64_t* make_undefined(size_t attr_domain_count, const struct betree_va
 }
 
 bool betree_search_with_preds(const struct config* config,
-    size_t filter_count,
-    betree_sub_t* filters,
     const struct betree_variable** preds,
     const struct cnode* cnode,
     struct report* report)
@@ -1791,19 +1789,6 @@ bool betree_search_with_preds(const struct config* config,
     report->subs = bmalloc(sizeof(*report->subs) * subs.count);
     for(size_t i = 0; i < subs.count; i++) {
         const struct sub* sub = subs.subs[i];
-        if(filter_count != 0) {
-            bool found = false;
-            for(size_t j = 0; j < filter_count; j++) {
-                if(filters[j] == sub->id) {
-                    found = true;
-                    break;
-                }
-            }
-            if(!found) {
-                report->filtered++;
-                continue;
-            }
-        }
         report->evaluated++;
         if(match_sub(config->attr_domain_count, preds, sub, report, &memoize, undefined) == true) {
             report->subs[report->matched] = sub->id;

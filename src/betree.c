@@ -560,7 +560,7 @@ static const struct betree_variable** make_environment(size_t attr_domain_count,
     return preds;
 }
 
-static bool betree_search_with_event_filled(const struct betree* betree, size_t filter_count, betree_sub_t* filters, struct betree_event* event, struct report* report)
+static bool betree_search_with_event_filled(const struct betree* betree, struct betree_event* event, struct report* report)
 {
     const struct betree_variable** variables
         = make_environment(betree->config->attr_domain_count, event);
@@ -568,7 +568,7 @@ static bool betree_search_with_event_filled(const struct betree* betree, size_t 
         fprintf(stderr, "Failed to validate event\n");
         return false;
     }
-    return betree_search_with_preds(betree->config, filter_count, filters, variables, betree->cnode, report);
+    return betree_search_with_preds(betree->config, variables, betree->cnode, report);
 }
 
 static bool betree_exists_with_event_filled(const struct betree* betree, struct betree_event* event)
@@ -594,22 +594,17 @@ bool betree_exists_with_event(const struct betree* betree, struct betree_event* 
 
 bool betree_search(const struct betree* tree, const char* event_str, struct report* report)
 {
-    return betree_search_with_filter(tree, 0, NULL, event_str, report);
-}
-
-bool betree_search_with_filter(const struct betree* tree, size_t filter_count, betree_sub_t* filters, const char* event_str, struct report* report)
-{
     struct betree_event* event = make_event_from_string(tree, event_str);
-    bool result = betree_search_with_event_filled(tree, filter_count, filters, event, report);
+    bool result = betree_search_with_event_filled(tree, event, report);
     free_event(event);
     return result;
 }
 
-bool betree_search_with_event(const struct betree* betree, size_t filter_count, betree_sub_t* filters, struct betree_event* event, struct report* report)
+bool betree_search_with_event(const struct betree* betree, struct betree_event* event, struct report* report)
 {
     fill_event(betree->config, event);
     sort_event_lists(event);
-    return betree_search_with_event_filled(betree, filter_count, filters, event, report);
+    return betree_search_with_event_filled(betree, event, report);
 }
 
 struct report* make_report()
