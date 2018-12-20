@@ -2747,12 +2747,13 @@ void sort_lists(struct ast_node* node)
                             sizeof(*node->set_expr.right_value.string_list_value->strings),
                             scmpfunc);
                         return;
-                    case AST_SET_RIGHT_VALUE_VARIABLE:
                     case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM:
                         qsort(node->set_expr.right_value.integer_list_enum_value->integers,
                             node->set_expr.right_value.integer_list_enum_value->count,
                             sizeof(*node->set_expr.right_value.integer_list_enum_value->integers),
                             iecmpfunc);
+                        return;
+                    case AST_SET_RIGHT_VALUE_VARIABLE:
                         return;
                     default:
                         fprintf(stderr, "Invalid set expr");
