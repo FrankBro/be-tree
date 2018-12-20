@@ -2320,7 +2320,7 @@ void assign_ienum_id(struct config* config, struct ast_node* node, bool always_a
             if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE
               && config->attr_domains[node->set_expr.left_value.variable_value.var]->bound.value_type == BETREE_INTEGER_ENUM) {
                 struct betree_integer_list_enum* integer_list_enum = make_integer_list_enum(node->set_expr.right_value.integer_list_value->count);
-                for(size_t i = 0; i < node->list_expr.value.string_list_value->count; i++) {
+                for(size_t i = 0; i < node->set_expr.right_value.integer_list_value->count; i++) {
                     betree_ienum_t ienum_id = get_id_for_ienum(config,
                         node->set_expr.left_value.variable_value,
                         node->set_expr.right_value.integer_list_value->integers[i], always_assign);
