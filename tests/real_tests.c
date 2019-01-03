@@ -94,23 +94,14 @@ size_t read_betree_exprs(struct betree* tree)
 {
 
     FILE* f = fopen("data/betree_exprs", "r");
+    FILE* constants_f = fopen("data/betree_constants", "r");
 
     //char* lines[MAX_EXPRS];
     char line[MAX_EXPR_CHARACTERS]; // Arbitrary from what I've seen
-    size_t count = 0;
-    while(fgets(line, sizeof(line), f)) {
-        if(!betree_change_boundaries(tree, line)) {
-            printf("Can't change boundaries expr %zu: %s\n", count, line);
-            abort();
-        }
-    }
-    /*for(size_t i = 0; i < tree->config->attr_domain_count; i++) {*/
-        /*const struct attr_domain* attr_domain = tree->config->attr_domains[i];*/
-        /*print_attr_domain(attr_domain);*/
-    /*}*/
-    rewind(f);
-    FILE* constants_f = fopen("data/betree_constants", "r");
     char constants_line[MAX_CONSTANT_CHARACTERS];
+    size_t count = 0;
+    const struct betree_sub* subs[MAX_EXPRS];
+
     enum e { constant_count = 6 };
     while(fgets(line, sizeof(line), f)) {
         char* ignore = fgets(constants_line, sizeof(constants_line), constants_f);
@@ -125,17 +116,29 @@ size_t read_betree_exprs(struct betree* tree)
             betree_make_integer_constant("advertiser_id", advertiser_id),
             betree_make_integer_constant("flight_id", flight_id),
         };
-        if(!betree_insert_with_constants(tree, count, constant_count, constants, line)) {
-            printf("Can't insert expr %zu: %s\n", count, line);
-            abort();
-        }
+
+        const struct betree_sub* sub = betree_make_sub(tree, count, constant_count, constants, line);
+        subs[count] = sub;
         count++;
         if(MAX_EXPRS != 0 && count == MAX_EXPRS) {
             break;
         }
     }
-
+    /*for(size_t i = 0; i < tree->config->attr_domain_count; i++) {*/
+        /*const struct attr_domain* attr_domain = tree->config->attr_domains[i];*/
+        /*print_attr_domain(attr_domain);*/
+    /*}*/
     fclose(f);
+    fclose(constants_f);
+
+    for(size_t i = 0; i < count; i++) {
+        const struct betree_sub* sub = subs[i];
+        if(!betree_insert_sub(tree, sub)) {
+            printf("Can't insert expr %zu\n", i);
+            abort();
+        }
+    }
+
     return count;
 }
 

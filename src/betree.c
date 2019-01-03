@@ -19,7 +19,7 @@
 
 bool betree_delete(struct betree* betree, betree_sub_t id)
 {
-    struct sub* sub = find_sub_id(id, betree->cnode);
+    struct betree_sub* sub = find_sub_id(id, betree->cnode);
     bool found = betree_delete_inner(betree->config->attr_domain_count, (const struct attr_domain**)betree->config->attr_domains, sub, betree->cnode);
     free_sub(sub);
     return found;
@@ -75,7 +75,7 @@ static bool is_valid(const struct config* config, const struct ast_node* node)
         fprintf(stderr, "Integer enum used in comparison\n");
         return false;
     }
-    bool ienum = all_bounded_strings_valid(config, node);
+    bool ienum = all_integer_enums_valid(config, node);
     if(!ienum) {
         fprintf(stderr, "Out of bound integer enum\n");
         return false;
@@ -536,11 +536,46 @@ bool betree_insert_with_constants(struct betree* tree,
         return false;
     }
     assign_str_id(tree->config, node, false);
-    assign_ienum_id(tree->config, node, true);
+    assign_ienum_id(tree->config, node, false);
     sort_lists(node);
     fix_float_with_no_fractions(tree->config, node);
     assign_pred_id(tree->config, node);
-    struct sub* sub = make_sub(tree->config, id, node);
+    struct betree_sub* sub = make_sub(tree->config, id, node);
+    return insert_be_tree(tree->config, sub, tree->cnode, NULL);
+}
+
+const struct betree_sub* betree_make_sub(struct betree* tree, betree_sub_t id, size_t constant_count, const struct betree_constant** constants, const char* expr)
+{
+    struct ast_node* node;
+    if(parse(expr, &node) != 0) {
+        fprintf(stderr, "Can't parse %ld\n", id);
+        return false;
+    }
+    assign_variable_id(tree->config, node);
+    if(!all_variables_in_config(tree->config, node)) {
+        fprintf(stderr, "Missing variable in config\n");
+        return false;
+    }
+    if(!all_integer_enums_valid(tree->config, node)) {
+        fprintf(stderr, "Integer enum used in comparison\n");
+        return false;
+    }
+    if(!assign_constants(constant_count, constants, node)) {
+        fprintf(stderr, "Can't assign constants %ld\n", id);
+        return false;
+    }
+    assign_str_id(tree->config, node, true);
+    assign_ienum_id(tree->config, node, true);
+    sort_lists(node);
+    fix_float_with_no_fractions(tree->config, node);
+    change_boundaries(tree->config, node);
+    assign_pred_id(tree->config, node);
+    struct betree_sub* sub = make_sub(tree->config, id, node);
+    return sub;
+}
+
+bool betree_insert_sub(struct betree* tree, const struct betree_sub* sub)
+{
     return insert_be_tree(tree->config, sub, tree->cnode, NULL);
 }
 

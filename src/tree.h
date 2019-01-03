@@ -19,7 +19,7 @@ struct short_circuit {
     uint64_t* fail;
 };
 
-struct sub {
+struct betree_sub {
     betree_sub_t id;
     uint64_t* attr_vars;
     const struct ast_node* expr;
@@ -32,7 +32,7 @@ struct lnode {
     struct cnode* parent;
     struct {
         size_t sub_count;
-        struct sub** subs;
+        struct betree_sub** subs;
     };
     size_t max;
 };
@@ -83,20 +83,20 @@ struct pdir {
     };
 };
 
-void free_sub(struct sub* sub);
+void free_sub(struct betree_sub* sub);
 void free_event(struct betree_event* event);
 
-bool sub_has_attribute(const struct sub* sub, betree_var_t variable_id);
-bool sub_has_attribute_str(struct config* config, const struct sub* sub, const char* attr);
-bool sub_is_enclosed(const struct attr_domain** attr_domains, const struct sub* sub, const struct cdir* cdir);
+bool sub_has_attribute(const struct betree_sub* sub, betree_var_t variable_id);
+bool sub_has_attribute_str(struct config* config, const struct betree_sub* sub, const char* attr);
+bool sub_is_enclosed(const struct attr_domain** attr_domains, const struct betree_sub* sub, const struct cdir* cdir);
 
 struct lnode* make_lnode(const struct config* config, struct cnode* parent);
 void free_lnode(struct lnode* lnode);
 struct cnode* make_cnode(const struct config* config, struct cdir* parent);
 void free_cnode(struct cnode* cnode);
 
-void fill_pred(struct sub* sub, const struct ast_node* expr);
-struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* expr);
+void fill_pred(struct betree_sub* sub, const struct ast_node* expr);
+struct betree_sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* expr);
 struct betree_event* make_empty_event();
 void event_to_string(const struct betree_event* event, char* buffer);
 
@@ -110,15 +110,14 @@ struct betree_event* make_event_from_string(const struct betree* betree, const c
 
 struct memoize make_memoize(size_t pred_count);
 void free_memoize(struct memoize memoize);
-void free_sub(struct sub* sub);
 
 struct betree_constant {
     const char* name;
     struct value value;
 };
 
-bool betree_delete_inner(size_t attr_domains_count, const struct attr_domain** attr_domains, struct sub* sub, struct cnode* cnode);
-struct sub* find_sub_id(betree_sub_t id, struct cnode* cnode);
+bool betree_delete_inner(size_t attr_domains_count, const struct attr_domain** attr_domains, struct betree_sub* sub, struct cnode* cnode);
+struct betree_sub* find_sub_id(betree_sub_t id, struct cnode* cnode);
 
 bool betree_search_with_preds(const struct config* config,
     const struct betree_variable** preds,
@@ -126,7 +125,7 @@ bool betree_search_with_preds(const struct config* config,
     struct report* report);
 bool betree_exists_with_preds(const struct config* config, const struct betree_variable** preds, const struct cnode* cnode);
 
-bool insert_be_tree(const struct config* config, const struct sub* sub, struct cnode* cnode, struct cdir* cdir);
+bool insert_be_tree(const struct config* config, const struct betree_sub* sub, struct cnode* cnode, struct cdir* cdir);
 
 void sort_event_lists(struct betree_event* event);
 

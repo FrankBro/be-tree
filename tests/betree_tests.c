@@ -20,7 +20,7 @@ int test_sub_has_attribute()
 
     mu_assert(betree_insert(tree, 0, "a = 0"), "");
 
-    struct sub* sub = tree->cnode->lnode->subs[0];
+    struct betree_sub* sub = tree->cnode->lnode->subs[0];
     mu_assert(sub_has_attribute_str(tree->config, sub, "a"), "Simple sub has 'a'");
     mu_assert(!sub_has_attribute_str(tree->config, sub, "b"), "Simple sub does not have 'b'");
 

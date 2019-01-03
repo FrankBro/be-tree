@@ -22,6 +22,7 @@ struct report {
     betree_sub_t* subs;
 };
 
+struct betree_sub;
 struct betree_constant;
 struct betree_variable;
 
@@ -91,6 +92,9 @@ void betree_add_segments_variable(struct betree* betree, const char* name, bool 
 void betree_add_frequency_caps_variable(struct betree* betree, const char* name, bool allow_undefined);
 
 bool betree_change_boundaries(struct betree* betree, const char* expr);
+
+const struct betree_sub* betree_make_sub(struct betree* betree, betree_sub_t id, size_t constant_count, const struct betree_constant** constants, const char* expr);
+bool betree_insert_sub(struct betree* betree, const struct betree_sub* sub);
 
 /*
  * Runtime

@@ -19,7 +19,7 @@
 #include "utils.h"
 
 struct subs_to_eval {
-    struct sub** subs;
+    struct betree_sub** subs;
     size_t capacity;
     size_t count;
 };
@@ -32,7 +32,7 @@ static void init_subs_to_eval(struct subs_to_eval* subs)
     subs->count = 0;
 }
 
-static void add_sub_to_eval(struct sub* sub, struct subs_to_eval* subs)
+static void add_sub_to_eval(struct betree_sub* sub, struct subs_to_eval* subs)
 {
     if(subs->capacity == subs->count) {
         subs->capacity *= 2;
@@ -64,7 +64,7 @@ static enum short_circuit_e try_short_circuit(size_t attr_domains_count,
 
 static bool match_sub(size_t attr_domains_count,
     const struct betree_variable** preds,
-    const struct sub* sub,
+    const struct betree_sub* sub,
     struct report* report,
     struct memoize* memoize,
     const uint64_t* undefined)
@@ -88,7 +88,7 @@ static bool match_sub(size_t attr_domains_count,
 static void check_sub(const struct lnode* lnode, struct subs_to_eval* subs)
 {
     for(size_t i = 0; i < lnode->sub_count; i++) {
-        struct sub* sub = lnode->subs[i];
+        struct betree_sub* sub = lnode->subs[i];
         add_sub_to_eval(sub, subs);
     }
 }
@@ -196,7 +196,7 @@ static bool is_event_enclosed(const struct betree_variable** preds, const struct
     return false;
 }
 
-bool sub_is_enclosed(const struct attr_domain** attr_domains, const struct sub* sub, const struct cdir* cdir)
+bool sub_is_enclosed(const struct attr_domain** attr_domains, const struct betree_sub* sub, const struct cdir* cdir)
 {
     if(cdir == NULL) {
         return false;
@@ -306,7 +306,7 @@ static bool is_used_cnode(betree_var_t variable_id, const struct cnode* cnode)
     return is_used_cdir(variable_id, cnode->parent);
 }
 
-static void insert_sub(const struct sub* sub, struct lnode* lnode)
+static void insert_sub(const struct betree_sub* sub, struct lnode* lnode)
 {
     if(lnode->sub_count == 0) {
         lnode->subs = bcalloc(sizeof(*lnode->subs));
@@ -316,14 +316,14 @@ static void insert_sub(const struct sub* sub, struct lnode* lnode)
         }
     }
     else {
-        struct sub** subs = brealloc(lnode->subs, sizeof(*subs) * (lnode->sub_count + 1));
+        struct betree_sub** subs = brealloc(lnode->subs, sizeof(*subs) * (lnode->sub_count + 1));
         if(subs == NULL) {
             fprintf(stderr, "%s brealloc failed\n", __func__);
             abort();
         }
         lnode->subs = subs;
     }
-    lnode->subs[lnode->sub_count] = (struct sub*)sub;
+    lnode->subs[lnode->sub_count] = (struct betree_sub*)sub;
     lnode->sub_count++;
 }
 
@@ -338,7 +338,7 @@ static bool is_root(const struct cnode* cnode)
 static void space_partitioning(const struct config* config, struct cnode* cnode);
 static void space_clustering(const struct config* config, struct cdir* cdir);
 static struct cdir* insert_cdir(
-    const struct config* config, const struct sub* sub, struct cdir* cdir);
+    const struct config* config, const struct betree_sub* sub, struct cdir* cdir);
 
 static size_t count_attr_in_lnode(betree_var_t variable_id, const struct lnode* lnode);
 
@@ -427,7 +427,7 @@ static void update_partition_score(const struct attr_domain** attr_domains, stru
 }
 
 bool insert_be_tree(
-    const struct config* config, const struct sub* sub, struct cnode* cnode, struct cdir* cdir)
+    const struct config* config, const struct betree_sub* sub, struct cnode* cnode, struct cdir* cdir)
 {
     if(config == NULL) {
         fprintf(stderr, "Config is NULL, required to insert in the be tree\n");
@@ -477,7 +477,7 @@ static bool is_leaf(const struct cdir* cdir)
 }
 
 static struct cdir* insert_cdir(
-    const struct config* config, const struct sub* sub, struct cdir* cdir)
+    const struct config* config, const struct betree_sub* sub, struct cdir* cdir)
 {
     if(is_leaf(cdir)) {
         return cdir;
@@ -498,12 +498,12 @@ static bool is_overflowed(const struct lnode* lnode)
     return lnode->sub_count > lnode->max;
 }
 
-bool sub_has_attribute(const struct sub* sub, betree_var_t variable_id)
+bool sub_has_attribute(const struct betree_sub* sub, betree_var_t variable_id)
 {
     return test_bit(sub->attr_vars, variable_id);
 }
 
-bool sub_has_attribute_str(struct config* config, const struct sub* sub, const char* attr)
+bool sub_has_attribute_str(struct config* config, const struct betree_sub* sub, const char* attr)
 {
     betree_var_t variable_id = try_get_id_for_attr(config, attr);
     if(variable_id == INVALID_VAR) {
@@ -515,7 +515,7 @@ bool sub_has_attribute_str(struct config* config, const struct sub* sub, const c
 static bool remove_sub(betree_sub_t sub, struct lnode* lnode)
 {
     for(size_t i = 0; i < lnode->sub_count; i++) {
-        const struct sub* lnode_sub = lnode->subs[i];
+        const struct betree_sub* lnode_sub = lnode->subs[i];
         if(sub == lnode_sub->id) {
             for(size_t j = i; j < lnode->sub_count - 1; j++) {
                 lnode->subs[j] = lnode->subs[j + 1];
@@ -526,7 +526,7 @@ static bool remove_sub(betree_sub_t sub, struct lnode* lnode)
                 lnode->subs = NULL;
             }
             else {
-                struct sub** subs = brealloc(lnode->subs, sizeof(*lnode->subs) * lnode->sub_count);
+                struct betree_sub** subs = brealloc(lnode->subs, sizeof(*lnode->subs) * lnode->sub_count);
                 if(subs == NULL) {
                     fprintf(stderr, "%s brealloc failed\n", __func__);
                     abort();
@@ -539,7 +539,7 @@ static bool remove_sub(betree_sub_t sub, struct lnode* lnode)
     return false;
 }
 
-static void move(const struct sub* sub, struct lnode* origin, struct lnode* destination)
+static void move(const struct betree_sub* sub, struct lnode* origin, struct lnode* destination)
 {
     bool isFound = remove_sub(sub->id, origin);
     if(!isFound) {
@@ -554,7 +554,7 @@ static void move(const struct sub* sub, struct lnode* origin, struct lnode* dest
         }
     }
     else {
-        struct sub** subs
+        struct betree_sub** subs
             = brealloc(destination->subs, sizeof(*destination->subs) * (destination->sub_count + 1));
         if(subs == NULL) {
             fprintf(stderr, "%s brealloc failed\n", __func__);
@@ -562,7 +562,7 @@ static void move(const struct sub* sub, struct lnode* origin, struct lnode* dest
         }
         destination->subs = subs;
     }
-    destination->subs[destination->sub_count] = (struct sub*)sub;
+    destination->subs[destination->sub_count] = (struct betree_sub*)sub;
     destination->sub_count++;
 }
 
@@ -676,7 +676,7 @@ static size_t count_attr_in_lnode(betree_var_t variable_id, const struct lnode* 
         return count;
     }
     for(size_t i = 0; i < lnode->sub_count; i++) {
-        const struct sub* sub = lnode->subs[i];
+        const struct betree_sub* sub = lnode->subs[i];
         if(sub == NULL) {
             fprintf(stderr, "%s, sub is NULL\n", __func__);
             continue;
@@ -779,7 +779,7 @@ static bool get_next_highest_score_unused_attr(
     double highest_score = 0;
     betree_var_t highest_var;
     for(size_t i = 0; i < lnode->sub_count; i++) {
-        const struct sub* sub = lnode->subs[i];
+        const struct betree_sub* sub = lnode->subs[i];
         for(size_t j = 0; j < config->attr_domain_count; j++) {
             if(test_bit(sub->attr_vars, j) == false) {
                 continue;
@@ -821,11 +821,11 @@ static void update_cluster_capacity(const struct config* config, struct lnode* l
 }
 
 static size_t count_subs_with_variable(
-    const struct sub** subs, size_t sub_count, betree_var_t variable_id)
+    const struct betree_sub** subs, size_t sub_count, betree_var_t variable_id)
 {
     size_t count = 0;
     for(size_t i = 0; i < sub_count; i++) {
-        const struct sub* sub = subs[i];
+        const struct betree_sub* sub = subs[i];
         if(sub_has_attribute(sub, variable_id)) {
             count++;
         }
@@ -843,14 +843,14 @@ static void space_partitioning(const struct config* config, struct cnode* cnode)
             break;
         }
         size_t target_subs_count = count_subs_with_variable(
-            (const struct sub**)lnode->subs, lnode->sub_count, var);
+            (const struct betree_sub**)lnode->subs, lnode->sub_count, var);
         if(target_subs_count < config->partition_min_size) {
             break;
         }
         const char* attr = config->attr_domains[var]->attr_var.attr;
         struct pnode* pnode = create_pdir(config, attr, var, cnode);
         for(size_t i = 0; i < lnode->sub_count; i++) {
-            const struct sub* sub = lnode->subs[i];
+            const struct betree_sub* sub = lnode->subs[i];
             if(sub_has_attribute(sub, var)) {
                 struct cdir* cdir = insert_cdir(config, sub, pnode->cdir);
                 move(sub, lnode, cdir->cnode->lnode);
@@ -1054,7 +1054,7 @@ static void space_clustering(const struct config* config, struct cdir* cdir)
         cdir->lchild = create_cdir_with_cdir_parent(config, cdir, bounds.lbound);
         cdir->rchild = create_cdir_with_cdir_parent(config, cdir, bounds.rbound);
         for(size_t i = 0; i < lnode->sub_count; i++) {
-            const struct sub* sub = lnode->subs[i];
+            const struct betree_sub* sub = lnode->subs[i];
             if(sub_is_enclosed((const struct attr_domain**)config->attr_domains, sub, cdir->lchild)) {
                 move(sub, lnode, cdir->lchild->cnode->lnode);
                 i--;
@@ -1072,7 +1072,7 @@ static void space_clustering(const struct config* config, struct cdir* cdir)
 }
 
 static bool search_delete_cdir(size_t attr_domains_count,
-    const struct attr_domain** attr_domains, struct sub* sub, struct cdir* cdir);
+    const struct attr_domain** attr_domains, struct betree_sub* sub, struct cdir* cdir);
 
 static bool delete_sub_from_leaf(betree_sub_t sub, struct lnode* lnode)
 {
@@ -1132,7 +1132,7 @@ static void free_pred(struct betree_variable* pred)
     bfree(pred);
 }
 
-void free_sub(struct sub* sub)
+void free_sub(struct betree_sub* sub)
 {
     if(sub == NULL) {
         return;
@@ -1167,8 +1167,8 @@ void free_lnode(struct lnode* lnode)
         return;
     }
     for(size_t i = 0; i < lnode->sub_count; i++) {
-        const struct sub* sub = lnode->subs[i];
-        free_sub((struct sub*)sub);
+        const struct betree_sub* sub = lnode->subs[i];
+        free_sub((struct betree_sub*)sub);
     }
     bfree(lnode->subs);
     lnode->subs = NULL;
@@ -1240,7 +1240,7 @@ static void free_pnode(struct pnode* pnode)
 }
 
 bool betree_delete_inner(size_t attr_domains_count,
-    const struct attr_domain** attr_domains, struct sub* sub, struct cnode* cnode)
+    const struct attr_domain** attr_domains, struct betree_sub* sub, struct cnode* cnode)
 {
     struct pnode* pnode = NULL;
     bool isFound = delete_sub_from_leaf(sub->id, cnode->lnode);
@@ -1282,27 +1282,27 @@ bool betree_delete_inner(size_t attr_domains_count,
     return isFound;
 }
 
-static struct sub* find_sub_id_cdir(betree_sub_t id, struct cdir* cdir)
+static struct betree_sub* find_sub_id_cdir(betree_sub_t id, struct cdir* cdir)
 {
     if(cdir == NULL) {
         return NULL;
     }
-    struct sub* in_cnode = find_sub_id(id, cdir->cnode);
+    struct betree_sub* in_cnode = find_sub_id(id, cdir->cnode);
     if(in_cnode != NULL) {
         return in_cnode;
     }
-    struct sub* in_lcdir = find_sub_id_cdir(id, cdir->lchild);
+    struct betree_sub* in_lcdir = find_sub_id_cdir(id, cdir->lchild);
     if(in_lcdir != NULL) {
         return in_lcdir;
     }
-    struct sub* in_rcdir = find_sub_id_cdir(id, cdir->rchild);
+    struct betree_sub* in_rcdir = find_sub_id_cdir(id, cdir->rchild);
     if(in_rcdir != NULL) {
         return in_rcdir;
     }
     return NULL;
 }
 
-struct sub* find_sub_id(betree_sub_t id, struct cnode* cnode)
+struct betree_sub* find_sub_id(betree_sub_t id, struct cnode* cnode)
 {
     if(cnode == NULL) {
         return NULL;
@@ -1314,7 +1314,7 @@ struct sub* find_sub_id(betree_sub_t id, struct cnode* cnode)
     }
     if(cnode->pdir != NULL) {
         for(size_t i = 0; i < cnode->pdir->pnode_count; i++) {
-            struct sub* in_cdir = find_sub_id_cdir(id, cnode->pdir->pnodes[i]->cdir);
+            struct betree_sub* in_cdir = find_sub_id_cdir(id, cnode->pdir->pnodes[i]->cdir);
             if(in_cdir != NULL) {
                 return in_cdir;
             }
@@ -1356,7 +1356,7 @@ static void try_remove_cdir_from_parent(struct cdir* cdir)
 }
 
 static bool search_delete_cdir(size_t attr_domains_count,
-    const struct attr_domain** attr_domains, struct sub* sub, struct cdir* cdir)
+    const struct attr_domain** attr_domains, struct betree_sub* sub, struct cdir* cdir)
 {
     bool isFound = false;
     if(sub_is_enclosed(attr_domains, sub, cdir->lchild)) {
@@ -1398,12 +1398,12 @@ struct betree_variable* make_pred(const char* attr, betree_var_t variable_id, st
     return pred;
 }
 
-static void fill_pred_attr_var(struct sub* sub, struct attr_var attr_var)
+static void fill_pred_attr_var(struct betree_sub* sub, struct attr_var attr_var)
 {
     set_bit(sub->attr_vars, attr_var.var);
 }
 
-void fill_pred(struct sub* sub, const struct ast_node* expr)
+void fill_pred(struct betree_sub* sub, const struct ast_node* expr)
 {
     switch(expr->type) {
         case AST_TYPE_IS_NULL_EXPR:
@@ -1611,7 +1611,7 @@ static enum short_circuit_e short_circuit_for_node(
     return SHORT_CIRCUIT_NONE;
 }
 
-static void fill_short_circuit(struct config* config, struct sub* sub)
+static void fill_short_circuit(struct config* config, struct betree_sub* sub)
 {
     for(size_t i = 0; i < config->attr_domain_count; i++) {
         struct attr_domain* attr_domain = config->attr_domains[i];
@@ -1628,9 +1628,9 @@ static void fill_short_circuit(struct config* config, struct sub* sub)
     }
 }
 
-struct sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* expr)
+struct betree_sub* make_sub(struct config* config, betree_sub_t id, struct ast_node* expr)
 {
-    struct sub* sub = bcalloc(sizeof(*sub));
+    struct betree_sub* sub = bcalloc(sizeof(*sub));
     if(sub == NULL) {
         fprintf(stderr, "%s bcalloc failed\n", __func__);
         abort();
@@ -1788,7 +1788,7 @@ bool betree_search_with_preds(const struct config* config,
     match_be_tree((const struct attr_domain**)config->attr_domains, preds, cnode, &subs);
     report->subs = bmalloc(sizeof(*report->subs) * subs.count);
     for(size_t i = 0; i < subs.count; i++) {
-        const struct sub* sub = subs.subs[i];
+        const struct betree_sub* sub = subs.subs[i];
         report->evaluated++;
         if(match_sub(config->attr_domain_count, preds, sub, report, &memoize, undefined) == true) {
             report->subs[report->matched] = sub->id;
@@ -1811,7 +1811,7 @@ bool betree_exists_with_preds(const struct config* config, const struct betree_v
     match_be_tree((const struct attr_domain**)config->attr_domains, preds, cnode, &subs);
     bool result = false;
     for(size_t i = 0; i < subs.count; i++) {
-        const struct sub* sub = subs.subs[i];
+        const struct betree_sub* sub = subs.subs[i];
         if(match_sub(config->attr_domain_count, preds, sub, NULL, &memoize, undefined) == true) {
             result = true;
             break;

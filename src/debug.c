@@ -839,10 +839,10 @@ static void write_dot_file_cnode_ranks(
 
 struct gathered_subs {
     size_t count;
-    struct sub** subs;
+    struct betree_sub** subs;
 };
 
-static void add_sub(const struct sub* sub, struct gathered_subs* gatherer)
+static void add_sub(const struct betree_sub* sub, struct gathered_subs* gatherer)
 {
     if(gatherer->count == 0) {
         gatherer->subs = bcalloc(sizeof(*gatherer->subs));
@@ -852,14 +852,14 @@ static void add_sub(const struct sub* sub, struct gathered_subs* gatherer)
         }
     }
     else {
-        struct sub** subs = brealloc(gatherer->subs, sizeof(*subs) * (gatherer->count + 1));
+        struct betree_sub** subs = brealloc(gatherer->subs, sizeof(*subs) * (gatherer->count + 1));
         if(subs == NULL) {
             fprintf(stderr, "%s brealloc failed", __func__);
             abort();
         }
         gatherer->subs = subs;
     }
-    gatherer->subs[gatherer->count] = (struct sub*)sub;
+    gatherer->subs[gatherer->count] = (struct betree_sub*)sub;
     gatherer->count++;
 }
 
