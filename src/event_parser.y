@@ -101,15 +101,15 @@ variable            : EVENT_STRING EVENT_COLON value        { $$ = make_pred($1,
                     | EVENT_STRING EVENT_COLON EVENT_NULL   { $$ = NULL; bfree($1); }
 ;
 
-value               : boolean                               { $$.value_type = BETREE_BOOLEAN; $$.bvalue = $1; }
-                    | integer                               { $$.value_type = BETREE_INTEGER; $$.ivalue = $1; }
-                    | float                                 { $$.value_type = BETREE_FLOAT; $$.fvalue = $1; }
-                    | string                                { $$.value_type = BETREE_STRING; $$.svalue = $1; }
-                    | empty_list_value                      { $$.value_type = BETREE_INTEGER_LIST; $$.ilvalue = $1; }
-                    | integer_list_value                    { $$.value_type = BETREE_INTEGER_LIST; $$.ilvalue = $1; }
-                    | string_list_value                     { $$.value_type = BETREE_STRING_LIST; $$.slvalue = $1; }
+value               : boolean                               { $$.value_type = BETREE_BOOLEAN; $$.boolean_value = $1; }
+                    | integer                               { $$.value_type = BETREE_INTEGER; $$.integer_value = $1; }
+                    | float                                 { $$.value_type = BETREE_FLOAT; $$.float_value = $1; }
+                    | string                                { $$.value_type = BETREE_STRING; $$.string_value = $1; }
+                    | empty_list_value                      { $$.value_type = BETREE_INTEGER_LIST; $$.integer_list_value = $1; }
+                    | integer_list_value                    { $$.value_type = BETREE_INTEGER_LIST; $$.integer_list_value = $1; }
+                    | string_list_value                     { $$.value_type = BETREE_STRING_LIST; $$.string_list_value = $1; }
                     | segments_value                        { $$.value_type = BETREE_SEGMENTS; $$.segments_value = $1; }
-                    | frequencies_value                     { $$.value_type = BETREE_FREQUENCY_CAPS; $$.frequency_value = $1; }
+                    | frequencies_value                     { $$.value_type = BETREE_FREQUENCY_CAPS; $$.frequency_caps_value = $1; }
 
 boolean             : EVENT_TRUE                            { $$ = true; }
                     | EVENT_FALSE                           { $$ = false; }

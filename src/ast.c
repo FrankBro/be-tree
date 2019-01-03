@@ -337,7 +337,7 @@ static void free_set_expr(struct ast_set_expr set_expr)
             break;
         }
         case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM:
-            free_integer_list_enum(set_expr.right_value.integer_list_enum_value);
+            free_integer_enum_list(set_expr.right_value.integer_enum_list_value);
             break;
         default: {
             switch_default_error("Invalid set right value type");
@@ -490,7 +490,7 @@ static bool string_in_string_list(struct string_value string, struct betree_stri
     return sbinary_search(list->strings, list->count, string.str);
 }
 
-static bool integer_enum_in_integer_list_enum(struct integer_enum_value ienum, struct betree_integer_list_enum* list)
+static bool integer_enum_in_integer_enum_list(struct integer_enum_value ienum, struct betree_integer_enum_list* list)
 {
     return iebinary_search(list->integers, list->count, ienum.ienum);
 }
@@ -665,15 +665,15 @@ static bool match_not_all_of_int(struct value variable, struct ast_list_expr lis
     size_t x_count;
     int64_t* ys;
     size_t y_count;
-    if(variable.ilvalue->count < list_expr.value.integer_list_value->count) {
-        xs = variable.ilvalue->integers;
-        x_count = variable.ilvalue->count;
+    if(variable.integer_list_value->count < list_expr.value.integer_list_value->count) {
+        xs = variable.integer_list_value->integers;
+        x_count = variable.integer_list_value->count;
         ys = list_expr.value.integer_list_value->integers;
         y_count = list_expr.value.integer_list_value->count;
     }
     else {
-        ys = variable.ilvalue->integers;
-        y_count = variable.ilvalue->count;
+        ys = variable.integer_list_value->integers;
+        y_count = variable.integer_list_value->count;
         xs = list_expr.value.integer_list_value->integers;
         x_count = list_expr.value.integer_list_value->count;
     }
@@ -700,15 +700,15 @@ static bool match_not_all_of_string(struct value variable, struct ast_list_expr 
     size_t x_count;
     struct string_value* ys;
     size_t y_count;
-    if(variable.slvalue->count < list_expr.value.integer_list_value->count) {
-        xs = variable.slvalue->strings;
-        x_count = variable.slvalue->count;
+    if(variable.string_list_value->count < list_expr.value.integer_list_value->count) {
+        xs = variable.string_list_value->strings;
+        x_count = variable.string_list_value->count;
         ys = list_expr.value.string_list_value->strings;
         y_count = list_expr.value.integer_list_value->count;
     }
     else {
-        ys = variable.slvalue->strings;
-        y_count = variable.slvalue->count;
+        ys = variable.string_list_value->strings;
+        y_count = variable.string_list_value->count;
         xs = list_expr.value.string_list_value->strings;
         x_count = list_expr.value.integer_list_value->count;
     }
@@ -733,8 +733,8 @@ static bool match_all_of_int(struct value variable, struct ast_list_expr list_ex
 {
     int64_t* xs = list_expr.value.integer_list_value->integers;
     size_t x_count = list_expr.value.integer_list_value->count;
-    int64_t* ys = variable.ilvalue->integers;
-    size_t y_count = variable.ilvalue->count;
+    int64_t* ys = variable.integer_list_value->integers;
+    size_t y_count = variable.integer_list_value->count;
     if(x_count <= y_count) {
         size_t i = 0, j = 0;
         while(i < y_count && j < x_count) {
@@ -767,8 +767,8 @@ static bool match_all_of_string(struct value variable, struct ast_list_expr list
 {
     struct string_value* xs = list_expr.value.string_list_value->strings;
     size_t x_count = list_expr.value.string_list_value->count;
-    struct string_value* ys = variable.slvalue->strings;
-    size_t y_count = variable.slvalue->count;
+    struct string_value* ys = variable.string_list_value->strings;
+    size_t y_count = variable.string_list_value->count;
     if(x_count <= y_count) {
         size_t i = 0, j = 0;
         while(i < y_count && j < x_count) {
@@ -902,7 +902,7 @@ static bool match_set_expr(const struct betree_variable** preds, const struct as
         if(is_variable_defined == false) {
             return false;
         }
-        is_in = integer_enum_in_integer_list_enum(variable, right.integer_list_enum_value);
+        is_in = integer_enum_in_integer_enum_list(variable, right.integer_enum_list_value);
     }
     else {
         invalid_expr("invalid set expression");
@@ -934,11 +934,11 @@ static bool match_compare_expr(
         case AST_COMPARE_LT: {
             switch(compare_expr.value.value_type) {
                 case AST_COMPARE_VALUE_INTEGER: {
-                    bool result = variable.ivalue < compare_expr.value.integer_value;
+                    bool result = variable.integer_value < compare_expr.value.integer_value;
                     return result;
                 }
                 case AST_COMPARE_VALUE_FLOAT: {
-                    bool result = variable.fvalue < compare_expr.value.float_value;
+                    bool result = variable.float_value < compare_expr.value.float_value;
                     return result;
                 }
                 default: {
@@ -950,11 +950,11 @@ static bool match_compare_expr(
         case AST_COMPARE_LE: {
             switch(compare_expr.value.value_type) {
                 case AST_COMPARE_VALUE_INTEGER: {
-                    bool result = variable.ivalue <= compare_expr.value.integer_value;
+                    bool result = variable.integer_value <= compare_expr.value.integer_value;
                     return result;
                 }
                 case AST_COMPARE_VALUE_FLOAT: {
-                    bool result = variable.fvalue <= compare_expr.value.float_value;
+                    bool result = variable.float_value <= compare_expr.value.float_value;
                     return result;
                 }
                 default: {
@@ -966,11 +966,11 @@ static bool match_compare_expr(
         case AST_COMPARE_GT: {
             switch(compare_expr.value.value_type) {
                 case AST_COMPARE_VALUE_INTEGER: {
-                    bool result = variable.ivalue > compare_expr.value.integer_value;
+                    bool result = variable.integer_value > compare_expr.value.integer_value;
                     return result;
                 }
                 case AST_COMPARE_VALUE_FLOAT: {
-                    bool result = variable.fvalue > compare_expr.value.float_value;
+                    bool result = variable.float_value > compare_expr.value.float_value;
                     return result;
                 }
                 default: {
@@ -982,11 +982,11 @@ static bool match_compare_expr(
         case AST_COMPARE_GE: {
             switch(compare_expr.value.value_type) {
                 case AST_COMPARE_VALUE_INTEGER: {
-                    bool result = variable.ivalue >= compare_expr.value.integer_value;
+                    bool result = variable.integer_value >= compare_expr.value.integer_value;
                     return result;
                 }
                 case AST_COMPARE_VALUE_FLOAT: {
-                    bool result = variable.fvalue >= compare_expr.value.float_value;
+                    bool result = variable.float_value >= compare_expr.value.float_value;
                     return result;
                 }
                 default: {
@@ -1014,19 +1014,19 @@ static bool match_equality_expr(
         case AST_EQUALITY_EQ: {
             switch(equality_expr.value.value_type) {
                 case AST_EQUALITY_VALUE_INTEGER: {
-                    bool result = variable.ivalue == equality_expr.value.integer_value;
+                    bool result = variable.integer_value == equality_expr.value.integer_value;
                     return result;
                 }
                 case AST_EQUALITY_VALUE_FLOAT: {
-                    bool result = feq(variable.fvalue, equality_expr.value.float_value);
+                    bool result = feq(variable.float_value, equality_expr.value.float_value);
                     return result;
                 }
                 case AST_EQUALITY_VALUE_STRING: {
-                    bool result = variable.svalue.str == equality_expr.value.string_value.str;
+                    bool result = variable.string_value.str == equality_expr.value.string_value.str;
                     return result;
                 }
                 case AST_EQUALITY_VALUE_INTEGER_ENUM: {
-                    bool result = variable.ievalue.ienum == equality_expr.value.integer_enum_value.ienum;
+                    bool result = variable.integer_enum_value.ienum == equality_expr.value.integer_enum_value.ienum;
                     return result;
                 }
                 default: {
@@ -1038,19 +1038,19 @@ static bool match_equality_expr(
         case AST_EQUALITY_NE: {
             switch(equality_expr.value.value_type) {
                 case AST_EQUALITY_VALUE_INTEGER: {
-                    bool result = variable.ivalue != equality_expr.value.integer_value;
+                    bool result = variable.integer_value != equality_expr.value.integer_value;
                     return result;
                 }
                 case AST_EQUALITY_VALUE_FLOAT: {
-                    bool result = fne(variable.fvalue, equality_expr.value.float_value);
+                    bool result = fne(variable.float_value, equality_expr.value.float_value);
                     return result;
                 }
                 case AST_EQUALITY_VALUE_STRING: {
-                    bool result = variable.svalue.str != equality_expr.value.string_value.str;
+                    bool result = variable.string_value.str != equality_expr.value.string_value.str;
                     return result;
                 }
                 case AST_EQUALITY_VALUE_INTEGER_ENUM: {
-                    bool result = variable.ievalue.ienum != equality_expr.value.integer_enum_value.ienum;
+                    bool result = variable.integer_enum_value.ienum != equality_expr.value.integer_enum_value.ienum;
                     return result;
                 }
                 default: {
@@ -2056,7 +2056,7 @@ static bool get_integer_constant(
     if(constant == NULL || constant->value.value_type != BETREE_INTEGER) {
         return false;
     }
-    *ret = constant->value.ivalue;
+    *ret = constant->value.integer_value;
     return true;
 }
 
@@ -2319,18 +2319,18 @@ void assign_ienum_id(struct config* config, struct ast_node* node, bool always_a
         case AST_TYPE_SET_EXPR:
             if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE
               && config->attr_domains[node->set_expr.left_value.variable_value.var]->bound.value_type == BETREE_INTEGER_ENUM) {
-                struct betree_integer_list_enum* integer_list_enum = make_integer_list_enum(node->set_expr.right_value.integer_list_value->count);
+                struct betree_integer_enum_list* integer_enum_list = make_integer_enum_list(node->set_expr.right_value.integer_list_value->count);
                 for(size_t i = 0; i < node->set_expr.right_value.integer_list_value->count; i++) {
                     betree_ienum_t ienum_id = get_id_for_ienum(config,
                         node->set_expr.left_value.variable_value,
                         node->set_expr.right_value.integer_list_value->integers[i], always_assign);
-                    integer_list_enum->integers[i].var = node->set_expr.left_value.variable_value.var;
-                    integer_list_enum->integers[i].ienum = ienum_id;
-                    integer_list_enum->integers[i].integer = node->set_expr.left_value.variable_value.var;
+                    integer_enum_list->integers[i].var = node->set_expr.left_value.variable_value.var;
+                    integer_enum_list->integers[i].ienum = ienum_id;
+                    integer_enum_list->integers[i].integer = node->set_expr.left_value.variable_value.var;
                 }
                 node->set_expr.right_value.value_type = AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM;
                 free_integer_list(node->set_expr.right_value.integer_list_value);
-                node->set_expr.right_value.integer_list_enum_value = integer_list_enum;
+                node->set_expr.right_value.integer_enum_list_value = integer_enum_list;
 
             }
             return;
@@ -2549,7 +2549,7 @@ static bool eq_string_list(struct betree_string_list* a, struct betree_string_li
     return true;
 }
 
-static bool eq_integer_list_enum(struct betree_integer_list_enum* a, struct betree_integer_list_enum* b)
+static bool eq_integer_enum_list(struct betree_integer_enum_list* a, struct betree_integer_enum_list* b)
 {
     if(a->count != b->count) {
         return false;
@@ -2575,7 +2575,7 @@ static bool eq_set_right_value(struct set_right_value a, struct set_right_value 
         case AST_SET_RIGHT_VALUE_VARIABLE:
             return a.variable_value.var == b.variable_value.var;
         case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM:
-            return eq_integer_list_enum(a.integer_list_enum_value, b.integer_list_enum_value);
+            return eq_integer_enum_list(a.integer_enum_list_value, b.integer_enum_list_value);
         default:
             switch_default_error("Invalid right value type");
             return false;
@@ -2748,9 +2748,9 @@ void sort_lists(struct ast_node* node)
                             scmpfunc);
                         return;
                     case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM:
-                        qsort(node->set_expr.right_value.integer_list_enum_value->integers,
-                            node->set_expr.right_value.integer_list_enum_value->count,
-                            sizeof(*node->set_expr.right_value.integer_list_enum_value->integers),
+                        qsort(node->set_expr.right_value.integer_enum_list_value->integers,
+                            node->set_expr.right_value.integer_enum_list_value->count,
+                            sizeof(*node->set_expr.right_value.integer_enum_list_value->integers),
                             iecmpfunc);
                         return;
                     case AST_SET_RIGHT_VALUE_VARIABLE:

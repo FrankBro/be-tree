@@ -142,7 +142,7 @@ static const char* set_right_value_to_string(struct set_right_value value)
             break;
         }
         case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM: {
-            const char* list = integer_list_enum_value_to_string(value.integer_list_enum_value);
+            const char* list = integer_enum_list_value_to_string(value.integer_enum_list_value);
             if(basprintf(&expr, "(%s)", list) < 0) {
                 abort();
             }
@@ -408,7 +408,7 @@ static const char* value_type_to_string(enum betree_value_type_e e)
         case BETREE_SEGMENTS: return "segments";
         case BETREE_FREQUENCY_CAPS: return "frequency_caps";
         case BETREE_INTEGER_ENUM: return "integer_enum";
-        case BETREE_INTEGER_LIST_ENUM: return "integer_list_enum";
+        case BETREE_INTEGER_LIST_ENUM: return "integer_enum_list";
         default: return "INVALID";
     }
 }
@@ -424,30 +424,30 @@ void print_variable(const struct betree_variable* v)
     char* inner = NULL;
     switch(v->value.value_type) {
         case BETREE_BOOLEAN:
-            printf("%s", v->value.bvalue ? "true" : "false");
+            printf("%s", v->value.boolean_value ? "true" : "false");
             break;
         case BETREE_INTEGER:
-            printf("%ld", v->value.ivalue);
+            printf("%ld", v->value.integer_value);
             break;
         case BETREE_FLOAT:
-            printf("%.2f", v->value.fvalue);
+            printf("%.2f", v->value.float_value);
             break;
         case BETREE_STRING:
-            printf("%s", v->value.svalue.string);
+            printf("%s", v->value.string_value.string);
             break;
         case BETREE_INTEGER_LIST:
-            inner = integer_list_value_to_string(v->value.ilvalue);
+            inner = integer_list_value_to_string(v->value.integer_list_value);
             printf("%s", inner);
             break;
         case BETREE_STRING_LIST:
-            inner = string_list_value_to_string(v->value.slvalue);
+            inner = string_list_value_to_string(v->value.string_list_value);
             printf("%s", inner);
             break;
         case BETREE_INTEGER_ENUM:
-            printf("%ld", v->value.ievalue.integer);
+            printf("%ld", v->value.integer_enum_value.integer);
             break;
         case BETREE_INTEGER_LIST_ENUM:
-            inner = integer_list_enum_value_to_string(v->value.ilevalue);
+            inner = integer_enum_list_value_to_string(v->value.integer_enum_list_value);
             printf("%s", inner);
             break;
         case BETREE_SEGMENTS:
@@ -455,7 +455,7 @@ void print_variable(const struct betree_variable* v)
             printf("%s", inner);
             break;
         case BETREE_FREQUENCY_CAPS:
-            inner = frequency_caps_value_to_string(v->value.frequency_value);
+            inner = frequency_caps_value_to_string(v->value.frequency_caps_value);
             printf("%s", inner);
             break;
         default:

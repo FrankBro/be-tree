@@ -160,9 +160,9 @@ static struct betree_string_list* clone_string_list(struct betree_string_list* l
     return clone;
 }
 
-static struct betree_integer_list_enum* clone_integer_list_enum(struct betree_integer_list_enum* list)
+static struct betree_integer_enum_list* clone_integer_enum_list(struct betree_integer_enum_list* list)
 {
-    struct betree_integer_list_enum* clone = make_integer_list_enum(list->count);
+    struct betree_integer_enum_list* clone = make_integer_enum_list(list->count);
     for(size_t i = 0; i < list->count; i++) {
         clone->integers[i] = list->integers[i];
     }
@@ -183,7 +183,7 @@ static struct set_right_value clone_set_right_value(struct set_right_value orig)
             clone.variable_value = clone_attr_var(orig.variable_value);
             break;
         case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM:
-            clone.integer_list_enum_value = clone_integer_list_enum(orig.integer_list_enum_value);
+            clone.integer_enum_list_value = clone_integer_enum_list(orig.integer_enum_list_value);
             break;
         default:
             switch_default_error("Invalid set right value type");

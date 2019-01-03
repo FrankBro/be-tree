@@ -14,28 +14,28 @@ bool test_bool_pred(const char* attr, bool value, const struct betree_event* eve
 {
     const struct betree_variable* pred = event->variables[index];
     return strcmp(pred->attr_var.attr, attr) == 0 && pred->value.value_type == BETREE_BOOLEAN
-        && pred->value.bvalue == value;
+        && pred->value.boolean_value == value;
 }
 
 bool test_integer_pred(const char* attr, int64_t value, const struct betree_event* event, size_t index)
 {
     const struct betree_variable* pred = event->variables[index];
     return strcmp(pred->attr_var.attr, attr) == 0 && pred->value.value_type == BETREE_INTEGER
-        && pred->value.ivalue == value;
+        && pred->value.integer_value == value;
 }
 
 bool test_float_pred(const char* attr, double value, const struct betree_event* event, size_t index)
 {
     const struct betree_variable* pred = event->variables[index];
     return strcmp(pred->attr_var.attr, attr) == 0 && pred->value.value_type == BETREE_FLOAT
-        && feq(pred->value.fvalue, value);
+        && feq(pred->value.float_value, value);
 }
 
 bool test_string_pred(const char* attr, const char* value, const struct betree_event* event, size_t index)
 {
     const struct betree_variable* pred = event->variables[index];
     return strcmp(pred->attr_var.attr, attr) == 0 && pred->value.value_type == BETREE_STRING
-        && strcmp(pred->value.svalue.string, value) == 0;
+        && strcmp(pred->value.string_value.string, value) == 0;
 }
 
 bool test_empty_list(const struct betree_variable* pred)
@@ -49,9 +49,9 @@ bool test_integer_list_pred(
     const struct betree_variable* pred = event->variables[index];
     if(strcmp(pred->attr_var.attr, attr) == 0
         && (test_empty_list(pred) || pred->value.value_type == BETREE_INTEGER_LIST)) {
-        if(list->count == pred->value.ilvalue->count) {
+        if(list->count == pred->value.integer_list_value->count) {
             for(size_t i = 0; i < list->count; i++) {
-                if(list->integers[i] != pred->value.ilvalue->integers[i]) {
+                if(list->integers[i] != pred->value.integer_list_value->integers[i]) {
                     return false;
                 }
             }
@@ -95,9 +95,9 @@ bool test_string_list_pred(
     const struct betree_variable* pred = event->variables[index];
     if(strcmp(pred->attr_var.attr, attr) == 0
         && (test_empty_list(pred) || pred->value.value_type == BETREE_STRING_LIST)) {
-        if(list->count == pred->value.slvalue->count) {
+        if(list->count == pred->value.string_list_value->count) {
             for(size_t i = 0; i < list->count; i++) {
-                if(strcmp(list->strings[i].string, pred->value.slvalue->strings[i].string) != 0) {
+                if(strcmp(list->strings[i].string, pred->value.string_list_value->strings[i].string) != 0) {
                     return false;
                 }
             }
@@ -202,10 +202,10 @@ bool test_frequency_list_pred(
     const struct betree_variable* pred = event->variables[index];
     if(strcmp(pred->attr_var.attr, attr) == 0
         && (test_empty_list(pred) || pred->value.value_type == BETREE_FREQUENCY_CAPS)) {
-        if(list->size == pred->value.frequency_value->size) {
+        if(list->size == pred->value.frequency_caps_value->size) {
             for(size_t i = 0; i < list->size; i++) {
                 struct betree_frequency_cap* target = list->content[i];
-                struct betree_frequency_cap* value = pred->value.frequency_value->content[i];
+                struct betree_frequency_cap* value = pred->value.frequency_caps_value->content[i];
                 if(target->id != value->id || target->timestamp != value->timestamp
                     || target->timestamp_defined != value->timestamp_defined
                     || target->type != value->type || target->value != value->value

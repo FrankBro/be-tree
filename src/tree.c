@@ -147,19 +147,19 @@ static bool is_event_enclosed(const struct betree_variable** preds, const struct
     }
     switch(pred->value.value_type) {
         case BETREE_BOOLEAN:
-            return (cdir->bound.bmin <= pred->value.bvalue) && (cdir->bound.bmax >= pred->value.bvalue);
+            return (cdir->bound.bmin <= pred->value.boolean_value) && (cdir->bound.bmax >= pred->value.boolean_value);
         case BETREE_INTEGER:
-            return (open_left || cdir->bound.imin <= pred->value.ivalue) && (open_right || cdir->bound.imax >= pred->value.ivalue);
+            return (open_left || cdir->bound.imin <= pred->value.integer_value) && (open_right || cdir->bound.imax >= pred->value.integer_value);
         case BETREE_FLOAT:
-            return (open_left || cdir->bound.fmin <= pred->value.fvalue) && (open_right || cdir->bound.fmax >= pred->value.fvalue);
+            return (open_left || cdir->bound.fmin <= pred->value.float_value) && (open_right || cdir->bound.fmax >= pred->value.float_value);
         case BETREE_STRING:
-            return (cdir->bound.smin <= pred->value.svalue.str) && (cdir->bound.smax >= pred->value.svalue.str);
+            return (cdir->bound.smin <= pred->value.string_value.str) && (cdir->bound.smax >= pred->value.string_value.str);
         case BETREE_INTEGER_ENUM:
-            return (cdir->bound.smin <= pred->value.ievalue.ienum) && (cdir->bound.smax >= pred->value.ievalue.ienum);
+            return (cdir->bound.smin <= pred->value.integer_enum_value.ienum) && (cdir->bound.smax >= pred->value.integer_enum_value.ienum);
         case BETREE_INTEGER_LIST_ENUM:
-            if(pred->value.ilevalue->count != 0) {
-                size_t min = pred->value.ilevalue->integers[0].ienum;
-                size_t max = pred->value.ilevalue->integers[pred->value.ilevalue->count - 1].ienum;
+            if(pred->value.integer_enum_list_value->count != 0) {
+                size_t min = pred->value.integer_enum_list_value->integers[0].ienum;
+                size_t max = pred->value.integer_enum_list_value->integers[pred->value.integer_enum_list_value->count - 1].ienum;
                 return (cdir->bound.smin <= min && cdir->bound.smax >= max)
                     || (min <= cdir->bound.smin && max >= cdir->bound.smax);
             }
@@ -167,9 +167,9 @@ static bool is_event_enclosed(const struct betree_variable** preds, const struct
                 return true;
             }
         case BETREE_INTEGER_LIST:
-            if(pred->value.ilvalue->count != 0) {
-                int64_t min = pred->value.ilvalue->integers[0];
-                int64_t max = pred->value.ilvalue->integers[pred->value.ilvalue->count - 1];
+            if(pred->value.integer_list_value->count != 0) {
+                int64_t min = pred->value.integer_list_value->integers[0];
+                int64_t max = pred->value.integer_list_value->integers[pred->value.integer_list_value->count - 1];
                 return (cdir->bound.imin <= min && cdir->bound.imax >= max)
                     || (min <= cdir->bound.imin && max >= cdir->bound.imax);
             }
@@ -177,9 +177,9 @@ static bool is_event_enclosed(const struct betree_variable** preds, const struct
                 return true;
             }
         case BETREE_STRING_LIST:
-            if(pred->value.slvalue->count != 0) {
-                size_t min = pred->value.slvalue->strings[0].str;
-                size_t max = pred->value.slvalue->strings[pred->value.slvalue->count - 1].str;
+            if(pred->value.string_list_value->count != 0) {
+                size_t min = pred->value.string_list_value->strings[0].str;
+                size_t max = pred->value.string_list_value->strings[pred->value.string_list_value->count - 1].str;
                 return (cdir->bound.smin <= min && cdir->bound.smax >= max)
                     || (min <= cdir->bound.smin && max >= cdir->bound.smax);
             }
@@ -1693,34 +1693,34 @@ void event_to_string(const struct betree_event* event, char* buffer)
         const char* attr = pred->attr_var.attr;
         switch(pred->value.value_type) {
             case(BETREE_INTEGER): {
-                length += sprintf(buffer + length, "%s = %" PRIu64, attr, pred->value.ivalue);
+                length += sprintf(buffer + length, "%s = %" PRIu64, attr, pred->value.integer_value);
                 break;
             }
             case(BETREE_FLOAT): {
-                length += sprintf(buffer + length, "%s = %.2f", attr, pred->value.fvalue);
+                length += sprintf(buffer + length, "%s = %.2f", attr, pred->value.float_value);
                 break;
             }
             case(BETREE_BOOLEAN): {
-                const char* value = pred->value.bvalue ? "true" : "false";
+                const char* value = pred->value.boolean_value ? "true" : "false";
                 length += sprintf(buffer + length, "%s = %s", attr, value);
                 break;
             }
             case(BETREE_STRING): {
-                length += sprintf(buffer + length, "%s = \"%s\"", attr, pred->value.svalue.string);
+                length += sprintf(buffer + length, "%s = \"%s\"", attr, pred->value.string_value.string);
                 break;
             }
             case(BETREE_INTEGER_ENUM): {
-                length += sprintf(buffer + length, "%s = %ld", attr, pred->value.ievalue.integer);
+                length += sprintf(buffer + length, "%s = %ld", attr, pred->value.integer_enum_value.integer);
                 break;
             }
             case(BETREE_INTEGER_LIST_ENUM): {
-                const char* integer_list_enum = integer_list_enum_value_to_string(pred->value.ilevalue);
-                length += sprintf(buffer + length, "%s = (%s)", attr, integer_list_enum);
-                bfree((char*)integer_list_enum);
+                const char* integer_enum_list = integer_enum_list_value_to_string(pred->value.integer_enum_list_value);
+                length += sprintf(buffer + length, "%s = (%s)", attr, integer_enum_list);
+                bfree((char*)integer_enum_list);
                 break;
             }
             case(BETREE_INTEGER_LIST): {
-                const char* integer_list = integer_list_value_to_string(pred->value.ilvalue);
+                const char* integer_list = integer_list_value_to_string(pred->value.integer_list_value);
                 length += sprintf(buffer + length, "%s = (%s)", attr, integer_list);
                 bfree((char*)integer_list);
                 break;
@@ -1732,7 +1732,7 @@ void event_to_string(const struct betree_event* event, char* buffer)
                 break;
             }
             case(BETREE_STRING_LIST): {
-                const char* string_list = string_list_value_to_string(pred->value.slvalue);
+                const char* string_list = string_list_value_to_string(pred->value.string_list_value);
                 length += sprintf(buffer + length, "%s = (%s)", attr, string_list);
                 bfree((char*)string_list);
                 break;
@@ -1831,21 +1831,21 @@ void sort_event_lists(struct betree_event* event)
             continue;
         }
         if(pred->value.value_type == BETREE_INTEGER_LIST) {
-            qsort(pred->value.ilvalue->integers,
-                pred->value.ilvalue->count,
-                sizeof(*pred->value.ilvalue->integers),
+            qsort(pred->value.integer_list_value->integers,
+                pred->value.integer_list_value->count,
+                sizeof(*pred->value.integer_list_value->integers),
                 icmpfunc);
         }
         else if(pred->value.value_type == BETREE_STRING_LIST) {
-            qsort(pred->value.slvalue->strings,
-                pred->value.slvalue->count,
-                sizeof(*pred->value.slvalue->strings),
+            qsort(pred->value.string_list_value->strings,
+                pred->value.string_list_value->count,
+                sizeof(*pred->value.string_list_value->strings),
                 scmpfunc);
         }
         else if(pred->value.value_type == BETREE_INTEGER_LIST_ENUM) {
-            qsort(pred->value.ilevalue->integers,
-                pred->value.ilevalue->count,
-                sizeof(*pred->value.ilevalue->integers),
+            qsort(pred->value.integer_enum_list_value->integers,
+                pred->value.integer_enum_list_value->count,
+                sizeof(*pred->value.integer_enum_list_value->integers),
                 iecmpfunc);
         }
     }
@@ -1936,43 +1936,43 @@ void fill_event(const struct config* config, struct betree_event* event)
                 break;
             case BETREE_INTEGER_ENUM: {
                 betree_ienum_t ienum
-                    = try_get_id_for_ienum(config, pred->attr_var, pred->value.ievalue.integer);
-                pred->value.ievalue.var = pred->attr_var.var;
-                pred->value.ievalue.ienum = ienum;
+                    = try_get_id_for_ienum(config, pred->attr_var, pred->value.integer_enum_value.integer);
+                pred->value.integer_enum_value.var = pred->attr_var.var;
+                pred->value.integer_enum_value.ienum = ienum;
                 break;
             }
             case BETREE_INTEGER_LIST_ENUM: {
-                for(size_t j = 0; j < pred->value.ilevalue->count; j++) {
+                for(size_t j = 0; j < pred->value.integer_enum_list_value->count; j++) {
                     betree_ienum_t ienum = try_get_id_for_ienum(
-                        config, pred->attr_var, pred->value.ilevalue->integers[j].integer);
-                    pred->value.ilevalue->integers[j].var = pred->attr_var.var;
-                    pred->value.ilevalue->integers[j].ienum = ienum;
+                        config, pred->attr_var, pred->value.integer_enum_list_value->integers[j].integer);
+                    pred->value.integer_enum_list_value->integers[j].var = pred->attr_var.var;
+                    pred->value.integer_enum_list_value->integers[j].ienum = ienum;
                 }
                 break;
             }
             case BETREE_STRING: {
                 betree_str_t str
-                    = try_get_id_for_string(config, pred->attr_var, pred->value.svalue.string);
-                pred->value.svalue.var = pred->attr_var.var;
-                pred->value.svalue.str = str;
+                    = try_get_id_for_string(config, pred->attr_var, pred->value.string_value.string);
+                pred->value.string_value.var = pred->attr_var.var;
+                pred->value.string_value.str = str;
                 break;
             }
             case BETREE_STRING_LIST: {
-                for(size_t j = 0; j < pred->value.slvalue->count; j++) {
+                for(size_t j = 0; j < pred->value.string_list_value->count; j++) {
                     betree_str_t str = try_get_id_for_string(
-                        config, pred->attr_var, pred->value.slvalue->strings[j].string);
-                    pred->value.slvalue->strings[j].var = pred->attr_var.var;
-                    pred->value.slvalue->strings[j].str = str;
+                        config, pred->attr_var, pred->value.string_list_value->strings[j].string);
+                    pred->value.string_list_value->strings[j].var = pred->attr_var.var;
+                    pred->value.string_list_value->strings[j].str = str;
                 }
                 break;
             }
             case BETREE_FREQUENCY_CAPS: {
-                for(size_t j = 0; j < pred->value.frequency_value->size; j++) {
+                for(size_t j = 0; j < pred->value.frequency_caps_value->size; j++) {
                     betree_str_t str = try_get_id_for_string(config,
                         pred->attr_var,
-                        pred->value.frequency_value->content[j]->namespace.string);
-                    pred->value.frequency_value->content[j]->namespace.var = pred->attr_var.var;
-                    pred->value.frequency_value->content[j]->namespace.str = str;
+                        pred->value.frequency_caps_value->content[j]->namespace.string);
+                    pred->value.frequency_caps_value->content[j]->namespace.var = pred->attr_var.var;
+                    pred->value.frequency_caps_value->content[j]->namespace.str = str;
                 }
                 break;
             }

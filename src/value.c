@@ -19,9 +19,9 @@ struct betree_integer_list* make_integer_list()
     return value;
 }
 
-struct betree_integer_list_enum* make_integer_list_enum(size_t count)
+struct betree_integer_enum_list* make_integer_enum_list(size_t count)
 {
-    struct betree_integer_list_enum* value = bcalloc(sizeof(*value));
+    struct betree_integer_enum_list* value = bcalloc(sizeof(*value));
     if(value == NULL) {
         fprintf(stderr, "%s bcalloc failed", __func__);
         abort();
@@ -146,7 +146,7 @@ char* string_list_value_to_string(struct betree_string_list* list)
     return string;
 }
 
-char* integer_list_enum_value_to_string(struct betree_integer_list_enum* list)
+char* integer_enum_list_value_to_string(struct betree_integer_enum_list* list)
 {
     char* string = NULL;
     for(size_t i = 0; i < list->count; i++) {
@@ -274,7 +274,7 @@ void free_integer_list(struct betree_integer_list* value)
     bfree(value);
 }
 
-void free_integer_list_enum(struct betree_integer_list_enum* value)
+void free_integer_enum_list(struct betree_integer_enum_list* value)
 {
     bfree(value->integers);
     bfree(value);
@@ -326,18 +326,18 @@ void free_value(struct value value)
 {
     switch(value.value_type) {
         case BETREE_INTEGER_LIST: {
-            free_integer_list(value.ilvalue);
+            free_integer_list(value.integer_list_value);
             break;
         }
         case BETREE_INTEGER_LIST_ENUM:
-            free_integer_list_enum(value.ilevalue);
+            free_integer_enum_list(value.integer_enum_list_value);
             break;
         case BETREE_STRING_LIST: {
-            free_string_list(value.slvalue);
+            free_string_list(value.string_list_value);
             break;
         }
         case BETREE_STRING: {
-            bfree((char*)value.svalue.string);
+            bfree((char*)value.string_value.string);
         }
         case BETREE_BOOLEAN:
         case BETREE_INTEGER:
@@ -350,7 +350,7 @@ void free_value(struct value value)
             break;
         }
         case BETREE_FREQUENCY_CAPS: {
-            free_frequency_caps(value.frequency_value);
+            free_frequency_caps(value.frequency_caps_value);
             break;
         }
         default: {

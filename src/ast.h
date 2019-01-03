@@ -134,7 +134,7 @@ struct set_right_value {
         struct betree_integer_list* integer_list_value;
         struct betree_string_list* string_list_value;
         struct attr_var variable_value;
-        struct betree_integer_list_enum* integer_list_enum_value;
+        struct betree_integer_enum_list* integer_enum_list_value;
     };
 };
 

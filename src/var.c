@@ -18,7 +18,7 @@ bool get_float_var(betree_var_t var, const struct betree_variable** preds, doubl
 {
     const struct betree_variable* pred = preds[var];
     if(pred != NULL) {
-        *ret = pred->value.fvalue;
+        *ret = pred->value.float_value;
         return true;
     }
     return false;
@@ -29,7 +29,7 @@ bool get_string_var(
 {
     const struct betree_variable* pred = preds[var];
     if(pred != NULL) {
-        *ret = pred->value.svalue;
+        *ret = pred->value.string_value;
         return true;
     }
     return false;
@@ -40,7 +40,7 @@ bool get_integer_enum_var(
 {
     const struct betree_variable* pred = preds[var];
     if(pred != NULL) {
-        *ret = pred->value.ievalue;
+        *ret = pred->value.integer_enum_value;
         return true;
     }
     return false;
@@ -50,7 +50,7 @@ bool get_integer_var(betree_var_t var, const struct betree_variable** preds, int
 {
     const struct betree_variable* pred = preds[var];
     if(pred != NULL) {
-        *ret = pred->value.ivalue;
+        *ret = pred->value.integer_value;
         return true;
     }
     return false;
@@ -60,7 +60,7 @@ bool get_bool_var(betree_var_t var, const struct betree_variable** preds, bool* 
 {
     const struct betree_variable* pred = preds[var];
     if(pred != NULL) {
-        *ret = pred->value.bvalue;
+        *ret = pred->value.boolean_value;
         return true;
     }
     return false;
@@ -71,7 +71,7 @@ bool get_integer_list_var(
 {
     const struct betree_variable* pred = preds[var];
     if(pred != NULL) {
-        *ret = pred->value.ilvalue;
+        *ret = pred->value.integer_list_value;
         return true;
     }
     return false;
@@ -82,7 +82,7 @@ bool get_string_list_var(
 {
     const struct betree_variable* pred = preds[var];
     if(pred != NULL) {
-        *ret = pred->value.slvalue;
+        *ret = pred->value.string_list_value;
         return true;
     }
     return false;
@@ -104,7 +104,7 @@ bool get_frequency_var(
 {
     const struct betree_variable* pred = preds[var];
     if(pred != NULL) {
-        *ret = pred->value.frequency_value;
+        *ret = pred->value.frequency_caps_value;
         return true;
     }
     return false;
@@ -114,6 +114,6 @@ bool is_empty_list(struct value value)
 {
     return (value.value_type == BETREE_INTEGER_LIST || value.value_type == BETREE_STRING_LIST
                || value.value_type == BETREE_SEGMENTS || value.value_type == BETREE_FREQUENCY_CAPS)
-        && value.ilvalue->count == 0 && value.slvalue->count == 0 && value.segments_value->size == 0
-        && value.frequency_value->size == 0;
+        && value.integer_list_value->count == 0 && value.string_list_value->count == 0 && value.segments_value->size == 0
+        && value.frequency_caps_value->size == 0;
 }
