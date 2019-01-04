@@ -161,9 +161,9 @@ frequencies_loop    : frequency_value                       { $$ = make_frequenc
 ;
 
 frequency_value     : EVENT_LSQUARE EVENT_STRING EVENT_COMMA integer EVENT_COMMA string EVENT_COMMA integer EVENT_COMMA integer EVENT_RSQUARE
-                                                            { $$ = make_frequency_cap($2, $4, $6, true, $8, $10); bfree($2); }
+                                                            { $$ = make_frequency_cap($2, $4, $6, true, $10, $8); bfree($2); }
                     | EVENT_LSQUARE EVENT_LSQUARE EVENT_STRING EVENT_COMMA integer EVENT_COMMA string EVENT_RSQUARE EVENT_COMMA integer EVENT_COMMA integer EVENT_RSQUARE
-                                                            { $$ = make_frequency_cap($3, $5, $7, true, $10, $12); bfree($3); }
+                                                            { $$ = make_frequency_cap($3, $5, $7, true, $12, $10); bfree($3); }
 ;
 
 %%

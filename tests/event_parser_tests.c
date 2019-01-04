@@ -359,9 +359,8 @@ int test_frequency()
                 "[[\"flight\",1,\"ns1\",2,3],[\"flight\",4,\"ns2\",5,6]], \"empty\":[]}",
         &event);
     mu_assert(event->variable_count == 3
-            && test_frequency_list_pred1("single", "flight", 1, "ns", 2, 3, event, 0)
-            && test_frequency_list_pred2(
-                   "two", "flight", 1, "ns1", 2, 3, "flight", 4, "ns2", 5, 6, event, 1)
+            && test_frequency_list_pred1("single", "flight", 1, "ns", 3, 2, event, 0)
+            && test_frequency_list_pred2("two", "flight", 1, "ns1", 3, 2, "flight", 4, "ns2", 6, 5, event, 1)
             && test_frequency_list_pred0("empty", event, 2),
         "all cases");
     free_event(event);
@@ -387,7 +386,7 @@ int test_frequency()
     free_event(event);
     event_parse("{\"new_format\": [[[\"flight\", 1, \"ns\"], 2, 3]]}", &event);
     mu_assert(event->variable_count == 1
-            && test_frequency_list_pred1("new_format", "flight", 1, "ns", 2, 3, event, 0),
+            && test_frequency_list_pred1("new_format", "flight", 1, "ns", 3, 2, event, 0),
         "new format");
     free_event(event);
     return 0;

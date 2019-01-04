@@ -47,7 +47,7 @@ frequency(
     betree_insert_with_constants(tree, 1, constant_count, constants, expr);
     char* event_str;
     const char* cap_type_value = frequency_type_to_string(cap_type);
-    if(basprintf(&event_str, "{\"now\": %ld, \"frequency_caps\": [[\"%s\", %u, \"%s\", %ld, %d]]}", now, cap_type_value, cap_id, cap_ns, timestamp * usec, cap_value) < 0) {
+    if(basprintf(&event_str, "{\"now\": %ld, \"frequency_caps\": [[\"%s\", %u, \"%s\", %d, %ld]]}", now, cap_type_value, cap_id, cap_ns, cap_value, timestamp * usec) < 0) {
         abort();
     }
     struct report* report = make_report();

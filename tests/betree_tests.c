@@ -1574,6 +1574,35 @@ int test_same_id()
     return 0;
 }
 
+int test_frequency_bug()
+{
+    struct betree* tree = betree_make();
+    add_attr_domain_frequency(tree->config, "frequency_caps", false);
+    add_attr_domain_i(tree->config, "now", false);
+
+    const char* expr = "within_frequency_cap(\"flight:ip\", \"3495614\", 1, 5184000)";
+
+    const struct betree_constant* constants[3] = {
+        betree_make_integer_constant("campaign_id", 50650),
+        betree_make_integer_constant("advertiser_id", 6573),
+        betree_make_integer_constant("flight_id", 101801),
+    };
+    const struct betree_sub* sub = betree_make_sub(tree, 0, 3, constants, expr);
+    betree_insert_sub(tree, sub);
+
+    const char* event = "{\"now\": 1541704800, \"frequency_caps\": [[[\"flight:ip\",101801,\"3495614\"],1,1546537569676283]]}";
+    struct report* report = make_report();
+    mu_assert(betree_search(tree, event, report), "");
+
+    fprintf(stderr, "matched = %zu\n", report->matched);
+    mu_assert(report->matched == 0, "");
+
+    free_report(report);
+    betree_free(tree);
+
+    return 0;
+}
+
 int all_tests()
 {
     mu_run_test(test_int_enum);
@@ -1615,9 +1644,8 @@ int all_tests()
     mu_run_test(test_event_out_of_bound);
     mu_run_test(test_list_bug1);
     mu_run_test(test_list_bug2);
-    /*mu_run_test(test_bool);*/
-    /*mu_run_test(test_insert_all);*/
     mu_run_test(test_same_id);
+    mu_run_test(test_frequency_bug);
 
     return 0;
 }

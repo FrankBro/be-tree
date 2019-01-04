@@ -26,7 +26,7 @@ bool within_frequency_caps(const struct betree_frequency_caps* caps,
             else if(!caps->content[i]->timestamp_defined) {
                 return true;
             }
-            else if(((uint64_t)now - (caps->content[i]->timestamp / 1000000)) > length) {
+            else if((now - (caps->content[i]->timestamp / 1000000)) > (int64_t)length) {
                 return true;
             }
             else if(value > caps->content[i]->value) {
