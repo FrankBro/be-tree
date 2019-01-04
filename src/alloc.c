@@ -19,14 +19,14 @@ void* enif_calloc(size_t size)
 
 char* bstrdup(const char *s1)
 {
-  char *str;
-  size_t size = strlen(s1) + 1;
+    char *str;
+    size_t size = strlen(s1) + 1;
 
-  str = bmalloc(size);
-  if (str) {
-    memcpy(str, s1, size);
-  }
-  return str;
+    str = bmalloc(size);
+    if (str) {
+        memcpy(str, s1, size);
+    }
+    return str;
 }
 
 __attribute__((__format__ (__printf__, 2, 0)))
