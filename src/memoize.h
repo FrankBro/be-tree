@@ -3,8 +3,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-struct ast_node;
-
 typedef uint64_t betree_pred_t;
 static const betree_pred_t INVALID_PRED = UINT64_MAX;
 
