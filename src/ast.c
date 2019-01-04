@@ -2811,6 +2811,7 @@ bool is_variable_valid(struct attr_var attr_var)
 {
     if(attr_var.var == INVALID_VAR) {
         fprintf(stderr, "Invalid variable: %s\n", attr_var.attr);
+        return false;
     }
     return true;
 }
