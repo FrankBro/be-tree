@@ -92,7 +92,8 @@ struct ast_node* ast_bool_expr_unary_create(struct ast_node* expr)
 
 // Instant here means simply fetching a variable
 enum scores {
-    instant_cost = 1,
+    instant_cost = 0,
+    variable_fetch_cost = 1,
     single_length_cost = 5,
     double_length_cost = 10,
     complex_cost = 20,
@@ -101,15 +102,13 @@ enum scores {
 static uint64_t score_node(struct ast_node* node)
 {
     switch(node->type) {
-        case AST_TYPE_IS_NULL_EXPR:
-            // faster than instant
-            return instant_cost - 1;
-        case AST_TYPE_COMPARE_EXPR:
-            return instant_cost;
-        case AST_TYPE_EQUALITY_EXPR:
-            return instant_cost;
+        case AST_TYPE_IS_NULL_EXPR: return instant_cost;
+        case AST_TYPE_COMPARE_EXPR: return variable_fetch_cost;
+        case AST_TYPE_EQUALITY_EXPR: return variable_fetch_cost;
         case AST_TYPE_BOOL_EXPR:
             switch(node->bool_expr.op) {
+                case AST_BOOL_VARIABLE: return variable_fetch_cost;
+                case AST_BOOL_LITERAL: return instant_cost;
                 case AST_BOOL_OR:
                 case AST_BOOL_AND:
                     // lhs + rhs
@@ -118,49 +117,20 @@ static uint64_t score_node(struct ast_node* node)
                 case AST_BOOL_NOT:
                     // expr
                     return score_node(node->bool_expr.unary.expr);
-                case AST_BOOL_VARIABLE:
-                    // instant
-                    return instant_cost;
-                case AST_BOOL_LITERAL:
-                    // faster than instant
-                    return instant_cost - 1;
                 default:
                     abort();
             }
-        case AST_TYPE_SET_EXPR:
-            // depend on constant length
-            return single_length_cost;
-        case AST_TYPE_LIST_EXPR:
-            // depend on constant and variable length
-            switch(node->list_expr.op) {
-                case AST_LIST_ONE_OF:
-                    return double_length_cost;
-                case AST_LIST_NONE_OF:
-                    return double_length_cost;
-                case AST_LIST_ALL_OF:
-                    return double_length_cost;
-                default:
-                    abort();
-            }
+        case AST_TYPE_SET_EXPR: return single_length_cost;
+        case AST_TYPE_LIST_EXPR: return double_length_cost;
         case AST_TYPE_SPECIAL_EXPR:
             switch(node->special_expr.type) {
-                case AST_SPECIAL_FREQUENCY:
-                    // depend on variable length
-                    return complex_cost;
-                case AST_SPECIAL_SEGMENT:
-                    // depend on variable length
-                    return complex_cost;
-                case AST_SPECIAL_GEO:
-                    // instant
-                    return instant_cost;
-                case AST_SPECIAL_STRING:
-                    // depend on constant and variable length
-                    return complex_cost;
-                default:
-                    abort();
+                case AST_SPECIAL_FREQUENCY: return complex_cost;
+                case AST_SPECIAL_SEGMENT: return complex_cost;
+                case AST_SPECIAL_GEO: return instant_cost;
+                case AST_SPECIAL_STRING: return complex_cost;
+                default: abort();
             }
-        default:
-            abort();
+        default: abort();
     }
 }
 
