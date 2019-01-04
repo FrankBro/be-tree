@@ -2807,58 +2807,54 @@ bool var_exists(const struct config* config, const char* attr)
     return false;
 }
 
+bool is_variable_valid(struct attr_var attr_var)
+{
+    if(attr_var.var == INVALID_VAR) {
+        fprintf(stderr, "Invalid variable: %s\n", attr_var.attr);
+    }
+    return true;
+}
+
 bool all_variables_in_config(const struct config* config, const struct ast_node* node)
 {
     switch(node->type) {
-        case AST_TYPE_IS_NULL_EXPR:
-            return node->is_null_expr.attr_var.var != INVALID_VAR;
-        case AST_TYPE_COMPARE_EXPR:
-            return node->compare_expr.attr_var.var != INVALID_VAR;
-        case AST_TYPE_EQUALITY_EXPR:
-            return node->equality_expr.attr_var.var != INVALID_VAR;
+        case AST_TYPE_IS_NULL_EXPR: return is_variable_valid(node->is_null_expr.attr_var);
+        case AST_TYPE_COMPARE_EXPR: return is_variable_valid(node->compare_expr.attr_var);
+        case AST_TYPE_EQUALITY_EXPR: return is_variable_valid(node->equality_expr.attr_var);
+        case AST_TYPE_LIST_EXPR: return is_variable_valid(node->list_expr.attr_var);
         case AST_TYPE_BOOL_EXPR:
             switch(node->bool_expr.op) {
+                case AST_BOOL_VARIABLE: return is_variable_valid(node->bool_expr.variable);
+                case AST_BOOL_LITERAL: return true;
                 case AST_BOOL_OR:
                 case AST_BOOL_AND:
                     return all_variables_in_config(config, node->bool_expr.binary.lhs)
                         && all_variables_in_config(config, node->bool_expr.binary.rhs);
                 case AST_BOOL_NOT:
                     return all_variables_in_config(config, node->bool_expr.unary.expr);
-                case AST_BOOL_VARIABLE:
-                    return node->bool_expr.variable.var != INVALID_VAR;
-                case AST_BOOL_LITERAL:
-                    return true;
-                default:
-                    switch_default_error("Invalid bool expr op");
-                    return false;
+                default: abort();
             }
         case AST_TYPE_SET_EXPR:
             if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
-                return node->set_expr.left_value.variable_value.var != INVALID_VAR;
+                return is_variable_valid(node->set_expr.left_value.variable_value);
             }
-            if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
-                return node->set_expr.right_value.variable_value.var != INVALID_VAR;
+            else if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
+                return is_variable_valid(node->set_expr.right_value.variable_value);
             }
             fprintf(stderr, "Invalid set expr");
             abort();
             return false;
-        case AST_TYPE_LIST_EXPR:
-            return node->list_expr.attr_var.var != INVALID_VAR;
         case AST_TYPE_SPECIAL_EXPR:
             switch(node->special_expr.type) {
+                case AST_SPECIAL_GEO: return true;
+                case AST_SPECIAL_STRING: return is_variable_valid(node->special_expr.string.attr_var);
                 case AST_SPECIAL_FREQUENCY:
-                    return node->special_expr.frequency.attr_var.var != INVALID_VAR
-                        && node->special_expr.frequency.now.var != INVALID_VAR;
+                    return is_variable_valid(node->special_expr.frequency.attr_var)
+                        && is_variable_valid(node->special_expr.frequency.now);
                 case AST_SPECIAL_SEGMENT:
-                    return node->special_expr.segment.attr_var.var != INVALID_VAR
-                        && node->special_expr.segment.now.var != INVALID_VAR;
-                case AST_SPECIAL_GEO:
-                    return true;
-                case AST_SPECIAL_STRING:
-                    return node->special_expr.string.attr_var.var != INVALID_VAR;
-                default:
-                    switch_default_error("Invalid special expr type");
-                    return false;
+                    return is_variable_valid(node->special_expr.segment.attr_var)
+                        && is_variable_valid(node->special_expr.segment.now);
+                default: abort();
             }
         default:
             switch_default_error("Invalid node type");
