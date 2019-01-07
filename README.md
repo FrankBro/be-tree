@@ -58,16 +58,24 @@ As you can notice, the event itself can have a value out of bound, this might ma
 
 ## Inserting
 
-Here are the steps when you insert an expression in the three:
+Here are the steps when you insert an expression in the tree:
+
+First we must call `betree_make_sub` for each expressions, which does the following.
 
 * Parse: Make sure we can parse the expression. During that step we reorder the `and` and `or` expressions to put the simplest to evaluate first.
-* Is valid: Make sure the previous constraints created during the configuring are valid
 * Assign var ids: Every variables is assigned an id for quick fetching in the events later
+* Validation:
+    * Are all the variables in the expression present in the config
+    * Make sure no integer enum is used in a comparision expression
+* Assign constants: Replace all the constants in an expression to their value. This is only used for the frequency expression as of now.
 * Assign str ids: Every string is assigned an id (unique to each variable) to compare on instead of doing string comparison
 * Sort lists: Sort the integer and string lists in the expression, to speed up searching in it but also to make sure in the next step, the same list is registered as the same predicate.
 * Fix floats with no fractions: Some expressions will use float variable to compare with what would be parsed as an integer. We will fix these to make sure the constants are floats.
+* Change boundaries: We use the expression to adjust the boundaries of the variables in the configuration, trying to minimize the boundaries for better performance if possible
 * Assign pred ids: We give a predicate id to every sub-expression that is present more than once, this will be used later by the memoize
 * Create the sub, which will create the short-circuit bitmap explained later, and insert it in the tree
+
+Once we've created a sub for every expressions we want to insert, we can finally call `betree_insert_sub` with all of them. 
 
 From now on, we follow the be-tree logic, which goes as follow:
 
@@ -104,5 +112,4 @@ At the end of this, we return a report with all the subscriptions id found to be
 * Float domain should allow a way to control the splitting of float values. Right now it splits like integers but that won't work well for values that have a small domain (eg -0.01 to 0.01). Use domain to find a good split
 * betree_remove should remove useless preds from the memoize
 * What if we wrote the lexers/parsers to have the set of possible attributes directly since we know them. While we never use the string attribute during runtime, it slows insertion.
-* All calloc/realloc/free need to be in config, use a function pointer so we can use enif_alloc/enif_realloc/enif_free
 
