@@ -1821,6 +1821,7 @@ bool betree_exists_with_preds(const struct config* config, const struct betree_v
             break;
         }
     }
+    bfree(subs.subs);
     free_memoize(memoize);
     bfree(undefined);
     bfree(preds);
