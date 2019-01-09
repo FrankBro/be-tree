@@ -106,7 +106,7 @@ size_t read_betree_exprs(struct betree* tree)
     size_t count = 0;
     const struct betree_sub* subs[MAX_EXPRS];
 
-    enum e { constant_count = 6 };
+    enum e { constant_count = 3 };
     while(fgets(line, sizeof(line), f)) {
         char* ignore = fgets(constants_line, sizeof(constants_line), constants_f);
         (void)ignore;
@@ -124,6 +124,8 @@ size_t read_betree_exprs(struct betree* tree)
         const struct betree_sub* sub = betree_make_sub(tree, count, constant_count, constants, line);
         subs[count] = sub;
         count++;
+        betree_free_constants(constant_count, (struct betree_constant**) constants);
+        free(copy);
         if(MAX_EXPRS != 0 && count == MAX_EXPRS) {
             break;
         }
@@ -236,6 +238,10 @@ int main(int argc, char** argv)
 
     CALLGRIND_STOP_INSTRUMENTATION;
     CALLGRIND_DUMP_STATS;
+
+    for(size_t i = 0; i < events.count; i++) {
+        free(events.events[i]);
+    }
 
     double evaluated_average = (double)evaluated_sum / (double)MAX_EVENTS;
     double matched_average = (double)matched_sum / (double)MAX_EVENTS;
