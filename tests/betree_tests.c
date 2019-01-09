@@ -1005,7 +1005,7 @@ int test_splitable_string_domain()
         mu_assert(betree_search(tree, "{\"s\": \"2\"}", report), "");
 
         mu_assert(report->matched == 1, "matched 1");
-        mu_assert(report->evaluated == 1, "only had to evaluate top");
+        mu_assert(report->evaluated == 2, "will eval 2 because 0 is in first cdir, second cdir is open_right and therefore will eval");
 
         betree_free(tree);
         free_report(report);

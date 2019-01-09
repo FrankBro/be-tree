@@ -145,6 +145,7 @@ static bool is_event_enclosed(const struct betree_variable** preds, const struct
     if(pred == NULL) {
         return true;
     }
+    // No open_left for smin because it's always 0
     switch(pred->value.value_type) {
         case BETREE_BOOLEAN:
             return (cdir->bound.bmin <= pred->value.boolean_value) && (cdir->bound.bmax >= pred->value.boolean_value);
@@ -153,15 +154,16 @@ static bool is_event_enclosed(const struct betree_variable** preds, const struct
         case BETREE_FLOAT:
             return (open_left || cdir->bound.fmin <= pred->value.float_value) && (open_right || cdir->bound.fmax >= pred->value.float_value);
         case BETREE_STRING:
-            return (cdir->bound.smin <= pred->value.string_value.str) && (cdir->bound.smax >= pred->value.string_value.str);
+            return (cdir->bound.smin <= pred->value.string_value.str) && (open_right || cdir->bound.smax >= pred->value.string_value.str);
         case BETREE_INTEGER_ENUM:
-            return (cdir->bound.smin <= pred->value.integer_enum_value.ienum) && (cdir->bound.smax >= pred->value.integer_enum_value.ienum);
+            return (cdir->bound.smin <= pred->value.integer_enum_value.ienum) && (open_right || cdir->bound.smax >= pred->value.integer_enum_value.ienum);
         case BETREE_INTEGER_LIST_ENUM:
             if(pred->value.integer_enum_list_value->count != 0) {
                 size_t min = pred->value.integer_enum_list_value->integers[0].ienum;
                 size_t max = pred->value.integer_enum_list_value->integers[pred->value.integer_enum_list_value->count - 1].ienum;
-                return (cdir->bound.smin <= min && cdir->bound.smax >= max)
-                    || (min <= cdir->bound.smin && max >= cdir->bound.smax);
+                size_t bound_min = cdir->bound.smin;
+                size_t bound_max = open_right ? SIZE_MAX : cdir->bound.smax;
+                return min <= bound_max && bound_min <= max;
             }
             else {
                 return true;
@@ -170,8 +172,9 @@ static bool is_event_enclosed(const struct betree_variable** preds, const struct
             if(pred->value.integer_list_value->count != 0) {
                 int64_t min = pred->value.integer_list_value->integers[0];
                 int64_t max = pred->value.integer_list_value->integers[pred->value.integer_list_value->count - 1];
-                return (cdir->bound.imin <= min && cdir->bound.imax >= max)
-                    || (min <= cdir->bound.imin && max >= cdir->bound.imax);
+                int64_t bound_min = open_left ? INT64_MIN : cdir->bound.imin;
+                int64_t bound_max = open_right ? INT64_MAX : cdir->bound.imax;
+                return min <= bound_max && bound_min <= max;
             }
             else {
                 return true;
@@ -180,8 +183,9 @@ static bool is_event_enclosed(const struct betree_variable** preds, const struct
             if(pred->value.string_list_value->count != 0) {
                 size_t min = pred->value.string_list_value->strings[0].str;
                 size_t max = pred->value.string_list_value->strings[pred->value.string_list_value->count - 1].str;
-                return (cdir->bound.smin <= min && cdir->bound.smax >= max)
-                    || (min <= cdir->bound.smin && max >= cdir->bound.smax);
+                size_t bound_min = cdir->bound.smin;
+                size_t bound_max = open_right ? SIZE_MAX : cdir->bound.smax;
+                return min <= bound_max && bound_min <= max;
             }
             else {
                 return true;

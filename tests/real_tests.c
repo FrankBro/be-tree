@@ -28,6 +28,10 @@
 #define MAX_EXPR_CHARACTERS 17000
 #define MAX_CONSTANT_CHARACTERS 20
 
+const char* EXPRS_FILE = "data/betree_exprs";
+const char* CONSTANTS_FILE = "data/betree_constants";
+const char* EVENTS_FILE = "data/betree_events";
+
 struct betree_events {
     size_t count;
     char** events;
@@ -74,7 +78,7 @@ int event_parse(const char* text, struct betree_event** event);
 
 size_t read_betree_events(struct betree_events* events)
 {
-    FILE* f = fopen("data/betree_events", "r");
+    FILE* f = fopen(EVENTS_FILE, "r");
     size_t count = 0;
 
     char line[MAX_EVENT_CHARACTERS]; // Arbitrary from what I've seen
@@ -93,8 +97,8 @@ size_t read_betree_events(struct betree_events* events)
 size_t read_betree_exprs(struct betree* tree)
 {
 
-    FILE* f = fopen("data/betree_exprs", "r");
-    FILE* constants_f = fopen("data/betree_constants", "r");
+    FILE* f = fopen(EXPRS_FILE, "r");
+    FILE* constants_f = fopen(CONSTANTS_FILE, "r");
 
     //char* lines[MAX_EXPRS];
     char line[MAX_EXPR_CHARACTERS]; // Arbitrary from what I've seen
