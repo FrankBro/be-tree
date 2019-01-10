@@ -8,140 +8,7 @@
 #include "tree.h"
 #include "utils.h"
 
-#define SEP_DASH "------------------------------------------------------"
 #define SEP_SPACE "                                                      "
-
-static void print_dashs(uint64_t level)
-{
-    printf("%.*s", (int)level * 2, SEP_DASH);
-}
-
-static void print_lnode(const struct lnode* lnode, uint64_t level)
-{
-    if(lnode == NULL) {
-        return;
-    }
-    print_dashs(level);
-    printf(" lnode (%zu) [", lnode->max);
-    for(size_t i = 0; i < lnode->sub_count; i++) {
-        printf("%" PRIu64, lnode->subs[i]->id);
-        if(i != lnode->sub_count - 1) {
-            printf(", ");
-        }
-    }
-    printf("]");
-}
-
-static void print_cnode(const struct config* config, const struct cnode* cnode, uint64_t level);
-
-static void print_cdir(const struct config* config, const struct cdir* cdir, uint64_t level)
-{
-    if(cdir == NULL) {
-        return;
-    }
-    print_dashs(level);
-    switch(cdir->bound.value_type) {
-        case(BETREE_INTEGER):
-        case(BETREE_INTEGER_LIST):
-            printf(" cdir [%" PRIu64 ", %" PRIu64 "]", cdir->bound.imin, cdir->bound.imax);
-            break;
-        case(BETREE_FLOAT): {
-            printf(" cdir [%.2f, %.2f]", cdir->bound.fmin, cdir->bound.fmax);
-            break;
-        }
-        case(BETREE_BOOLEAN): {
-            const char* min = cdir->bound.bmin ? "true" : "false";
-            const char* max = cdir->bound.bmax ? "true" : "false";
-            printf(" cdir [%s, %s]", min, max);
-            break;
-        }
-        case(BETREE_STRING):
-        case(BETREE_STRING_LIST):
-        case(BETREE_INTEGER_ENUM):
-        case(BETREE_INTEGER_LIST_ENUM):
-            printf(" cdir [%zu , %zu]", cdir->bound.smin, cdir->bound.smax);
-            break;
-        case(BETREE_SEGMENTS): {
-            fprintf(stderr, "%s a segments value cdir should never happen for now", __func__);
-            abort();
-        }
-        case(BETREE_FREQUENCY_CAPS): {
-            fprintf(stderr, "%s a frequency value cdir should never happen for now", __func__);
-            abort();
-        }
-        default: {
-            switch_default_error("Invalid bound value type");
-        }
-    }
-    if(cdir->cnode != NULL) {
-        printf("\n");
-        print_cnode(config, cdir->cnode, level + 1);
-    }
-    if(cdir->lchild != NULL) {
-        printf("\n");
-        print_cdir(config, cdir->lchild, level + 1);
-    }
-    if(cdir->rchild != NULL) {
-        printf("\n");
-        print_cdir(config, cdir->rchild, level + 1);
-    }
-}
-
-static void print_pnode(const struct config* config, const struct pnode* pnode, uint64_t level)
-{
-    if(pnode == NULL) {
-        return;
-    }
-    print_dashs(level);
-    printf(" pnode %s (%f)", pnode->attr_var.attr, pnode->score);
-    if(pnode->cdir != NULL) {
-        printf("\n");
-        print_cdir(config, pnode->cdir, level + 1);
-    }
-}
-
-static void print_pdir(const struct config* config, const struct pdir* pdir, uint64_t level)
-{
-    if(pdir == NULL) {
-        return;
-    }
-    print_dashs(level);
-    printf(" pdir");
-    for(size_t i = 0; i < pdir->pnode_count; i++) {
-        const struct pnode* pnode = pdir->pnodes[i];
-        if(pnode != NULL) {
-            printf("\n");
-            print_pnode(config, pnode, level + 1);
-        }
-    }
-}
-
-static void print_cnode(const struct config* config, const struct cnode* cnode, uint64_t level)
-{
-    if(cnode == NULL) {
-        return;
-    }
-    print_dashs(level);
-    printf(" cnode");
-    if(cnode->lnode != NULL) {
-        printf("\n");
-        print_lnode(cnode->lnode, level + 1);
-    }
-    if(cnode->pdir != NULL) {
-        printf("\n");
-        print_pdir(config, cnode->pdir, level + 1);
-    }
-}
-
-void print_be_tree(const struct betree* tree)
-{
-    print_cnode(tree->config, tree->cnode, 0);
-    printf("\n");
-}
-
-// -----------------------------------------------------------------------------
-// dot
-// -----------------------------------------------------------------------------
 
 static bool should_print_cnode(const struct cnode* cnode)
 {
@@ -214,7 +81,7 @@ static const char* get_path_cdir(const struct config* config, const struct cdir*
         case(BETREE_INTEGER):
         case(BETREE_INTEGER_LIST):
             if(basprintf(&name,
-                   "%s_%" PRIu64 "_%" PRIu64,
+                   "%s_%lu_%lu",
                    parent_path,
                    cdir->bound.imin,
                    cdir->bound.imax)
@@ -348,9 +215,14 @@ static void write_dot_file_lnode_names(
         fprintf(f, "\"%s_subs\" [label=<\\\{", name);
         for(size_t i = 0; i < lnode->sub_count; i++) {
             if(i != 0) {
-                fprintf(f, ", ");
+                if(i % 5 == 0) {
+                    fprintf(f, "<br/>");
+                }
+                else {
+                    fprintf(f, ", ");
+                }
             }
-            fprintf(f, "S<sub>%" PRIu64 "</sub>", lnode->subs[i]->id);
+            fprintf(f, "S<sub>%lu</sub>", lnode->subs[i]->id);
         }
         fprintf(f, "\\}>, color=lightblue1, fillcolor=lightblue1, style=filled, shape=record]\n");
     }
@@ -381,7 +253,7 @@ static void write_dot_file_cdir_td(FILE* f,
     if(current_depth == 0) {
         print_spaces(f, level);
         if(cdir == NULL) {
-            fprintf(f, "<td colspan=\"%" PRIu64 "\"></td>\n", colspan);
+            fprintf(f, "<td colspan=\"%lu\"></td>\n", colspan);
         }
         else {
             const char* name = get_name_cdir(config, cdir);
@@ -389,7 +261,7 @@ static void write_dot_file_cdir_td(FILE* f,
                 case(BETREE_INTEGER):
                 case(BETREE_INTEGER_LIST):
                     fprintf(f,
-                        "<td colspan=\"%" PRIu64 "\" port=\"%s\">[%" PRIu64 ", %" PRIu64 "]</td>\n",
+                        "<td colspan=\"%lu\" port=\"%s\">[%ld, %ld]</td>\n",
                         colspan,
                         name,
                         cdir->bound.imin,
@@ -397,7 +269,7 @@ static void write_dot_file_cdir_td(FILE* f,
                     break;
                 case(BETREE_FLOAT): {
                     fprintf(f,
-                        "<td colspan=\"%" PRIu64 "\" port=\"%s\">[%.0f, %.0f]</td>\n",
+                        "<td colspan=\"%lu\" port=\"%s\">[%.0f, %.0f]</td>\n",
                         colspan,
                         name,
                         cdir->bound.fmin,
@@ -408,7 +280,7 @@ static void write_dot_file_cdir_td(FILE* f,
                     const char* min = cdir->bound.bmin ? "true" : "false";
                     const char* max = cdir->bound.bmax ? "true" : "false";
                     fprintf(f,
-                        "<td colspan=\"%" PRIu64 "\" port=\"%s\">[%s, %s]</td>\n",
+                        "<td colspan=\"%lu\" port=\"%s\">[%s, %s]</td>\n",
                         colspan,
                         name,
                         min,
@@ -420,7 +292,7 @@ static void write_dot_file_cdir_td(FILE* f,
                 case(BETREE_INTEGER_ENUM):
                 case(BETREE_INTEGER_LIST_ENUM):
                     fprintf(f,
-                        "<td colspan=\"%" PRIu64 "\" port=\"%s\">[%zu, %zu]</td>\n",
+                        "<td colspan=\"%lu\" port=\"%s\">[%zu, %zu]</td>\n",
                         colspan,
                         name,
                         cdir->bound.smin,
