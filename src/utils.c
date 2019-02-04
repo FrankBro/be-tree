@@ -7,8 +7,8 @@
 #include <string.h>
 
 #include "betree.h"
-#include "value.h"
 #include "utils.h"
+#include "value.h"
 
 bool bmin(bool a, bool b)
 {
@@ -50,16 +50,6 @@ size_t smax(size_t a, size_t b)
     return a > b ? a : b;
 }
 
-int64_t random_in_range(int64_t min, int64_t max)
-{
-    return rand() % (max + 1 - min) + min;
-}
-
-bool random_bool()
-{
-    return random_in_range(false, true);
-}
-
 bool feq(double a, double b)
 {
     return fabs(a - b) < __DBL_EPSILON__;
@@ -88,35 +78,41 @@ void betree_assert(bool should_abort, enum error_e error, bool expr)
 
 int icmpfunc(const void *a, const void *b) 
 {
-  const int64_t x = *(int64_t*)a;
-  const int64_t y = *(int64_t*)b;
-  int64_t comp =  x - y;
-  if (comp < 0)
-    return -1;
-  if (comp > 0)
-    return 1;
-  return comp;
+    const int64_t x = *(int64_t*)a;
+    const int64_t y = *(int64_t*)b;
+    int64_t comp =  x - y;
+    if (comp < 0) {
+        return -1;
+    }
+    if (comp > 0) {
+        return 1;
+    }
+    return comp;
 }
 
 int scmpfunc(const void *a, const void *b) 
 {
-  const struct string_value* x = (struct string_value*)a;
-  const struct string_value* y = (struct string_value*)b;
-  if (x->str < y->str)
-    return -1;
-  if (x->str > y->str)
-    return 1;
-  return 0;
+    const struct string_value* x = (struct string_value*)a;
+    const struct string_value* y = (struct string_value*)b;
+    if (x->str < y->str) {
+        return -1;
+    }
+    if (x->str > y->str) {
+        return 1;
+    }
+    return 0;
 }
 
 int iecmpfunc(const void *a, const void *b) 
 {
-  const struct integer_enum_value* x = (struct integer_enum_value*)a;
-  const struct integer_enum_value* y = (struct integer_enum_value*)b;
-  if (x->ienum < y->ienum)
-    return -1;
-  if (x->ienum > y->ienum)
-    return 1;
-  return 0;
+    const struct integer_enum_value* x = (struct integer_enum_value*)a;
+    const struct integer_enum_value* y = (struct integer_enum_value*)b;
+    if (x->ienum < y->ienum) {
+        return -1;
+    }
+    if (x->ienum > y->ienum) {
+        return 1;
+    }
+    return 0;
 }
 

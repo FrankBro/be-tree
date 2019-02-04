@@ -28,6 +28,7 @@ VALGRIND=valgrind --tool=memcheck --leak-check=full --track-origins=yes --suppre
 CALLGRIND=valgrind --tool=callgrind --instr-atstart=no
 CACHEGRIND=valgrind --tool=cachegrind
 MASSIF=valgrind --tool=massif
+TIDY=clang-tidy
 
 ERTS_INCLUDE_DIR ?= $(shell erl -noshell -s init stop -eval "io:format(\"~ts/erts-~ts/include/\", [code:root_dir(), erlang:system_info(version)]).")
 ERL_INTERFACE_INCLUDE_DIR ?= $(shell erl -noshell -s init stop -eval "io:format(\"~ts\", [code:lib_dir(erl_interface, include)]).")
@@ -120,6 +121,7 @@ valgrind:
 	$(VALGRIND) build/tests/printer_tests
 	$(VALGRIND) build/tests/report_tests
 	$(VALGRIND) build/tests/special_tests
+	#$(VALGRIND) build/tests/real_tests 1
 
 callgrind:
 	$(CALLGRIND) build/tests/real_tests 1
@@ -129,4 +131,24 @@ cachegrind:
 
 massif:
 	$(MASSIF) build/tests/real_tests 1
+
+tidy:
+	#$(TIDY) src/alloc.c -checks='*' -- -Isrc
+	#$(TIDY) src/ast.c -checks='*' -- -Isrc
+	#$(TIDY) src/ast_compare.c -checks='*' -- -Isrc
+	#$(TIDY) src/betree.c -checks='*' -- -Isrc
+	#$(TIDY) src/clone.c -checks='*' -- -Isrc
+	#$(TIDY) src/config.c -checks='*' -- -Isrc
+	#$(TIDY) src/debug.c -checks='*' -- -Isrc
+	#$(TIDY) src/hashmap.c -checks='*' -- -Isrc
+	#$(TIDY) src/helper.c -checks='*' -- -Isrc
+	#$(TIDY) src/jsw_rbtree.c -checks='*' -- -Isrc
+	#$(TIDY) src/map.c -checks='*' -- -Isrc
+	#$(TIDY) src/memoize.c -checks='*' -- -Isrc
+	#$(TIDY) src/printer.c -checks='*' -- -Isrc
+	#$(TIDY) src/special.c -checks='*' -- -Isrc
+	#$(TIDY) src/tree.c -checks='*' -- -Isrc
+	#$(TIDY) src/utils.c -checks='*' -- -Isrc
+	#$(TIDY) src/value.c -checks='*' -- -Isrc
+	#$(TIDY) src/var.c -checks='*' -- -Isrc
 

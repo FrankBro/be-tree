@@ -23,7 +23,7 @@ struct map_node_t {
 static unsigned map_hash(const char *str) {
     unsigned hash = 5381;
     while (*str) {
-        hash = ((hash << 5) + hash) ^ *str++;
+        hash = ((hash << 5u) + hash) ^ (unsigned)*str++;
     }
     return hash;
 }
@@ -34,7 +34,9 @@ static map_node_t *map_newnode(const char *key, void *value, int vsize) {
     int ksize = strlen(key) + 1;
     int voffset = ksize + ((sizeof(void*) - ksize) % sizeof(void*));
     node = bmalloc(sizeof(*node) + voffset + vsize);
-    if (!node) return NULL;
+    if (!node) {
+        return NULL;
+    }
     memcpy(node + 1, key, ksize);
     node->hash = map_hash(key);
     node->value = ((char*) (node + 1)) + voffset;
@@ -143,17 +145,23 @@ int map_set_(map_base_t *m, const char *key, void *value, int vsize) {
     }
     /* Add new node */
     node = map_newnode(key, value, vsize);
-    if (node == NULL) goto fail;
+    if (node == NULL) {
+        goto fail;
+    }
     if (m->nnodes >= m->nbuckets) {
-        n = (m->nbuckets > 0) ? (m->nbuckets << 1) : 1;
+        n = (m->nbuckets > 0) ? (m->nbuckets << 1u) : 1;
         err = map_resize(m, n);
-        if (err) goto fail;
+        if (err) {
+            goto fail;
+        }
     }
     map_addnode(m, node);
     m->nnodes++;
     return 0;
-    fail:
-    if (node) bfree(node);
+fail:
+    if (node) {
+        bfree(node);
+    }
     return -1;
 }
 
@@ -181,9 +189,12 @@ map_iter_t map_iter_(void) {
 const char *map_next_(map_base_t *m, map_iter_t *iter) {
     if (iter->node) {
         iter->node = iter->node->next;
-        if (iter->node == NULL) goto nextBucket;
-    } else {
-        nextBucket:
+        if (iter->node == NULL) {
+            goto nextBucket;
+        }
+    } 
+    else {
+nextBucket:
         do {
             if (++iter->bucketidx >= m->nbuckets) {
                 return NULL;

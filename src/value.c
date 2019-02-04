@@ -6,8 +6,8 @@
 #include "alloc.h"
 #include "ast.h"
 #include "betree.h"
-#include "value.h"
 #include "utils.h"
+#include "value.h"
 
 struct betree_integer_list* make_integer_list()
 {
@@ -241,31 +241,29 @@ enum frequency_type_e get_type_from_string(const char* stype)
     if(strcmp(stype, "advertiser") == 0) {
         return FREQUENCY_TYPE_ADVERTISER;
     }
-    else if(strcmp(stype, "advertiser:ip") == 0) {
+    if(strcmp(stype, "advertiser:ip") == 0) {
         return FREQUENCY_TYPE_ADVERTISERIP;
     }
-    else if(strcmp(stype, "campaign") == 0) {
+    if(strcmp(stype, "campaign") == 0) {
         return FREQUENCY_TYPE_CAMPAIGN;
     }
-    else if(strcmp(stype, "campaign:ip") == 0) {
+    if(strcmp(stype, "campaign:ip") == 0) {
         return FREQUENCY_TYPE_CAMPAIGNIP;
     }
-    else if(strcmp(stype, "product") == 0) {
+    if(strcmp(stype, "product") == 0) {
         return FREQUENCY_TYPE_PRODUCT;
     }
-    else if(strcmp(stype, "product:ip") == 0) {
+    if(strcmp(stype, "product:ip") == 0) {
         return FREQUENCY_TYPE_PRODUCTIP;
     }
-    else if(strcmp(stype, "flight") == 0) {
+    if(strcmp(stype, "flight") == 0) {
         return FREQUENCY_TYPE_FLIGHT;
     }
-    else if(strcmp(stype, "flight:ip") == 0) {
+    if(strcmp(stype, "flight:ip") == 0) {
         return FREQUENCY_TYPE_FLIGHTIP;
     }
-    else {
-        fprintf(stderr, "Invalid frequency type");
-        abort();
-    }
+    fprintf(stderr, "Invalid frequency type");
+    abort();
 }
 
 void free_integer_list(struct betree_integer_list* value)

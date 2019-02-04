@@ -116,7 +116,7 @@ struct betree_constant {
     struct value value;
 };
 
-bool betree_delete_inner(size_t attr_domains_count, const struct attr_domain** attr_domains, struct betree_sub* sub, struct cnode* cnode);
+//bool betree_delete_inner(size_t attr_domains_count, const struct attr_domain** attr_domains, struct betree_sub* sub, struct cnode* cnode);
 struct betree_sub* find_sub_id(betree_sub_t id, struct cnode* cnode);
 
 bool betree_search_with_preds(const struct config* config,

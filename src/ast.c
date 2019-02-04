@@ -393,7 +393,7 @@ static void invalid_expr(const char* msg)
     abort();
 }
 
-bool d64binary_search(int64_t arr[], size_t count, int64_t to_find)
+static bool d64binary_search(const int64_t arr[], size_t count, int64_t to_find)
 {
     int imin = 0;
     int imax = (int)count - 1;
@@ -402,7 +402,7 @@ bool d64binary_search(int64_t arr[], size_t count, int64_t to_find)
         if(arr[imid] == to_find) {
             return true;
         }
-        else if(arr[imid] < to_find) {
+        if(arr[imid] < to_find) {
             imin = imid + 1;
         }
         else {
@@ -412,7 +412,7 @@ bool d64binary_search(int64_t arr[], size_t count, int64_t to_find)
     return false;
 }
 
-bool sbinary_search(struct string_value arr[], size_t count, betree_str_t to_find)
+static bool sbinary_search(struct string_value arr[], size_t count, betree_str_t to_find)
 {
     int imin = 0;
     int imax = (int)count - 1;
@@ -421,7 +421,7 @@ bool sbinary_search(struct string_value arr[], size_t count, betree_str_t to_fin
         if(arr[imid].str == to_find) {
             return true;
         }
-        else if(arr[imid].str < to_find) {
+        if(arr[imid].str < to_find) {
             imin = imid + 1;
         }
         else {
@@ -431,7 +431,7 @@ bool sbinary_search(struct string_value arr[], size_t count, betree_str_t to_fin
     return false;
 }
 
-bool iebinary_search(struct integer_enum_value arr[], size_t count, betree_ienum_t to_find)
+static bool iebinary_search(struct integer_enum_value arr[], size_t count, betree_ienum_t to_find)
 {
     int imin = 0;
     int imax = (int)count - 1;
@@ -440,7 +440,7 @@ bool iebinary_search(struct integer_enum_value arr[], size_t count, betree_ienum
         if(arr[imid].ienum == to_find) {
             return true;
         }
-        else if(arr[imid].ienum < to_find) {
+        if(arr[imid].ienum < to_find) {
             imin = imid + 1;
         }
         else {
@@ -654,7 +654,7 @@ static bool match_not_all_of_int(struct value variable, struct ast_list_expr lis
         if(x == y) {
             return true;
         }
-        else if(y < x) {
+        if(y < x) {
             j++;
         }
         else {
@@ -689,7 +689,7 @@ static bool match_not_all_of_string(struct value variable, struct ast_list_expr 
         if(x->str == y->str) {
             return true;
         }
-        else if(y->str < x->str) {
+        if(y->str < x->str) {
             j++;
         }
         else {
@@ -724,13 +724,9 @@ static bool match_all_of_int(struct value variable, struct ast_list_expr list_ex
         if(j < x_count) {
             return false;
         }
-        else {
-            return true;
-        }
+        return true;
     }
-    else {
-        return false;
-    }
+    return false;
 }
 
 static bool match_all_of_string(struct value variable, struct ast_list_expr list_expr)
@@ -758,13 +754,9 @@ static bool match_all_of_string(struct value variable, struct ast_list_expr list
         if(j < x_count) {
             return false;
         }
-        else {
-            return true;
-        }
+        return true;
     }
-    else {
-        return false;
-    }
+    return false;
 }
 
 static bool match_list_expr(
@@ -1227,7 +1219,7 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                         }
                         return;
                     }
-                    else if(domain->bound.value_type == BETREE_STRING_LIST
+                    if(domain->bound.value_type == BETREE_STRING_LIST
                         && node->list_expr.value.value_type == AST_LIST_VALUE_STRING_LIST) {
                         if(is_reversed) {
                         }
@@ -1249,10 +1241,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                         }
                         return;
                     }
-                    else {
-                        invalid_expr("Domain and expr type mismatch");
-                        return;
-                    }
+                    invalid_expr("Domain and expr type mismatch");
+                    return;
                 case AST_LIST_NONE_OF:
                     if(domain->bound.value_type == BETREE_INTEGER_LIST
                         && node->list_expr.value.value_type == AST_LIST_VALUE_INTEGER_LIST) {
@@ -1333,7 +1323,7 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                             }
                             return;
                         }
-                        else if(domain->bound.value_type == BETREE_STRING
+                        if(domain->bound.value_type == BETREE_STRING
                             && node->set_expr.right_value.value_type
                                 == AST_SET_RIGHT_VALUE_STRING_LIST) {
                             if(is_reversed) {
@@ -1357,10 +1347,8 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                             }
                             return;
                         }
-                        else {
-                            invalid_expr("Domain and expr type mismatch");
-                            return;
-                        }
+                        invalid_expr("Domain and expr type mismatch");
+                        return;
                     }
                     else if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
                         if(domain->attr_var.var != node->set_expr.right_value.variable_value.var) {
@@ -1379,7 +1367,7 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                             }
                             return;
                         }
-                        else if(domain->bound.value_type == BETREE_STRING_LIST
+                        if(domain->bound.value_type == BETREE_STRING_LIST
                             && node->set_expr.left_value.value_type
                                 == AST_SET_LEFT_VALUE_STRING) {
                             if(is_reversed) {
@@ -1392,15 +1380,11 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                             }
                             return;
                         }
-                        else {
-                            invalid_expr("Domain and expr type mismatch");
-                            return;
-                        }
-                    }
-                    else {
                         invalid_expr("Domain and expr type mismatch");
                         return;
                     }
+                    invalid_expr("Domain and expr type mismatch");
+                    return;
                 case AST_SET_NOT_IN:
                     if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
                         if(domain->attr_var.var != node->set_expr.left_value.variable_value.var) {
@@ -1428,7 +1412,7 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                             }
                             return;
                         }
-                        else if(domain->bound.value_type == BETREE_STRING
+                        if(domain->bound.value_type == BETREE_STRING
                             && node->set_expr.right_value.value_type
                                 == AST_SET_RIGHT_VALUE_STRING_LIST) {
                             if(is_reversed) {
@@ -1452,12 +1436,10 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                             }
                             return;
                         }
-                        else {
-                            invalid_expr("Domain and expr type mismatch");
-                            return;
-                        }
+                        invalid_expr("Domain and expr type mismatch");
+                        return;
                     }
-                    else if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
+                    if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
                         if(domain->attr_var.var != node->set_expr.right_value.variable_value.var) {
                             return;
                         }
@@ -1474,7 +1456,7 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                             }
                             return;
                         }
-                        else if(domain->bound.value_type == BETREE_STRING_LIST
+                        if(domain->bound.value_type == BETREE_STRING_LIST
                             && node->set_expr.left_value.value_type
                                 == AST_SET_LEFT_VALUE_STRING) {
                             if(is_reversed) {
@@ -1487,15 +1469,11 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                             }
                             return;
                         }
-                        else {
-                            invalid_expr("Domain and expr type mismatch");
-                            return;
-                        }
-                    }
-                    else {
                         invalid_expr("Domain and expr type mismatch");
                         return;
                     }
+                    invalid_expr("Domain and expr type mismatch");
+                    return;
                 default:
                     switch_default_error("Invalid set operation");
                     return;
@@ -2841,9 +2819,7 @@ static size_t get_attr_string_bound(const struct config* config, const char* att
             if(count == SIZE_MAX) {
                 return count;
             }
-            else {
-                return count + 1;
-            }
+            return count + 1;
         }
     }
     return SIZE_MAX;

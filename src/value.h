@@ -129,7 +129,7 @@ char* integer_enum_list_value_to_string(struct betree_integer_enum_list* list);
 void add_segment(struct betree_segment* segment, struct betree_segments* list);
 void add_frequency(struct betree_frequency_cap* frequency, struct betree_frequency_caps* list);
 struct betree_segment* make_segment(int64_t id, int64_t timestamp);
-struct betree_frequency_cap* make_frequency_cap(const char* type,
+struct betree_frequency_cap* make_frequency_cap(const char* stype,
     uint32_t id,
     struct string_value namespace,
     bool timestamp_defined,

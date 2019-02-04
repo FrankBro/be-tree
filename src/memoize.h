@@ -13,5 +13,5 @@ struct memoize {
 
 void set_bit(uint64_t A[], uint64_t k);
 void clear_bit(uint64_t A[], uint64_t k);
-bool test_bit(uint64_t A[], uint64_t k);
+bool test_bit(const uint64_t A[], uint64_t k);
 

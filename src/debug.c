@@ -59,18 +59,14 @@ static const char* get_path_cdir(const struct config* config, const struct cdir*
                 parent_path = get_path_cdir(config, cdir->cdir_parent, false);
                 break;
             }
-            else {
-                return get_path_cdir(config, cdir->cdir_parent, false);
-            }
+            return get_path_cdir(config, cdir->cdir_parent, false);
         }
         case(CNODE_PARENT_PNODE): {
             if(first) {
                 parent_path = get_path_pnode(config, cdir->pnode_parent);
                 break;
             }
-            else {
-                return get_path_pnode(config, cdir->pnode_parent);
-            }
+            return get_path_pnode(config, cdir->pnode_parent);
         }
         default: {
             switch_default_error("Invalid cdir parent type");
@@ -163,15 +159,13 @@ static const char* get_name_cnode(const struct config* config, const struct cnod
     if(cnode->parent == NULL) {
         return bstrdup("cnode_root");
     }
-    else {
-        char* name;
-        const char* path = get_path_cnode(config, cnode);
-        if(basprintf(&name, "cnode_%s", path) < 0) {
-            abort();
-        }
-        bfree((char*)path);
-        return name;
+    char* name;
+    const char* path = get_path_cnode(config, cnode);
+    if(basprintf(&name, "cnode_%s", path) < 0) {
+        abort();
     }
+    bfree((char*)path);
+    return name;
 }
 
 static const char* get_name_lnode(const struct config* config, const struct lnode* lnode)
@@ -781,7 +775,7 @@ void write_dot_file(const struct betree* tree)
 {
     const struct config* config = tree->config;
     const struct cnode* root = tree->cnode;
-    FILE* f = fopen("data/betree.dot", "w");
+    FILE* f = fopen("data/betree.dot", "we");
     if(f == NULL) {
         fprintf(stderr, "Can't open a file to write the dot_file");
         abort();

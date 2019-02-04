@@ -310,9 +310,7 @@ char* ast_to_string(const struct ast_node* node)
                     if(node->bool_expr.literal == true) {
                         return bstrdup("true");
                     }
-                    else {
-                        return bstrdup("false");
-                    }
+                    return bstrdup("false");
                 }
                 case AST_BOOL_VARIABLE: {
                     return bstrdup(node->bool_expr.variable.attr);

@@ -66,7 +66,7 @@ struct betree_segment* betree_make_segment(int64_t id, int64_t timestamp);
 void betree_add_segment(struct betree_segments* segments, size_t index, struct betree_segment* segment);
 
 struct betree_frequency_caps* betree_make_frequency_caps(size_t count);
-struct betree_frequency_cap* betree_make_frequency_cap(const char* type, uint32_t id, const char* ns, bool timestamp_defined, int64_t timestamp, uint32_t value);
+struct betree_frequency_cap* betree_make_frequency_cap(const char* stype, uint32_t id, const char* ns, bool timestamp_defined, int64_t timestamp, uint32_t value);
 void betree_add_frequency_cap(struct betree_frequency_caps* frequency_caps, size_t index, struct betree_frequency_cap* frequency_cap);
 
 struct betree_variable_definition {
@@ -86,15 +86,15 @@ void betree_add_integer_variable(struct betree* betree, const char* name, bool a
 void betree_add_float_variable(struct betree* betree, const char* name, bool allow_undefined, double min, double max);
 void betree_add_string_variable(struct betree* betree, const char* name, bool allow_undefined, size_t count);
 void betree_add_integer_list_variable(struct betree* betree, const char* name, bool allow_undefined, int64_t min, int64_t max);
-void betree_add_integer_enum_variable(struct betree* betree, const char* name, bool allow_undefined, size_t max);
+void betree_add_integer_enum_variable(struct betree* betree, const char* name, bool allow_undefined, size_t count);
 void betree_add_string_list_variable(struct betree* betree, const char* name, bool allow_undefined, size_t count);
 void betree_add_segments_variable(struct betree* betree, const char* name, bool allow_undefined);
 void betree_add_frequency_caps_variable(struct betree* betree, const char* name, bool allow_undefined);
 
-bool betree_change_boundaries(struct betree* betree, const char* expr);
+bool betree_change_boundaries(struct betree* tree, const char* expr);
 
-const struct betree_sub* betree_make_sub(struct betree* betree, betree_sub_t id, size_t constant_count, const struct betree_constant** constants, const char* expr);
-bool betree_insert_sub(struct betree* betree, const struct betree_sub* sub);
+const struct betree_sub* betree_make_sub(struct betree* tree, betree_sub_t id, size_t constant_count, const struct betree_constant** constants, const char* expr);
+bool betree_insert_sub(struct betree* tree, const struct betree_sub* sub);
 
 /*
  * Runtime
@@ -102,7 +102,7 @@ bool betree_insert_sub(struct betree* betree, const struct betree_sub* sub);
 //bool betree_insert_all(struct betree* tree, size_t count, const char** exprs);
 struct betree_variable_definition betree_get_variable_definition(struct betree* betree, size_t index);
 
-struct betree_constant* betree_make_integer_constant(const char* name, int64_t value);
+struct betree_constant* betree_make_integer_constant(const char* name, int64_t integer_value);
 
 struct betree_variable* betree_make_boolean_variable(const char* name, bool value);
 struct betree_variable* betree_make_integer_variable(const char* name, int64_t value);
@@ -119,13 +119,13 @@ void betree_set_variable(struct betree_event* event, size_t index, struct betree
 bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr);
 bool betree_insert_with_constants(struct betree* tree, betree_sub_t id, size_t constant_count, const struct betree_constant** constants, const char* expr);
 
-bool betree_search(const struct betree* betree, const char* event, struct report* report);
+bool betree_search(const struct betree* tree, const char* event_str, struct report* report);
 bool betree_search_with_event(const struct betree* betree, struct betree_event* event, struct report* report);
 
-bool betree_exists(const struct betree* betree, const char* event);
+bool betree_exists(const struct betree* tree, const char* event_str);
 bool betree_exists_with_event(const struct betree* betree, struct betree_event* event);
 
-bool betree_delete(struct betree* betree, betree_sub_t id);
+//bool betree_delete(struct betree* betree, betree_sub_t id);
 
 struct report* make_report();
 void free_report(struct report* report);

@@ -81,8 +81,6 @@ static struct ast_node* clone_equality(betree_pred_t global_id, betree_pred_t me
     return clone;
 }
 
-struct ast_node* clone_node(const struct ast_node* node);
-
 static struct ast_node* clone_bool(betree_pred_t global_id, betree_pred_t memoize_id, struct ast_bool_expr orig)
 {
     struct ast_node* clone = ast_node_create();

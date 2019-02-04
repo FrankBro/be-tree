@@ -240,49 +240,49 @@ int test_cdir_split_twice()
     return 0;
 }
 
-int test_remove_sub_in_tree()
-{
-    struct betree* tree = betree_make();
-    add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);
+/*int test_remove_sub_in_tree()*/
+/*{*/
+    /*struct betree* tree = betree_make();*/
+    /*add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);*/
 
-    mu_assert(betree_insert(tree, 0, "a = 0"), "");
+    /*mu_assert(betree_insert(tree, 0, "a = 0"), "");*/
 
-    mu_assert(tree->cnode->lnode->sub_count == 1, "lnode has the sub");
+    /*mu_assert(tree->cnode->lnode->sub_count == 1, "lnode has the sub");*/
 
-    mu_assert(betree_delete(tree, 0), "");
+    /*mu_assert(betree_delete(tree, 0), "");*/
 
-    mu_assert(tree->cnode->lnode->sub_count == 0, "lnode does not have the sub");
-    mu_assert(tree->cnode != NULL && tree->cnode->lnode != NULL,
-        "did not delete the cnode or lnode because it's root");
+    /*mu_assert(tree->cnode->lnode->sub_count == 0, "lnode does not have the sub");*/
+    /*mu_assert(tree->cnode != NULL && tree->cnode->lnode != NULL,*/
+        /*"did not delete the cnode or lnode because it's root");*/
 
-    betree_free(tree);
-    return 0;
-}
+    /*betree_free(tree);*/
+    /*return 0;*/
+/*}*/
 
-int test_remove_sub_in_tree_with_delete()
-{
-    struct betree* tree = betree_make();
-    add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);
-    add_attr_domain_bounded_i(tree->config, "b", false, 0, 10);
+/*int test_remove_sub_in_tree_with_delete()*/
+/*{*/
+    /*struct betree* tree = betree_make();*/
+    /*add_attr_domain_bounded_i(tree->config, "a", false, 0, 10);*/
+    /*add_attr_domain_bounded_i(tree->config, "b", false, 0, 10);*/
 
-    mu_assert(betree_insert(tree, 1, "a = 0"), "");
-    mu_assert(betree_insert(tree, 2, "a = 0"), "");
-    mu_assert(betree_insert(tree, 3, "a = 0"), "");
-    mu_assert(betree_insert(tree, 4, "b = 0"), "");
+    /*mu_assert(betree_insert(tree, 1, "a = 0"), "");*/
+    /*mu_assert(betree_insert(tree, 2, "a = 0"), "");*/
+    /*mu_assert(betree_insert(tree, 3, "a = 0"), "");*/
+    /*mu_assert(betree_insert(tree, 4, "b = 0"), "");*/
 
-    mu_assert(tree->cnode->lnode->sub_count == 1, "sub 4 is in lnode");
-    mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3,
-        "sub 1, 2, and 3 is lower lnode");
+    /*mu_assert(tree->cnode->lnode->sub_count == 1, "sub 4 is in lnode");*/
+    /*mu_assert(tree->cnode->pdir->pnodes[0]->cdir->cnode->lnode->sub_count == 3,*/
+        /*"sub 1, 2, and 3 is lower lnode");*/
 
-    mu_assert(betree_delete(tree, 1), "");
-    mu_assert(betree_delete(tree, 2), "");
-    mu_assert(betree_delete(tree, 3), "");
+    /*mu_assert(betree_delete(tree, 1), "");*/
+    /*mu_assert(betree_delete(tree, 2), "");*/
+    /*mu_assert(betree_delete(tree, 3), "");*/
 
-    mu_assert(tree->cnode->pdir == NULL, "deleted everything down of the pdir");
+    /*mu_assert(tree->cnode->pdir == NULL, "deleted everything down of the pdir");*/
 
-    betree_free(tree);
-    return 0;
-}
+    /*betree_free(tree);*/
+    /*return 0;*/
+/*}*/
 
 int test_match_deeper()
 {
@@ -1611,8 +1611,8 @@ int all_tests()
     mu_run_test(test_insert_first_split);
     mu_run_test(test_pdir_split_twice);
     mu_run_test(test_cdir_split_twice);
-    mu_run_test(test_remove_sub_in_tree);
-    mu_run_test(test_remove_sub_in_tree_with_delete);
+    /*mu_run_test(test_remove_sub_in_tree);*/
+    /*mu_run_test(test_remove_sub_in_tree_with_delete);*/
     mu_run_test(test_match_deeper);
     mu_run_test(test_large_cdir_split);
     mu_run_test(test_min_partition);

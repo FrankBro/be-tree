@@ -1,6 +1,6 @@
-#include <string.h>
 #include <float.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "alloc.h"
 #include "hashmap.h"
@@ -29,10 +29,10 @@ void add_variable_from_string(struct betree* betree, const char* line)
     else if(strcmp(type, "float") == 0) {
         double min = -DBL_MAX, max = DBL_MAX;
         if(min_str != NULL) {
-            min = atof(min_str);
+            min = strtod(min_str, NULL);
         }
         if(max_str != NULL) {
-            max = atof(max_str);
+            max = strtod(max_str, NULL);
         }
         add_attr_domain_bounded_f(config, name, allow_undefined, min, max);
     }
@@ -47,7 +47,7 @@ void add_variable_from_string(struct betree* betree, const char* line)
     }
     else if(strcmp(type, "string") == 0) {
         if(min_str != NULL) {
-            size_t max = atoi(min_str);
+            size_t max = strtol(min_str, NULL, 10);
             add_attr_domain_bounded_s(config, name, allow_undefined, max);
         }
         else {
@@ -56,7 +56,7 @@ void add_variable_from_string(struct betree* betree, const char* line)
     }
     else if(strcmp(type, "integer enum") == 0) {
         if(min_str != NULL) {
-            size_t max = atoi(min_str);
+            size_t max = strtol(min_str, NULL, 10);
             add_attr_domain_bounded_ie(config, name, allow_undefined, max);
         }
         else {
@@ -80,7 +80,7 @@ void add_variable_from_string(struct betree* betree, const char* line)
     }
     else if(strcmp(type, "string list") == 0) {
         if(min_str != NULL) {
-            size_t max = atoi(min_str);
+            size_t max = strtol(min_str, NULL, 10);
             add_attr_domain_bounded_sl(config, name, allow_undefined, max);
         }
         else {

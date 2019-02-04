@@ -23,18 +23,16 @@ bool within_frequency_caps(const struct betree_frequency_caps* caps,
             if(length <= 0) {
                 return value > caps->content[i]->value;
             }
-            else if(!caps->content[i]->timestamp_defined) {
+            if(!caps->content[i]->timestamp_defined) {
                 return true;
             }
-            else if((now - (caps->content[i]->timestamp / 1000000)) > (int64_t)length) {
+            if((now - (caps->content[i]->timestamp / 1000000)) > (int64_t)length) {
                 return true;
             }
-            else if(value > caps->content[i]->value) {
+            if(value > caps->content[i]->value) {
                 return true;
             }
-            else {
-                return false;
-            }
+            return false;
         }
     }
     return true;
@@ -47,12 +45,10 @@ bool segment_within(
         if(segments->content[i]->id < segment_id) {
             continue;
         }
-        else if(segments->content[i]->id == segment_id) {
+        if(segments->content[i]->id == segment_id) {
             return (now - after_seconds) <= (segments->content[i]->timestamp / 1000000);
         }
-        else {
-            return false;
-        }
+        return false;
     }
     return false;
 }
@@ -64,12 +60,10 @@ bool segment_before(
         if(segments->content[i]->id < segment_id) {
             continue;
         }
-        else if(segments->content[i]->id == segment_id) {
+        if(segments->content[i]->id == segment_id) {
             return (now - before_seconds) > (segments->content[i]->timestamp / 1000000);
         }
-        else {
-            return false;
-        }
+        return false;
     }
     return false;
 }
@@ -94,7 +88,9 @@ bool contains(const char* value, const char* pattern)
 {
     size_t value_size = strlen(value);
     size_t pattern_size = strlen(pattern);
-    if(value_size < pattern_size) return false;
+    if(value_size < pattern_size) {
+        return false;
+    }
 
     return strstr(value, pattern) != NULL;
 }
@@ -103,7 +99,9 @@ bool starts_with(const char* value, const char* pattern)
 {
     size_t value_size = strlen(value);
     size_t pattern_size = strlen(pattern);
-    if(value_size < pattern_size) return false;
+    if(value_size < pattern_size) {
+        return false;
+    }
 
     return strstr(value, pattern) != NULL;
 }
@@ -112,7 +110,9 @@ bool ends_with(const char* value, const char* pattern)
 {
     size_t value_size = strlen(value);
     size_t pattern_size = strlen(pattern);
-    if(value_size < pattern_size) return false;
+    if(value_size < pattern_size) {
+        return false;
+    }
 
     size_t off = value_size - pattern_size;
     return strstr(value + off, pattern) != NULL;

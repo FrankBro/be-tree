@@ -1,6 +1,6 @@
-#include <stdlib.h>
-#include <stdio.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "alloc.h"
@@ -47,8 +47,9 @@ int bvasprintf(char **buf, const char *format, va_list va)
 	/* Account for null terminator. */
 	len += 1;
 	*buf = bmalloc(len);
-	if (*buf == NULL)
+	if (*buf == NULL) {
 		return (-1);
+    }
 
 	ret = vsnprintf(*buf, len, format, va);
 	if (ret < 0) {

@@ -17,13 +17,13 @@
 #include "utils.h"
 #include "value.h"
 
-bool betree_delete(struct betree* betree, betree_sub_t id)
-{
-    struct betree_sub* sub = find_sub_id(id, betree->cnode);
-    bool found = betree_delete_inner(betree->config->attr_domain_count, (const struct attr_domain**)betree->config->attr_domains, sub, betree->cnode);
-    free_sub(sub);
-    return found;
-}
+/*bool betree_delete(struct betree* betree, betree_sub_t id)*/
+/*{*/
+    /*struct betree_sub* sub = find_sub_id(id, betree->cnode);*/
+    /*bool found = betree_delete_inner(betree->config->attr_domain_count, (const struct attr_domain**)betree->config->attr_domains, sub, betree->cnode);*/
+    /*free_sub(sub);*/
+    /*return found;*/
+/*}*/
 
 int parse(const char* text, struct ast_node** node);
 int event_parse(const char* text, struct betree_event** event);
@@ -704,10 +704,10 @@ void betree_deinit(struct betree* betree)
     free_config(betree->config);
 }
 
-void betree_free(struct betree* tree)
+void betree_free(struct betree* betree)
 {
-    betree_deinit(tree);
-    bfree(tree);
+    betree_deinit(betree);
+    bfree(betree);
 }
 
 void betree_add_boolean_variable(struct betree* betree, const char* name, bool allow_undefined)

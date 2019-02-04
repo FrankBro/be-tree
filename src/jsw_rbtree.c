@@ -82,7 +82,7 @@ void jsw_rbdelete(struct jsw_rbtree* tree)
     struct jsw_rbnode* save;
 
     while(it != NULL) {
-		if(it->link[0] == NULL) {
+        if(it->link[0] == NULL) {
             save = it->link[1];
             bfree(it);
         }
