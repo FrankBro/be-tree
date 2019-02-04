@@ -80,14 +80,13 @@ int icmpfunc(const void *a, const void *b)
 {
     const int64_t x = *(int64_t*)a;
     const int64_t y = *(int64_t*)b;
-    int64_t comp =  x - y;
-    if (comp < 0) {
+    if (x < y) {
         return -1;
     }
-    if (comp > 0) {
+    if (x > y) {
         return 1;
     }
-    return comp;
+    return 0;
 }
 
 int scmpfunc(const void *a, const void *b) 
