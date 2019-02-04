@@ -351,9 +351,7 @@ void free_value(struct value value)
             free_frequency_caps(value.frequency_caps_value);
             break;
         }
-        default: {
-            switch_default_error("Invalid value value type");
-        }
+        default: abort();
     }
 }
 

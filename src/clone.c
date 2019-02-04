@@ -21,9 +21,7 @@ static struct compare_value clone_compare_value(struct compare_value orig)
         case AST_COMPARE_VALUE_FLOAT:
             clone.float_value = orig.float_value;
             break;
-        default:
-            switch_default_error("Invalid compare value type");
-            break;
+        default: abort();
     }
     return clone;
 }
@@ -62,9 +60,7 @@ static struct equality_value clone_equality_value(struct equality_value orig)
         case AST_EQUALITY_VALUE_INTEGER_ENUM:
             clone.integer_enum_value = orig.integer_enum_value;
             break;
-        default:
-            switch_default_error("Invalid equality value type");
-            break;
+        default: abort();
     }
     return clone;
 }
@@ -108,9 +104,7 @@ static struct ast_node* clone_bool(betree_pred_t global_id, betree_pred_t memoiz
         case AST_BOOL_LITERAL:
             clone->bool_expr.literal = orig.literal;
             break;
-        default:
-            switch_default_error("Invalid bool op");
-            break;
+        default: abort();
     }
     return clone;
 }
@@ -128,9 +122,7 @@ static struct set_left_value clone_set_left_value(struct set_left_value orig)
         case AST_SET_LEFT_VALUE_VARIABLE:
             clone.variable_value = clone_attr_var(orig.variable_value);
             break;
-        default:
-            switch_default_error("Invalid set left value type");
-            break;
+        default: abort();
     }
     return clone;
 }
@@ -183,9 +175,7 @@ static struct set_right_value clone_set_right_value(struct set_right_value orig)
         case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM:
             clone.integer_enum_list_value = clone_integer_enum_list(orig.integer_enum_list_value);
             break;
-        default:
-            switch_default_error("Invalid set right value type");
-            break;
+        default: abort();
     }
     return clone;
 }
@@ -212,9 +202,7 @@ static struct list_value clone_list_value(struct list_value orig)
         case AST_LIST_VALUE_STRING_LIST:
             clone.string_list_value = clone_string_list(orig.string_list_value);
             break;
-        default:
-            switch_default_error("Invalid list value type");
-            break;
+        default: abort();
     }
     return clone;
 }
@@ -266,9 +254,7 @@ static struct ast_node* clone_special(betree_pred_t global_id, betree_pred_t mem
             clone->special_expr.string.op = orig.string.op;
             clone->special_expr.string.pattern = bstrdup(orig.string.pattern);
             break;
-        default:
-            switch_default_error("Invalid special expr type");
-            break;
+        default: abort();
     }
     return clone;
 }
@@ -309,9 +295,7 @@ struct ast_node* clone_node(const struct ast_node* node)
         case AST_TYPE_IS_NULL_EXPR:
             clone = clone_is_null(node->global_id, node->memoize_id, node->is_null_expr);
             break;
-        default:
-            switch_default_error("Invalid node type");
-            break;
+        default: abort();
     }
     return clone;
 }

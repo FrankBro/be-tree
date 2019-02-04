@@ -10,16 +10,6 @@
 #include "utils.h"
 #include "value.h"
 
-bool bmin(bool a, bool b)
-{
-    return a < b ? a : b;
-}
-
-bool bmax(bool a, bool b)
-{
-    return a > b ? a : b;
-}
-
 int64_t d64min(int64_t a, int64_t b)
 {
     return a < b ? a : b;
@@ -28,11 +18,6 @@ int64_t d64min(int64_t a, int64_t b)
 int64_t d64max(int64_t a, int64_t b)
 {
     return a > b ? a : b;
-}
-
-uint64_t u64min(uint64_t a, uint64_t b)
-{
-    return a < b ? a : b;
 }
 
 uint64_t u64max(uint64_t a, uint64_t b)
@@ -58,22 +43,6 @@ bool feq(double a, double b)
 bool fne(double a, double b)
 {
     return !feq(a, b);
-}
-
-void switch_default_error(const char* str)
-{
-    fprintf(stderr, "%s", str);
-    abort();
-}
-
-void betree_assert(bool should_abort, enum error_e error, bool expr)
-{
-    (void)error;
-    if(!expr) {
-        if(should_abort) {
-            abort();
-        }
-    }
 }
 
 int icmpfunc(const void *a, const void *b) 

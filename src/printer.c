@@ -22,9 +22,7 @@ static const char* compare_value_to_string(struct compare_value value)
                 abort();
             }
             break;
-        default:
-            switch_default_error("Invalid compare value type");
-            break;
+        default: abort();
     }
     return expr;
 }
@@ -40,9 +38,7 @@ static const char* compare_op_to_string(enum ast_compare_e op)
             return ">";
         case AST_COMPARE_GE:
             return ">=";
-        default:
-            switch_default_error("Invalid compare operation");
-            return NULL;
+        default: abort();
     }
 }
 
@@ -70,9 +66,7 @@ static const char* equality_value_to_string(struct equality_value value)
                 abort();
             }
             break;
-        default:
-            switch_default_error("Invalid equality value type");
-            break;
+        default: abort();
     }
     return expr;
 }
@@ -84,9 +78,7 @@ static const char* equality_op_to_string(enum ast_equality_e op)
             return "=";
         case AST_EQUALITY_NE:
             return "<>";
-        default:
-            switch_default_error("Invalid equality operation");
-            return NULL;
+        default: abort();
     }
 }
 
@@ -109,9 +101,7 @@ static const char* set_left_value_to_string(struct set_left_value value)
                 abort();
             }
             break;
-        default:
-            switch_default_error("Invalid set left value type");
-            break;
+        default: abort();
     }
     return expr;
 }
@@ -149,9 +139,7 @@ static const char* set_right_value_to_string(struct set_right_value value)
             bfree((char*)list);
             break;
         }
-        default:
-            switch_default_error("Invalid set right value type");
-            break;
+        default: abort();
     }
     return expr;
 }
@@ -163,9 +151,7 @@ static const char* set_op_to_string(enum ast_set_e op)
             return "in";
         case AST_SET_NOT_IN:
             return "not in";
-        default:
-            switch_default_error("Invalid set op");
-            return NULL;
+        default: abort();
     }
 }
 
@@ -189,10 +175,7 @@ static const char* list_value_to_string(struct list_value value)
             bfree((char*)inner);
             break;
         }
-        default: {
-            switch_default_error("Invalid list value type");
-            break;
-        }
+        default: abort();
     }
     return list;
 }
@@ -209,10 +192,7 @@ static const char* list_op_to_string(enum ast_list_e op)
         case AST_LIST_ALL_OF: {
             return "all of";
         }
-        default: {
-            switch_default_error("Invalid list operation");
-            return NULL;
-        }
+        default: abort();
     }
 }
 
@@ -247,9 +227,7 @@ char* ast_to_string(const struct ast_node* node)
                         case AST_SPECIAL_SEGMENTBEFORE:
                             op = "segment_before";
                             break;
-                        default:
-                            switch_default_error("Invalid special segment op");
-                            return NULL;
+                        default: abort();
                     }
                     if(basprintf(&expr,
                            "%s(%s, %lu, %ld)",
@@ -285,9 +263,7 @@ char* ast_to_string(const struct ast_node* node)
                         case AST_SPECIAL_ENDSWITH:
                             op = "ends_with";
                             break;
-                        default:
-                            switch_default_error("Invalid special string op");
-                            return NULL;
+                        default: abort();
                     }
                     if(basprintf(&expr,
                            "%s(%s, \"%s\")",
@@ -299,9 +275,7 @@ char* ast_to_string(const struct ast_node* node)
                     }
                     return expr;
                 }
-                default:
-                    switch_default_error("Invalid special op");
-                    return NULL;
+                default: abort();
             }
         }
         case(AST_TYPE_BOOL_EXPR): {
@@ -343,10 +317,7 @@ char* ast_to_string(const struct ast_node* node)
                     bfree((char*)b);
                     return expr;
                 }
-                default: {
-                    switch_default_error("Invalid bool operation");
-                    return NULL;
-                }
+                default: abort();
             }
         }
         case(AST_TYPE_SET_EXPR): {
@@ -387,10 +358,7 @@ char* ast_to_string(const struct ast_node* node)
             bfree((char*)value);
             return expr;
         }
-        default: {
-            switch_default_error("Invalid expr type");
-            return NULL;
-        }
+        default: abort();
     }
 }
 

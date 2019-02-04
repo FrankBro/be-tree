@@ -193,9 +193,7 @@ static bool is_event_enclosed(const struct betree_variable** preds, const struct
         case BETREE_SEGMENTS:
         case BETREE_FREQUENCY_CAPS:
             return true;
-        default:
-            switch_default_error("Invalid value type");
-            return false;
+        default: abort();
     }
     return false;
 }
@@ -234,9 +232,7 @@ bool sub_is_enclosed(const struct attr_domain** attr_domains, const struct betre
                     __func__);
                 abort();
             }
-            default: {
-                switch_default_error("Invalid bound value type");
-            }
+            default: abort();
         }
     }
     return false;
@@ -292,10 +288,7 @@ static bool is_used_cdir(betree_var_t variable_id, const struct cdir* cdir)
         case CNODE_PARENT_CDIR: {
             return is_used_cdir(variable_id, cdir->cdir_parent);
         }
-        default: {
-            switch_default_error("Invalid cdir parent type");
-            return false;
-        }
+        default: abort();
     }
 }
 
@@ -717,10 +710,7 @@ static bool is_attr_used_in_parent_cdir(betree_var_t variable_id, const struct c
         case(CNODE_PARENT_PNODE): {
             return is_attr_used_in_parent_pnode(variable_id, cdir->pnode_parent);
         }
-        default: {
-            switch_default_error("Invalid cdir parent type");
-            return false;
-        }
+        default: abort();
     }
 }
 
@@ -768,9 +758,7 @@ static bool splitable_attr_domain(
         case BETREE_SEGMENTS:
         case BETREE_FREQUENCY_CAPS:
             return false;
-        default:
-            switch_default_error("Invalid bound value type");
-            return false;
+        default: abort();
     }
 }
 
@@ -886,10 +874,7 @@ static bool is_atomic(const struct cdir* cdir)
             fprintf(stderr, "%s a frequency value cdir should never happen for now\n", __func__);
             abort();
         }
-        default: {
-            switch_default_error("Invalid bound value type");
-            return false;
-        }
+        default: abort();
     }
 }
 
@@ -1028,9 +1013,7 @@ static struct value_bounds split_value_bound(struct value_bound bound)
             fprintf(stderr, "%s a frequency value cdir should never happen for now\n", __func__);
             abort();
         }
-        default: {
-            switch_default_error("Invalid bound value type");
-        }
+        default: abort();
     }
     struct value_bounds bounds = { .lbound = lbound, .rbound = rbound };
     return bounds;
@@ -1423,9 +1406,7 @@ void fill_pred(struct betree_sub* sub, const struct ast_node* expr)
                 case AST_SPECIAL_SEGMENT:
                     fill_pred_attr_var(sub, expr->special_expr.segment.attr_var);
                     return;
-                default:
-                    switch_default_error("Invalid special expr type");
-                    return;
+                default: abort();
             }
             return;
         }
@@ -1444,9 +1425,7 @@ void fill_pred(struct betree_sub* sub, const struct ast_node* expr)
                     return;
                 case AST_BOOL_LITERAL:
                     return;
-                default:
-                    switch_default_error("Invalid bool op");
-                    return;
+                default: abort();
             }
             return;
         }
@@ -1474,9 +1453,7 @@ void fill_pred(struct betree_sub* sub, const struct ast_node* expr)
             fill_pred_attr_var(sub, expr->list_expr.attr_var);
             return;
         }
-        default: {
-            switch_default_error("Invalid expr type");
-        }
+        default: abort();
     }
 }
 
@@ -1732,9 +1709,7 @@ void event_to_string(const struct betree_event* event, char* buffer)
                 bfree((char*)string_list);
                 break;
             }
-            default: {
-                switch_default_error("Invalid value value type");
-            }
+            default: abort();
         }
     }
     buffer[length] = '\0';
@@ -1972,9 +1947,7 @@ void fill_event(const struct config* config, struct betree_event* event)
                 }
                 break;
             }
-            default:
-                switch_default_error("Invalid value type");
-                break;
+            default: abort();
         }
     }
 }

@@ -68,9 +68,7 @@ static const char* get_path_cdir(const struct config* config, const struct cdir*
             }
             return get_path_pnode(config, cdir->pnode_parent);
         }
-        default: {
-            switch_default_error("Invalid cdir parent type");
-        }
+        default: abort();
     }
     char* name;
     switch(cdir->bound.value_type) {
@@ -116,9 +114,7 @@ static const char* get_path_cdir(const struct config* config, const struct cdir*
             fprintf(stderr, "%s a frequency value cdir should never happen for now", __func__);
             abort();
         }
-        default: {
-            switch_default_error("Invalid bound value type");
-        }
+        default: abort();
     }
     bfree((char*)parent_path);
     return name;
@@ -302,9 +298,7 @@ static void write_dot_file_cdir_td(FILE* f,
                         stderr, "%s a frequency value cdir should never happen for now", __func__);
                     abort();
                 }
-                default: {
-                    switch_default_error("Invalid bound value type");
-                }
+                default: abort();
             }
             bfree((char*)name);
         }
