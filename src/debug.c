@@ -8,8 +8,6 @@
 #include "tree.h"
 #include "utils.h"
 
-#define SEP_SPACE "                                                      "
-
 static bool should_print_cnode(const struct cnode* cnode)
 {
     return cnode->pdir != NULL || cnode->lnode->sub_count > 0;
@@ -188,7 +186,7 @@ static const char* get_name_pdir(const struct config* config, const struct pdir*
 
 static void print_spaces(FILE* f, uint64_t level)
 {
-    fprintf(f, "%.*s", (int)level * 4, SEP_SPACE);
+    fprintf(f, "%*s", (int)level * 4, "");
 }
 
 static void write_dot_file_lnode_names(
