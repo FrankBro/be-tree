@@ -86,12 +86,6 @@ bool geo_within_radius(double lat1, double lon1, double lat2, double lon2, doubl
 
 bool contains(const char* value, const char* pattern)
 {
-    size_t value_size = strlen(value);
-    size_t pattern_size = strlen(pattern);
-    if(value_size < pattern_size) {
-        return false;
-    }
-
     return strstr(value, pattern) != NULL;
 }
 
