@@ -451,6 +451,7 @@ static int test_starts_with()
     mu_assert(starts_with_a("", "abc"), "starts_with_in_nil");
     mu_assert(starts_with_a("abc", "abcc"), "starts_with_in_start");
     mu_assert(starts_with_a("abc", "abc"), "starts_with_in_exact");
+    mu_assert(!starts_with_a("abc", "aabc"), "starts_with_in_end");
     mu_assert(!starts_with_a("abc", "a"), "starts_with_out_var_smaller");
     mu_assert(!starts_with_a("abc", ""), "starts_with_out_var_nil");
     mu_assert(!starts_with_b("abc", "abc"), "starts_with_out_undef");
@@ -503,8 +504,9 @@ static bool not_ends_with_a(const char* pattern, const char* value) { return end
 static int test_ends_with()
 {
     mu_assert(ends_with_a("", "abc"), "ends_with_in_nil");
-    mu_assert(ends_with_a("abc", "aabc"), "ends_with_in_start");
+    mu_assert(!ends_with_a("abc", "abcc"), "ends_with_in_start");
     mu_assert(ends_with_a("abc", "abc"), "ends_with_in_exact");
+    mu_assert(ends_with_a("abc", "aabc"), "ends_with_in_end");
     mu_assert(!ends_with_a("abc", "c"), "ends_with_out_var_smaller");
     mu_assert(!ends_with_a("abc", ""), "ends_with_out_var_nil");
     mu_assert(!ends_with_b("abc", "abc"), "ends_with_out_undef");

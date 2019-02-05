@@ -103,7 +103,7 @@ bool starts_with(const char* value, const char* pattern)
         return false;
     }
 
-    return strstr(value, pattern) != NULL;
+    return strncmp(value, pattern, pattern_size) == 0;
 }
 
 bool ends_with(const char* value, const char* pattern)
@@ -115,6 +115,6 @@ bool ends_with(const char* value, const char* pattern)
     }
 
     size_t off = value_size - pattern_size;
-    return strstr(value + off, pattern) != NULL;
+    return strncmp(value + off, pattern, pattern_size) == 0;
 }
 
