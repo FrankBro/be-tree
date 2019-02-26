@@ -784,7 +784,9 @@ void betree_free_constant(struct betree_constant* constant)
 void betree_free_constants(size_t count, struct betree_constant** constants)
 {
     for(size_t i = 0; i < count; i++) {
-        betree_free_constant(constants[i]);
+        if(constants != NULL) {
+            betree_free_constant(constants[i]);
+        }
     }
 }
 
