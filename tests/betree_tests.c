@@ -1589,6 +1589,9 @@ int test_frequency_bug()
     };
     const struct betree_sub* sub = betree_make_sub(tree, 0, 3, constants, expr);
     betree_insert_sub(tree, sub);
+    for(size_t i = 0; i < 3; i++) {
+        betree_free_constant((struct betree_constant*)constants[i]);
+    }
 
     const char* event = "{\"now\": 1541704800, \"frequency_caps\": [[[\"flight:ip\",101801,\"3495614\"],1,1546537569676283]]}";
     struct report* report = make_report();
