@@ -8,9 +8,8 @@
     #include "betree.h"
     #include "parser.h"
     #include "value.h"
-    struct ast_node *root;
     extern int xxlex();
-    void xxerror(void *scanner, const char *s) { (void)scanner; printf("ERROR: %s\n", s); }
+    void xxerror(void *scanner, struct ast_node** node, const char *s) { (void)node; (void)scanner; printf("ERROR: %s\n", s); }
 #ifdef NIF
     #include "erl_nif.h"
     #define YYMALLOC enif_alloc
@@ -24,9 +23,9 @@
 %}
 
 // %debug
-%pure-parser
-%lex-param {void *scanner}
-%parse-param {void *scanner}
+%define api.pure full
+%lex-param {void *scanner} {struct ast_node** root}
+%parse-param {void *scanner} {struct ast_node** root}
 %define api.prefix {xx}
 
 %{
@@ -94,7 +93,7 @@
 
 %%
 
-program             : expr                                  { root = $1; }
+program             : expr                                  { *root = $1; }
 
 ident               : TIDENTIFIER                           { $$ = $1; }
 
@@ -243,12 +242,11 @@ int parse(const char *text, struct ast_node **node)
     yyscan_t scanner;
     xxlex_init(&scanner);
     YY_BUFFER_STATE buffer = xx_scan_string(text, scanner);
-    int rc = xxparse(scanner);
+    int rc = xxparse(scanner, node);
     xx_delete_buffer(buffer, scanner);
     xxlex_destroy(scanner);
     
     if(rc == 0) {
-        *node = root;
         return 0;
     }
     else {
