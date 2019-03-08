@@ -1746,6 +1746,28 @@ static uint64_t* make_undefined(size_t attr_domain_count, const struct betree_va
     return undefined;
 }
 
+static void add_sub(betree_sub_t id, struct report* report)
+{
+    if(report->matched == 0) {
+        report->subs = bcalloc(sizeof(*report->subs));
+        if(report->subs == NULL) {
+            fprintf(stderr, "%s bcalloc failed", __func__);
+            abort();
+        }
+    }
+    else {
+        betree_sub_t* subs
+            = brealloc(report->subs, sizeof(*report->subs) * (report->matched + 1));
+        if(subs == NULL) {
+            fprintf(stderr, "%s brealloc failed", __func__);
+            abort();
+        }
+        report->subs = subs;
+    }
+    report->subs[report->matched] = id;
+    report->matched++;
+}
+
 bool betree_search_with_preds(const struct config* config,
     const struct betree_variable** preds,
     const struct cnode* cnode,
@@ -1756,13 +1778,11 @@ bool betree_search_with_preds(const struct config* config,
     struct subs_to_eval subs;
     init_subs_to_eval(&subs);
     match_be_tree((const struct attr_domain**)config->attr_domains, preds, cnode, &subs);
-    report->subs = bmalloc(sizeof(*report->subs) * subs.count);
     for(size_t i = 0; i < subs.count; i++) {
         const struct betree_sub* sub = subs.subs[i];
         report->evaluated++;
         if(match_sub(config->attr_domain_count, preds, sub, report, &memoize, undefined) == true) {
-            report->subs[report->matched] = sub->id;
-            report->matched++;
+            add_sub(sub->id, report);
         }
     }
     bfree(subs.subs);
