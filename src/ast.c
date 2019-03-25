@@ -2525,6 +2525,7 @@ void assign_pred_id(struct config* config, struct ast_node* node)
     assign_pred(config->pred_map, node);
 }
 
+
 void sort_lists(struct ast_node* node)
 {
     switch(node->type) {
@@ -2550,22 +2551,13 @@ void sort_lists(struct ast_node* node)
             if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
                 switch(node->set_expr.right_value.value_type) {
                     case AST_SET_RIGHT_VALUE_INTEGER_LIST:
-                        qsort(node->set_expr.right_value.integer_list_value->integers,
-                            node->set_expr.right_value.integer_list_value->count,
-                            sizeof(*node->set_expr.right_value.integer_list_value->integers),
-                            icmpfunc);
+                        sort_integer_list(node->set_expr.right_value.integer_list_value);
                         return;
                     case AST_SET_RIGHT_VALUE_STRING_LIST:
-                        qsort(node->set_expr.right_value.string_list_value->strings,
-                            node->set_expr.right_value.string_list_value->count,
-                            sizeof(*node->set_expr.right_value.string_list_value->strings),
-                            scmpfunc);
+                        sort_string_list(node->set_expr.right_value.string_list_value);
                         return;
                     case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM:
-                        qsort(node->set_expr.right_value.integer_enum_list_value->integers,
-                            node->set_expr.right_value.integer_enum_list_value->count,
-                            sizeof(*node->set_expr.right_value.integer_enum_list_value->integers),
-                            iecmpfunc);
+                        sort_integer_enum_list(node->set_expr.right_value.integer_enum_list_value);
                         return;
                     case AST_SET_RIGHT_VALUE_VARIABLE:
                         return;
@@ -2579,16 +2571,10 @@ void sort_lists(struct ast_node* node)
         case AST_TYPE_LIST_EXPR:
             switch(node->list_expr.value.value_type) {
                 case AST_LIST_VALUE_INTEGER_LIST:
-                    qsort(node->list_expr.value.integer_list_value->integers,
-                        node->list_expr.value.integer_list_value->count,
-                        sizeof(*node->list_expr.value.integer_list_value->integers),
-                        icmpfunc);
+                    sort_integer_list(node->list_expr.value.integer_list_value);
                     return;
                 case AST_LIST_VALUE_STRING_LIST:
-                    qsort(node->list_expr.value.string_list_value->strings,
-                        node->list_expr.value.string_list_value->count,
-                        sizeof(*node->list_expr.value.string_list_value->strings),
-                        scmpfunc);
+                    sort_string_list(node->list_expr.value.string_list_value);
                     return;
                 default: abort();
             }

@@ -1822,22 +1822,13 @@ void sort_event_lists(struct betree_event* event)
             continue;
         }
         if(pred->value.value_type == BETREE_INTEGER_LIST) {
-            qsort(pred->value.integer_list_value->integers,
-                pred->value.integer_list_value->count,
-                sizeof(*pred->value.integer_list_value->integers),
-                icmpfunc);
+            sort_and_remove_duplicate_integer_list(pred->value.integer_list_value);
         }
         else if(pred->value.value_type == BETREE_STRING_LIST) {
-            qsort(pred->value.string_list_value->strings,
-                pred->value.string_list_value->count,
-                sizeof(*pred->value.string_list_value->strings),
-                scmpfunc);
+            sort_and_remove_duplicate_string_list(pred->value.string_list_value);
         }
         else if(pred->value.value_type == BETREE_INTEGER_LIST_ENUM) {
-            qsort(pred->value.integer_enum_list_value->integers,
-                pred->value.integer_enum_list_value->count,
-                sizeof(*pred->value.integer_enum_list_value->integers),
-                iecmpfunc);
+            sort_and_remove_duplicate_integer_enum_list(pred->value.integer_enum_list_value);
         }
     }
 }

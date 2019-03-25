@@ -150,3 +150,13 @@ void free_integer_enum_list(struct betree_integer_enum_list* value);
 
 void free_value(struct value value);
 
+void remove_duplicates_integer_list(struct betree_integer_list* list);
+void sort_integer_list(struct betree_integer_list* list);
+void sort_and_remove_duplicate_integer_list(struct betree_integer_list* list);
+void remove_duplicates_string_list(struct betree_string_list* list);
+void sort_string_list(struct betree_string_list* list);
+void sort_and_remove_duplicate_string_list(struct betree_string_list* list);
+void remove_duplicates_integer_enum_list(struct betree_integer_enum_list* list);
+void sort_integer_enum_list(struct betree_integer_enum_list* list);
+void sort_and_remove_duplicate_integer_enum_list(struct betree_integer_enum_list* list);
+

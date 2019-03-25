@@ -427,3 +427,78 @@ char* frequency_caps_value_to_string(struct betree_frequency_caps* list)
     return string;
 }
 
+void remove_duplicates_integer_list(struct betree_integer_list* list)
+{
+    if (list->count == 0) {
+        return;
+    }
+    size_t r = 0;
+    for (size_t i = 1; i < list->count; i++) {
+        if (list->integers[r] != list->integers[i]) {
+            list->integers[++ r] = list->integers[i]; // copy-in next unique number
+        }
+    }
+    list->count = r + 1;
+}
+
+void sort_integer_list(struct betree_integer_list* list)
+{
+    qsort(list->integers, list->count, sizeof(*list->integers), icmpfunc);
+}
+
+void sort_and_remove_duplicate_integer_list(struct betree_integer_list* list)
+{
+    sort_integer_list(list);
+    remove_duplicates_integer_list(list);
+}
+
+void remove_duplicates_string_list(struct betree_string_list* list)
+{
+    if (list->count == 0) {
+        return;
+    }
+    size_t r = 0;
+    for (size_t i = 1; i < list->count; i++) {
+        if (list->strings[r].str != list->strings[i].str) {
+            list->strings[++ r].str = list->strings[i].str; // copy-in next unique number
+        }
+    }
+    list->count = r + 1;
+}
+
+void sort_string_list(struct betree_string_list* list)
+{
+    qsort(list->strings, list->count, sizeof(*list->strings), scmpfunc);
+}
+
+void sort_and_remove_duplicate_string_list(struct betree_string_list* list)
+{
+    sort_string_list(list);
+    remove_duplicates_string_list(list);
+}
+
+void remove_duplicates_integer_enum_list(struct betree_integer_enum_list* list)
+{
+    if (list->count == 0) {
+        return;
+    }
+    size_t r = 0;
+    for (size_t i = 1; i < list->count; i++) {
+        if (list->integers[r].ienum != list->integers[i].ienum) {
+            list->integers[++ r] = list->integers[i]; // copy-in next unique number
+        }
+    }
+    list->count = r + 1;
+}
+
+void sort_integer_enum_list(struct betree_integer_enum_list* list)
+{
+    qsort(list->integers, list->count, sizeof(*list->integers), iecmpfunc);
+}
+
+void sort_and_remove_duplicate_integer_enum_list(struct betree_integer_enum_list* list)
+{
+    sort_integer_enum_list(list);
+    remove_duplicates_integer_enum_list(list);
+}
+
