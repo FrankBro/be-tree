@@ -1597,8 +1597,29 @@ int test_frequency_bug()
     struct report* report = make_report();
     mu_assert(betree_search(tree, event, report), "");
 
-    fprintf(stderr, "matched = %zu\n", report->matched);
     mu_assert(report->matched == 0, "");
+
+    free_report(report);
+    betree_free(tree);
+
+    return 0;
+}
+
+int test_duplicate_unsorted_string_list()
+{
+    struct betree* tree = betree_make();
+    add_attr_domain_sl(tree->config, "sl", false);
+
+    const char* expr = "\"3\" in sl";
+
+    const struct betree_sub* sub = betree_make_sub(tree, 0, 0, NULL, expr);
+    betree_insert_sub(tree, sub);
+
+    const char* event = "{\"sl\": [\"2\",\"3\",\"1\",\"4\",\"3\",\"2\",\"1\",\"3\"]}";
+    struct report* report = make_report();
+    mu_assert(betree_search(tree, event, report), "");
+
+    mu_assert(report->matched == 1, "");
 
     free_report(report);
     betree_free(tree);
@@ -1649,6 +1670,7 @@ int all_tests()
     mu_run_test(test_list_bug2);
     mu_run_test(test_same_id);
     mu_run_test(test_frequency_bug);
+    mu_run_test(test_duplicate_unsorted_string_list);
 
     return 0;
 }
