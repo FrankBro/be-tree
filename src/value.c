@@ -460,7 +460,7 @@ void remove_duplicates_string_list(struct betree_string_list* list)
     size_t r = 0;
     for (size_t i = 1; i < list->count; i++) {
         if (list->strings[r].str != list->strings[i].str) {
-            list->strings[++ r].str = list->strings[i].str; // copy-in next unique number
+            list->strings[++ r] = list->strings[i]; // copy-in next unique number
         }
         else {
             bfree((char*)list->strings[i].string);
