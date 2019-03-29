@@ -1605,6 +1605,28 @@ int test_frequency_bug()
     return 0;
 }
 
+int test_duplicate_unsorted_integer_list()
+{
+    struct betree* tree = betree_make();
+    add_attr_domain_il(tree->config, "il", false);
+
+    const char* expr = "3 in il";
+
+    const struct betree_sub* sub = betree_make_sub(tree, 0, 0, NULL, expr);
+    betree_insert_sub(tree, sub);
+
+    const char* event = "{\"il\": [2,3,1,4,3,2,1,3]}";
+    struct report* report = make_report();
+    mu_assert(betree_search(tree, event, report), "");
+
+    mu_assert(report->matched == 1, "");
+
+    free_report(report);
+    betree_free(tree);
+
+    return 0;
+}
+
 int test_duplicate_unsorted_string_list()
 {
     struct betree* tree = betree_make();
@@ -1670,6 +1692,7 @@ int all_tests()
     mu_run_test(test_list_bug2);
     mu_run_test(test_same_id);
     mu_run_test(test_frequency_bug);
+    mu_run_test(test_duplicate_unsorted_integer_list);
     mu_run_test(test_duplicate_unsorted_string_list);
 
     return 0;
