@@ -462,6 +462,9 @@ void remove_duplicates_string_list(struct betree_string_list* list)
         if (list->strings[r].str != list->strings[i].str) {
             list->strings[++ r].str = list->strings[i].str; // copy-in next unique number
         }
+        else {
+            bfree((char*)list->strings[i].string);
+        }
     }
     list->count = r + 1;
 }
