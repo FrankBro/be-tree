@@ -2,7 +2,7 @@
 # Variables
 ################################################################################
 
-CFLAGS := -O3 -std=gnu11 -Wall -Wextra -Wshadow -Wfloat-equal -Wundef -Wcast-align \
+CFLAGS := -O3 -g -std=gnu11 -Wall -Wextra -Wshadow -Wfloat-equal -Wundef -Wcast-align \
 	-Wwrite-strings -Wunreachable-code -Wformat=2 -Wswitch-enum \
 	-Wswitch-default -Winit-self -Wno-strict-aliasing
 
@@ -24,7 +24,7 @@ LEX?=flex
 YACC?=bison
 YFLAGS?=-dv
 
-VALGRIND=valgrind --tool=memcheck --leak-check=full --track-origins=yes --suppressions=valgrind.supp
+VALGRIND=valgrind --tool=memcheck --leak-check=full --track-origins=yes --suppressions=valgrind.supp --error-exitcode=1
 CALLGRIND=valgrind --tool=callgrind --instr-atstart=no
 CACHEGRIND=valgrind --tool=cachegrind
 MASSIF=valgrind --tool=massif
@@ -46,8 +46,8 @@ endif
 
 # all: build/betree.a build/betree.so $(OBJECTS) tool test dot
 # all: build/betree.a build/betree.so $(OBJECTS) tool test
-all: build/libbetree.so 
-dev: build/libbetree.so test
+all: build/libbetree.so
+dev: build/libbetree.so test valgrind
 
 dot:
 	# dot -Tpng data/betree.dot -o data/betree.png
