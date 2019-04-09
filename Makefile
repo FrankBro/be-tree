@@ -40,10 +40,13 @@ ifdef NIF
 	DEFINES += -DNIF
 	CFLAGS += -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
 	LDFLAGS += -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei
-	ifeq ($(UNAME), Darwin)
-	LDFLAGS += -bundle -flat_namespace -undefined suppress
-	endif
 endif
+
+ifeq ($(UNAME), Darwin)
+	EXTRA := -bundle -flat_namespace -undefined suppress
+else
+	EXTRA := -shared
+	endif
 
 ################################################################################
 # Default Target
@@ -66,7 +69,7 @@ neato:
 ################################################################################
 
 build/libbetree.so: build $(OBJECTS)
-	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+	$(CC) $(EXTRA) $(OBJECTS) -o $@
 
 build:
 	mkdir -p build
