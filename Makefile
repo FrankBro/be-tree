@@ -42,20 +42,14 @@ ifdef NIF
 	LDFLAGS += -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei
 endif
 
-ifeq ($(UNAME), Darwin)
-	EXTRA := -bundle -flat_namespace -undefined suppress
-else
-	EXTRA := -shared
-	endif
-
 ################################################################################
 # Default Target
 ################################################################################
 
-# all: build/betree.a build/betree.so $(OBJECTS) tool test dot
-# all: build/betree.a build/betree.so $(OBJECTS) tool test
-all: build/libbetree.so
-dev: build/libbetree.so test valgrind
+#all: build/libbetree.so build/libbetree.a
+#dev: build/libbetree.so build/libbetree.a test valgrind
+all: build/libbetree.a
+dev: build/libbetree.a test valgrind
 
 dot:
 	# dot -Tpng data/betree.dot -o data/betree.png
@@ -68,8 +62,11 @@ neato:
 # Binaries
 ################################################################################
 
-build/libbetree.so: build $(OBJECTS)
-	$(CC) $(EXTRA) $(OBJECTS) -o $@
+#build/libbetree.so: build $(OBJECTS)
+	#$(CC) -shared $(OBJECTS) -o $@
+
+build/libbetree.a: build $(OBJECTS)
+	ar rcs $@ $(OBJECTS)
 
 build:
 	mkdir -p build
@@ -110,11 +107,12 @@ test: $(TEST_OBJECTS)
 build/tests:
 	mkdir -p build/tests
 
-$(TEST_OBJECTS): %: %.c build/tests build/libbetree.so
-	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/libbetree.so $(LDFLAGS_TESTS)
+#$(TEST_OBJECTS): %: %.c build/tests build/libbetree.so
+$(TEST_OBJECTS): %: %.c build/tests build/libbetree.a
+	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/libbetree.a $(LDFLAGS_TESTS)
 
 clean:
-	rm -rf build/libbetree.so $(OBJECTS) $(LEX_OBJECTS) $(YACC_OBJECTS)
+	rm -rf build/libbetree.so build/libbetree.a $(OBJECTS) $(LEX_OBJECTS) $(YACC_OBJECTS)
 	rm -rf build
 
 valgrind:
