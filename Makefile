@@ -2,17 +2,19 @@
 # Variables
 ################################################################################
 
+UNAME := $(shell uname)
+
 CFLAGS := -O3 -g -std=gnu11 -Wall -Wextra -Wshadow -Wfloat-equal -Wundef -Wcast-align \
 	-Wwrite-strings -Wunreachable-code -Wformat=2 -Wswitch-enum \
 	-Wswitch-default -Winit-self -Wno-strict-aliasing
 
-LDFLAGS := -lm -fPIC 
-LDFLAGS_TESTS := $(LDFLAGS) -lgsl -lgslcblas 
+LDFLAGS := -lm -fPIC
+LDFLAGS_TESTS := $(LDFLAGS) -lgsl -lgslcblas
 
-LEX_SOURCES=$(wildcard src/*.l) 
+LEX_SOURCES=$(wildcard src/*.l)
 LEX_OBJECTS=$(patsubst %.l,%.c,${LEX_SOURCES}) $(patsubst %.l,%.h,${LEX_SOURCES})
 
-YACC_SOURCES=$(wildcard src/*.y) 
+YACC_SOURCES=$(wildcard src/*.y)
 YACC_OBJECTS=$(patsubst %.y,%.c,${YACC_SOURCES}) $(patsubst %.y,%.h,${YACC_SOURCES})
 
 SOURCES=$(filter-out ${YACC_OBJECTS},$(filter-out ${LEX_OBJECTS},$(wildcard src/*.c)))
@@ -44,10 +46,10 @@ endif
 # Default Target
 ################################################################################
 
-# all: build/betree.a build/betree.so $(OBJECTS) tool test dot
-# all: build/betree.a build/betree.so $(OBJECTS) tool test
-all: build/libbetree.so
-dev: build/libbetree.so test valgrind
+#all: build/libbetree.so build/libbetree.a
+#dev: build/libbetree.so build/libbetree.a test valgrind
+all: build/libbetree.a
+dev: build/libbetree.a test valgrind
 
 dot:
 	# dot -Tpng data/betree.dot -o data/betree.png
@@ -60,8 +62,11 @@ neato:
 # Binaries
 ################################################################################
 
-build/libbetree.so: build $(OBJECTS)
-	$(CC) -shared $(OBJECTS) -o $@
+#build/libbetree.so: build $(OBJECTS)
+	#$(CC) -shared $(OBJECTS) -o $@
+
+build/libbetree.a: build $(OBJECTS)
+	ar rcs $@ $(OBJECTS)
 
 build:
 	mkdir -p build
@@ -102,11 +107,12 @@ test: $(TEST_OBJECTS)
 build/tests:
 	mkdir -p build/tests
 
-$(TEST_OBJECTS): %: %.c build/tests build/libbetree.so
-	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/libbetree.so $(LDFLAGS_TESTS)
+#$(TEST_OBJECTS): %: %.c build/tests build/libbetree.so
+$(TEST_OBJECTS): %: %.c build/tests build/libbetree.a
+	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/libbetree.a $(LDFLAGS_TESTS)
 
 clean:
-	rm -rf build/libbetree.so $(OBJECTS) $(LEX_OBJECTS) $(YACC_OBJECTS)
+	rm -rf build/libbetree.so build/libbetree.a $(OBJECTS) $(LEX_OBJECTS) $(YACC_OBJECTS)
 	rm -rf build
 
 valgrind:
