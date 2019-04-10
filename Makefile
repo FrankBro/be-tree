@@ -2,17 +2,19 @@
 # Variables
 ################################################################################
 
+UNAME := $(shell uname)
+
 CFLAGS := -O3 -g -std=gnu11 -Wall -Wextra -Wshadow -Wfloat-equal -Wundef -Wcast-align \
 	-Wwrite-strings -Wunreachable-code -Wformat=2 -Wswitch-enum \
 	-Wswitch-default -Winit-self -Wno-strict-aliasing
 
-LDFLAGS := -lm -fPIC 
-LDFLAGS_TESTS := $(LDFLAGS) -lgsl -lgslcblas 
+LDFLAGS := -lm -fPIC
+LDFLAGS_TESTS := $(LDFLAGS) -lgsl -lgslcblas
 
-LEX_SOURCES=$(wildcard src/*.l) 
+LEX_SOURCES=$(wildcard src/*.l)
 LEX_OBJECTS=$(patsubst %.l,%.c,${LEX_SOURCES}) $(patsubst %.l,%.h,${LEX_SOURCES})
 
-YACC_SOURCES=$(wildcard src/*.y) 
+YACC_SOURCES=$(wildcard src/*.y)
 YACC_OBJECTS=$(patsubst %.y,%.c,${YACC_SOURCES}) $(patsubst %.y,%.h,${YACC_SOURCES})
 
 SOURCES=$(filter-out ${YACC_OBJECTS},$(filter-out ${LEX_OBJECTS},$(wildcard src/*.c)))
@@ -38,6 +40,9 @@ ifdef NIF
 	DEFINES += -DNIF
 	CFLAGS += -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
 	LDFLAGS += -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei
+	ifeq ($(UNAME), Darwin)
+	LDFLAGS += -bundle -flat_namespace -undefined suppress
+	endif
 endif
 
 ################################################################################
@@ -61,7 +66,7 @@ neato:
 ################################################################################
 
 build/libbetree.so: build $(OBJECTS)
-	$(CC) -shared $(OBJECTS) -o $@
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
 
 build:
 	mkdir -p build
