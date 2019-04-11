@@ -49,7 +49,7 @@ endif
 #all: build/libbetree.so build/libbetree.a
 #dev: build/libbetree.so build/libbetree.a test valgrind
 all: build/libbetree.a
-dev: build/libbetree.a test valgrind
+dev: gen build/libbetree.a test valgrind
 gen: lexer parser event_lexer event_parser
 
 dot:
