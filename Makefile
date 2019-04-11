@@ -50,6 +50,7 @@ endif
 #dev: build/libbetree.so build/libbetree.a test valgrind
 all: build/libbetree.a
 dev: build/libbetree.a test valgrind
+gen: lexer parser event_lexer event_parser
 
 dot:
 	# dot -Tpng data/betree.dot -o data/betree.png
@@ -75,19 +76,19 @@ build:
 # Bison / Flex
 ################################################################################
 
-src/lexer.c: src/parser.c
-	$(LEX) --header-file=src/lexer.h -o $@ src/lexer.l
+lexer: parser
+	$(LEX) --header-file=src/lexer.h -o src/lexer.c src/lexer.l
 
-src/parser.c: src/parser.y
+parser:
 	mkdir -p build/bison
-	$(YACC) $(YFLAGS) -o $@ $^
+	$(YACC) $(YFLAGS) -o src/parser.c src/parser.y
 
-src/event_lexer.c: src/event_parser.c
-	$(LEX) --header-file=src/event_lexer.h -o $@ src/event_lexer.l
+event_lexer: event_parser
+	$(LEX) --header-file=src/event_lexer.h -o src/event_lexer.c src/event_lexer.l
 
-src/event_parser.c: src/event_parser.y
+event_parser:
 	mkdir -p build/bison
-	$(YACC) $(YFLAGS) -o $@ $^
+	$(YACC) $(YFLAGS) -o src/event_parser.c src/event_parser.y
 
 ################################################################################
 # BETree

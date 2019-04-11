@@ -1,14 +1,6 @@
 *.o
 err.txt
 build/*
-src/lexer.c
-src/lexer.h
-src/event_lexer.c
-src/event_lexer.h
-src/parser.c
-src/parser.h
-src/event_parser.c
-src/event_parser.h
 src/parser.output
 src/event_parser.output
 .DS_Store
