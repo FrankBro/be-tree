@@ -48,9 +48,9 @@ endif
 
 #all: build/libbetree.so build/libbetree.a
 #dev: build/libbetree.so build/libbetree.a test valgrind
+.DEFAULT_GOAL := build/libbetree.a
 all: build/libbetree.a
 dev: gen build/libbetree.a test valgrind
-gen: lexer parser event_lexer event_parser
 
 dot:
 	# dot -Tpng data/betree.dot -o data/betree.png
@@ -76,19 +76,12 @@ build:
 # Bison / Flex
 ################################################################################
 
-lexer: parser
-	$(LEX) --header-file=src/lexer.h -o src/lexer.c src/lexer.l
-
-parser:
+gen:
 	mkdir -p build/bison
 	$(YACC) $(YFLAGS) -o src/parser.c src/parser.y
-
-event_lexer: event_parser
-	$(LEX) --header-file=src/event_lexer.h -o src/event_lexer.c src/event_lexer.l
-
-event_parser:
-	mkdir -p build/bison
+	$(LEX) --header-file=src/lexer.h -o src/lexer.c src/lexer.l
 	$(YACC) $(YFLAGS) -o src/event_parser.c src/event_parser.y
+	$(LEX) --header-file=src/event_lexer.h -o src/event_lexer.c src/event_lexer.l
 
 ################################################################################
 # BETree
@@ -113,7 +106,7 @@ $(TEST_OBJECTS): %: %.c build/tests build/libbetree.a
 	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/libbetree.a $(LDFLAGS_TESTS)
 
 clean:
-	rm -rf build/libbetree.so build/libbetree.a $(OBJECTS) $(LEX_OBJECTS) $(YACC_OBJECTS)
+	rm -rf build/libbetree.so build/libbetree.a $(OBJECTS)
 	rm -rf build
 
 valgrind:
