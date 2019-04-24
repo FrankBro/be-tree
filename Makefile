@@ -121,7 +121,7 @@ clean:
 realclean: clean
 	$(RM) $(INTERMEDIATES)
 
-valgrind:
+valgrind: $(TEST_BINARIES)
 	$(VALGRIND) build/tests/betree_tests
 	$(VALGRIND) build/tests/bound_tests
 	$(VALGRIND) build/tests/change_boundaries_tests
@@ -164,4 +164,4 @@ tidy:
 	#$(TIDY) src/value.c -checks='*' -- -Isrc
 	#$(TIDY) src/var.c -checks='*' -- -Isrc
 
-.PHONY: clean realclean test
+.PHONY: clean realclean test valgrind
