@@ -112,8 +112,8 @@ $(TEST_OBJECTS): %: %.c build/tests build/libbetree.a
 	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/libbetree.a $(LDFLAGS_TESTS)
 
 clean:
-	rm -rf build/libbetree.so build/libbetree.a $(OBJECTS)
-	rm -rf build
+	$(RM) $(OBJECTS)
+	$(RM) -rf build
 
 valgrind:
 	$(VALGRIND) build/tests/betree_tests
