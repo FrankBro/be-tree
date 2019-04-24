@@ -21,11 +21,16 @@ YACC_INTERMEDIATES = \
 	$(patsubst %.y,%.c,${YACC_SOURCES}) \
 	$(patsubst %.y,%.h,${YACC_SOURCES})
 
-SOURCES = $(filter-out ${YACC_INTERMEDIATES},$(filter-out ${LEX_INTERMEDIATES},$(wildcard src/*.c)))
+INTERMEDIATES = $(LEX_INTERMEDIATES) $(YACC_INTERMEDIATES)
+GENERATED_OBJECTS = \
+	$(patsubst %.l,%.o,$(LEX_SOURCES)) \
+	$(patsubst %.y,%.o,$(YACC_SOURCES))
+
+SOURCES = $(filter-out $(INTERMEDIATES),$(wildcard src/*.c))
 OBJECTS = \
-	$(patsubst %.c,%.o,${SOURCES}) \
-	$(patsubst %.l,%.o,${LEX_SOURCES}) \
-	$(patsubst %.y,%.o,${YACC_SOURCES})
+	$(patsubst %.c,%.o,$(SOURCES)) \
+	$(GENERATED_OBJECTS)
+
 TEST_SOURCES=$(wildcard tests/*_tests.c)
 TEST_OBJECTS=$(patsubst %.c,%,${TEST_SOURCES})
 
@@ -57,7 +62,7 @@ endif
 #dev: build/libbetree.so build/libbetree.a test valgrind
 .DEFAULT_GOAL := build/libbetree.a
 all: build/libbetree.a
-dev: gen build/libbetree.a test valgrind
+dev: $(GENERATED_OBJECTS) build/libbetree.a test valgrind
 
 dot:
 	# dot -Tpng data/betree.dot -o data/betree.png
@@ -83,12 +88,10 @@ build:
 # Bison / Flex
 ################################################################################
 
-gen:
-	mkdir -p build/bison
-	$(YACC) $(YFLAGS) -o src/parser.c src/parser.y
-	$(LEX) --header-file=src/lexer.h -o src/lexer.c src/lexer.l
-	$(YACC) $(YFLAGS) -o src/event_parser.c src/event_parser.y
-	$(LEX) --header-file=src/event_lexer.h -o src/event_lexer.c src/event_lexer.l
+%.c %.h: %.l
+	$(LEX) --header-file=$*.h -o $@ $<
+%.c: %.y
+	$(YACC) $(YFLAGS) -o $@ $<
 
 ################################################################################
 # BETree
