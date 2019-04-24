@@ -118,6 +118,9 @@ clean:
 	$(RM) $(OBJECTS)
 	$(RM) -rf build
 
+realclean: clean
+	$(RM) $(INTERMEDIATES)
+
 valgrind:
 	$(VALGRIND) build/tests/betree_tests
 	$(VALGRIND) build/tests/bound_tests
@@ -161,4 +164,4 @@ tidy:
 	#$(TIDY) src/value.c -checks='*' -- -Isrc
 	#$(TIDY) src/var.c -checks='*' -- -Isrc
 
-.PHONY: clean test
+.PHONY: clean realclean test
