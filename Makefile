@@ -32,7 +32,7 @@ OBJECTS = \
 	$(GENERATED_OBJECTS)
 
 TEST_SOURCES=$(wildcard tests/*_tests.c)
-TEST_OBJECTS=$(patsubst %.c,%,${TEST_SOURCES})
+TEST_BINARIES=$(patsubst %.c,%,${TEST_SOURCES})
 
 LEX?=flex
 YACC?=bison
@@ -104,14 +104,14 @@ src/%.o: src/%.c
 # Tests
 ################################################################################
 
-test: $(TEST_OBJECTS)
+test: $(TEST_BINARIES)
 	@bash ./tests/runtests.sh
 
 build/tests:
 	mkdir -p build/tests
 
-#$(TEST_OBJECTS): %: %.c build/tests build/libbetree.so
-$(TEST_OBJECTS): %: %.c build/tests build/libbetree.a
+#$(TEST_BINARIES): %: %.c build/tests build/libbetree.so
+$(TEST_BINARIES): %: %.c build/tests build/libbetree.a
 	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/libbetree.a $(LDFLAGS_TESTS)
 
 clean:
