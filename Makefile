@@ -11,16 +11,28 @@ CFLAGS := -O3 -g -std=gnu11 -Wall -Wextra -Wshadow -Wfloat-equal -Wundef -Wcast-
 LDFLAGS := -lm -fPIC
 LDFLAGS_TESTS := $(LDFLAGS) -lgsl -lgslcblas
 
-LEX_SOURCES=$(wildcard src/*.l)
-LEX_OBJECTS=$(patsubst %.l,%.c,${LEX_SOURCES}) $(patsubst %.l,%.h,${LEX_SOURCES})
+LEX_SOURCES = $(wildcard src/*.l)
+LEX_INTERMEDIATES = \
+	$(patsubst %.l,%.c,${LEX_SOURCES}) \
+	$(patsubst %.l,%.h,${LEX_SOURCES})
 
-YACC_SOURCES=$(wildcard src/*.y)
-YACC_OBJECTS=$(patsubst %.y,%.c,${YACC_SOURCES}) $(patsubst %.y,%.h,${YACC_SOURCES})
+YACC_SOURCES = $(wildcard src/*.y)
+YACC_INTERMEDIATES = \
+	$(patsubst %.y,%.c,${YACC_SOURCES}) \
+	$(patsubst %.y,%.h,${YACC_SOURCES})
 
-SOURCES=$(filter-out ${YACC_OBJECTS},$(filter-out ${LEX_OBJECTS},$(wildcard src/*.c)))
-OBJECTS=$(patsubst %.c,%.o,${SOURCES}) $(patsubst %.l,%.o,${LEX_SOURCES}) $(patsubst %.y,%.o,${YACC_SOURCES})
+INTERMEDIATES = $(LEX_INTERMEDIATES) $(YACC_INTERMEDIATES)
+GENERATED_OBJECTS = \
+	$(patsubst %.l,%.o,$(LEX_SOURCES)) \
+	$(patsubst %.y,%.o,$(YACC_SOURCES))
+
+SOURCES = $(filter-out $(INTERMEDIATES),$(wildcard src/*.c))
+OBJECTS = \
+	$(patsubst %.c,%.o,$(SOURCES)) \
+	$(GENERATED_OBJECTS)
+
 TEST_SOURCES=$(wildcard tests/*_tests.c)
-TEST_OBJECTS=$(patsubst %.c,%,${TEST_SOURCES})
+TEST_BINARIES=$(patsubst %.c,%,${TEST_SOURCES})
 
 LEX?=flex
 YACC?=bison
@@ -50,7 +62,7 @@ endif
 #dev: build/libbetree.so build/libbetree.a test valgrind
 .DEFAULT_GOAL := build/libbetree.a
 all: build/libbetree.a
-dev: gen build/libbetree.a test valgrind
+dev: $(GENERATED_OBJECTS) build/libbetree.a test valgrind
 
 dot:
 	# dot -Tpng data/betree.dot -o data/betree.png
@@ -76,12 +88,10 @@ build:
 # Bison / Flex
 ################################################################################
 
-gen:
-	mkdir -p build/bison
-	$(YACC) $(YFLAGS) -o src/parser.c src/parser.y
-	$(LEX) --header-file=src/lexer.h -o src/lexer.c src/lexer.l
-	$(YACC) $(YFLAGS) -o src/event_parser.c src/event_parser.y
-	$(LEX) --header-file=src/event_lexer.h -o src/event_lexer.c src/event_lexer.l
+%.c %.h: | %.l
+	$(LEX) --header-file=$*.h -o $@ $<
+%.c: | %.y
+	$(YACC) $(YFLAGS) -o $@ $<
 
 ################################################################################
 # BETree
@@ -94,22 +104,24 @@ src/%.o: src/%.c
 # Tests
 ################################################################################
 
-.PHONY: clean test
-test: $(TEST_OBJECTS)
+test: $(TEST_BINARIES)
 	@bash ./tests/runtests.sh
 
 build/tests:
 	mkdir -p build/tests
 
-#$(TEST_OBJECTS): %: %.c build/tests build/libbetree.so
-$(TEST_OBJECTS): %: %.c build/tests build/libbetree.a
+#$(TEST_BINARIES): %: %.c build/tests build/libbetree.so
+$(TEST_BINARIES): %: %.c build/tests build/libbetree.a
 	$(CC) $(CFLAGS) -Isrc -o build/$@ $< build/libbetree.a $(LDFLAGS_TESTS)
 
 clean:
-	rm -rf build/libbetree.so build/libbetree.a $(OBJECTS)
-	rm -rf build
+	$(RM) $(OBJECTS)
+	$(RM) -rf build
 
-valgrind:
+realclean: clean
+	$(RM) $(INTERMEDIATES)
+
+valgrind: $(TEST_BINARIES)
 	$(VALGRIND) build/tests/betree_tests
 	$(VALGRIND) build/tests/bound_tests
 	$(VALGRIND) build/tests/change_boundaries_tests
@@ -152,3 +164,4 @@ tidy:
 	#$(TIDY) src/value.c -checks='*' -- -Isrc
 	#$(TIDY) src/var.c -checks='*' -- -Isrc
 
+.PHONY: clean realclean test valgrind
