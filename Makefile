@@ -11,14 +11,21 @@ CFLAGS := -O3 -g -std=gnu11 -Wall -Wextra -Wshadow -Wfloat-equal -Wundef -Wcast-
 LDFLAGS := -lm -fPIC
 LDFLAGS_TESTS := $(LDFLAGS) -lgsl -lgslcblas
 
-LEX_SOURCES=$(wildcard src/*.l)
-LEX_OBJECTS=$(patsubst %.l,%.c,${LEX_SOURCES}) $(patsubst %.l,%.h,${LEX_SOURCES})
+LEX_SOURCES = $(wildcard src/*.l)
+LEX_OBJECTS = \
+	$(patsubst %.l,%.c,${LEX_SOURCES}) \
+	$(patsubst %.l,%.h,${LEX_SOURCES})
 
-YACC_SOURCES=$(wildcard src/*.y)
-YACC_OBJECTS=$(patsubst %.y,%.c,${YACC_SOURCES}) $(patsubst %.y,%.h,${YACC_SOURCES})
+YACC_SOURCES = $(wildcard src/*.y)
+YACC_OBJECTS = \
+	$(patsubst %.y,%.c,${YACC_SOURCES}) \
+	$(patsubst %.y,%.h,${YACC_SOURCES})
 
-SOURCES=$(filter-out ${YACC_OBJECTS},$(filter-out ${LEX_OBJECTS},$(wildcard src/*.c)))
-OBJECTS=$(patsubst %.c,%.o,${SOURCES}) $(patsubst %.l,%.o,${LEX_SOURCES}) $(patsubst %.y,%.o,${YACC_SOURCES})
+SOURCES = $(filter-out ${YACC_OBJECTS},$(filter-out ${LEX_OBJECTS},$(wildcard src/*.c)))
+OBJECTS = \
+	$(patsubst %.c,%.o,${SOURCES}) \
+	$(patsubst %.l,%.o,${LEX_SOURCES}) \
+	$(patsubst %.y,%.o,${YACC_SOURCES})
 TEST_SOURCES=$(wildcard tests/*_tests.c)
 TEST_OBJECTS=$(patsubst %.c,%,${TEST_SOURCES})
 
