@@ -12,16 +12,16 @@ LDFLAGS := -lm -fPIC
 LDFLAGS_TESTS := $(LDFLAGS) -lgsl -lgslcblas
 
 LEX_SOURCES = $(wildcard src/*.l)
-LEX_OBJECTS = \
+LEX_INTERMEDIATES = \
 	$(patsubst %.l,%.c,${LEX_SOURCES}) \
 	$(patsubst %.l,%.h,${LEX_SOURCES})
 
 YACC_SOURCES = $(wildcard src/*.y)
-YACC_OBJECTS = \
+YACC_INTERMEDIATES = \
 	$(patsubst %.y,%.c,${YACC_SOURCES}) \
 	$(patsubst %.y,%.h,${YACC_SOURCES})
 
-SOURCES = $(filter-out ${YACC_OBJECTS},$(filter-out ${LEX_OBJECTS},$(wildcard src/*.c)))
+SOURCES = $(filter-out ${YACC_INTERMEDIATES},$(filter-out ${LEX_INTERMEDIATES},$(wildcard src/*.c)))
 OBJECTS = \
 	$(patsubst %.c,%.o,${SOURCES}) \
 	$(patsubst %.l,%.o,${LEX_SOURCES}) \
