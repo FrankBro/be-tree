@@ -101,7 +101,6 @@ src/%.o: src/%.c
 # Tests
 ################################################################################
 
-.PHONY: clean test
 test: $(TEST_OBJECTS)
 	@bash ./tests/runtests.sh
 
@@ -159,3 +158,4 @@ tidy:
 	#$(TIDY) src/value.c -checks='*' -- -Isrc
 	#$(TIDY) src/var.c -checks='*' -- -Isrc
 
+.PHONY: clean test
