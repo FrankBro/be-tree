@@ -210,7 +210,7 @@ static void write_dot_file_lnode_names(
                     fprintf(f, ", ");
                 }
             }
-            fprintf(f, "S<sub>%lu</sub>", lnode->subs[i]->id);
+            fprintf(f, "S<sub>%"PRIbst"</sub>", lnode->subs[i]->id);
         }
         fprintf(f, "\\}>, color=lightblue1, fillcolor=lightblue1, style=filled, shape=record]\n");
     }
@@ -241,7 +241,7 @@ static void write_dot_file_cdir_td(FILE* f,
     if(current_depth == 0) {
         print_spaces(f, level);
         if(cdir == NULL) {
-            fprintf(f, "<td colspan=\"%lu\"></td>\n", colspan);
+            fprintf(f, "<td colspan=\"%"PRIu64"\"></td>\n", colspan);
         }
         else {
             const char* name = get_name_cdir(config, cdir);
@@ -249,7 +249,7 @@ static void write_dot_file_cdir_td(FILE* f,
                 case(BETREE_INTEGER):
                 case(BETREE_INTEGER_LIST):
                     fprintf(f,
-                        "<td colspan=\"%lu\" port=\"%s\">[%ld, %ld]</td>\n",
+                        "<td colspan=\"%"PRIu64"\" port=\"%s\">[%"PRIi64", %"PRIi64"]</td>\n",
                         colspan,
                         name,
                         cdir->bound.imin,
@@ -257,7 +257,7 @@ static void write_dot_file_cdir_td(FILE* f,
                     break;
                 case(BETREE_FLOAT): {
                     fprintf(f,
-                        "<td colspan=\"%lu\" port=\"%s\">[%.0f, %.0f]</td>\n",
+                        "<td colspan=\"%"PRIu64"\" port=\"%s\">[%.0f, %.0f]</td>\n",
                         colspan,
                         name,
                         cdir->bound.fmin,
@@ -268,7 +268,7 @@ static void write_dot_file_cdir_td(FILE* f,
                     const char* min = cdir->bound.bmin ? "true" : "false";
                     const char* max = cdir->bound.bmax ? "true" : "false";
                     fprintf(f,
-                        "<td colspan=\"%lu\" port=\"%s\">[%s, %s]</td>\n",
+                        "<td colspan=\"%"PRIu64"\" port=\"%s\">[%s, %s]</td>\n",
                         colspan,
                         name,
                         min,
@@ -280,7 +280,7 @@ static void write_dot_file_cdir_td(FILE* f,
                 case(BETREE_INTEGER_ENUM):
                 case(BETREE_INTEGER_LIST_ENUM):
                     fprintf(f,
-                        "<td colspan=\"%lu\" port=\"%s\">[%zu, %zu]</td>\n",
+                        "<td colspan=\"%"PRIu64"\" port=\"%s\">[%zu, %zu]</td>\n",
                         colspan,
                         name,
                         cdir->bound.smin,

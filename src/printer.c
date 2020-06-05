@@ -393,7 +393,7 @@ void print_variable(const struct betree_variable* v)
             printf("%s", v->value.boolean_value ? "true" : "false");
             break;
         case BETREE_INTEGER:
-            printf("%ld", v->value.integer_value);
+            printf("%"PRIi64, v->value.integer_value);
             break;
         case BETREE_FLOAT:
             printf("%.2f", v->value.float_value);
@@ -410,7 +410,7 @@ void print_variable(const struct betree_variable* v)
             printf("%s", inner);
             break;
         case BETREE_INTEGER_ENUM:
-            printf("%ld", v->value.integer_enum_value.integer);
+            printf("%"PRIi64, v->value.integer_enum_value.integer);
             break;
         case BETREE_INTEGER_LIST_ENUM:
             inner = integer_enum_list_value_to_string(v->value.integer_enum_list_value);
@@ -450,13 +450,13 @@ void print_attr_domain(const struct attr_domain* domain)
                 printf("INT64_MIN, ");
             }
             else {
-                printf("%ld, ", domain->bound.imin);
+                printf("%"PRIi64", ", domain->bound.imin);
             }
             if(domain->bound.imax == INT64_MAX) {
                 printf("INT64_MAX]\n");
             }
             else {
-                printf("%ld]\n", domain->bound.imax);
+                printf("%"PRIi64"]\n", domain->bound.imax);
             }
             break;
         case BETREE_FLOAT:
@@ -492,13 +492,13 @@ void print_attr_domain(const struct attr_domain* domain)
                 printf("INT64_MIN, ");
             }
             else {
-                printf("%ld, ", domain->bound.imin);
+                printf("%"PRIi64", ", domain->bound.imin);
             }
             if(domain->bound.imax == INT64_MAX) {
                 printf("INT64_MAX]\n");
             }
             else {
-                printf("%ld]\n", domain->bound.imax);
+                printf("%"PRIi64"]\n", domain->bound.imax);
             }
             break;
         case BETREE_STRING_LIST:
@@ -558,13 +558,13 @@ void print_cdir(const struct cdir* cdir)
                 printf("INT64_MIN, ");
             }
             else {
-                printf("%ld, ", cdir->bound.imin);
+                printf("%"PRIi64", ", cdir->bound.imin);
             }
             if(cdir->bound.imax == INT64_MAX) {
                 printf("INT64_MAX]\n");
             }
             else {
-                printf("%ld]\n", cdir->bound.imax);
+                printf("%"PRIi64"]\n", cdir->bound.imax);
             }
             break;
         case BETREE_FLOAT:
@@ -597,13 +597,13 @@ void print_cdir(const struct cdir* cdir)
                 printf("INT64_MIN, ");
             }
             else {
-                printf("%ld, ", cdir->bound.imin);
+                printf("%"PRIi64", ", cdir->bound.imin);
             }
             if(cdir->bound.imax == INT64_MAX) {
                 printf("INT64_MAX]\n");
             }
             else {
-                printf("%ld]\n", cdir->bound.imax);
+                printf("%"PRIi64"]\n", cdir->bound.imax);
             }
             break;
         case BETREE_STRING_LIST:

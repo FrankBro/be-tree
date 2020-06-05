@@ -3,8 +3,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 typedef uint64_t betree_sub_t;
+#define PRIbst PRIu64
 
 struct config;
 struct cnode;
