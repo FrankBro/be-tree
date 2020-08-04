@@ -18,7 +18,7 @@ The following types are supported:
 The expressions supported are as follow:
 
 * Comparison: `<`, `<=`, `>` and `>=`. They work on integers and floats.
-* Equality: `=` and `<>`. They work on integers, floats and strings.
+* Equality: `=` and `<>`. They work on integers, integer enums, floats and strings.
 * Boolean: `and`, `or`, `not` and checking a boolean variable.
 * Set: `in` and `not in`. Two possibilities:
     * value `in` variable. Here value is an integer or a string.
