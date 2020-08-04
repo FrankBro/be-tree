@@ -1,8 +1,9 @@
-/* A Bison parser, made by GNU Bison 3.0.4.  */
+/* A Bison parser, made by GNU Bison 3.5.1.  */
 
 /* Bison interface for Yacc-like parsers in C
 
-   Copyright (C) 1984, 1989-1990, 2000-2015 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989-1990, 2000-2015, 2018-2020 Free Software Foundation,
+   Inc.
 
    This program is free software: you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -29,6 +30,9 @@
 
    This special exception was added by the Free Software Foundation in
    version 2.2 of Bison.  */
+
+/* Undocumented macros, especially those whose name start with YY_,
+   are private implementation details.  Do not rely on them.  */
 
 #ifndef YY_ZZ_SRC_EVENT_PARSER_H_INCLUDED
 # define YY_ZZ_SRC_EVENT_PARSER_H_INCLUDED
@@ -68,27 +72,12 @@ extern int zzdebug;
     EVENT_STRING = 270
   };
 #endif
-/* Tokens.  */
-#define EVENT_LCURLY 258
-#define EVENT_RCURLY 259
-#define EVENT_LSQUARE 260
-#define EVENT_RSQUARE 261
-#define EVENT_COMMA 262
-#define EVENT_COLON 263
-#define EVENT_MINUS 264
-#define EVENT_NULL 265
-#define EVENT_TRUE 266
-#define EVENT_FALSE 267
-#define EVENT_INTEGER 268
-#define EVENT_FLOAT 269
-#define EVENT_STRING 270
 
 /* Value type.  */
 #if ! defined ZZSTYPE && ! defined ZZSTYPE_IS_DECLARED
-
 union ZZSTYPE
 {
-#line 32 "src/event_parser.y" /* yacc.c:1909  */
+#line 32 "src/event_parser.y"
 
     int token;
     char *string;
@@ -109,9 +98,9 @@ union ZZSTYPE
 
     struct betree_event* event;
 
-#line 113 "src/event_parser.h" /* yacc.c:1909  */
-};
+#line 102 "src/event_parser.h"
 
+};
 typedef union ZZSTYPE ZZSTYPE;
 # define ZZSTYPE_IS_TRIVIAL 1
 # define ZZSTYPE_IS_DECLARED 1
