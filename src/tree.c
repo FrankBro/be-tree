@@ -157,17 +157,6 @@ static bool is_event_enclosed(const struct betree_variable** preds, const struct
             return (cdir->bound.smin <= pred->value.string_value.str) && (open_right || cdir->bound.smax >= pred->value.string_value.str);
         case BETREE_INTEGER_ENUM:
             return (cdir->bound.smin <= pred->value.integer_enum_value.ienum) && (open_right || cdir->bound.smax >= pred->value.integer_enum_value.ienum);
-        case BETREE_INTEGER_LIST_ENUM:
-            if(pred->value.integer_enum_list_value->count != 0) {
-                size_t min = pred->value.integer_enum_list_value->integers[0].ienum;
-                size_t max = pred->value.integer_enum_list_value->integers[pred->value.integer_enum_list_value->count - 1].ienum;
-                size_t bound_min = cdir->bound.smin;
-                size_t bound_max = open_right ? SIZE_MAX : cdir->bound.smax;
-                return min <= bound_max && bound_min <= max;
-            }
-            else {
-                return true;
-            }
         case BETREE_INTEGER_LIST:
             if(pred->value.integer_list_value->count != 0) {
                 int64_t min = pred->value.integer_list_value->integers[0];
@@ -219,7 +208,6 @@ bool sub_is_enclosed(const struct attr_domain** attr_domains, const struct betre
             case(BETREE_STRING):
             case(BETREE_STRING_LIST):
             case(BETREE_INTEGER_ENUM):
-            case(BETREE_INTEGER_LIST_ENUM):
                 return cdir->bound.smin <= bound.smin && cdir->bound.smax >= bound.smax;
             case(BETREE_SEGMENTS): {
                 fprintf(
@@ -377,7 +365,6 @@ static size_t domain_bound_diff(const struct attr_domain* attr_domain)
         case BETREE_STRING:
         case BETREE_STRING_LIST:
         case BETREE_INTEGER_ENUM:
-        case BETREE_INTEGER_LIST_ENUM:
             return b->smax - b->smin;
         case BETREE_SEGMENTS:
         case BETREE_FREQUENCY_CAPS:
@@ -749,7 +736,6 @@ static bool splitable_attr_domain(
         case BETREE_STRING:
         case BETREE_STRING_LIST:
         case BETREE_INTEGER_ENUM:
-        case BETREE_INTEGER_LIST_ENUM:
             if(attr_domain->bound.smax == SIZE_MAX) {
                 return false;
             }
@@ -864,7 +850,6 @@ static bool is_atomic(const struct cdir* cdir)
         case(BETREE_STRING):
         case(BETREE_STRING_LIST):
         case(BETREE_INTEGER_ENUM):
-        case(BETREE_INTEGER_LIST_ENUM):
             return cdir->bound.smin == cdir->bound.smax;
         case(BETREE_SEGMENTS): {
             fprintf(stderr, "%s a segments value cdir should never happen for now\n", __func__);
@@ -980,8 +965,7 @@ static struct value_bounds split_value_bound(struct value_bound bound)
         }
         case(BETREE_STRING):
         case(BETREE_STRING_LIST): 
-        case(BETREE_INTEGER_ENUM): 
-        case(BETREE_INTEGER_LIST_ENUM):{
+        case(BETREE_INTEGER_ENUM): {
             size_t start = bound.smin, end = bound.smax;
             lbound.smin = start;
             rbound.smax = end;
@@ -1685,12 +1669,6 @@ void event_to_string(const struct betree_event* event, char* buffer)
                 length += sprintf(buffer + length, "%s = %ld", attr, pred->value.integer_enum_value.integer);
                 break;
             }
-            case(BETREE_INTEGER_LIST_ENUM): {
-                const char* integer_enum_list = integer_enum_list_value_to_string(pred->value.integer_enum_list_value);
-                length += sprintf(buffer + length, "%s = (%s)", attr, integer_enum_list);
-                bfree((char*)integer_enum_list);
-                break;
-            }
             case(BETREE_INTEGER_LIST): {
                 const char* integer_list = integer_list_value_to_string(pred->value.integer_list_value);
                 length += sprintf(buffer + length, "%s = (%s)", attr, integer_list);
@@ -1827,9 +1805,6 @@ void sort_event_lists(struct betree_event* event)
         else if(pred->value.value_type == BETREE_STRING_LIST) {
             sort_and_remove_duplicate_string_list(pred->value.string_list_value);
         }
-        else if(pred->value.value_type == BETREE_INTEGER_LIST_ENUM) {
-            sort_and_remove_duplicate_integer_enum_list(pred->value.integer_enum_list_value);
-        }
     }
 }
 
@@ -1921,15 +1896,6 @@ void fill_event(const struct config* config, struct betree_event* event)
                     = try_get_id_for_ienum(config, pred->attr_var, pred->value.integer_enum_value.integer);
                 pred->value.integer_enum_value.var = pred->attr_var.var;
                 pred->value.integer_enum_value.ienum = ienum;
-                break;
-            }
-            case BETREE_INTEGER_LIST_ENUM: {
-                for(size_t j = 0; j < pred->value.integer_enum_list_value->count; j++) {
-                    betree_ienum_t ienum = try_get_id_for_ienum(
-                        config, pred->attr_var, pred->value.integer_enum_list_value->integers[j].integer);
-                    pred->value.integer_enum_list_value->integers[j].var = pred->attr_var.var;
-                    pred->value.integer_enum_list_value->integers[j].ienum = ienum;
-                }
                 break;
             }
             case BETREE_STRING: {

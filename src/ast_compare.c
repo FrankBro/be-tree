@@ -41,25 +41,6 @@ static int cmp_string_list(struct betree_string_list* l1, struct betree_string_l
     return 0;
 }
 
-static int cmp_integer_enum_list(struct betree_integer_enum_list* l1, struct betree_integer_enum_list* l2)
-{
-    if(l1->count > l2->count) {
-        return 1;
-    }
-    if(l1->count < l2->count) {
-        return -1;
-    }
-    for(size_t i = 0; i < l1->count; i++) {
-        if(l1->integers[i].ienum > l2->integers[i].ienum) {
-            return 1;
-        }
-        if(l1->integers[i].ienum < l2->integers[i].ienum) {
-            return -1;
-        }
-    }
-    return 0;
-}
-
 static int compare_expr_cmp(struct ast_compare_expr* c1, struct ast_compare_expr* c2)
 {
     if(c1->op > c2->op) {
@@ -273,8 +254,6 @@ static int set_expr_cmp(struct ast_set_expr* s1, struct ast_set_expr* s2)
                 return -1;
             }
             return 0;
-        case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM:
-            return cmp_integer_enum_list(s1->right_value.integer_enum_list_value, s2->right_value.integer_enum_list_value);
         default: abort();
     }
 }

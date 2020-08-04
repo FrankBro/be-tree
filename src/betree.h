@@ -45,7 +45,6 @@ enum betree_value_type_e {
     BETREE_SEGMENTS,
     BETREE_FREQUENCY_CAPS,
     BETREE_INTEGER_ENUM,
-    BETREE_INTEGER_LIST_ENUM,
 };
 
 struct betree_integer_list;

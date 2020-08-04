@@ -125,7 +125,6 @@ enum set_right_value_e {
     AST_SET_RIGHT_VALUE_INTEGER_LIST,
     AST_SET_RIGHT_VALUE_STRING_LIST,
     AST_SET_RIGHT_VALUE_VARIABLE,
-    AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM,
 };
 
 struct set_right_value {
@@ -134,7 +133,6 @@ struct set_right_value {
         struct betree_integer_list* integer_list_value;
         struct betree_string_list* string_list_value;
         struct attr_var variable_value;
-        struct betree_integer_enum_list* integer_enum_list_value;
     };
 };
 
@@ -343,3 +341,4 @@ bool fast_eq_expr(const struct ast_node* a, const struct ast_node* b);
 
 bool all_variables_in_config(const struct config* config, const struct ast_node* node);
 bool all_bounded_strings_valid(const struct config* config, const struct ast_node* node);
+bool all_exprs_valid(const struct config* config, const struct ast_node* node);

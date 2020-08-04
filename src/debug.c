@@ -99,7 +99,6 @@ static const char* get_path_cdir(const struct config* config, const struct cdir*
         case(BETREE_STRING):
         case(BETREE_STRING_LIST):
         case(BETREE_INTEGER_ENUM):
-        case(BETREE_INTEGER_LIST_ENUM):
             if(basprintf(&name, "%s_%zu_%zu", parent_path, cdir->bound.smin, cdir->bound.smax) < 0) {
                 abort();
             }
@@ -278,7 +277,6 @@ static void write_dot_file_cdir_td(FILE* f,
                 case(BETREE_STRING):
                 case(BETREE_STRING_LIST):
                 case(BETREE_INTEGER_ENUM):
-                case(BETREE_INTEGER_LIST_ENUM):
                     fprintf(f,
                         "<td colspan=\"%lu\" port=\"%s\">[%zu, %zu]</td>\n",
                         colspan,

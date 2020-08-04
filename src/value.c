@@ -19,18 +19,6 @@ struct betree_integer_list* make_integer_list()
     return value;
 }
 
-struct betree_integer_enum_list* make_integer_enum_list(size_t count)
-{
-    struct betree_integer_enum_list* value = bcalloc(sizeof(*value));
-    if(value == NULL) {
-        fprintf(stderr, "%s bcalloc failed", __func__);
-        abort();
-    }
-    value->count = count;
-    value->integers = bcalloc(count * sizeof(*value->integers));
-    return value;
-}
-
 struct betree_string_list* make_string_list()
 {
     struct betree_string_list* value = bcalloc(sizeof(*value));
@@ -146,27 +134,6 @@ char* string_list_value_to_string(struct betree_string_list* list)
     return string;
 }
 
-char* integer_enum_list_value_to_string(struct betree_integer_enum_list* list)
-{
-    char* string = NULL;
-    for(size_t i = 0; i < list->count; i++) {
-        char* new_string;
-        if(i != 0) {
-            if(basprintf(&new_string, "%s, %ld", string, list->integers[i].integer) < 0) {
-                abort();
-            }
-            bfree(string);
-        }
-        else {
-            if(basprintf(&new_string, "%ld", list->integers[i].integer) < 0) {
-                abort();
-            }
-        }
-        string = new_string;
-    }
-    return string;
-}
-
 void add_segment(struct betree_segment* segment, struct betree_segments* list)
 {
     if(list->size == 0) {
@@ -272,12 +239,6 @@ void free_integer_list(struct betree_integer_list* value)
     bfree(value);
 }
 
-void free_integer_enum_list(struct betree_integer_enum_list* value)
-{
-    bfree(value->integers);
-    bfree(value);
-}
-
 void free_string_list(struct betree_string_list* value)
 {
     for(size_t i = 0; i < value->count; i++) {
@@ -327,9 +288,6 @@ void free_value(struct value value)
             free_integer_list(value.integer_list_value);
             break;
         }
-        case BETREE_INTEGER_LIST_ENUM:
-            free_integer_enum_list(value.integer_enum_list_value);
-            break;
         case BETREE_STRING_LIST: {
             free_string_list(value.string_list_value);
             break;
@@ -479,29 +437,3 @@ void sort_and_remove_duplicate_string_list(struct betree_string_list* list)
     sort_string_list(list);
     remove_duplicates_string_list(list);
 }
-
-void remove_duplicates_integer_enum_list(struct betree_integer_enum_list* list)
-{
-    if (list->count == 0) {
-        return;
-    }
-    size_t r = 0;
-    for (size_t i = 1; i < list->count; i++) {
-        if (list->integers[r].ienum != list->integers[i].ienum) {
-            list->integers[++ r] = list->integers[i]; // copy-in next unique number
-        }
-    }
-    list->count = r + 1;
-}
-
-void sort_integer_enum_list(struct betree_integer_enum_list* list)
-{
-    qsort(list->integers, list->count, sizeof(*list->integers), iecmpfunc);
-}
-
-void sort_and_remove_duplicate_integer_enum_list(struct betree_integer_enum_list* list)
-{
-    sort_integer_enum_list(list);
-    remove_duplicates_integer_enum_list(list);
-}
-
