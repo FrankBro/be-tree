@@ -133,6 +133,7 @@ valgrind: $(TEST_BINARIES)
 	$(VALGRIND) build/tests/printer_tests
 	$(VALGRIND) build/tests/report_tests
 	$(VALGRIND) build/tests/special_tests
+	$(VALGRIND) build/tests/valid_tests
 	#$(VALGRIND) build/tests/real_tests 1
 
 callgrind:
