@@ -104,6 +104,18 @@ int test_valid(enum valid_domain_e domain, bool allow_undefined, const char* exp
     return 0;
 }
 
+int test_missing_domain()
+{
+    struct betree* tree = betree_make();
+    const struct betree_sub* sub = NULL;
+    sub = betree_make_sub(tree, 0, 0, NULL, "var = 1");
+    mu_assert(sub == NULL, "");
+    sub = betree_make_sub(tree, 0, 0, NULL, "var = \"1\"");
+    mu_assert(sub == NULL, "");
+    betree_free(tree);
+    return 0;
+}
+
 int test_comparison()
 {
     // For the event, we don't need to test integer values because in the real code, this never happens
@@ -351,6 +363,7 @@ int test_null()
 
 int all_tests()
 {
+    test_missing_domain();
     test_comparison();
     test_equality();
     test_boolean();

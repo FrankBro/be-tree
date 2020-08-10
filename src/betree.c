@@ -510,16 +510,16 @@ const struct betree_sub* betree_make_sub(struct betree* tree, betree_sub_t id, s
         return NULL;
     }
     assign_variable_id(tree->config, node);
+    if(!all_variables_in_config(tree->config, node)) {
+        fprintf(stderr, "Missing variable in config\n");
+        free_ast_node(node);
+        return NULL;
+    }
     assign_str_id(tree->config, node, true);
     assign_ienum_id(tree->config, node, true);
     fix_float_with_no_fractions(tree->config, node);
     if(!all_exprs_valid(tree->config, node)) {
         fprintf(stderr, "Invalid expression found\n");
-        free_ast_node(node);
-        return NULL;
-    }
-    if(!all_variables_in_config(tree->config, node)) {
-        fprintf(stderr, "Missing variable in config\n");
         free_ast_node(node);
         return NULL;
     }
