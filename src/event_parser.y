@@ -91,7 +91,9 @@
 
 %%
 
-program             : EVENT_LCURLY variable_loop EVENT_RCURLY   { root = $2; }
+program             : EVENT_LCURLY EVENT_RCURLY                 { root = make_empty_event(); }
+                    | EVENT_LCURLY variable_loop EVENT_RCURLY   { root = $2; }
+;
 
 variable_loop       : variable                              { $$ = make_empty_event(); add_variable($1, $$); }
                     | variable_loop EVENT_COMMA variable    { add_variable($3, $1); $$ = $1; }

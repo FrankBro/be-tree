@@ -150,15 +150,6 @@ static struct betree_string_list* clone_string_list(struct betree_string_list* l
     return clone;
 }
 
-static struct betree_integer_enum_list* clone_integer_enum_list(struct betree_integer_enum_list* list)
-{
-    struct betree_integer_enum_list* clone = make_integer_enum_list(list->count);
-    for(size_t i = 0; i < list->count; i++) {
-        clone->integers[i] = list->integers[i];
-    }
-    return clone;
-}
-
 static struct set_right_value clone_set_right_value(struct set_right_value orig)
 {
     struct set_right_value clone = { .value_type = orig.value_type };
@@ -171,9 +162,6 @@ static struct set_right_value clone_set_right_value(struct set_right_value orig)
             break;
         case AST_SET_RIGHT_VALUE_VARIABLE:
             clone.variable_value = clone_attr_var(orig.variable_value);
-            break;
-        case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM:
-            clone.integer_enum_list_value = clone_integer_enum_list(orig.integer_enum_list_value);
             break;
         default: abort();
     }

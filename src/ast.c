@@ -303,9 +303,6 @@ static void free_set_expr(struct ast_set_expr set_expr)
             free_attr_var(set_expr.right_value.variable_value);
             break;
         }
-        case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM:
-            free_integer_enum_list(set_expr.right_value.integer_enum_list_value);
-            break;
         default: abort();
     }
 }
@@ -420,25 +417,6 @@ static bool sbinary_search(struct string_value arr[], size_t count, betree_str_t
     return false;
 }
 
-static bool iebinary_search(struct integer_enum_value arr[], size_t count, betree_ienum_t to_find)
-{
-    int imin = 0;
-    int imax = (int)count - 1;
-    while(imax >= imin) {
-        int imid = imin + ((imax - imin) / 2);
-        if(arr[imid].ienum == to_find) {
-            return true;
-        }
-        if(arr[imid].ienum < to_find) {
-            imin = imid + 1;
-        }
-        else {
-            imax = imid - 1;
-        }
-    }
-    return false;
-}
-
 static bool integer_in_integer_list(int64_t integer, struct betree_integer_list* list)
 {
     return d64binary_search(list->integers, list->count, integer);
@@ -447,11 +425,6 @@ static bool integer_in_integer_list(int64_t integer, struct betree_integer_list*
 static bool string_in_string_list(struct string_value string, struct betree_string_list* list)
 {
     return sbinary_search(list->strings, list->count, string.str);
-}
-
-static bool integer_enum_in_integer_enum_list(struct integer_enum_value ienum, struct betree_integer_enum_list* list)
-{
-    return iebinary_search(list->integers, list->count, ienum.ienum);
 }
 
 static bool compare_value_matches(enum ast_compare_value_e a, enum betree_value_type_e b)
@@ -821,15 +794,6 @@ static bool match_set_expr(const struct betree_variable** preds, const struct as
             return false;
         }
         is_in = string_in_string_list(variable, right.string_list_value);
-    }
-    else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE
-      && right.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM) {
-        struct integer_enum_value variable;
-        bool is_variable_defined = get_integer_enum_var(left.variable_value.var, preds, &variable);
-        if(is_variable_defined == false) {
-            return false;
-        }
-        is_in = integer_enum_in_integer_enum_list(variable, right.integer_enum_list_value);
     }
     else {
         invalid_expr("invalid set expression");
@@ -1458,7 +1422,6 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                             case BETREE_STRING:
                             case BETREE_STRING_LIST:
                             case BETREE_INTEGER_ENUM:
-                            case BETREE_INTEGER_LIST_ENUM:
                                 bound->smin = smin(lbound.smin, rbound.smin);
                                 break;
                             case BETREE_SEGMENTS:
@@ -1483,7 +1446,6 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                             case BETREE_STRING:
                             case BETREE_STRING_LIST:
                             case BETREE_INTEGER_ENUM:
-                            case BETREE_INTEGER_LIST_ENUM:
                                 bound->smax = smax(lbound.smax, rbound.smax);
                                 break;
                             case BETREE_SEGMENTS:
@@ -1543,7 +1505,6 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                             case BETREE_STRING:
                             case BETREE_STRING_LIST:
                             case BETREE_INTEGER_ENUM:
-                            case BETREE_INTEGER_LIST_ENUM:
                                 if(ldirty.min_dirty == true && rdirty.min_dirty == true) {
                                     bound->smin = smin(lbound.smin, rbound.smin);
                                 }
@@ -1600,7 +1561,6 @@ static void get_variable_bound_inner(const struct attr_domain* domain,
                             case BETREE_STRING:
                             case BETREE_STRING_LIST:
                             case BETREE_INTEGER_ENUM:
-                            case BETREE_INTEGER_LIST_ENUM:
                                 if(ldirty.max_dirty == true && rdirty.max_dirty == true) {
                                     bound->smax = smax(lbound.smax, rbound.smax);
                                 }
@@ -1879,7 +1839,6 @@ struct value_bound get_variable_bound(const struct attr_domain* domain, const st
         case BETREE_STRING:
         case BETREE_STRING_LIST:
         case BETREE_INTEGER_ENUM:
-        case BETREE_INTEGER_LIST_ENUM:
             if(dirty.min_dirty == false) {
                 bound.smin = domain->bound.smin;
             }
@@ -2107,8 +2066,6 @@ void assign_variable_id(struct config* config, struct ast_node* node)
                     node->set_expr.right_value.variable_value.var = variable_id;
                     break;
                 }
-                case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM:
-                    break;
                 default: abort();
             }
             return;
@@ -2124,6 +2081,7 @@ void assign_ienum_id(struct config* config, struct ast_node* node, bool always_a
         case AST_TYPE_SPECIAL_EXPR: 
         case AST_TYPE_COMPARE_EXPR: 
         case AST_TYPE_LIST_EXPR:
+        case AST_TYPE_SET_EXPR:
             return;
         case AST_TYPE_EQUALITY_EXPR:
             if(node->equality_expr.value.value_type == AST_EQUALITY_VALUE_INTEGER
@@ -2156,24 +2114,6 @@ void assign_ienum_id(struct config* config, struct ast_node* node, bool always_a
                 }
                 default: abort();
             }
-        case AST_TYPE_SET_EXPR:
-            if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE
-              && config->attr_domains[node->set_expr.left_value.variable_value.var]->bound.value_type == BETREE_INTEGER_ENUM) {
-                struct betree_integer_enum_list* integer_enum_list = make_integer_enum_list(node->set_expr.right_value.integer_list_value->count);
-                for(size_t i = 0; i < node->set_expr.right_value.integer_list_value->count; i++) {
-                    betree_ienum_t ienum_id = get_id_for_ienum(config,
-                        node->set_expr.left_value.variable_value,
-                        node->set_expr.right_value.integer_list_value->integers[i], always_assign);
-                    integer_enum_list->integers[i].var = node->set_expr.left_value.variable_value.var;
-                    integer_enum_list->integers[i].ienum = ienum_id;
-                    integer_enum_list->integers[i].integer = node->set_expr.left_value.variable_value.var;
-                }
-                node->set_expr.right_value.value_type = AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM;
-                free_integer_list(node->set_expr.right_value.integer_list_value);
-                node->set_expr.right_value.integer_enum_list_value = integer_enum_list;
-
-            }
-            return;
         default: abort();
     }
 }
@@ -2373,19 +2313,6 @@ static bool eq_string_list(struct betree_string_list* a, struct betree_string_li
     return true;
 }
 
-static bool eq_integer_enum_list(struct betree_integer_enum_list* a, struct betree_integer_enum_list* b)
-{
-    if(a->count != b->count) {
-        return false;
-    }
-    for(size_t i = 0; i < a->count; i++) {
-        if(a->integers[i].var == b->integers[i].var && a->integers[i].ienum != b->integers[i].ienum) {
-            return false;
-        }
-    }
-    return true;
-}
-
 static bool eq_set_right_value(struct set_right_value a, struct set_right_value b)
 {
     if(a.value_type != b.value_type) {
@@ -2398,8 +2325,6 @@ static bool eq_set_right_value(struct set_right_value a, struct set_right_value 
             return eq_string_list(a.string_list_value, b.string_list_value);
         case AST_SET_RIGHT_VALUE_VARIABLE:
             return a.variable_value.var == b.variable_value.var;
-        case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM:
-            return eq_integer_enum_list(a.integer_enum_list_value, b.integer_enum_list_value);
         default: abort();
     }
 }
@@ -2556,9 +2481,6 @@ void sort_lists(struct ast_node* node)
                     case AST_SET_RIGHT_VALUE_STRING_LIST:
                         sort_string_list(node->set_expr.right_value.string_list_value);
                         return;
-                    case AST_SET_RIGHT_VALUE_INTEGER_LIST_ENUM:
-                        sort_integer_enum_list(node->set_expr.right_value.integer_enum_list_value);
-                        return;
                     case AST_SET_RIGHT_VALUE_VARIABLE:
                         return;
                     default:
@@ -2608,6 +2530,78 @@ bool is_variable_valid(struct attr_var attr_var)
         return false;
     }
     return true;
+}
+
+bool is_list_type(enum betree_value_type_e type) {
+    return type == BETREE_INTEGER_LIST || type == BETREE_STRING_LIST;
+}
+
+bool all_exprs_valid(const struct config* config, const struct ast_node* node)
+{
+    switch(node->type) {
+        case AST_TYPE_IS_NULL_EXPR: {
+            const struct attr_domain* attr_domain = config->attr_domains[node->is_null_expr.attr_var.var];
+            enum betree_value_type_e var_type = attr_domain->bound.value_type;
+            return (node->is_null_expr.type == AST_IS_NULL && attr_domain->allow_undefined)
+                || (node->is_null_expr.type == AST_IS_NOT_NULL && attr_domain->allow_undefined)
+                || (node->is_null_expr.type == AST_IS_EMPTY && is_list_type(var_type));
+        }
+        case AST_TYPE_COMPARE_EXPR: {
+            enum betree_value_type_e var_type = config->attr_domains[node->compare_expr.attr_var.var]->bound.value_type;
+            enum ast_compare_value_e val_type = node->compare_expr.value.value_type;
+            return (var_type == BETREE_INTEGER && val_type == AST_COMPARE_VALUE_INTEGER)
+                || (var_type == BETREE_FLOAT && val_type == AST_COMPARE_VALUE_FLOAT);
+        }
+        case AST_TYPE_EQUALITY_EXPR: {
+            enum betree_value_type_e var_type = config->attr_domains[node->equality_expr.attr_var.var]->bound.value_type;
+            enum ast_equality_value_e val_type = node->equality_expr.value.value_type;
+            return (var_type == BETREE_STRING && val_type == AST_EQUALITY_VALUE_STRING)
+                || (var_type == BETREE_FLOAT && val_type == AST_EQUALITY_VALUE_FLOAT)
+                || (var_type == BETREE_INTEGER && val_type == AST_EQUALITY_VALUE_INTEGER)
+                || (var_type == BETREE_INTEGER_ENUM && val_type == AST_EQUALITY_VALUE_INTEGER_ENUM);
+        }
+        case AST_TYPE_LIST_EXPR: {
+            enum betree_value_type_e var_type = config->attr_domains[node->list_expr.attr_var.var]->bound.value_type;
+            enum ast_list_value_e val_type = node->list_expr.value.value_type;
+            return (var_type == BETREE_STRING_LIST && val_type == AST_LIST_VALUE_STRING_LIST)
+                || (var_type == BETREE_INTEGER_LIST && val_type == AST_LIST_VALUE_INTEGER_LIST);
+        }
+        case AST_TYPE_BOOL_EXPR: {
+            switch(node->bool_expr.op) {
+                case AST_BOOL_VARIABLE: {
+                    enum betree_value_type_e var_type = config->attr_domains[node->bool_expr.variable.var]->bound.value_type;
+                    return var_type == BETREE_BOOLEAN;
+                }
+                case AST_BOOL_LITERAL: 
+                    return true;
+                case AST_BOOL_OR:
+                case AST_BOOL_AND:
+                    return all_exprs_valid(config, node->bool_expr.binary.lhs)
+                        && all_exprs_valid(config, node->bool_expr.binary.rhs);
+                case AST_BOOL_NOT:
+                    return all_exprs_valid(config, node->bool_expr.unary.expr);
+                default: abort();
+            }
+        }
+        case AST_TYPE_SET_EXPR: {
+            if(node->set_expr.left_value.value_type == AST_SET_LEFT_VALUE_VARIABLE) {
+                enum betree_value_type_e var_type = config->attr_domains[node->set_expr.left_value.variable_value.var]->bound.value_type;
+                enum set_right_value_e val_type = node->set_expr.right_value.value_type;
+                return (var_type == BETREE_STRING && val_type == AST_SET_RIGHT_VALUE_STRING_LIST)
+                    || (var_type == BETREE_INTEGER && val_type == AST_SET_RIGHT_VALUE_INTEGER_LIST);
+            }
+            else if(node->set_expr.right_value.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
+                enum betree_value_type_e var_type = config->attr_domains[node->set_expr.right_value.variable_value.var]->bound.value_type;
+                enum set_left_value_e val_type = node->set_expr.left_value.value_type;
+                return (var_type == BETREE_STRING_LIST && val_type == AST_SET_LEFT_VALUE_STRING)
+                    || (var_type == BETREE_INTEGER_LIST && val_type == AST_SET_LEFT_VALUE_INTEGER); 
+            }
+            return false;
+        }
+        case AST_TYPE_SPECIAL_EXPR:
+            return true;
+        default: abort();
+    }
 }
 
 bool all_variables_in_config(const struct config* config, const struct ast_node* node)
