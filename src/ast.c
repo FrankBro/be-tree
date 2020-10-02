@@ -467,6 +467,14 @@ const char* frequency_type_to_string(enum frequency_type_e type)
             string = "campaign:ip";
             break;
         }
+        case FREQUENCY_TYPE_CAMPAIGN_GROUP: {
+            string = "campaign_group";
+            break;
+        }
+        case FREQUENCY_TYPE_CAMPAIGN_GROUPIP: {
+            string = "campaign_group:ip";
+            break;
+        }
         case FREQUENCY_TYPE_FLIGHT: {
             string = "flight";
             break;
@@ -1881,6 +1889,9 @@ static const char* get_constant_name_for_type(enum frequency_type_e type)
         case FREQUENCY_TYPE_CAMPAIGN:
         case FREQUENCY_TYPE_CAMPAIGNIP:
             return "campaign_id";
+        case FREQUENCY_TYPE_CAMPAIGN_GROUP:
+        case FREQUENCY_TYPE_CAMPAIGN_GROUPIP:
+            return "campaign_group_id";
         case FREQUENCY_TYPE_FLIGHT:
         case FREQUENCY_TYPE_FLIGHTIP:
             return "flight_id";
