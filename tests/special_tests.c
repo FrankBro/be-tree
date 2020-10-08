@@ -20,11 +20,12 @@ frequency(
     int64_t now, 
     enum frequency_type_e cap_type, uint32_t cap_id, const char* cap_ns, uint32_t cap_value, int64_t timestamp)
 {
-    enum e { constant_count = 4 };
+    enum e { constant_count = 5 };
     const struct betree_constant* constants[constant_count] = {
         betree_make_integer_constant("flight_id", 10),
         betree_make_integer_constant("advertiser_id", 20),
         betree_make_integer_constant("campaign_id", 30),
+        betree_make_integer_constant("campaign_group_id", 31),
         betree_make_integer_constant("product_id", 40),
     };
     struct betree* tree = betree_make();
@@ -109,6 +110,16 @@ int test_frequency()
         0, 
         FREQUENCY_TYPE_CAMPAIGNIP, 30, "ns", 0, 0
     ), "fcap_type_campaign_ip");
+    mu_assert(within_frequency_cap(
+        FREQUENCY_TYPE_CAMPAIGN_GROUP, "ns", 100, 0,
+        0,
+        FREQUENCY_TYPE_CAMPAIGN_GROUP, 31, "ns", 0, 0
+    ), "fcap_type_campaign_group");
+    mu_assert(within_frequency_cap(
+        FREQUENCY_TYPE_CAMPAIGN_GROUPIP, "ns", 100, 0,
+        0,
+        FREQUENCY_TYPE_CAMPAIGN_GROUPIP, 31, "ns", 0, 0
+    ), "fcap_type_campaign_group_ip");
     mu_assert(within_frequency_cap(
         FREQUENCY_TYPE_PRODUCT, "ns", 100, 0,
         0, 

@@ -217,6 +217,12 @@ enum frequency_type_e get_type_from_string(const char* stype)
     if(strcmp(stype, "campaign:ip") == 0) {
         return FREQUENCY_TYPE_CAMPAIGNIP;
     }
+    if(strcmp(stype, "campaign_group") == 0) {
+        return FREQUENCY_TYPE_CAMPAIGN_GROUP;
+    }
+    if(strcmp(stype, "campaign_group:ip") == 0) {
+        return FREQUENCY_TYPE_CAMPAIGN_GROUPIP;
+    }
     if(strcmp(stype, "product") == 0) {
         return FREQUENCY_TYPE_PRODUCT;
     }
