@@ -17,19 +17,20 @@ bool within_frequency_caps(const struct betree_frequency_caps* caps,
     int64_t now)
 {
     for(size_t i = 0; i < caps->size; i++) {
-        if(caps->content[i]->id == id && 
-            caps->content[i]->namespace.str == namespace.str &&
-            caps->content[i]->type == type) {
+        const struct betree_frequency_cap* content = caps->content[i];
+        if(content->id == id && 
+            content->namespace.str == namespace.str &&
+            content->type == type) {
             if(length <= 0) {
-                return value > caps->content[i]->value;
+                return value > content->value;
             }
-            if(!caps->content[i]->timestamp_defined) {
+            if(!content->timestamp_defined) {
                 return true;
             }
-            if((now - (caps->content[i]->timestamp / 1000000)) > (int64_t)length) {
+            if((now - (content->timestamp / 1000000)) > (int64_t)length) {
                 return true;
             }
-            if(value > caps->content[i]->value) {
+            if(value > content->value) {
                 return true;
             }
             return false;
