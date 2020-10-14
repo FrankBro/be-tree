@@ -314,52 +314,34 @@ int test_null()
     return 0;
 }
 
-    // mu_assert(test_valid(VALID_DOMAIN_I, true, "var", false, "", 0) == 0, "");
-    // mu_assert(test_valid(VALID_DOMAIN_F, true, "var", false, "", 0) == 0, ""); 
-    // mu_assert(test_valid(VALID_DOMAIN_B, true, "var", false, "", 0) == 0, ""); 
-    // mu_assert(test_valid(VALID_DOMAIN_S, true, "var", false, "", 0) == 0, ""); 
-    // mu_assert(test_valid(VALID_DOMAIN_IL, true, "var", false, "", 0) == 0, ""); 
-    // mu_assert(test_valid(VALID_DOMAIN_SL, true, "var", false, "", 0) == 0, ""); 
-    // mu_assert(test_valid(VALID_DOMAIN_SEGMENTS, true, "var", false, "", 0) == 0, ""); 
-    // mu_assert(test_valid(VALID_DOMAIN_FREQUENCY, true, "var", false, "", 0) == 0, ""); 
-    // mu_assert(test_valid(VALID_DOMAIN_IE, true, "var", false, "", 0) == 0, ""); 
-
-    // {
-    //     struct betree* tree = betree_make();
-    //     add_attr_domain_s(tree->config, "samsung_device_country", true);
-    //     const char* expr = "samsung_device_country one of (\"US\", \"UK\")";
-    //     const struct betree_sub* sub = betree_make_sub(tree, 0, 0, NULL, expr);
-    //     betree_insert_sub(tree, sub);
-    //     const char* event = "{\"samsung_device_country\": \"UK\"}";
-    //     struct report* report = make_report();
-    //     mu_assert(betree_search(tree, event, report), "");
-    //     free_report(report);
-    //     betree_free(tree);
-    // }
-    // {
-    //     struct betree* tree = betree_make();
-    //     add_attr_domain_s(tree->config, "samsung_device_country", true);
-    //     const char* expr = "samsung_device_country none of (\"US\", \"UK\")";
-    //     const struct betree_sub* sub = betree_make_sub(tree, 0, 0, NULL, expr);
-    //     betree_insert_sub(tree, sub);
-    //     const char* event = "{\"samsung_device_country\": \"FI\"}";
-    //     struct report* report = make_report();
-    //     mu_assert(betree_search(tree, event, report), "");
-    //     free_report(report);
-    //     betree_free(tree);
-    // }
-    // {
-    //     struct betree* tree = betree_make();
-    //     add_attr_domain_i(tree->config, "i", true);
-    //     const char* expr = "i = \"US\"";
-    //     const struct betree_sub* sub = betree_make_sub(tree, 0, 0, NULL, expr);
-    //     betree_insert_sub(tree, sub);
-    //     const char* event = "{\"i\": 1}";
-    //     struct report* report = make_report();
-    //     mu_assert(betree_search(tree, event, report), "");
-    //     free_report(report);
-    //     betree_free(tree);
-    // }
+int test_special()
+{
+    // frequency
+    enum e { constant_count = 5 };
+    const struct betree_constant* constants[constant_count] = {
+        betree_make_integer_constant("flight_id", 10),
+        betree_make_integer_constant("advertiser_id", 20),
+        betree_make_integer_constant("campaign_id", 30),
+        betree_make_integer_constant("product_id", 40),
+        betree_make_integer_constant("unknown", 50),
+    };
+    struct betree* tree = betree_make();
+    add_attr_domain_i(tree->config, "now", false);
+    add_attr_domain_frequency(tree->config, "frequency_caps", false);
+    const char* expr = "within_frequency_cap(\"flight\", \"ns\", 100, 0)";
+    const struct betree_sub* sub = betree_make_sub(tree, 0, constant_count, constants, expr);
+    mu_assert(sub != NULL, "");
+    betree_insert_sub(tree, sub);
+    expr = "within_frequency_cap(\"invalid\", \"ns\", 100, 0)";
+    sub = betree_make_sub(tree, 1, constant_count, constants, expr);
+    mu_assert(sub == NULL, "");
+    // search
+    struct betree_frequency_cap* frequency_cap = betree_make_frequency_cap("invalid", 0, "ns", false, 0, 0);
+    mu_assert(frequency_cap == NULL, "");
+    betree_free_constants(constant_count, (struct betree_constant**)constants);
+    betree_free(tree);
+    return 0;
+}
 
 int all_tests()
 {
@@ -370,6 +352,7 @@ int all_tests()
     test_set();
     test_list();
     test_null();
+    test_special();
     return 0;
 }
 

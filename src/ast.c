@@ -491,7 +491,9 @@ const char* frequency_type_to_string(enum frequency_type_e type)
             string = "product:ip";
             break;
         }
-        default: abort();
+        case FREQUENCY_TYPE_INVALID:
+        default: 
+            abort();
     }
     return string;
 }
@@ -1898,6 +1900,7 @@ static const char* get_constant_name_for_type(enum frequency_type_e type)
         case FREQUENCY_TYPE_PRODUCT:
         case FREQUENCY_TYPE_PRODUCTIP:
             return "product_id";
+        case FREQUENCY_TYPE_INVALID:
         default:
             return NULL;
     };
@@ -2610,7 +2613,15 @@ bool all_exprs_valid(const struct config* config, const struct ast_node* node)
             return false;
         }
         case AST_TYPE_SPECIAL_EXPR:
-            return true;
+            switch(node->special_expr.type) {
+                case AST_SPECIAL_FREQUENCY:
+                    return node->special_expr.frequency.type != FREQUENCY_TYPE_INVALID;
+                case AST_SPECIAL_SEGMENT:
+                case AST_SPECIAL_GEO:
+                case AST_SPECIAL_STRING:
+                    return true;
+                default: abort();
+            }
         default: abort();
     }
 }

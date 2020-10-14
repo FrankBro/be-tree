@@ -813,9 +813,13 @@ struct betree_frequency_cap* betree_make_frequency_cap(const char* stype,
     int64_t timestamp,
     uint32_t value)
 {
+    enum frequency_type_e type = get_type_from_string(stype);
+    if(type == FREQUENCY_TYPE_INVALID) {
+        return NULL;
+    }
     struct string_value namespace
         = { .string = bstrdup(ns), .str = INVALID_STR, .var = INVALID_VAR };
-    return make_frequency_cap(stype, id, namespace, timestamp_defined, timestamp, value);
+    return make_frequency_cap_with_type(type, id, namespace, timestamp_defined, timestamp, value);
 }
 
 void betree_add_frequency_cap(struct betree_frequency_caps* frequency_caps,

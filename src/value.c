@@ -192,8 +192,18 @@ struct betree_frequency_cap* make_frequency_cap(const char* stype,
     int64_t timestamp,
     uint32_t value)
 {
-    struct betree_frequency_cap* frequency_cap = bmalloc(sizeof(*frequency_cap));
     enum frequency_type_e type = get_type_from_string(stype);
+    return make_frequency_cap_with_type(type, id, namespace, timestamp_defined, timestamp, value);
+}
+
+struct betree_frequency_cap* make_frequency_cap_with_type(enum frequency_type_e type,
+    uint32_t id,
+    struct string_value namespace,
+    bool timestamp_defined,
+    int64_t timestamp,
+    uint32_t value)
+{
+    struct betree_frequency_cap* frequency_cap = bmalloc(sizeof(*frequency_cap));
     frequency_cap->type = type;
     frequency_cap->id = id;
     frequency_cap->namespace = namespace;
@@ -235,8 +245,7 @@ enum frequency_type_e get_type_from_string(const char* stype)
     if(strcmp(stype, "flight:ip") == 0) {
         return FREQUENCY_TYPE_FLIGHTIP;
     }
-    fprintf(stderr, "Invalid frequency type");
-    abort();
+    return FREQUENCY_TYPE_INVALID;
 }
 
 void free_integer_list(struct betree_integer_list* value)
