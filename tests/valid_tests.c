@@ -331,12 +331,14 @@ int test_special()
     const char* expr = "within_frequency_cap(\"flight\", \"ns\", 100, 0)";
     const struct betree_sub* sub = betree_make_sub(tree, 0, constant_count, constants, expr);
     mu_assert(sub != NULL, "");
+    betree_insert_sub(tree, sub);
     expr = "within_frequency_cap(\"invalid\", \"ns\", 100, 0)";
     sub = betree_make_sub(tree, 1, constant_count, constants, expr);
     mu_assert(sub == NULL, "");
     // search
     struct betree_frequency_cap* frequency_cap = betree_make_frequency_cap("invalid", 0, "ns", false, 0, 0);
-    mu_assert(sub == NULL, "");
+    mu_assert(frequency_cap == NULL, "");
+    betree_free_constants(constant_count, (struct betree_constant**)constants);
     betree_free(tree);
     return 0;
 }
