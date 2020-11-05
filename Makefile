@@ -51,7 +51,7 @@ ERL_INTERFACE_LIB_DIR ?= $(shell erl -noshell -s init stop -eval "io:format(\"~t
 ifdef NIF
 	DEFINES += -DNIF
 	CFLAGS += -I $(ERTS_INCLUDE_DIR) -I $(ERL_INTERFACE_INCLUDE_DIR)
-	LDFLAGS += -L $(ERL_INTERFACE_LIB_DIR) -lerl_interface -lei
+	LDFLAGS += -L $(ERL_INTERFACE_LIB_DIR) -lei
 endif
 
 ################################################################################
