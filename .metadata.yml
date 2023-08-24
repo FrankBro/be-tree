@@ -1,0 +1,17 @@
+metadata:
+  name: be-tree
+  description: "be-tree used for filtering flights in rtb-gateway and next generation rtb-bidder"
+  labels:
+    stack: "c"
+    practice: "engineering"
+    jira-project: "INNOVX"
+    jira-board: 1704
+    public: false
+    sensitive: false
+  links:
+    - url: https://github.com/adgear/be-tree/...
+
+spec:
+  owner: cg-dsp-bidding-systems-greenfield
+  type: service
+  lifecycle: development
