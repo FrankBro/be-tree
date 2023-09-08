@@ -18,6 +18,8 @@
 #include "value.h"
 #include "var.h"
 
+#define DEGA_1294
+
 struct ast_node* ast_node_create()
 {
     struct ast_node* node = bcalloc(sizeof(*node));
@@ -606,6 +608,17 @@ static bool match_not_all_of_int(struct value variable, struct ast_list_expr lis
         xs = list_expr.value.integer_list_value->integers;
         x_count = list_expr.value.integer_list_value->count;
     }
+#ifdef DEGA_1294
+    if (x_count == 1) {
+        return (d64binary_search(ys, y_count, xs[0]) == true);
+    }
+    if (x_count == 2) {
+        return (d64binary_search(ys, y_count, xs[0]) == true || d64binary_search(ys, y_count, xs[1]) == true);
+    }
+    if (x_count == 3) {
+        return (d64binary_search(ys, y_count, xs[0]) == true || d64binary_search(ys, y_count, xs[1]) == true || d64binary_search(ys, y_count, xs[2]) == true);
+    }
+#endif
     size_t i = 0, j = 0;
     while(i < x_count && j < y_count) {
         int64_t x = xs[i];
@@ -665,6 +678,17 @@ static bool match_all_of_int(struct value variable, struct ast_list_expr list_ex
     int64_t* ys = variable.integer_list_value->integers;
     size_t y_count = variable.integer_list_value->count;
     if(x_count <= y_count) {
+#ifdef DEGA_1294
+        if (x_count == 1) {
+            return (d64binary_search(ys, y_count, xs[0]) == true);
+        }
+        if (x_count == 2) {
+            return (d64binary_search(ys, y_count, xs[0]) == true && d64binary_search(ys, y_count, xs[1]) == true);
+        }
+        if (x_count == 3) {
+            return (d64binary_search(ys, y_count, xs[0]) == true && d64binary_search(ys, y_count, xs[1]) == true && d64binary_search(ys, y_count, xs[2]) == true);
+        }
+#endif
         size_t i = 0, j = 0;
         while(i < y_count && j < x_count) {
             int64_t x = xs[j];
