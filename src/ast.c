@@ -18,7 +18,8 @@
 #include "value.h"
 #include "var.h"
 
-#define DEGA_1294
+// #define DEGA_1294
+#define DEGA_1468
 
 struct ast_node* ast_node_create()
 {
@@ -590,6 +591,62 @@ static bool match_special_expr(
     }
 }
 
+#ifdef DEGA_1468
+
+size_t next_low(const int64_t arr[], size_t low, size_t count, int64_t x)
+{
+//    assert(low <= high);
+    size_t high = count - 1;
+    // Till low is less than high
+    while (low < high) {
+        size_t mid = low + (high - low) / 2;
+        if (x <= arr[mid]) {
+            high = mid;
+        } else {
+            low = mid + 1;
+        }
+    }
+    // if x is greater than arr[low]
+    if(low < count && arr[low] < x) {
+       low++;
+    }
+ // Return the lower_bound index
+ return low;
+}
+
+static bool match_not_all_of_int(struct value variable, struct ast_list_expr list_expr)
+{
+    int64_t* xs;
+    size_t x_count;
+    int64_t* ys;
+    size_t y_count;
+    if(variable.integer_list_value->count < list_expr.value.integer_list_value->count) {
+        xs = variable.integer_list_value->integers;
+        x_count = variable.integer_list_value->count;
+        ys = list_expr.value.integer_list_value->integers;
+        y_count = list_expr.value.integer_list_value->count;
+    }
+    else {
+        ys = variable.integer_list_value->integers;
+        y_count = variable.integer_list_value->count;
+        xs = list_expr.value.integer_list_value->integers;
+        x_count = list_expr.value.integer_list_value->count;
+    }
+    size_t i = 0, from = 0;
+    while(i < x_count && from < y_count) {
+        int64_t x = xs[i];
+        from = next_low(ys, from, y_count, x);
+        if(from < y_count && ys[from] == x) {
+            return true;
+        } else {
+            i++;
+        }
+    }
+    return false;
+}
+
+#else
+
 static bool match_not_all_of_int(struct value variable, struct ast_list_expr list_expr)
 {
     int64_t* xs;
@@ -636,6 +693,9 @@ static bool match_not_all_of_int(struct value variable, struct ast_list_expr lis
     return false;
 }
 
+#endif
+
+
 static bool match_not_all_of_string(struct value variable, struct ast_list_expr list_expr)
 {
     struct string_value* xs;
@@ -670,6 +730,35 @@ static bool match_not_all_of_string(struct value variable, struct ast_list_expr 
     }
     return false;
 }
+
+#ifdef DEGA_1468
+
+static bool match_all_of_int(struct value variable, struct ast_list_expr list_expr)
+{
+    int64_t* xs = list_expr.value.integer_list_value->integers;
+    size_t x_count = list_expr.value.integer_list_value->count;
+    int64_t* ys = variable.integer_list_value->integers;
+    size_t y_count = variable.integer_list_value->count;
+    if(x_count <= y_count) {
+        size_t from = 0, j = 0;
+        while(from < y_count && j < x_count) {
+            int64_t x = xs[j];
+            from = next_low(ys, from, y_count, x);
+            if(from < y_count && ys[from] == x) {
+                j++;
+            } else {
+                return false;
+            }
+        }
+        if(j < x_count) {
+            return false;
+        }
+        return true;
+    }
+    return false;
+}
+
+#else
 
 static bool match_all_of_int(struct value variable, struct ast_list_expr list_expr)
 {
@@ -711,6 +800,7 @@ static bool match_all_of_int(struct value variable, struct ast_list_expr list_ex
     }
     return false;
 }
+#endif
 
 static bool match_all_of_string(struct value variable, struct ast_list_expr list_expr)
 {
