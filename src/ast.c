@@ -588,11 +588,14 @@ static bool match_special_expr(
     }
 }
 
+// Returns index i; 0 <= i <= count. 
+// If x is among arr values returns index of element in arr with value equal to x
+// If there is not such element returns index i such that:
+//   if all elements in arr are less then x returns count (i.e the array's length)
+//   else returns i such that then arr[i-1] < x < arr[i]
 size_t next_low(const int64_t arr[], size_t low, size_t count, int64_t x)
 {
-//    assert(low <= high);
     size_t high = count - 1;
-    // Till low is less than high
     while (low < high) {
         size_t mid = low + (high - low) / 2;
         if (x <= arr[mid]) {
@@ -601,11 +604,9 @@ size_t next_low(const int64_t arr[], size_t low, size_t count, int64_t x)
             low = mid + 1;
         }
     }
-    // if x is greater than arr[low]
     if(low < count && arr[low] < x) {
        low++;
     }
- // Return the lower_bound index
  return low;
 }
 
@@ -631,6 +632,7 @@ static bool match_not_all_of_int(struct value variable, struct ast_list_expr lis
     while(i < x_count && from < y_count) {
         int64_t x = xs[i];
         from = next_low(ys, from, y_count, x);
+        // first check that new index is in array
         if(from < y_count && ys[from] == x) {
             return true;
         } else {
