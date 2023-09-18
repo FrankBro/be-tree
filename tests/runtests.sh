@@ -3,6 +3,8 @@ echo "Unit Tests"
 
 real_tests="build/tests/real_tests"
 
+log_file=/tmp/sky-test.log
+
 # Loop over compiled tests and run them.
 for test_file in build/tests/*_tests
 do
@@ -14,12 +16,14 @@ do
     if test -f $test_file
     then
         # Log execution to file.
-        if ./$test_file 2>&1 > /tmp/sky-test.log
+        if ./$test_file 2>&1 > $log_file
         then
-            rm -f /tmp/sky-test.log
+            echo 'no errors'
+            rm -f $log_file
         else
             # If error occurred then print off log.
-            cat /tmp/sky-test.log
+            echo "error in test; see $log_file"
+            cat $log_file
             exit 1
         fi
     fi
