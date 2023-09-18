@@ -588,6 +588,28 @@ static bool match_special_expr(
     }
 }
 
+// Returns index i; 0 <= i <= count. 
+// If x is among arr values returns index of element in arr with value equal to x
+// If there is not such element returns index i such that:
+//   if all elements in arr are less then x returns count (i.e the array's length)
+//   else returns i such that then arr[i-1] < x < arr[i]
+size_t next_low(const int64_t arr[], size_t low, size_t count, int64_t x)
+{
+    size_t high = count - 1;
+    while (low < high) {
+        size_t mid = low + (high - low) / 2;
+        if (x <= arr[mid]) {
+            high = mid;
+        } else {
+            low = mid + 1;
+        }
+    }
+    if(low < count && arr[low] < x) {
+       low++;
+    }
+ return low;
+}
+
 static bool match_not_all_of_int(struct value variable, struct ast_list_expr list_expr)
 {
     int64_t* xs;
@@ -606,17 +628,14 @@ static bool match_not_all_of_int(struct value variable, struct ast_list_expr lis
         xs = list_expr.value.integer_list_value->integers;
         x_count = list_expr.value.integer_list_value->count;
     }
-    size_t i = 0, j = 0;
-    while(i < x_count && j < y_count) {
+    size_t i = 0, from = 0;
+    while(i < x_count && from < y_count) {
         int64_t x = xs[i];
-        int64_t y = ys[j];
-        if(x == y) {
+        from = next_low(ys, from, y_count, x);
+        // first check that new index is in array
+        if(from < y_count && ys[from] == x) {
             return true;
-        }
-        if(y < x) {
-            j++;
-        }
-        else {
+        } else {
             i++;
         }
     }
@@ -665,18 +684,13 @@ static bool match_all_of_int(struct value variable, struct ast_list_expr list_ex
     int64_t* ys = variable.integer_list_value->integers;
     size_t y_count = variable.integer_list_value->count;
     if(x_count <= y_count) {
-        size_t i = 0, j = 0;
-        while(i < y_count && j < x_count) {
+        size_t from = 0, j = 0;
+        while(from < y_count && j < x_count) {
             int64_t x = xs[j];
-            int64_t y = ys[i];
-            if(y < x) {
-                i++;
-            }
-            else if(x == y) {
-                i++;
+            from = next_low(ys, from, y_count, x);
+            if(from < y_count && ys[from] == x) {
                 j++;
-            }
-            else {
+            } else {
                 return false;
             }
         }
