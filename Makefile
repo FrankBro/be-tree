@@ -165,4 +165,7 @@ tidy:
 	#$(TIDY) src/value.c -checks='*' -- -Isrc
 	#$(TIDY) src/var.c -checks='*' -- -Isrc
 
+build-test-benchmark: build/libbetree.a
+	gcc -o testbenchmark tests/real_tests.c -Isrc -I/usr/include -I/usr/local/include  build/libbetree.a  $(LDFLAGS_TESTS)
+
 .PHONY: clean realclean test valgrind

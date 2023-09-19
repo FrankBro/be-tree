@@ -37,6 +37,15 @@ struct betree_events {
     char** events;
 };
 
+
+size_t max(size_t x, size_t y){
+    if(x > y){
+        return x;
+    }else{
+        return y;
+    }
+}
+
 void add_event(char* event, struct betree_events* events)
 {
     if(events->count == 0) {
@@ -106,22 +115,25 @@ size_t read_betree_exprs(struct betree* tree)
     size_t count = 0;
     const struct betree_sub* subs[MAX_EXPRS];
 
-    enum e { constant_count = 3 };
+    enum e { constant_count = 4 };
     while(fgets(line, sizeof(line), f)) {
         char* ignore = fgets(constants_line, sizeof(constants_line), constants_f);
         (void)ignore;
         char* copy = strdup(constants_line);
         char* rest = copy;
+        int64_t boolean_expression_id = strtoll(strtok_r(rest, ",", &rest), NULL, 10);
+        int64_t campaign_group_id = strtoll(strtok_r(rest, ",", &rest), NULL, 10);
         int64_t campaign_id = strtoll(strtok_r(rest, ",", &rest), NULL, 10);
         int64_t advertiser_id = strtoll(strtok_r(rest, ",", &rest), NULL, 10);
         int64_t flight_id = strtoll(strtok_r(rest, "\n", &rest), NULL, 10);
         const struct betree_constant* constants[constant_count] = {
+            betree_make_integer_constant("campaign_group_id", campaign_group_id),
             betree_make_integer_constant("campaign_id", campaign_id),
             betree_make_integer_constant("advertiser_id", advertiser_id),
             betree_make_integer_constant("flight_id", flight_id),
         };
 
-        const struct betree_sub* sub = betree_make_sub(tree, count, constant_count, constants, line);
+        const struct betree_sub* sub = betree_make_sub(tree, boolean_expression_id, constant_count, constants, line);
         subs[count] = sub;
         count++;
         betree_free_constants(constant_count, (struct betree_constant**) constants);
@@ -207,6 +219,8 @@ int main(int argc, char** argv)
     CALLGRIND_START_INSTRUMENTATION;
 
     size_t search_us_i = 0;
+    size_t max_match_expression = 0;
+    int zero_boolean_expression_match = 0;
     
     for(size_t j = 0; j < search_count; j++) {
         for(size_t i = 0; i < events.count; i++) {
@@ -230,6 +244,18 @@ int main(int argc, char** argv)
             matched_sum += report->matched;
             memoized_sum += report->memoized;
             shorted_sum += report->shorted;
+            max_match_expression = max(max_match_expression, report->matched);
+            zero_boolean_expression_match += report->matched == 0 ? 1:0;
+            // print expression id match by boolean expression
+            // printf("report subs id: [");
+            // for(int ka=0;ka<report->matched;ka++){
+            //     if(ka==0){
+            //         printf("%ld", report->subs[ka]);
+            //     }else{
+            //         printf(",%ld", report->subs[ka]);
+            //     }
+            // }
+            // printf("]\n");
             free_report(report);
             search_us_i++;
         }
@@ -269,7 +295,8 @@ int main(int argc, char** argv)
     printf("Min: %.1f, Mean: %.1f, Max: %.1f, 90: %.1f, 95: %.1f, 99: %.1f\n", search_us_min, search_us_mean, search_us_max, search_us_90, search_us_95, search_us_99);
 
     printf("| %lu | %.1f | %.1f | %.1f | %.1f | %.1f | %.1f | |\n", insert_us, search_us_min, search_us_mean, search_us_max, search_us_90, search_us_95, search_us_99);
-
+    printf("max expression matched: %ld\n", max_match_expression);
+    printf("no  expression matched: %d\n", zero_boolean_expression_match);
     // DEBUG
     write_dot_file(tree);
     // DEBUG

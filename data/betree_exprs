@@ -1,0 +1,3 @@
+(((b = 100) and (c = 200) and (1 in d) and true and true)) and (((h = 1) and (g = 0) and true))
+(((b = 100) and (c = 300) and (1 in d) and true and true)) and (((h = 1) and (g = 0) and true))
+(((b = 100) and (c = 300) and (1 in d) and true and true)) and (((h = 1) and (g = 0) and true))
