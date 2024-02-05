@@ -1666,7 +1666,7 @@ void event_to_string(const struct betree_event* event, char* buffer)
                 break;
             }
             case(BETREE_INTEGER_ENUM): {
-                length += sprintf(buffer + length, "%s = %ld", attr, pred->value.integer_enum_value.integer);
+                length += sprintf(buffer + length, "%s = %lld", attr, pred->value.integer_enum_value.integer);
                 break;
             }
             case(BETREE_INTEGER_LIST): {

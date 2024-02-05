@@ -209,7 +209,7 @@ static void write_dot_file_lnode_names(
                     fprintf(f, ", ");
                 }
             }
-            fprintf(f, "S<sub>%lu</sub>", lnode->subs[i]->id);
+            fprintf(f, "S<sub>%llu</sub>", lnode->subs[i]->id);
         }
         fprintf(f, "\\}>, color=lightblue1, fillcolor=lightblue1, style=filled, shape=record]\n");
     }
@@ -240,7 +240,7 @@ static void write_dot_file_cdir_td(FILE* f,
     if(current_depth == 0) {
         print_spaces(f, level);
         if(cdir == NULL) {
-            fprintf(f, "<td colspan=\"%lu\"></td>\n", colspan);
+            fprintf(f, "<td colspan=\"%llu\"></td>\n", colspan);
         }
         else {
             const char* name = get_name_cdir(config, cdir);
@@ -248,7 +248,7 @@ static void write_dot_file_cdir_td(FILE* f,
                 case(BETREE_INTEGER):
                 case(BETREE_INTEGER_LIST):
                     fprintf(f,
-                        "<td colspan=\"%lu\" port=\"%s\">[%ld, %ld]</td>\n",
+                        "<td colspan=\"%llu\" port=\"%s\">[%lld, %lld]</td>\n",
                         colspan,
                         name,
                         cdir->bound.imin,
@@ -256,7 +256,7 @@ static void write_dot_file_cdir_td(FILE* f,
                     break;
                 case(BETREE_FLOAT): {
                     fprintf(f,
-                        "<td colspan=\"%lu\" port=\"%s\">[%.0f, %.0f]</td>\n",
+                        "<td colspan=\"%llu\" port=\"%s\">[%.0f, %.0f]</td>\n",
                         colspan,
                         name,
                         cdir->bound.fmin,
@@ -267,7 +267,7 @@ static void write_dot_file_cdir_td(FILE* f,
                     const char* min = cdir->bound.bmin ? "true" : "false";
                     const char* max = cdir->bound.bmax ? "true" : "false";
                     fprintf(f,
-                        "<td colspan=\"%lu\" port=\"%s\">[%s, %s]</td>\n",
+                        "<td colspan=\"%llu\" port=\"%s\">[%s, %s]</td>\n",
                         colspan,
                         name,
                         min,
@@ -278,7 +278,7 @@ static void write_dot_file_cdir_td(FILE* f,
                 case(BETREE_STRING_LIST):
                 case(BETREE_INTEGER_ENUM):
                     fprintf(f,
-                        "<td colspan=\"%lu\" port=\"%s\">[%zu, %zu]</td>\n",
+                        "<td colspan=\"%llu\" port=\"%s\">[%zu, %zu]</td>\n",
                         colspan,
                         name,
                         cdir->bound.smin,
@@ -761,15 +761,10 @@ static void gather_subs_cnode(const struct cnode* cnode, struct gathered_subs* g
     }
 }
 
-void write_dot_file(const struct betree* tree)
+void wrt_dot_to_file(const struct betree* tree, FILE* f)
 {
     const struct config* config = tree->config;
     const struct cnode* root = tree->cnode;
-    FILE* f = fopen("data/betree.dot", "we");
-    if(f == NULL) {
-        fprintf(stderr, "Can't open a file to write the dot_file");
-        abort();
-    }
     fprintf(f, "digraph {\n");
     fprintf(f, "    compound=true");
     fprintf(f, "    node [fontsize=20, fontname=\"Verdana\"];\n");
@@ -780,3 +775,22 @@ void write_dot_file(const struct betree* tree)
     fprintf(f, "}\n");
 }
 
+void write_dot_to_file(const struct betree* tree, const char* fname) {
+    FILE* f = fopen(fname, "w");
+    if(f == NULL) {
+        fprintf(stderr, "Can't open file %s  to write the dot_file", fname);
+        abort();
+    }
+    wrt_dot_to_file(tree, f);
+}
+
+// legacy 
+void write_dot_file(const struct betree* tree)
+{
+    FILE* f = fopen("data/betree.dot", "we");
+    if(f == NULL) {
+        fprintf(stderr, "Can't open file data/betree.dot to write the dot_file");
+        abort();
+    }
+    wrt_dot_to_file(tree, f);
+}
