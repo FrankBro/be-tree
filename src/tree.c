@@ -1770,6 +1770,49 @@ bool betree_search_with_preds(const struct config* config,
     return true;
 }
 
+// find index in sorted array ids[i] < ids[j] if i < j
+// The array is supposed to be short
+bool is_id_in(uint64_t id, const uint64_t* ids, size_t sz) {
+    if(id < ids[0] || id > ids[sz-1]){
+        return false;
+    }
+    for(size_t i = 0; i < sz; i++) {
+      if (id <= ids[i]) {
+        return (id == ids[i]);
+      }
+    }
+    return false;
+}
+
+bool betree_search_with_preds_ids(const struct config* config,
+    const struct betree_variable** preds,
+    const struct cnode* cnode,
+    struct report* report,
+    const uint64_t* ids,
+    size_t sz
+    )
+{
+    uint64_t* undefined = make_undefined(config->attr_domain_count, preds);
+    struct memoize memoize = make_memoize(config->pred_map->memoize_count);
+    struct subs_to_eval subs;
+    init_subs_to_eval(&subs);
+    match_be_tree((const struct attr_domain**)config->attr_domains, preds, cnode, &subs);
+    for(size_t i = 0; i < subs.count; i++) {
+        const struct betree_sub* sub = subs.subs[i];
+        if (is_id_in(sub->id, ids, sz)) {
+            report->evaluated++;
+            if(match_sub(config->attr_domain_count, preds, sub, report, &memoize, undefined) == true) {
+                add_sub(sub->id, report);
+            }
+        }
+    }
+    bfree(subs.subs);
+    free_memoize(memoize);
+    bfree(undefined);
+    bfree(preds);
+    return true;
+}
+
 bool betree_exists_with_preds(const struct config* config, const struct betree_variable** preds, const struct cnode* cnode)
 {
     uint64_t* undefined = make_undefined(config->attr_domain_count, preds);
