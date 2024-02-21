@@ -35,7 +35,30 @@ int test_search()
     betree_free(tree);
     return 0;
 }
-int test_search_ids()
+
+int test_search_ids_0()
+{
+    struct betree* tree = betree_make();
+    add_attr_domain_bounded_i(tree->config, "a", false, 0, 0);
+    add_attr_domain_bounded_i(tree->config, "b", false, 0, 1);
+
+    mu_assert(betree_insert(tree, 1, "a = 0 and b = 0"), "");
+    mu_assert(betree_insert(tree, 2, "a = 1"), "");
+    mu_assert(betree_insert(tree, 3, "a = 0 and b = 0"), "");
+    mu_assert(betree_insert(tree, 4, "a = 0 and b = 1"), "");
+    mu_assert(betree_insert(tree, 5, "b = 1 and a = 0"), "");
+
+    struct report* report = make_report();
+    uint64_t ids[] = {1, 2, 3, 4, 5};
+    size_t sz = 5;
+    mu_assert(betree_search_ids(tree, "{\"a\": 0, \"b\": 1}", report, ids, sz), "");
+
+    free_report(report);
+    betree_free(tree);
+    return 0;
+}
+
+int test_search_ids_1()
 {
     struct betree* tree = betree_make();
     add_attr_domain_bounded_i(tree->config, "a", false, 0, 0);
@@ -53,16 +76,85 @@ int test_search_ids()
     mu_assert(betree_search_ids(tree, "{\"a\": 0, \"b\": 1}", report, ids, sz), "");
     mu_assert(report->matched == 1 && report->subs[0] == 4, "goodEvent");
 
-    write_dot_to_file(tree, "tests/beetree_search_tests.dot");
+    free_report(report);
+    return 0;
+}
+
+int test_search_ids_2()
+{
+    struct betree* tree = betree_make();
+    add_attr_domain_bounded_i(tree->config, "a", false, 0, 0);
+    add_attr_domain_bounded_i(tree->config, "b", false, 0, 1);
+
+    mu_assert(betree_insert(tree, 1, "a = 0 and b = 0"), "");
+    mu_assert(betree_insert(tree, 2, "a = 1"), "");
+    mu_assert(betree_insert(tree, 3, "a = 0 and b = 0"), "");
+    mu_assert(betree_insert(tree, 4, "a = 0 and b = 1"), "");
+    mu_assert(betree_insert(tree, 5, "b = 1 and a = 0"), "");
+
+    struct report* report = make_report();
+    uint64_t ids[] = {1, 4, 5};
+    size_t sz = 3;
+    mu_assert(betree_search_ids(tree, "{\"a\": 0, \"b\": 1}", report, ids, sz), "");
+    mu_assert(report->matched == 2 && report->subs[0] == 4 && report->subs[1] == 5, "goodEvent");
 
     free_report(report);
     return 0;
 }
 
+int test_search_ids_3()
+{
+    struct betree* tree = betree_make();
+    add_attr_domain_bounded_i(tree->config, "a", false, 0, 0);
+    add_attr_domain_bounded_i(tree->config, "b", false, 0, 1);
+
+    mu_assert(betree_insert(tree, 1, "a = 0 and b = 0"), "");
+    mu_assert(betree_insert(tree, 2, "a = 1"), "");
+    mu_assert(betree_insert(tree, 3, "a = 0 and b = 0"), "");
+    mu_assert(betree_insert(tree, 4, "a = 0 and b = 1"), "");
+    mu_assert(betree_insert(tree, 5, "b = 1 and a = 0"), "");
+
+    struct report* report = make_report();
+    uint64_t ids[] = {1, 3};
+    size_t sz = 3;
+    mu_assert(betree_search_ids(tree, "{\"a\": 0, \"b\": 1}", report, ids, sz), "");
+    mu_assert(report->matched == 0, "goodEvent");
+
+    free_report(report);
+    return 0;
+}
+
+int test_search_ids_4()
+{
+    struct betree* tree = betree_make();
+    add_attr_domain_bounded_i(tree->config, "a", false, 0, 0);
+    add_attr_domain_bounded_i(tree->config, "b", false, 0, 1);
+
+    mu_assert(betree_insert(tree, 1, "a = 0 and b = 0"), "");
+    mu_assert(betree_insert(tree, 2, "a = 1"), "");
+    mu_assert(betree_insert(tree, 3, "a = 0 and b = 0"), "");
+    mu_assert(betree_insert(tree, 4, "a = 0 and b = 1"), "");
+    mu_assert(betree_insert(tree, 5, "b = 1 and a = 0"), "");
+
+    struct report* report = make_report();
+    uint64_t ids[] = {};
+    size_t sz = 0;
+    mu_assert(betree_search_ids(tree, "{\"a\": 0, \"b\": 1}", report, ids, sz), "");
+    mu_assert(report->matched == 0, "goodEvent");
+
+    free_report(report);
+    return 0;
+}
+
+
 int all_tests()
 {
     mu_run_test(test_search);
-    mu_run_test(test_search_ids);
+    mu_run_test(test_search_ids_0);
+    mu_run_test(test_search_ids_1);
+    mu_run_test(test_search_ids_2);
+    mu_run_test(test_search_ids_3);
+    mu_run_test(test_search_ids_4);
     return 0;
 }
 
