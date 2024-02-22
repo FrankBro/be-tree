@@ -31,7 +31,7 @@ static void search_cdir_ids(const struct attr_domain** attr_domains,
     const uint64_t* ids,
     size_t sz);
 
-bool is_id_in(uint64_t id, const uint64_t* ids, size_t sz);
+static bool is_id_in(uint64_t id, const uint64_t* ids, size_t sz);
 
 
 static void init_subs_to_eval(struct subs_to_eval* subs)
@@ -1829,19 +1829,28 @@ bool betree_search_with_preds(const struct config* config,
     return true;
 }
 
-// find index in sorted array ids[i] < ids[j] if i < j
-// The array is supposed to be short
-bool is_id_in(uint64_t id, const uint64_t* ids, size_t sz) {
-    if(id < ids[0] || id > ids[sz-1]){
+
+static bool is_id_in(uint64_t id, const uint64_t* ids, size_t sz) {
+    size_t first = 0;
+    size_t last = sz - 1;
+    if (id < ids[first] || id > ids[last]){
         return false;
     }
-    for(size_t i = 0; i < sz; i++) {
-      if (id <= ids[i]) {
-        return (id == ids[i]);
-      }
+    size_t middle = (first + last)/2;
+    while (first <= last) {
+        if (id == ids[middle]) {
+            return true;
+        }
+        if (ids[middle] < id) {
+            first = middle + 1;
+        } else {
+            last = middle - 1;
+        }
+        middle = (first + last)/2;
     }
     return false;
 }
+
 
 bool betree_search_with_preds_ids(const struct config* config,
     const struct betree_variable** preds,
