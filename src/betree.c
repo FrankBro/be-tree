@@ -545,7 +545,7 @@ bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr)
     return betree_insert_with_constants(tree, id, 0, NULL, expr);
 }
 
-static const struct betree_variable** make_environment(size_t attr_domain_count, const struct betree_event* event)
+const struct betree_variable** make_environment(size_t attr_domain_count, const struct betree_event* event)
 {
     const struct betree_variable** preds = bcalloc(attr_domain_count * sizeof(*preds));
     for(size_t i = 0; i < event->variable_count; i++) {
@@ -619,6 +619,29 @@ struct report* make_report()
 }
 
 void free_report(struct report* report)
+{
+    bfree(report->subs);
+    bfree(report);
+}
+
+struct report_counting* make_report_counting()
+{
+    struct report_counting* report = bcalloc(sizeof(*report));
+    if(report == NULL) {
+        fprintf(stderr, "%s bcalloc failed\n", __func__);
+        abort();
+    }
+    report->evaluated = 0;
+    report->matched = 0;
+    report->memoized = 0;
+    report->shorted = 0;
+    report->subs = NULL;
+    report->node_count = 0;
+    report->ops_count = 0;
+    return report;
+}
+
+void free_report_counting(struct report_counting* report)
 {
     bfree(report->subs);
     bfree(report);
