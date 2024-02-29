@@ -113,7 +113,6 @@ struct betree_variable* betree_make_segments_variable(const char* name, struct b
 struct betree_variable* betree_make_frequency_caps_variable(const char* name, struct betree_frequency_caps* value);
 
 struct betree_event* betree_make_event(const struct betree* betree);
-void betree_init_event(const struct betree* betree, struct betree_event* event);
 void betree_set_variable(struct betree_event* event, size_t index, struct betree_variable* variable);
 
 bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr);
