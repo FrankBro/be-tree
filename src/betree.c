@@ -975,12 +975,6 @@ struct betree_event* betree_make_event(const struct betree* betree)
     return event;
 }
 
-void betree_init_event(const struct betree* betree, struct betree_event* event)
-{
-    event->variable_count = betree->config->attr_domain_count;
-    event->variables = bcalloc(event->variable_count * sizeof(*event->variables));
-}
-
 void betree_set_variable(struct betree_event* event, size_t index, struct betree_variable* variable)
 {
     event->variables[index] = variable;
