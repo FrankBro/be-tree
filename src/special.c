@@ -18,6 +18,39 @@ bool within_frequency_caps(const struct betree_frequency_caps* caps,
 {
     for(size_t i = 0; i < caps->size; i++) {
         const struct betree_frequency_cap* content = caps->content[i];
+        if(content->id == id &&
+            content->namespace.str == namespace.str &&
+            content->type == type) {
+            if(length <= 0) {
+                return value > content->value;
+            }
+            if(!content->timestamp_defined) {
+                return true;
+            }
+            if((now - (content->timestamp / 1000000)) > (int64_t)length) {
+                return true;
+            }
+            if(value > content->value) {
+                return true;
+            }
+            return false;
+        }
+    }
+    return true;
+}
+
+bool within_frequency_caps_counting(const struct betree_frequency_caps* caps,
+    enum frequency_type_e type,
+    uint32_t id,
+    const struct string_value namespace,
+    uint32_t value,
+    size_t length,
+    int64_t now,
+    int* ops_count)
+{
+    for(size_t i = 0; i < caps->size; i++) {
+        (*ops_count)++;
+        const struct betree_frequency_cap* content = caps->content[i];
         if(content->id == id && 
             content->namespace.str == namespace.str &&
             content->type == type) {
@@ -54,10 +87,44 @@ bool segment_within(
     return false;
 }
 
+bool segment_within_counting(
+    int64_t segment_id, int32_t after_seconds, const struct betree_segments* segments, int64_t now,
+    int* ops_count)
+{
+    for(size_t i = 0; i < segments->size; i++) {
+        (*ops_count)++;
+        if(segments->content[i]->id < segment_id) {
+            continue;
+        }
+        if(segments->content[i]->id == segment_id) {
+            return (now - after_seconds) <= (segments->content[i]->timestamp / 1000000);
+        }
+        return false;
+    }
+    return false;
+}
+
 bool segment_before(
     int64_t segment_id, int32_t before_seconds, const struct betree_segments* segments, int64_t now)
 {
     for(size_t i = 0; i < segments->size; i++) {
+        if(segments->content[i]->id < segment_id) {
+            continue;
+        }
+        if(segments->content[i]->id == segment_id) {
+            return (now - before_seconds) > (segments->content[i]->timestamp / 1000000);
+        }
+        return false;
+    }
+    return false;
+}
+
+bool segment_before_counting(
+    int64_t segment_id, int32_t before_seconds, const struct betree_segments* segments, int64_t now,
+    int* ops_count)
+{
+    for(size_t i = 0; i < segments->size; i++) {
+        (*ops_count)++;
         if(segments->content[i]->id < segment_id) {
             continue;
         }
