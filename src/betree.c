@@ -480,17 +480,17 @@ bool betree_insert_with_constants(struct betree* tree,
 {
     struct ast_node* node;
     if(parse(expr, &node) != 0) {
-        fprintf(stderr, "Can't parse %llu\n", id);
+        fprintf(stderr, "Can't parse %lu\n", id);
         return false;
     }
     assign_variable_id(tree->config, node);
     if(!is_valid(tree->config, node)) {
-        fprintf(stderr, "Can't validate %llu\n", id);
+        fprintf(stderr, "Can't validate %lu\n", id);
         free_ast_node(node);
         return false;
     }
     if(!assign_constants(constant_count, constants, node)) {
-        fprintf(stderr, "Can't assign constants %llu\n", id);
+        fprintf(stderr, "Can't assign constants %lu\n", id);
         return false;
     }
     assign_str_id(tree->config, node, false);
@@ -506,7 +506,7 @@ const struct betree_sub* betree_make_sub(struct betree* tree, betree_sub_t id, s
 {
     struct ast_node* node;
     if(parse(expr, &node) != 0) {
-        fprintf(stderr, "Can't parse %llu\n", id);
+        fprintf(stderr, "Can't parse %lu\n", id);
         return NULL;
     }
     assign_variable_id(tree->config, node);
@@ -524,7 +524,7 @@ const struct betree_sub* betree_make_sub(struct betree* tree, betree_sub_t id, s
         return NULL;
     }
     if(!assign_constants(constant_count, constants, node)) {
-        fprintf(stderr, "Can't assign constants %llu\n", id);
+        fprintf(stderr, "Can't assign constants %lu\n", id);
         free_ast_node(node);
         return NULL;
     }
