@@ -44,7 +44,7 @@ bool match_integer(struct config* config, const char* expr, int64_t min, int64_t
     bool result = bound.value_type == BETREE_INTEGER && bound.imin == min && bound.imax == max;
     if(!result) {
         fprintf(stderr,
-            "Min: Expected %lld, Got %lld. Max: Expected %lld, Got %lld\n",
+            "Min: Expected %ld, Got %ld. Max: Expected %ld, Got %ld\n",
             min,
             bound.imin,
             max,
@@ -59,7 +59,7 @@ bool match_integer_list(struct config* config, const char* expr, int64_t min, in
     bool result = bound.value_type == BETREE_INTEGER_LIST && bound.imin == min && bound.imax == max;
     if(!result) {
         fprintf(stderr,
-            "Min: Expected %lld, Got %lld. Max: Expected %lld, Got %lld\n",
+            "Min: Expected %ld, Got %ld. Max: Expected %ld, Got %ld\n",
             min,
             bound.imin,
             max,
