@@ -22,6 +22,16 @@ struct report {
     betree_sub_t* subs;
 };
 
+struct report_counting {
+    size_t evaluated;
+    size_t matched;
+    size_t memoized;
+    size_t shorted;
+    betree_sub_t* subs;
+    int node_count;
+    int ops_count;
+};
+
 struct betree_sub;
 struct betree_constant;
 struct betree_variable;
@@ -73,6 +83,8 @@ struct betree_variable_definition {
     enum betree_value_type_e type;
 };
 
+const struct betree_variable** make_environment(size_t attr_domain_count, const struct betree_event* event);
+
 /*
  * Initialization
  */
@@ -119,7 +131,9 @@ bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr);
 bool betree_insert_with_constants(struct betree* tree, betree_sub_t id, size_t constant_count, const struct betree_constant** constants, const char* expr);
 
 bool betree_search(const struct betree* tree, const char* event_str, struct report* report);
+bool betree_search_ids(const struct betree* tree, const char* event_str, struct report* report, const uint64_t* ids, size_t sz);
 bool betree_search_with_event(const struct betree* betree, struct betree_event* event, struct report* report);
+bool betree_search_with_event_ids(const struct betree* betree, struct betree_event* event, struct report* report, const uint64_t* ids, size_t sz);
 
 bool betree_exists(const struct betree* tree, const char* event_str);
 bool betree_exists_with_event(const struct betree* betree, struct betree_event* event);
@@ -128,6 +142,9 @@ bool betree_exists_with_event(const struct betree* betree, struct betree_event* 
 
 struct report* make_report();
 void free_report(struct report* report);
+
+struct report_counting* make_report_counting();
+void free_report_counting(struct report_counting* report);
 
 /*
  * Destruction

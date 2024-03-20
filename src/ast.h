@@ -324,6 +324,11 @@ bool match_node(const struct betree_variable** preds,
     struct memoize* memoize,
     struct report* report);
 
+bool match_node_counting(const struct betree_variable** preds,
+    const struct ast_node* node,
+    struct memoize* memoize,
+    struct report_counting* report);
+
 struct value_bound get_variable_bound(
     const struct attr_domain* domain, const struct ast_node* node);
 

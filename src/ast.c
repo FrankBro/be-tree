@@ -398,6 +398,27 @@ static bool d64binary_search(const int64_t arr[], size_t count, int64_t to_find)
     return false;
 }
 
+static bool d64binary_search_counting(const int64_t arr[], size_t count, int64_t to_find,
+    int* ops_count)
+{
+    int imin = 0;
+    int imax = (int)count - 1;
+    while(imax >= imin) {
+        (*ops_count)++;
+        int imid = imin + ((imax - imin) / 2);
+        if(arr[imid] == to_find) {
+            return true;
+        }
+        if(arr[imid] < to_find) {
+            imin = imid + 1;
+        }
+        else {
+            imax = imid - 1;
+        }
+    }
+    return false;
+}
+
 static bool sbinary_search(struct string_value arr[], size_t count, betree_str_t to_find)
 {
     int imin = 0;
@@ -417,14 +438,47 @@ static bool sbinary_search(struct string_value arr[], size_t count, betree_str_t
     return false;
 }
 
+static bool sbinary_search_counting(struct string_value arr[], size_t count, betree_str_t to_find,
+    int* ops_count)
+{
+    int imin = 0;
+    int imax = (int)count - 1;
+    while(imax >= imin) {
+        (*ops_count)++;
+        int imid = imin + ((imax - imin) / 2);
+        if(arr[imid].str == to_find) {
+            return true;
+        }
+        if(arr[imid].str < to_find) {
+            imin = imid + 1;
+        }
+        else {
+            imax = imid - 1;
+        }
+    }
+    return false;
+}
+
 static bool integer_in_integer_list(int64_t integer, struct betree_integer_list* list)
 {
     return d64binary_search(list->integers, list->count, integer);
 }
 
+static bool integer_in_integer_list_counting(int64_t integer, struct betree_integer_list* list,
+    int* ops_count)
+{
+    return d64binary_search_counting(list->integers, list->count, integer, ops_count);
+}
+
 static bool string_in_string_list(struct string_value string, struct betree_string_list* list)
 {
     return sbinary_search(list->strings, list->count, string.str);
+}
+
+static bool string_in_string_list_counting(struct string_value string, struct betree_string_list* list,
+    int* ops_count)
+{
+    return sbinary_search_counting(list->strings, list->count, string.str, ops_count);
 }
 
 static bool compare_value_matches(enum ast_compare_value_e a, enum betree_value_type_e b)
@@ -588,6 +642,124 @@ static bool match_special_expr(
     }
 }
 
+static bool match_special_expr_counting(
+    const struct betree_variable** preds, const struct ast_special_expr special_expr,
+    int* ops_count)
+{
+    (*ops_count)++;
+    switch(special_expr.type) {
+        case AST_SPECIAL_FREQUENCY: {
+            switch(special_expr.frequency.op) {
+                case AST_SPECIAL_WITHINFREQUENCYCAP: {
+                    const struct ast_special_frequency* f = &special_expr.frequency;
+                    struct betree_frequency_caps* caps;
+                    bool is_caps_defined = get_frequency_var(f->attr_var.var, preds, &caps);
+                    if(is_caps_defined == false) {
+                        return false;
+                    }
+                    if(caps->size == 0) {
+                        // Optimization from looking at what within_frequency_caps does
+                        return true;
+                    }
+                    int64_t now;
+                    bool is_now_defined = get_integer_var(f->now.var, preds, &now);
+                    if(is_now_defined == false) {
+                        return false;
+                    }
+                    return within_frequency_caps_counting(
+                        caps, f->type, f->id, f->ns, f->value, f->length, now, ops_count);
+                }
+                default: abort();
+            }
+        }
+        case AST_SPECIAL_SEGMENT: {
+            const struct ast_special_segment* s = &special_expr.segment;
+            struct betree_segments* segments;
+            bool is_segment_defined = get_segments_var(s->attr_var.var, preds, &segments);
+            if(is_segment_defined == false) {
+                return false;
+            }
+            int64_t now;
+            bool is_now_defined = get_integer_var(s->now.var, preds, &now);
+            if(is_now_defined == false) {
+                return false;
+            }
+            switch(special_expr.segment.op) {
+                case AST_SPECIAL_SEGMENTWITHIN:
+                    return segment_within_counting(s->segment_id, s->seconds, segments, now,
+                        ops_count);
+                case AST_SPECIAL_SEGMENTBEFORE:
+                    return segment_before_counting(s->segment_id, s->seconds, segments, now,
+                        ops_count);
+                default: abort();
+            }
+        }
+        case AST_SPECIAL_GEO: {
+            switch(special_expr.geo.op) {
+                case AST_SPECIAL_GEOWITHINRADIUS: {
+                    const struct ast_special_geo* g = &special_expr.geo;
+                    double latitude_var, longitude_var;
+                    bool is_latitude_defined
+                        = get_float_var(g->latitude_var.var, preds, &latitude_var);
+                    bool is_longitude_defined
+                        = get_float_var(g->longitude_var.var, preds, &longitude_var);
+                    if(is_latitude_defined == false || is_longitude_defined == false) {
+                        return false;
+                    }
+
+                    (*ops_count)++;
+                    return geo_within_radius(
+                        g->latitude, g->longitude, latitude_var, longitude_var, g->radius);
+                }
+                default: abort();
+            }
+            return false;
+        }
+        case AST_SPECIAL_STRING: {
+            const struct ast_special_string* s = &special_expr.string;
+            struct string_value value;
+            bool is_string_defined = get_string_var(s->attr_var.var, preds, &value);
+            if(is_string_defined == false) {
+                return false;
+            }
+            (*ops_count)++;
+            switch(s->op) {
+                case AST_SPECIAL_CONTAINS:
+                    return contains(value.string, s->pattern);
+                case AST_SPECIAL_STARTSWITH:
+                    return starts_with(value.string, s->pattern);
+                case AST_SPECIAL_ENDSWITH:
+                    return ends_with(value.string, s->pattern);
+                default: abort();
+            }
+            return false;
+        }
+        default: abort();
+    }
+}
+
+// Returns index i; 0 <= i <= count. 
+// If x is among arr values returns index of element in arr with value equal to x
+// If there is not such element returns index i such that:
+//   if all elements in arr are less then x returns count (i.e the array's length)
+//   else returns i such that then arr[i-1] < x < arr[i]
+size_t next_low(const int64_t arr[], size_t low, size_t count, int64_t x)
+{
+    size_t high = count - 1;
+    while (low < high) {
+        size_t mid = low + (high - low) / 2;
+        if (x <= arr[mid]) {
+            high = mid;
+        } else {
+            low = mid + 1;
+        }
+    }
+    if(low < count && arr[low] < x) {
+       low++;
+    }
+ return low;
+}
+
 static bool match_not_all_of_int(struct value variable, struct ast_list_expr list_expr)
 {
     int64_t* xs;
@@ -606,17 +778,49 @@ static bool match_not_all_of_int(struct value variable, struct ast_list_expr lis
         xs = list_expr.value.integer_list_value->integers;
         x_count = list_expr.value.integer_list_value->count;
     }
-    size_t i = 0, j = 0;
-    while(i < x_count && j < y_count) {
+    size_t i = 0, from = 0;
+    while(i < x_count && from < y_count) {
         int64_t x = xs[i];
-        int64_t y = ys[j];
-        if(x == y) {
+        from = next_low(ys, from, y_count, x);
+        // first check that new index is in array
+        if(from < y_count && ys[from] == x) {
             return true;
+        } else {
+            i++;
         }
-        if(y < x) {
-            j++;
-        }
-        else {
+    }
+    return false;
+}
+
+static bool match_not_all_of_int_counting(struct value variable, struct ast_list_expr list_expr,
+    int* ops_count)
+{
+    (*ops_count)++;
+    int64_t* xs;
+    size_t x_count;
+    int64_t* ys;
+    size_t y_count;
+    if(variable.integer_list_value->count < list_expr.value.integer_list_value->count) {
+        xs = variable.integer_list_value->integers;
+        x_count = variable.integer_list_value->count;
+        ys = list_expr.value.integer_list_value->integers;
+        y_count = list_expr.value.integer_list_value->count;
+    }
+    else {
+        ys = variable.integer_list_value->integers;
+        y_count = variable.integer_list_value->count;
+        xs = list_expr.value.integer_list_value->integers;
+        x_count = list_expr.value.integer_list_value->count;
+    }
+    size_t i = 0, from = 0;
+    while(i < x_count && from < y_count) {
+        (*ops_count)++;
+        int64_t x = xs[i];
+        from = next_low(ys, from, y_count, x);
+        // first check that new index is in array
+        if(from < y_count && ys[from] == x) {
+            return true;
+        } else {
             i++;
         }
     }
@@ -658,6 +862,44 @@ static bool match_not_all_of_string(struct value variable, struct ast_list_expr 
     return false;
 }
 
+static bool match_not_all_of_string_counting(struct value variable, struct ast_list_expr list_expr,
+    int* ops_count)
+{
+    (*ops_count)++;
+    struct string_value* xs;
+    size_t x_count;
+    struct string_value* ys;
+    size_t y_count;
+    if(variable.string_list_value->count < list_expr.value.integer_list_value->count) {
+        xs = variable.string_list_value->strings;
+        x_count = variable.string_list_value->count;
+        ys = list_expr.value.string_list_value->strings;
+        y_count = list_expr.value.integer_list_value->count;
+    }
+    else {
+        ys = variable.string_list_value->strings;
+        y_count = variable.string_list_value->count;
+        xs = list_expr.value.string_list_value->strings;
+        x_count = list_expr.value.integer_list_value->count;
+    }
+    size_t i = 0, j = 0;
+    while(i < x_count && j < y_count) {
+        (*ops_count)++;
+        struct string_value* x = &xs[i];
+        struct string_value* y = &ys[j];
+        if(x->str == y->str) {
+            return true;
+        }
+        if(y->str < x->str) {
+            j++;
+        }
+        else {
+            i++;
+        }
+    }
+    return false;
+}
+
 static bool match_all_of_int(struct value variable, struct ast_list_expr list_expr)
 {
     int64_t* xs = list_expr.value.integer_list_value->integers;
@@ -665,18 +907,41 @@ static bool match_all_of_int(struct value variable, struct ast_list_expr list_ex
     int64_t* ys = variable.integer_list_value->integers;
     size_t y_count = variable.integer_list_value->count;
     if(x_count <= y_count) {
-        size_t i = 0, j = 0;
-        while(i < y_count && j < x_count) {
+        size_t from = 0, j = 0;
+        while(from < y_count && j < x_count) {
             int64_t x = xs[j];
-            int64_t y = ys[i];
-            if(y < x) {
-                i++;
-            }
-            else if(x == y) {
-                i++;
+            from = next_low(ys, from, y_count, x);
+            if(from < y_count && ys[from] == x) {
                 j++;
+            } else {
+                return false;
             }
-            else {
+        }
+        if(j < x_count) {
+            return false;
+        }
+        return true;
+    }
+    return false;
+}
+
+static bool match_all_of_int_counting(struct value variable, struct ast_list_expr list_expr,
+    int* ops_count)
+{
+    (*ops_count)++;
+    int64_t* xs = list_expr.value.integer_list_value->integers;
+    size_t x_count = list_expr.value.integer_list_value->count;
+    int64_t* ys = variable.integer_list_value->integers;
+    size_t y_count = variable.integer_list_value->count;
+    if(x_count <= y_count) {
+        size_t from = 0, j = 0;
+        while(from < y_count && j < x_count) {
+            (*ops_count)++;
+            int64_t x = xs[j];
+            from = next_low(ys, from, y_count, x);
+            if(from < y_count && ys[from] == x) {
+                j++;
+            } else {
                 return false;
             }
         }
@@ -697,6 +962,39 @@ static bool match_all_of_string(struct value variable, struct ast_list_expr list
     if(x_count <= y_count) {
         size_t i = 0, j = 0;
         while(i < y_count && j < x_count) {
+            struct string_value* x = &xs[j];
+            struct string_value* y = &ys[i];
+            if(y->str < x->str) {
+                i++;
+            }
+            else if(x->str == y->str) {
+                i++;
+                j++;
+            }
+            else {
+                return false;
+            }
+        }
+        if(j < x_count) {
+            return false;
+        }
+        return true;
+    }
+    return false;
+}
+
+static bool match_all_of_string_counting(struct value variable, struct ast_list_expr list_expr,
+    int* ops_count)
+{
+    (*ops_count)++;
+    struct string_value* xs = list_expr.value.string_list_value->strings;
+    size_t x_count = list_expr.value.string_list_value->count;
+    struct string_value* ys = variable.string_list_value->strings;
+    size_t y_count = variable.string_list_value->count;
+    if(x_count <= y_count) {
+        size_t i = 0, j = 0;
+        while(i < y_count && j < x_count) {
+            (*ops_count)++;
             struct string_value* x = &xs[j];
             struct string_value* y = &ys[i];
             if(y->str < x->str) {
@@ -764,6 +1062,54 @@ static bool match_list_expr(
     }
 }
 
+static bool match_list_expr_counting(
+    const struct betree_variable** preds, const struct ast_list_expr list_expr,
+    int* ops_count)
+{
+    (*ops_count)++;
+    struct value variable;
+    bool is_variable_defined = get_variable(list_expr.attr_var.var, preds, &variable);
+    if(is_variable_defined == false) {
+        return false;
+    }
+    switch(list_expr.op) {
+        case AST_LIST_ONE_OF:
+        case AST_LIST_NONE_OF: {
+            bool result = false;
+            switch(list_expr.value.value_type) {
+                case AST_LIST_VALUE_INTEGER_LIST:
+                    result = match_not_all_of_int_counting(variable, list_expr, ops_count);
+                    break;
+                case AST_LIST_VALUE_STRING_LIST: {
+                    result = match_not_all_of_string_counting(variable, list_expr, ops_count);
+                    break;
+                }
+                default: abort();
+            }
+            switch(list_expr.op) {
+                case AST_LIST_ONE_OF:
+                    return result;
+                case AST_LIST_NONE_OF:
+                    return !result;
+                case AST_LIST_ALL_OF:
+                    invalid_expr("Should never happen");
+                    return false;
+                default: abort();
+            }
+        }
+        case AST_LIST_ALL_OF: {
+            switch(list_expr.value.value_type) {
+                case AST_LIST_VALUE_INTEGER_LIST:
+                    return match_all_of_int_counting(variable, list_expr, ops_count);
+                case AST_LIST_VALUE_STRING_LIST:
+                    return match_all_of_string_counting(variable, list_expr, ops_count);
+                default: abort();
+            }
+        }
+        default: abort();
+    }
+}
+
 static bool match_set_expr(const struct betree_variable** preds, const struct ast_set_expr set_expr)
 {
     struct set_left_value left = set_expr.left_value;
@@ -804,6 +1150,64 @@ static bool match_set_expr(const struct betree_variable** preds, const struct as
             return false;
         }
         is_in = string_in_string_list(variable, right.string_list_value);
+    }
+    else {
+        invalid_expr("invalid set expression");
+        return false;
+    }
+    switch(set_expr.op) {
+        case AST_SET_NOT_IN: {
+            return !is_in;
+        }
+        case AST_SET_IN: {
+            return is_in;
+        }
+        default: abort();
+    }
+}
+
+static bool match_set_expr_counting(const struct betree_variable** preds, const struct ast_set_expr set_expr,
+    int* ops_count)
+{
+    (*ops_count)++;
+    struct set_left_value left = set_expr.left_value;
+    struct set_right_value right = set_expr.right_value;
+    bool is_in;
+    if(left.value_type == AST_SET_LEFT_VALUE_INTEGER
+        && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
+        struct betree_integer_list* variable;
+        bool is_variable_defined = get_integer_list_var(right.variable_value.var, preds, &variable);
+        if(is_variable_defined == false) {
+            return false;
+        }
+        is_in = integer_in_integer_list_counting(left.integer_value, variable, ops_count);
+    }
+    else if(left.value_type == AST_SET_LEFT_VALUE_STRING
+        && right.value_type == AST_SET_RIGHT_VALUE_VARIABLE) {
+        struct betree_string_list* variable;
+        bool is_variable_defined = get_string_list_var(right.variable_value.var, preds, &variable);
+        if(is_variable_defined == false) {
+            return false;
+        }
+        is_in = string_in_string_list_counting(left.string_value, variable, ops_count);
+    }
+    else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE
+        && right.value_type == AST_SET_RIGHT_VALUE_INTEGER_LIST) {
+        int64_t variable;
+        bool is_variable_defined = get_integer_var(left.variable_value.var, preds, &variable);
+        if(is_variable_defined == false) {
+            return false;
+        }
+        is_in = integer_in_integer_list_counting(variable, right.integer_list_value, ops_count);
+    }
+    else if(left.value_type == AST_SET_LEFT_VALUE_VARIABLE
+        && right.value_type == AST_SET_RIGHT_VALUE_STRING_LIST) {
+        struct string_value variable;
+        bool is_variable_defined = get_string_var(left.variable_value.var, preds, &variable);
+        if(is_variable_defined == false) {
+            return false;
+        }
+        is_in = string_in_string_list_counting(variable, right.string_list_value, ops_count);
     }
     else {
         invalid_expr("invalid set expression");
@@ -985,6 +1389,47 @@ static bool match_bool_expr(const struct betree_variable** preds,
     }
 }
 
+static bool match_bool_expr_counting(const struct betree_variable** preds,
+    const struct ast_bool_expr bool_expr,
+    struct memoize* memoize,
+    struct report_counting* report)
+{
+    report->ops_count++;
+    switch(bool_expr.op) {
+        case AST_BOOL_LITERAL:
+            return bool_expr.literal;
+        case AST_BOOL_AND: {
+            bool lhs = match_node_counting(preds, bool_expr.binary.lhs, memoize, report);
+            if(lhs == false) {
+                return false;
+            }
+            bool rhs = match_node_counting(preds, bool_expr.binary.rhs, memoize, report);
+            return rhs;
+        }
+        case AST_BOOL_OR: {
+            bool lhs = match_node_counting(preds, bool_expr.binary.lhs, memoize, report);
+            if(lhs == true) {
+                return true;
+            }
+            bool rhs = match_node_counting(preds, bool_expr.binary.rhs, memoize, report);
+            return rhs;
+        }
+        case AST_BOOL_NOT: {
+            bool result = match_node_counting(preds, bool_expr.unary.expr, memoize, report);
+            return !result;
+        }
+        case AST_BOOL_VARIABLE: {
+            bool value;
+            bool is_variable_defined = get_bool_var(bool_expr.variable.var, preds, &value);
+            if(is_variable_defined == false) {
+                return false;
+            }
+            return value;
+        }
+        default: abort();
+    }
+}
+
 static bool match_is_null_expr(const struct betree_variable** preds,
     const struct ast_is_null_expr is_null_expr)
 {
@@ -1046,6 +1491,71 @@ static bool match_node_inner(const struct betree_variable** preds,
             break;
         }
         case AST_TYPE_EQUALITY_EXPR: {
+            result = match_equality_expr(preds, node->equality_expr);
+            break;
+        }
+        default: abort();
+    }
+    if(node->memoize_id != INVALID_PRED) {
+        if(result) {
+            set_bit(memoize->pass, node->memoize_id);
+        }
+        else {
+            set_bit(memoize->fail, node->memoize_id);
+        }
+    }
+    return result;
+}
+
+bool match_node_counting(const struct betree_variable** preds,
+    const struct ast_node* node,
+    struct memoize* memoize,
+    struct report_counting* report)
+{
+    report->node_count++;
+    if(node->memoize_id != INVALID_PRED) {
+        if(test_bit(memoize->pass, node->memoize_id)) {
+            if(report != NULL) {
+                report->memoized++;
+            }
+            return true;
+        }
+        if(test_bit(memoize->fail, node->memoize_id)) {
+            if(report != NULL) {
+                report->memoized++;
+            }
+            return false;
+        }
+    }
+    bool result;
+    switch(node->type) {
+        case AST_TYPE_IS_NULL_EXPR:
+            report->ops_count++;
+            result = match_is_null_expr(preds, node->is_null_expr);
+            break;
+        case AST_TYPE_SPECIAL_EXPR: {
+            result = match_special_expr_counting(preds, node->special_expr, &report->ops_count);
+            break;
+        }
+        case AST_TYPE_BOOL_EXPR: {
+            result = match_bool_expr_counting(preds, node->bool_expr, memoize, report);
+            break;
+        }
+        case AST_TYPE_LIST_EXPR: {
+            result = match_list_expr_counting(preds, node->list_expr, &report->ops_count);
+            break;
+        }
+        case AST_TYPE_SET_EXPR: {
+            result = match_set_expr_counting(preds, node->set_expr, &report->ops_count);
+            break;
+        }
+        case AST_TYPE_COMPARE_EXPR: {
+            report->ops_count++;
+            result = match_compare_expr(preds, node->compare_expr);
+            break;
+        }
+        case AST_TYPE_EQUALITY_EXPR: {
+            report->ops_count++;
             result = match_equality_expr(preds, node->equality_expr);
             break;
         }

@@ -480,17 +480,17 @@ bool betree_insert_with_constants(struct betree* tree,
 {
     struct ast_node* node;
     if(parse(expr, &node) != 0) {
-        fprintf(stderr, "Can't parse %ld\n", id);
+        fprintf(stderr, "Can't parse %lu\n", id);
         return false;
     }
     assign_variable_id(tree->config, node);
     if(!is_valid(tree->config, node)) {
-        fprintf(stderr, "Can't validate %ld\n", id);
+        fprintf(stderr, "Can't validate %lu\n", id);
         free_ast_node(node);
         return false;
     }
     if(!assign_constants(constant_count, constants, node)) {
-        fprintf(stderr, "Can't assign constants %ld\n", id);
+        fprintf(stderr, "Can't assign constants %lu\n", id);
         return false;
     }
     assign_str_id(tree->config, node, false);
@@ -506,7 +506,7 @@ const struct betree_sub* betree_make_sub(struct betree* tree, betree_sub_t id, s
 {
     struct ast_node* node;
     if(parse(expr, &node) != 0) {
-        fprintf(stderr, "Can't parse %ld\n", id);
+        fprintf(stderr, "Can't parse %lu\n", id);
         return NULL;
     }
     assign_variable_id(tree->config, node);
@@ -524,7 +524,7 @@ const struct betree_sub* betree_make_sub(struct betree* tree, betree_sub_t id, s
         return NULL;
     }
     if(!assign_constants(constant_count, constants, node)) {
-        fprintf(stderr, "Can't assign constants %ld\n", id);
+        fprintf(stderr, "Can't assign constants %lu\n", id);
         free_ast_node(node);
         return NULL;
     }
@@ -545,7 +545,7 @@ bool betree_insert(struct betree* tree, betree_sub_t id, const char* expr)
     return betree_insert_with_constants(tree, id, 0, NULL, expr);
 }
 
-static const struct betree_variable** make_environment(size_t attr_domain_count, const struct betree_event* event)
+const struct betree_variable** make_environment(size_t attr_domain_count, const struct betree_event* event)
 {
     const struct betree_variable** preds = bcalloc(attr_domain_count * sizeof(*preds));
     for(size_t i = 0; i < event->variable_count; i++) {
@@ -566,6 +566,18 @@ static bool betree_search_with_event_filled(const struct betree* betree, struct 
     }
     return betree_search_with_preds(betree->config, variables, betree->cnode, report);
 }
+
+bool betree_search_with_event_filled_ids(const struct betree* betree, struct betree_event* event, struct report* report, const uint64_t* ids, size_t sz)
+{
+    const struct betree_variable** variables
+        = make_environment(betree->config->attr_domain_count, event);
+    if(validate_variables(betree->config, variables) == false) {
+        fprintf(stderr, "Failed to validate event\n");
+        return false;
+    }
+    return betree_search_with_preds_ids(betree->config, variables, betree->cnode, report, ids, sz);
+}
+
 
 static bool betree_exists_with_event_filled(const struct betree* betree, struct betree_event* event)
 {
@@ -596,11 +608,26 @@ bool betree_search(const struct betree* tree, const char* event_str, struct repo
     return result;
 }
 
+bool betree_search_ids(const struct betree* tree, const char* event_str, struct report* report, const uint64_t* ids, size_t sz)
+{
+    struct betree_event* event = make_event_from_string(tree, event_str);
+    bool result = betree_search_with_event_filled_ids(tree, event, report, ids, sz);
+    free_event(event);
+    return result;
+}
+
 bool betree_search_with_event(const struct betree* betree, struct betree_event* event, struct report* report)
 {
     fill_event(betree->config, event);
     sort_event_lists(event);
     return betree_search_with_event_filled(betree, event, report);
+}
+
+bool betree_search_with_event_ids(const struct betree* betree, struct betree_event* event, struct report* report, const uint64_t* ids, size_t sz)
+{
+    fill_event(betree->config, event);
+    sort_event_lists(event);
+    return betree_search_with_event_filled_ids(betree, event, report, ids, sz);
 }
 
 struct report* make_report()
@@ -619,6 +646,29 @@ struct report* make_report()
 }
 
 void free_report(struct report* report)
+{
+    bfree(report->subs);
+    bfree(report);
+}
+
+struct report_counting* make_report_counting()
+{
+    struct report_counting* report = bcalloc(sizeof(*report));
+    if(report == NULL) {
+        fprintf(stderr, "%s bcalloc failed\n", __func__);
+        abort();
+    }
+    report->evaluated = 0;
+    report->matched = 0;
+    report->memoized = 0;
+    report->shorted = 0;
+    report->subs = NULL;
+    report->node_count = 0;
+    report->ops_count = 0;
+    return report;
+}
+
+void free_report_counting(struct report_counting* report)
 {
     bfree(report->subs);
     bfree(report);

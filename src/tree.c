@@ -18,15 +18,26 @@
 #include "tree.h"
 #include "utils.h"
 
-struct subs_to_eval {
-    struct betree_sub** subs;
-    size_t capacity;
-    size_t count;
-};
+static void search_cdir_ids(const struct attr_domain** attr_domains,
+    const struct betree_variable** preds,
+    struct cdir* cdir,
+    struct subs_to_eval* subs, bool open_left, bool open_right,
+    const uint64_t* ids,
+    size_t sz);
 
-static void init_subs_to_eval(struct subs_to_eval* subs)
+static bool is_id_in(uint64_t id, const uint64_t* ids, size_t sz);
+
+
+void init_subs_to_eval(struct subs_to_eval* subs)
 {
     size_t init = 10;
+    subs->subs = bmalloc(init * sizeof(*subs->subs));
+    subs->capacity = init;
+    subs->count = 0;
+}
+
+void init_subs_to_eval_ext(struct subs_to_eval* subs, size_t init)
+{
     subs->subs = bmalloc(init * sizeof(*subs->subs));
     subs->capacity = init;
     subs->count = 0;
@@ -62,7 +73,7 @@ static enum short_circuit_e try_short_circuit(size_t attr_domains_count,
     return SHORT_CIRCUIT_NONE;
 }
 
-static bool match_sub(size_t attr_domains_count,
+bool match_sub(size_t attr_domains_count,
     const struct betree_variable** preds,
     const struct betree_sub* sub,
     struct report* report,
@@ -85,11 +96,54 @@ static bool match_sub(size_t attr_domains_count,
     return result;
 }
 
+bool match_sub_counting(size_t attr_domains_count,
+    const struct betree_variable** preds,
+    const struct betree_sub* sub,
+    struct report_counting* report,
+    struct memoize* memoize,
+    const uint64_t* undefined)
+{
+    enum short_circuit_e short_circuit = try_short_circuit(attr_domains_count, &sub->short_circuit, undefined);
+    if(short_circuit != SHORT_CIRCUIT_NONE) {
+        if(report != NULL) {
+            report->shorted++;
+        }
+        if(short_circuit == SHORT_CIRCUIT_PASS) {
+            return true;
+        }
+        if(short_circuit == SHORT_CIRCUIT_FAIL) {
+            return false;
+        }
+    }
+    bool result = match_node_counting(preds, sub->expr, memoize, report);
+    return result;
+}
+
 static void check_sub(const struct lnode* lnode, struct subs_to_eval* subs)
 {
     for(size_t i = 0; i < lnode->sub_count; i++) {
         struct betree_sub* sub = lnode->subs[i];
         add_sub_to_eval(sub, subs);
+    }
+}
+
+static void check_sub_ids(const struct lnode* lnode, struct subs_to_eval* subs,
+    const uint64_t* ids, size_t sz)
+{
+    for(size_t i = 0; i < lnode->sub_count; i++) {
+        struct betree_sub* sub = lnode->subs[i];
+        if(is_id_in(sub->id, ids, sz)) {
+            add_sub_to_eval(sub, subs);
+        }
+    }
+}
+
+static void check_sub_node_counting(const struct lnode* lnode, struct subs_to_eval* subs, int* node_count)
+{
+    for(size_t i = 0; i < lnode->sub_count; i++) {
+        struct betree_sub* sub = lnode->subs[i];
+        add_sub_to_eval(sub, subs);
+        ++*node_count;
     }
 }
 
@@ -112,12 +166,17 @@ static void search_cdir(const struct attr_domain** attr_domains,
     struct cdir* cdir,
     struct subs_to_eval* subs, bool open_left, bool open_right);
 
+static void search_cdir_node_counting(const struct attr_domain** attr_domains,
+    const struct betree_variable** preds,
+    struct cdir* cdir,
+    struct subs_to_eval* subs, bool open_left, bool open_right, int* node_count);
+
 static bool event_contains_variable(const struct betree_variable** preds, betree_var_t variable_id)
 {
     return preds[variable_id] != NULL;
 }
 
-static void match_be_tree(const struct attr_domain** attr_domains,
+void match_be_tree(const struct attr_domain** attr_domains,
     const struct betree_variable** preds,
     const struct cnode* cnode,
     struct subs_to_eval* subs)
@@ -133,6 +192,49 @@ static void match_be_tree(const struct attr_domain** attr_domains,
                 search_cdir(attr_domains, preds, pnode->cdir, subs, true, true);
             }
         }
+    }
+}
+
+
+static void match_be_tree_ids(const struct attr_domain** attr_domains,
+    const struct betree_variable** preds,
+    const struct cnode* cnode,
+    struct subs_to_eval* subs,
+    const uint64_t* ids,
+    size_t sz)
+{
+    check_sub_ids(cnode->lnode, subs, ids, sz);
+    if(cnode->pdir != NULL) {
+        for(size_t i = 0; i < cnode->pdir->pnode_count; i++) {
+            struct pnode* pnode = cnode->pdir->pnodes[i];
+            const struct attr_domain* attr_domain
+                = get_attr_domain(attr_domains, pnode->attr_var.var);
+            if(attr_domain->allow_undefined
+                || event_contains_variable(preds, pnode->attr_var.var)) {
+                search_cdir_ids(attr_domains, preds, pnode->cdir, subs, true, true, ids, sz);
+            }
+        }
+    }
+}
+
+void match_be_tree_node_counting(const struct attr_domain** attr_domains,
+    const struct betree_variable** preds,
+    const struct cnode* cnode,
+    struct subs_to_eval* subs, int* node_count)
+{
+    check_sub_node_counting(cnode->lnode, subs, node_count);
+    if(cnode->pdir != NULL) {
+        for(size_t i = 0; i < cnode->pdir->pnode_count; i++) {
+            struct pnode* pnode = cnode->pdir->pnodes[i];
+            const struct attr_domain* attr_domain
+                = get_attr_domain(attr_domains, pnode->attr_var.var);
+            if(attr_domain->allow_undefined
+                || event_contains_variable(preds, pnode->attr_var.var)) {
+                search_cdir_node_counting(attr_domains, preds, pnode->cdir, subs, true, true, node_count);
+            }
+            ++*node_count;
+        }
+        ++*node_count;
     }
 }
 
@@ -237,6 +339,36 @@ static void search_cdir(const struct attr_domain** attr_domains,
     }
     if(is_event_enclosed(preds, cdir->rchild, false, open_right)) {
         search_cdir(attr_domains, preds, cdir->rchild, subs, false, open_right);
+    }
+}
+
+static void search_cdir_ids(const struct attr_domain** attr_domains,
+    const struct betree_variable** preds,
+    struct cdir* cdir,
+    struct subs_to_eval* subs, bool open_left, bool open_right,
+    const uint64_t* ids,
+    size_t sz)
+{
+    match_be_tree_ids(attr_domains, preds, cdir->cnode, subs, ids, sz);
+    if(is_event_enclosed(preds, cdir->lchild, open_left, false)) {
+        search_cdir_ids(attr_domains, preds, cdir->lchild, subs, open_left, false, ids, sz);
+    }
+    if(is_event_enclosed(preds, cdir->rchild, false, open_right)) {
+        search_cdir_ids(attr_domains, preds, cdir->rchild, subs, false, open_right, ids, sz);
+    }
+}
+
+static void search_cdir_node_counting(const struct attr_domain** attr_domains,
+    const struct betree_variable** preds,
+    struct cdir* cdir,
+    struct subs_to_eval* subs, bool open_left, bool open_right, int* node_count)
+{
+    match_be_tree_node_counting(attr_domains, preds, cdir->cnode, subs, node_count);
+    if(is_event_enclosed(preds, cdir->lchild, open_left, false)) {
+        search_cdir_node_counting(attr_domains, preds, cdir->lchild, subs, open_left, false, node_count);
+    }
+    if(is_event_enclosed(preds, cdir->rchild, false, open_right)) {
+        search_cdir_node_counting(attr_domains, preds, cdir->rchild, subs, false, open_right, node_count);
     }
 }
 
@@ -1706,6 +1838,16 @@ struct memoize make_memoize(size_t pred_count)
     return memoize;
 }
 
+struct memoize make_memoize_with_count(size_t pred_count, size_t* count)
+{
+    *count = pred_count / 64 + 1;
+    struct memoize memoize = {
+        .pass = bcalloc(*count * sizeof(*memoize.pass)),
+        .fail = bcalloc(*count * sizeof(*memoize.fail)),
+    };
+    return memoize;
+}
+
 void free_memoize(struct memoize memoize)
 {
     bfree(memoize.pass);
@@ -1724,7 +1866,41 @@ static uint64_t* make_undefined(size_t attr_domain_count, const struct betree_va
     return undefined;
 }
 
+uint64_t* make_undefined_with_count(size_t attr_domain_count, const struct betree_variable** preds, size_t* count)
+{
+    *count = attr_domain_count / 64 + 1;
+    uint64_t* undefined = bcalloc(*count * sizeof(*undefined));
+    for(size_t i = 0; i < attr_domain_count; i++) {
+        if(preds[i] == NULL) {
+            set_bit(undefined, i);
+        }
+    }
+    return undefined;
+}
+
 static void add_sub(betree_sub_t id, struct report* report)
+{
+    if(report->matched == 0) {
+        report->subs = bcalloc(sizeof(*report->subs));
+        if(report->subs == NULL) {
+            fprintf(stderr, "%s bcalloc failed", __func__);
+            abort();
+        }
+    }
+    else {
+        betree_sub_t* subs
+            = brealloc(report->subs, sizeof(*report->subs) * (report->matched + 1));
+        if(subs == NULL) {
+            fprintf(stderr, "%s brealloc failed", __func__);
+            abort();
+        }
+        report->subs = subs;
+    }
+    report->subs[report->matched] = id;
+    report->matched++;
+}
+
+void add_sub_counting(betree_sub_t id, struct report_counting* report)
 {
     if(report->matched == 0) {
         report->subs = bcalloc(sizeof(*report->subs));
@@ -1756,6 +1932,59 @@ bool betree_search_with_preds(const struct config* config,
     struct subs_to_eval subs;
     init_subs_to_eval(&subs);
     match_be_tree((const struct attr_domain**)config->attr_domains, preds, cnode, &subs);
+    for(size_t i = 0; i < subs.count; i++) {
+        const struct betree_sub* sub = subs.subs[i];
+        report->evaluated++;
+        if(match_sub(config->attr_domain_count, preds, sub, report, &memoize, undefined) == true) {
+            add_sub(sub->id, report);
+        }
+    }
+    bfree(subs.subs);
+    free_memoize(memoize);
+    bfree(undefined);
+    bfree(preds);
+    return true;
+}
+
+
+static bool is_id_in(uint64_t id, const uint64_t* ids, size_t sz) {
+    if (sz == 0) {
+        return false;
+    }
+    size_t first = 0;
+    size_t last = sz - 1;
+    if (id < ids[first] || id > ids[last]) {
+        return false;
+    }
+    size_t middle = (first + last)/2;
+    while (first <= last) {
+        if (id == ids[middle]) {
+            return true;
+        }
+        if (ids[middle] < id) {
+            first = middle + 1;
+        } else {
+            last = middle - 1;
+        }
+        middle = (first + last)/2;
+    }
+    return false;
+}
+
+
+bool betree_search_with_preds_ids(const struct config* config,
+    const struct betree_variable** preds,
+    const struct cnode* cnode,
+    struct report* report,
+    const uint64_t* ids,
+    size_t sz
+    )
+{
+    uint64_t* undefined = make_undefined(config->attr_domain_count, preds);
+    struct memoize memoize = make_memoize(config->pred_map->memoize_count);
+    struct subs_to_eval subs;
+    init_subs_to_eval(&subs);
+    match_be_tree_ids((const struct attr_domain**)config->attr_domains, preds, cnode, &subs, ids, sz);
     for(size_t i = 0; i < subs.count; i++) {
         const struct betree_sub* sub = subs.subs[i];
         report->evaluated++;

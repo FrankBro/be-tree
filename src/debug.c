@@ -761,15 +761,10 @@ static void gather_subs_cnode(const struct cnode* cnode, struct gathered_subs* g
     }
 }
 
-void write_dot_file(const struct betree* tree)
+void wrt_dot_to_file(const struct betree* tree, FILE* f)
 {
     const struct config* config = tree->config;
     const struct cnode* root = tree->cnode;
-    FILE* f = fopen("data/betree.dot", "we");
-    if(f == NULL) {
-        fprintf(stderr, "Can't open a file to write the dot_file");
-        abort();
-    }
     fprintf(f, "digraph {\n");
     fprintf(f, "    compound=true");
     fprintf(f, "    node [fontsize=20, fontname=\"Verdana\"];\n");
@@ -780,3 +775,22 @@ void write_dot_file(const struct betree* tree)
     fprintf(f, "}\n");
 }
 
+void write_dot_to_file(const struct betree* tree, const char* fname) {
+    FILE* f = fopen(fname, "w");
+    if(f == NULL) {
+        fprintf(stderr, "Can't open file %s  to write the dot_file", fname);
+        abort();
+    }
+    wrt_dot_to_file(tree, f);
+}
+
+// legacy 
+void write_dot_file(const struct betree* tree)
+{
+    FILE* f = fopen("data/betree.dot", "we");
+    if(f == NULL) {
+        fprintf(stderr, "Can't open file data/betree.dot to write the dot_file");
+        abort();
+    }
+    wrt_dot_to_file(tree, f);
+}

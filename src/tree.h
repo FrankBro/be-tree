@@ -83,6 +83,38 @@ struct pdir {
     };
 };
 
+struct subs_to_eval {
+    struct betree_sub** subs;
+    size_t capacity;
+    size_t count;
+};
+
+void init_subs_to_eval(struct subs_to_eval* subs);
+void init_subs_to_eval_ext(struct subs_to_eval* subs, size_t init);
+uint64_t* make_undefined_with_count(size_t attr_domain_count, const struct betree_variable** preds, size_t* count);
+struct memoize make_memoize_with_count(size_t pred_count, size_t* count);
+void match_be_tree(const struct attr_domain** attr_domains,
+    const struct betree_variable** preds,
+    const struct cnode* cnode,
+    struct subs_to_eval* subs);
+void match_be_tree_node_counting(const struct attr_domain** attr_domains,
+    const struct betree_variable** preds,
+    const struct cnode* cnode,
+    struct subs_to_eval* subs, int* node_count);
+bool match_sub(size_t attr_domains_count,
+    const struct betree_variable** preds,
+    const struct betree_sub* sub,
+    struct report* report,
+    struct memoize* memoize,
+    const uint64_t* undefined);
+bool match_sub_counting(size_t attr_domains_count,
+    const struct betree_variable** preds,
+    const struct betree_sub* sub,
+    struct report_counting* report,
+    struct memoize* memoize,
+    const uint64_t* undefined);
+void add_sub_counting(betree_sub_t id, struct report_counting* report);
+
 void free_sub(struct betree_sub* sub);
 void free_event(struct betree_event* event);
 
@@ -123,6 +155,13 @@ bool betree_search_with_preds(const struct config* config,
     const struct betree_variable** preds,
     const struct cnode* cnode,
     struct report* report);
+bool betree_search_with_preds_ids(const struct config* config,
+    const struct betree_variable** preds,
+    const struct cnode* cnode,
+    struct report* report,
+    const uint64_t* ids,
+    size_t sz
+    );
 bool betree_exists_with_preds(const struct config* config, const struct betree_variable** preds, const struct cnode* cnode);
 
 bool insert_be_tree(const struct config* config, const struct betree_sub* sub, struct cnode* cnode, struct cdir* cdir);

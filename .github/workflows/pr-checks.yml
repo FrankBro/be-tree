@@ -1,0 +1,16 @@
+---
+name: PR Checks
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+jobs:
+  test:
+    name: Run tests
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - run: |
+          sudo apt-get update
+          sudo apt-get install -y libgsl0-dev valgrind
+      - run: |
+          make dev

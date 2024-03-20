@@ -130,6 +130,9 @@ int test_insert_first_split()
     mu_assert(pnode->cdir->cnode->lnode != NULL, "inner cnode has a lnode");
     mu_assert(pnode->cdir->cnode->lnode->sub_count == 3, "tree has three sub in the second lnode");
 
+    // write_dot_file(tree);
+    // write_dot_to_file(tree, "/tmp/betree.dot");
+
     betree_free(tree);
     return 0;
 }
