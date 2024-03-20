@@ -1948,9 +1948,12 @@ bool betree_search_with_preds(const struct config* config,
 
 
 static bool is_id_in(uint64_t id, const uint64_t* ids, size_t sz) {
+    if (sz == 0) {
+        return false;
+    }
     size_t first = 0;
     size_t last = sz - 1;
-    if (id < ids[first] || id > ids[last]){
+    if (id < ids[first] || id > ids[last]) {
         return false;
     }
     size_t middle = (first + last)/2;
