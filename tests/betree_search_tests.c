@@ -116,7 +116,7 @@ int test_search_ids_3()
 
     struct report* report = make_report();
     uint64_t ids[] = {1, 3};
-    size_t sz = 3;
+    size_t sz = 2;
     mu_assert(betree_search_ids(tree, "{\"a\": 0, \"b\": 1}", report, ids, sz), "");
     mu_assert(report->matched == 0, "goodEvent");
 
